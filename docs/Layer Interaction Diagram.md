@@ -1,5 +1,9 @@
 ﻿Here's how the data flows between the layers:
 
+NEED TO REVIEW THIS>>> THE DOMAIN LAYER DOES NOT DEPEND ON ANYTHING 
+THE CHART MAKES IT LOOK LIKE THATS THE FLOW... ITS NOT
+
+
    🌍 Client (Web, Mobile, Postman)
                       │
                       ▼
