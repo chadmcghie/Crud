@@ -2,10 +2,17 @@
 
 namespace Domain.Entities
 {
-    internal class Person
+    public class Person
     {
-        public string FullName { get; set; }
-        public PhoneAttribute Phone { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
+        [Required]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        public string? Phone { get; set; }
+
+        // A person can have many roles. Roles are extensible and managed separately
+        public ICollection<Role> Roles { get; set; } = new HashSet<Role>();
     }
 }
