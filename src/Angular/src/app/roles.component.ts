@@ -231,14 +231,8 @@ export class RolesComponent implements OnInit, OnChanges {
     if (event) {
       event.preventDefault();
     }
-    console.log('Role form submitted!');
-    console.log('Form valid:', this.form.valid);
-    console.log('Form value:', this.form.value);
-    console.log('Form errors:', this.form.errors);
-    console.log('Is submitting:', this.isSubmitting);
     
     if (this.form.valid && !this.isSubmitting) {
-      console.log('Starting role submission...');
       this.isSubmitting = true;
       const formValue = this.form.value;
       
@@ -247,15 +241,10 @@ export class RolesComponent implements OnInit, OnChanges {
         description: formValue.description || null
       };
 
-      console.log('Payload:', payload);
-      console.log('Editing role:', this.editingRole);
-
       if (this.editingRole) {
         // Update existing role
-        console.log('Updating role with ID:', this.editingRole.id);
         this.api.updateRole(this.editingRole.id, payload).subscribe({
           next: () => {
-            console.log('Role updated successfully');
             this.isSubmitting = false;
             this.roleSaved.emit(this.editingRole!);
           },
@@ -266,10 +255,8 @@ export class RolesComponent implements OnInit, OnChanges {
         });
       } else {
         // Create new role
-        console.log('Creating new role...');
         this.api.createRole(payload).subscribe({
           next: (role: RoleDto) => {
-            console.log('Role created successfully:', role);
             this.isSubmitting = false;
             this.roleSaved.emit(role);
             this.resetForm();
@@ -277,17 +264,6 @@ export class RolesComponent implements OnInit, OnChanges {
           error: (error: any) => {
             console.error('Error creating role:', error);
             this.isSubmitting = false;
-          }
-        });
-      }
-    } else {
-      console.log('Form submission blocked - invalid or already submitting');
-      if (!this.form.valid) {
-        console.log('Individual field errors:');
-        Object.keys(this.form.controls).forEach(key => {
-          const control = this.form.get(key);
-          if (control && control.errors) {
-            console.log(`${key}:`, control.errors);
           }
         });
       }

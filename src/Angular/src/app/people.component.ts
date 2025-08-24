@@ -307,15 +307,8 @@ export class PeopleComponent implements OnInit, OnChanges {
     if (event) {
       event.preventDefault();
     }
-    console.log('People form submitted!');
-    console.log('Form valid:', this.form.valid);
-    console.log('Form value:', this.form.value);
-    console.log('Form errors:', this.form.errors);
-    console.log('Is submitting:', this.isSubmitting);
-    console.log('Selected role IDs:', Array.from(this.selectedRoleIds));
     
     if (this.form.valid && !this.isSubmitting) {
-      console.log('Starting person submission...');
       this.isSubmitting = true;
       const formValue = this.form.value;
       
@@ -325,15 +318,10 @@ export class PeopleComponent implements OnInit, OnChanges {
         roleIds: Array.from(this.selectedRoleIds)
       };
 
-      console.log('Payload:', payload);
-      console.log('Editing person:', this.editingPerson);
-
       if (this.editingPerson) {
         // Update existing person
-        console.log('Updating person with ID:', this.editingPerson.id);
         this.api.updatePerson(this.editingPerson.id, payload).subscribe({
           next: () => {
-            console.log('Person updated successfully');
             this.isSubmitting = false;
             this.personSaved.emit(this.editingPerson!);
           },
@@ -344,10 +332,8 @@ export class PeopleComponent implements OnInit, OnChanges {
         });
       } else {
         // Create new person
-        console.log('Creating new person...');
         this.api.createPerson(payload).subscribe({
           next: (person: PersonResponse) => {
-            console.log('Person created successfully:', person);
             this.isSubmitting = false;
             this.personSaved.emit(person);
             this.resetForm();
@@ -355,17 +341,6 @@ export class PeopleComponent implements OnInit, OnChanges {
           error: (error: any) => {
             console.error('Error creating person:', error);
             this.isSubmitting = false;
-          }
-        });
-      }
-    } else {
-      console.log('Form submission blocked - invalid or already submitting');
-      if (!this.form.valid) {
-        console.log('Individual field errors:');
-        Object.keys(this.form.controls).forEach(key => {
-          const control = this.form.get(key);
-          if (control && control.errors) {
-            console.log(`${key}:`, control.errors);
           }
         });
       }
