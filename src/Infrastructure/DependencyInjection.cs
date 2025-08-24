@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IPersonRepository, InMemoryPersonRepository>();
         services.AddSingleton<IRoleRepository, InMemoryRoleRepository>();
+        services.AddSingleton<IWallRepository, InMemoryWallRepository>();
         return services;
     }
 }
