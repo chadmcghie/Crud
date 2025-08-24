@@ -233,8 +233,10 @@ export class App {
 
   // People methods
   onAddPerson() {
+    console.log('App: Add person clicked');
     this.editingPerson = null;
     this.showPeopleForm = true;
+    console.log('App: People form shown, editingPerson:', this.editingPerson);
   }
 
   onEditPerson(person: PersonResponse) {
@@ -243,11 +245,15 @@ export class App {
   }
 
   onPersonSaved(person: PersonResponse) {
+    console.log('App: Person saved event received:', person);
     this.showPeopleForm = false;
     this.editingPerson = null;
     // Refresh the people list
     if (this.peopleList) {
+      console.log('App: Refreshing people list');
       this.peopleList.refresh();
+    } else {
+      console.warn('App: People list component not found');
     }
   }
 
@@ -258,8 +264,10 @@ export class App {
 
   // Roles methods
   onAddRole() {
+    console.log('App: Add role clicked');
     this.editingRole = null;
     this.showRolesForm = true;
+    console.log('App: Roles form shown, editingRole:', this.editingRole);
   }
 
   onEditRole(role: RoleDto) {
@@ -268,11 +276,15 @@ export class App {
   }
 
   onRoleSaved(role: RoleDto) {
+    console.log('App: Role saved event received:', role);
     this.showRolesForm = false;
     this.editingRole = null;
     // Refresh the roles list
     if (this.rolesList) {
+      console.log('App: Refreshing roles list');
       this.rolesList.refresh();
+    } else {
+      console.warn('App: Roles list component not found');
     }
   }
 

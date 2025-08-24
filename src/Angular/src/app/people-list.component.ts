@@ -214,6 +214,7 @@ export class PeopleListComponent implements OnInit {
   }
 
   onAddPerson() {
+    console.log('People List: Add person button clicked');
     this.addPerson.emit();
   }
 

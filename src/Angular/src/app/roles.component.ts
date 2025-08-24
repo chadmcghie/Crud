@@ -12,7 +12,7 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
     <div class="roles-form-container">
       <h3>{{ editingRole ? 'Edit Role' : 'Add New Role' }}</h3>
       
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="role-form">
+      <form [formGroup]="form" (ngSubmit)="onSubmit($event)" class="role-form">
         <div class="form-group">
           <label for="name">Role Name *</label>
           <input 
@@ -227,8 +227,18 @@ export class RolesComponent implements OnInit, OnChanges {
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
-  onSubmit() {
+  onSubmit(event?: Event) {
+    if (event) {
+      event.preventDefault();
+    }
+    console.log('Role form submitted!');
+    console.log('Form valid:', this.form.valid);
+    console.log('Form value:', this.form.value);
+    console.log('Form errors:', this.form.errors);
+    console.log('Is submitting:', this.isSubmitting);
+    
     if (this.form.valid && !this.isSubmitting) {
+      console.log('Starting role submission...');
       this.isSubmitting = true;
       const formValue = this.form.value;
       
@@ -237,29 +247,47 @@ export class RolesComponent implements OnInit, OnChanges {
         description: formValue.description || null
       };
 
+      console.log('Payload:', payload);
+      console.log('Editing role:', this.editingRole);
+
       if (this.editingRole) {
         // Update existing role
+        console.log('Updating role with ID:', this.editingRole.id);
         this.api.updateRole(this.editingRole.id, payload).subscribe({
           next: () => {
+            console.log('Role updated successfully');
             this.isSubmitting = false;
             this.roleSaved.emit(this.editingRole!);
           },
           error: (error: any) => {
-            this.isSubmitting = false;
             console.error('Error updating role:', error);
+            this.isSubmitting = false;
           }
         });
       } else {
         // Create new role
+        console.log('Creating new role...');
         this.api.createRole(payload).subscribe({
           next: (role: RoleDto) => {
+            console.log('Role created successfully:', role);
             this.isSubmitting = false;
             this.roleSaved.emit(role);
             this.resetForm();
           },
           error: (error: any) => {
-            this.isSubmitting = false;
             console.error('Error creating role:', error);
+            this.isSubmitting = false;
+          }
+        });
+      }
+    } else {
+      console.log('Form submission blocked - invalid or already submitting');
+      if (!this.form.valid) {
+        console.log('Individual field errors:');
+        Object.keys(this.form.controls).forEach(key => {
+          const control = this.form.get(key);
+          if (control && control.errors) {
+            console.log(`${key}:`, control.errors);
           }
         });
       }

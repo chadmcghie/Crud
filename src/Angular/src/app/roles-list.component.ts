@@ -191,6 +191,7 @@ export class RolesListComponent implements OnInit {
   }
 
   onAddRole() {
+    console.log('Roles List: Add role button clicked');
     this.addRole.emit();
   }
 
