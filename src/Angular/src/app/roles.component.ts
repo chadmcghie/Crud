@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { ApiService, RoleDto } from './api.service';
 
 @Component({
   selector: 'app-roles',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   template: `
   <h2>Roles</h2>
   <form [formGroup]="form" (ngSubmit)="save()">

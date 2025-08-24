@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { ApiService, PersonResponse, RoleDto } from './api.service';
 
 @Component({
   selector: 'app-people',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   template: `
   <h2>People</h2>
   <form [formGroup]="form" (ngSubmit)="save()">
@@ -11,7 +15,7 @@ import { ApiService, PersonResponse, RoleDto } from './api.service';
     <input placeholder="Phone" formControlName="phone" />
     <label>Roles</label>
     <div *ngFor="let role of roles">
-      <input type="checkbox" [value]="role.id" (change)="toggleRole(role.id, $event.target?.checked)" [checked]="selectedRoleIds.has(role.id)"/> {{role.name}}
+      <input type="checkbox" [value]="role.id" (change)="toggleRole(role.id, $any($event.target).checked)" [checked]="selectedRoleIds.has(role.id)"/> {{role.name}}
     </div>
     <button type="submit">{{ editingId ? 'Update' : 'Create' }}</button>
     <button type="button" (click)="reset()" *ngIf="editingId">Cancel</button>
@@ -19,7 +23,7 @@ import { ApiService, PersonResponse, RoleDto } from './api.service';
 
   <ul>
     <li *ngFor="let p of people">
-      {{p.fullName}} ({{p.phone || 'n/a'}}) - Roles: {{p.roles.map(r => r.name).join(', ')}}
+      {{p.fullName}} ({{p.phone || 'n/a'}}) - Roles: {{ roleNames(p) }}
       <button (click)="edit(p)">Edit</button>
       <button (click)="remove(p)">Delete</button>
     </li>
@@ -44,6 +48,10 @@ export class PeopleComponent implements OnInit {
     this.refresh();
   }
 
+  roleNames(p: PersonResponse): string {
+    return (p.roles ?? []).map(r => r.name).join(', ');
+  }
+
   private loadRoles() {
     this.api.listRoles().subscribe(r => this.roles = r);
   }
@@ -58,7 +66,7 @@ export class PeopleComponent implements OnInit {
     this.reset();
   }
 
-  toggleRole(roleId: string, checked: boolean | undefined) {
+  toggleRole(roleId: string, checked: boolean) {
     if (!roleId) return;
     if (checked) this.selectedRoleIds.add(roleId); else this.selectedRoleIds.delete(roleId);
   }
