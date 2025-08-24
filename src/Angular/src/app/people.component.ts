@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -240,7 +240,7 @@ import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonR
     }
   `]
 })
-export class PeopleComponent implements OnInit {
+export class PeopleComponent implements OnInit, OnChanges {
   @Input() editingPerson: PersonResponse | null = null;
   @Output() personSaved = new EventEmitter<PersonResponse>();
   @Output() cancelled = new EventEmitter<void>();
@@ -314,24 +314,32 @@ export class PeopleComponent implements OnInit {
         roleIds: Array.from(this.selectedRoleIds)
       };
 
-      const request = this.editingPerson 
-        ? this.api.updatePerson(this.editingPerson.id, payload)
-        : this.api.createPerson(payload);
-
-      request.subscribe({
-        next: (person) => {
-          this.isSubmitting = false;
-          this.personSaved.emit(person || this.editingPerson);
-          if (!this.editingPerson) {
-            this.resetForm();
+      if (this.editingPerson) {
+        // Update existing person
+        this.api.updatePerson(this.editingPerson.id, payload).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.personSaved.emit(this.editingPerson!);
+          },
+          error: (error: any) => {
+            this.isSubmitting = false;
+            console.error('Error updating person:', error);
           }
-        },
-        error: (error) => {
-          this.isSubmitting = false;
-          console.error('Error saving person:', error);
-          // You could add proper error handling here
-        }
-      });
+        });
+      } else {
+        // Create new person
+        this.api.createPerson(payload).subscribe({
+          next: (person: PersonResponse) => {
+            this.isSubmitting = false;
+            this.personSaved.emit(person);
+            this.resetForm();
+          },
+          error: (error: any) => {
+            this.isSubmitting = false;
+            console.error('Error creating person:', error);
+          }
+        });
+      }
     }
   }
 

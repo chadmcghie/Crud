@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -184,7 +184,7 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
     }
   `]
 })
-export class RolesComponent implements OnInit {
+export class RolesComponent implements OnInit, OnChanges {
   @Input() editingRole: RoleDto | null = null;
   @Output() roleSaved = new EventEmitter<RoleDto>();
   @Output() cancelled = new EventEmitter<void>();
@@ -237,24 +237,32 @@ export class RolesComponent implements OnInit {
         description: formValue.description || null
       };
 
-      const request = this.editingRole 
-        ? this.api.updateRole(this.editingRole.id, payload)
-        : this.api.createRole(payload);
-
-      request.subscribe({
-        next: (role) => {
-          this.isSubmitting = false;
-          this.roleSaved.emit(role || this.editingRole);
-          if (!this.editingRole) {
-            this.resetForm();
+      if (this.editingRole) {
+        // Update existing role
+        this.api.updateRole(this.editingRole.id, payload).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.roleSaved.emit(this.editingRole!);
+          },
+          error: (error: any) => {
+            this.isSubmitting = false;
+            console.error('Error updating role:', error);
           }
-        },
-        error: (error) => {
-          this.isSubmitting = false;
-          console.error('Error saving role:', error);
-          // You could add proper error handling here
-        }
-      });
+        });
+      } else {
+        // Create new role
+        this.api.createRole(payload).subscribe({
+          next: (role: RoleDto) => {
+            this.isSubmitting = false;
+            this.roleSaved.emit(role);
+            this.resetForm();
+          },
+          error: (error: any) => {
+            this.isSubmitting = false;
+            console.error('Error creating role:', error);
+          }
+        });
+      }
     }
   }
 
