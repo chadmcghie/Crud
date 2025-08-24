@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations;
 namespace Api.Dtos;
 
 public record CreateRoleRequest(
-    [property: Required] string Name,
+    [param: Required] string Name,
     string? Description
 );
 
 public record UpdateRoleRequest(
-    [property: Required] string Name,
+    [param: Required] string Name,
     string? Description
 );
 
