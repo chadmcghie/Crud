@@ -1,0 +1,67 @@
+### Get all walls
+GET https://localhost:7001/api/walls
+Accept: application/json
+
+### Get wall by ID
+GET https://localhost:7001/api/walls/{{wallId}}
+Accept: application/json
+
+### Create a new wall
+POST https://localhost:7001/api/walls
+Content-Type: application/json
+
+{
+  "name": "Exterior Wall - North",
+  "description": "North-facing exterior wall with 2x6 framing and R19 insulation",
+  "length": 24.0,
+  "height": 8.0,
+  "thickness": 6.0,
+  "assemblyType": "2x6 16\" on center with R19 mineral fiber batt insulation in the cavity with R5 EPS continuous insulation on the exterior",
+  "assemblyDetails": "Exterior: 1/2\" OSB sheathing, R5 EPS continuous insulation, 1/2\" fiber cement siding. Cavity: R19 mineral fiber batt insulation. Interior: 1/2\" drywall",
+  "rValue": 24.0,
+  "uValue": 0.042,
+  "materialLayers": "1/2\" fiber cement siding (R0.5) + R5 EPS continuous insulation + 1/2\" OSB sheathing (R0.6) + 2x6 cavity with R19 mineral fiber batt (R19) + 1/2\" drywall (R0.45) = Total R24.55",
+  "orientation": "North",
+  "location": "Exterior"
+}
+
+### Create another wall
+POST https://localhost:7001/api/walls
+Content-Type: application/json
+
+{
+  "name": "Interior Wall - Load Bearing",
+  "description": "Interior load-bearing wall with 2x4 framing",
+  "length": 16.0,
+  "height": 8.0,
+  "thickness": 4.0,
+  "assemblyType": "2x4 16\" on center with R13 fiberglass insulation",
+  "assemblyDetails": "Interior: 1/2\" drywall on both sides. Cavity: R13 fiberglass batt insulation",
+  "rValue": 13.0,
+  "uValue": 0.077,
+  "materialLayers": "1/2\" drywall (R0.45) + 2x4 cavity with R13 fiberglass batt (R13) + 1/2\" drywall (R0.45) = Total R13.9",
+  "orientation": "N/A",
+  "location": "Interior"
+}
+
+### Update a wall
+PUT https://localhost:7001/api/walls/{{wallId}}
+Content-Type: application/json
+
+{
+  "name": "Updated Exterior Wall - North",
+  "description": "Updated north-facing exterior wall with improved insulation",
+  "length": 24.0,
+  "height": 8.0,
+  "thickness": 6.0,
+  "assemblyType": "2x6 16\" on center with R21 mineral fiber batt insulation in the cavity with R7.5 EPS continuous insulation on the exterior",
+  "assemblyDetails": "Exterior: 1/2\" OSB sheathing, R7.5 EPS continuous insulation, 1/2\" fiber cement siding. Cavity: R21 mineral fiber batt insulation. Interior: 1/2\" drywall",
+  "rValue": 28.5,
+  "uValue": 0.035,
+  "materialLayers": "1/2\" fiber cement siding (R0.5) + R7.5 EPS continuous insulation + 1/2\" OSB sheathing (R0.6) + 2x6 cavity with R21 mineral fiber batt (R21) + 1/2\" drywall (R0.45) = Total R28.55",
+  "orientation": "North",
+  "location": "Exterior"
+}
+
+### Delete a wall
+DELETE https://localhost:7001/api/walls/{{wallId}}
