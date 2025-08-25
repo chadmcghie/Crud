@@ -1,0 +1,22 @@
+{
+  "name": "tests-e2e-ng",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Angular application and API",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:local": "playwright test --config=playwright.config.local.ts",
+    "test:api-only": "playwright test --config=playwright.config.api-only.ts",
+    "test:list": "playwright test --list --config=playwright.config.local.ts",
+    "test:list-api": "playwright test --list --config=playwright.config.api-only.ts",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
