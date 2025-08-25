@@ -23,6 +23,11 @@ namespace Api
                         throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQL Server provider.");
                     builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
                     break;
+                case "sqlite":
+                    if (string.IsNullOrEmpty(connectionString))
+                        throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQLite provider.");
+                    builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+                    break;
                 case "entityframeworkinmemory":
                     builder.Services.AddInfrastructureEntityFrameworkInMemory();
                     break;
@@ -56,7 +61,7 @@ namespace Api
             var app = builder.Build();
 
             // Ensure database is created for Entity Framework providers
-            if (databaseProvider.ToLowerInvariant() is "sqlserver" or "entityframeworkinmemory")
+            if (databaseProvider.ToLowerInvariant() is "sqlserver" or "sqlite" or "entityframeworkinmemory")
             {
                 await app.Services.EnsureDatabaseAsync();
             }

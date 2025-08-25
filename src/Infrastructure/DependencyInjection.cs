@@ -40,7 +40,7 @@ public static class DependencyInjection
 
     /// <summary>
     /// Adds infrastructure services using Entity Framework with SQL Server
-    /// Suitable for production and end-to-end testing scenarios
+    /// Suitable for production scenarios
     /// </summary>
     public static IServiceCollection AddInfrastructureEntityFrameworkSqlServer(this IServiceCollection services, string connectionString)
     {
@@ -56,8 +56,25 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Adds infrastructure services using Entity Framework with SQLite
+    /// Suitable for development, testing, and lightweight production scenarios
+    /// </summary>
+    public static IServiceCollection AddInfrastructureEntityFrameworkSqlite(this IServiceCollection services, string connectionString)
+    {
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlite(connectionString));
+
+        services.AddScoped<IPersonRepository, EfPersonRepository>();
+        services.AddScoped<IRoleRepository, EfRoleRepository>();
+        services.AddScoped<IWallRepository, EfWallRepository>();
+        services.AddScoped<IWindowRepository, EfWindowRepository>();
+
+        return services;
+    }
+
+    /// <summary>
     /// Ensures the database is created and applies any pending migrations
-    /// Call this during application startup for SQL Server configurations
+    /// Call this during application startup for Entity Framework configurations
     /// </summary>
     public static async Task EnsureDatabaseAsync(this IServiceProvider serviceProvider)
     {
