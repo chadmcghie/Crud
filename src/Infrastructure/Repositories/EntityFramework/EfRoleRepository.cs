@@ -19,6 +19,12 @@ public class EfRoleRepository : IRoleRepository
         return await _context.Roles.FindAsync(new object[] { id }, ct);
     }
 
+    public async Task<Role?> GetByNameAsync(string name, CancellationToken ct = default)
+    {
+        return await _context.Roles
+            .FirstOrDefaultAsync(r => r.Name == name, ct);
+    }
+
     public async Task<IReadOnlyList<Role>> ListAsync(CancellationToken ct = default)
     {
         return await _context.Roles.ToListAsync(ct);
