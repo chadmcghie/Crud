@@ -17,7 +17,12 @@ public class InMemoryRoleRepository : IRoleRepository
     }
 
     public Task<Role?> GetByNameAsync(string name, CancellationToken ct = default)
-        => Task.FromResult(_store.Values.FirstOrDefault(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
+    {
+        lock (_lock)
+        {
+            return Task.FromResult(_store.Values.FirstOrDefault(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
 
     public Task<IReadOnlyList<Role>> ListAsync(CancellationToken ct = default)
     {

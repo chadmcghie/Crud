@@ -95,29 +95,43 @@ public class WallsController(IWallService walls) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWallRequest request, CancellationToken ct)
     {
-        await walls.UpdateAsync(
-            id,
-            request.Name,
-            request.Description,
-            request.Length,
-            request.Height,
-            request.Thickness,
-            request.AssemblyType,
-            request.AssemblyDetails,
-            request.RValue,
-            request.UValue,
-            request.MaterialLayers,
-            request.Orientation,
-            request.Location,
-            ct
-        );
-        return NoContent();
+        try
+        {
+            await walls.UpdateAsync(
+                id,
+                request.Name,
+                request.Description,
+                request.Length,
+                request.Height,
+                request.Thickness,
+                request.AssemblyType,
+                request.AssemblyDetails,
+                request.RValue,
+                request.UValue,
+                request.MaterialLayers,
+                request.Orientation,
+                request.Location,
+                ct
+            );
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await walls.DeleteAsync(id, ct);
-        return NoContent();
+        try
+        {
+            await walls.DeleteAsync(id, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

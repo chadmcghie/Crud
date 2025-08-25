@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Angular", "src\Angular\Angu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{2D07D896-8D77-4383-87B2-606078182B99}"
 	ProjectSection(SolutionItems) = preProject
-		Launch App.ps1 = Launch App.ps1
+		LaunchApps.ps1 = LaunchApps.ps1
 	EndProjectSection
 EndProject
 Global

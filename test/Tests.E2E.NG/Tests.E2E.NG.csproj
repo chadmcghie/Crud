@@ -21,9 +21,6 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\src\Angular\Angular.esproj" />
-  </ItemGroup>
+
 
 </Project>

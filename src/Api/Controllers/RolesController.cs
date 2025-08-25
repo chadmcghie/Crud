@@ -33,14 +33,28 @@ public class RolesController(IRoleService roles) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
-        await roles.UpdateAsync(id, request.Name, request.Description, ct);
-        return NoContent();
+        try
+        {
+            await roles.UpdateAsync(id, request.Name, request.Description, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await roles.DeleteAsync(id, ct);
-        return NoContent();
+        try
+        {
+            await roles.DeleteAsync(id, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }
