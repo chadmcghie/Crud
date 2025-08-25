@@ -1,0 +1,105 @@
+# Application Layer - Clean Architecture Use Cases
+
+## Project Context
+This is the Application layer containing use cases, business workflows, and application services. It orchestrates domain objects and coordinates with infrastructure through abstractions.
+
+## Architecture Guidelines
+- Depends on Domain layer abstractions, not implementations
+- Contains application-specific business rules and workflows
+- Orchestrates domain objects to fulfill use cases
+- Defines interfaces for infrastructure dependencies (repositories, external services)
+- Should be testable in isolation using mocks/stubs
+
+## CQRS Pattern
+- Separate Commands (write operations) from Queries (read operations)
+- Use MediatR for implementing CQRS pattern
+- Commands should modify state and return void or simple results
+- Queries should return data and never modify state
+- Keep command and query handlers focused and single-purpose
+
+## Application Services
+- Coordinate between domain objects and infrastructure
+- Handle application-specific workflows and business processes
+- Validate input and enforce application rules
+- Transform between DTOs and domain objects
+- Manage transactions and unit of work patterns
+
+## Code Standards
+- Use async/await for all I/O operations
+- Implement proper error handling and validation
+- Use dependency injection for all external dependencies
+- Follow single responsibility principle for services
+- Use meaningful names that express business intent
+- Keep services focused on specific use cases
+
+## Dependencies & Patterns
+- Use repository pattern for data access abstractions
+- Implement unit of work pattern for transaction management
+- Use AutoMapper or manual mapping for DTO transformations
+- Use FluentValidation for input validation
+- Use MediatR for decoupling and CQRS implementation
+
+## Service Guidelines
+- Services should be stateless
+- Inject dependencies through constructor
+- Use interfaces for all external dependencies
+- Handle domain exceptions and translate to application exceptions
+- Log important business events and errors
+- Validate inputs before processing
+
+## Testing
+- Unit test all application services in isolation
+- Mock all external dependencies (repositories, external services)
+- Test both success and failure scenarios
+- Use the Arrange-Act-Assert pattern
+- Test business workflows end-to-end at application level
+
+## Error Handling
+- Catch domain exceptions and handle appropriately
+- Validate inputs and return meaningful error messages
+- Use Result pattern or exceptions based on team preference
+- Log errors with sufficient context for debugging
+- Don't let infrastructure exceptions bubble up unhandled
+
+## File Organization
+- Services/ - Application services implementing use cases
+- Abstractions/ - Interfaces for external dependencies
+- Commands/ - CQRS command objects (if using MediatR)
+- Queries/ - CQRS query objects (if using MediatR)
+- Handlers/ - MediatR command and query handlers (if using MediatR)
+- DTOs/ - Data transfer objects for application boundaries
+- Validators/ - Input validation logic (if using FluentValidation)
+
+## Example Patterns
+```csharp
+public class PersonService : IPersonService
+{
+    private readonly IPersonRepository _repository;
+    private readonly IMapper _mapper;
+    
+    public PersonService(IPersonRepository repository, IMapper mapper)
+    {
+        _repository = repository;
+        _mapper = mapper;
+    }
+    
+    public async Task<PersonDto> CreatePersonAsync(CreatePersonRequest request)
+    {
+        // Validate input
+        var person = Person.Create(request.Name, new Email(request.Email));
+        
+        // Save through repository
+        await _repository.AddAsync(person);
+        await _repository.SaveChangesAsync();
+        
+        // Return DTO
+        return _mapper.Map<PersonDto>(person);
+    }
+}
+```
+
+## Validation Strategy
+- Validate at application boundary (service methods)
+- Use domain objects to enforce business rules
+- Return validation errors in a consistent format
+- Don't duplicate validation logic between layers

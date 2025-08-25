@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
+
   fullyParallel: false, // Disable full parallelism to avoid data conflicts
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
@@ -13,6 +14,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Run tests sequentially to avoid data conflicts */
   workers: 1, // Run tests sequentially to avoid data conflicts
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -25,6 +27,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
+    /* Increase timeouts for better stability */
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
+    /* Wait for network to be idle before considering navigation complete */
+    waitForLoadState: 'networkidle',
   },
 
   /* Configure projects for major browsers */

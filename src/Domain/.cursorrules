@@ -1,0 +1,92 @@
+# Domain Layer - Clean Architecture Core
+
+## Project Context
+This is the Domain layer - the heart of Clean Architecture. It contains the core business logic, entities, value objects, and domain services. This layer should have NO dependencies on external frameworks or infrastructure.
+
+## Architecture Guidelines
+- This is the innermost layer - NO external dependencies allowed
+- Contains pure business logic and domain rules
+- Should be framework-agnostic and testable in isolation
+- Other layers depend on this layer, but this layer depends on nothing
+- Use Domain-Driven Design (DDD) principles
+
+## Domain Modeling
+- **Entities**: Objects with identity that persist over time (Person, Role, Wall, Window)
+- **Value Objects**: Immutable objects defined by their attributes (Email, Money, DateRange)
+- **Aggregates**: Clusters of entities and value objects with consistency boundaries
+- **Domain Services**: Business logic that doesn't naturally fit in entities
+- **Domain Events**: Represent something important that happened in the domain
+
+## Code Standards
+- Use rich domain models with behavior, not anemic data models
+- Implement business rules and invariants within entities
+- Use private setters and expose behavior through methods
+- Validate business rules in constructors and methods
+- Throw domain-specific exceptions for business rule violations
+- Use meaningful names that reflect the ubiquitous language
+
+## Entity Guidelines
+- Entities should encapsulate business logic and maintain invariants
+- Use factory methods for complex object creation
+- Implement equality based on identity, not attributes
+- Keep entities focused on their core responsibilities
+- Avoid public setters - use methods that express business intent
+
+## Value Object Guidelines
+- Immutable by design - no setters after construction
+- Implement equality based on all attributes
+- Validate invariants in constructor
+- Use static factory methods for creation when appropriate
+- Override GetHashCode() and Equals() properly
+
+## Business Rules
+- Encode business rules as methods on entities
+- Use guard clauses with Ardalis.GuardClauses if available
+- Throw meaningful domain exceptions for rule violations
+- Keep business logic in the domain, not in application services
+- Use specification pattern for complex business rules
+
+## Testing
+- Domain logic should be easily unit testable
+- Test business rules and invariants thoroughly
+- Use the Arrange-Act-Assert pattern
+- Test both valid and invalid scenarios
+- Mock nothing - domain should have no external dependencies
+
+## Anti-Patterns to Avoid
+- Anemic domain models (entities with only getters/setters)
+- Business logic in application or infrastructure layers
+- Dependencies on frameworks, databases, or external services
+- Public setters that bypass business rules
+- Entities that are just data containers
+
+## File Organization
+- Entities/ - Domain entities with business logic
+- ValueObjects/ - Immutable value objects (if used)
+- Services/ - Domain services for cross-entity business logic
+- Events/ - Domain events (if implemented)
+- Exceptions/ - Domain-specific exceptions
+- Specifications/ - Business rule specifications (if used)
+
+## Example Patterns
+```csharp
+public class Person
+{
+    private Person() { } // EF Core constructor
+    
+    public static Person Create(string name, Email email)
+    {
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.Null(email, nameof(email));
+        
+        return new Person { Name = name, Email = email };
+    }
+    
+    public void UpdateEmail(Email newEmail)
+    {
+        Guard.Against.Null(newEmail, nameof(newEmail));
+        Email = newEmail;
+        // Raise domain event if needed
+    }
+}
+```

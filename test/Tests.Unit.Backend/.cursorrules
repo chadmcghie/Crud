@@ -1,0 +1,178 @@
+# Unit Testing - Backend Components
+
+## Project Context
+This project contains unit tests for backend components including Domain entities, Application services, and other business logic. Tests should be fast, isolated, and focused on single units of functionality.
+
+## Testing Philosophy
+- Test behavior, not implementation details
+- Focus on business logic and domain rules
+- Keep tests fast and independent
+- Use the AAA pattern (Arrange, Act, Assert)
+- Test both success and failure scenarios
+
+## Unit Testing Guidelines
+- Test one thing at a time
+- Use descriptive test names that explain the scenario
+- Keep tests simple and focused
+- Mock external dependencies
+- Test edge cases and boundary conditions
+- Ensure tests are deterministic and repeatable
+
+## Domain Testing
+- Test entity business rules and invariants
+- Verify domain object creation and validation
+- Test domain service logic
+- Validate value object behavior
+- Test domain events if implemented
+- Focus on business rule enforcement
+
+## Application Service Testing
+- Mock all external dependencies (repositories, external services)
+- Test service orchestration and workflow logic
+- Verify proper error handling and validation
+- Test mapping between DTOs and domain objects
+- Validate transaction boundaries
+- Test authorization and security rules
+
+## Code Standards
+- Use xUnit as the testing framework
+- Use FluentAssertions for readable assertions
+- Use Moq or NSubstitute for mocking
+- Follow consistent naming conventions
+- Use proper test categorization and organization
+- Implement proper test data builders/factories
+
+## Mocking Strategy
+- Mock interfaces, not concrete classes
+- Use strict mocks to catch unexpected calls
+- Verify important interactions with mocks
+- Don't over-mock - focus on external dependencies
+- Use test doubles appropriately (mocks, stubs, fakes)
+
+## Test Data Management
+- Use object mothers or test data builders
+- Create realistic test data
+- Use constants for test values to avoid magic numbers
+- Implement proper test data cleanup
+- Use factories for complex object creation
+
+## Assertions
+- Use FluentAssertions for readable assertions
+- Test the most important aspects first
+- Use specific assertions rather than generic ones
+- Verify both positive and negative outcomes
+- Assert on behavior, not internal state when possible
+
+## Performance
+- Keep tests fast (under 100ms each)
+- Avoid I/O operations in unit tests
+- Use in-memory implementations for dependencies
+- Run tests in parallel where possible
+- Profile slow tests and optimize them
+
+## Test Organization
+- Group related tests in the same test class
+- Use nested classes for organizing test scenarios
+- Follow consistent file and namespace naming
+- Use proper test categorization (unit, integration, etc.)
+- Organize tests by the class/method being tested
+
+## Example Patterns
+```csharp
+public class PersonServiceTests
+{
+    private readonly Mock<IPersonRepository> _mockRepository;
+    private readonly Mock<IMapper> _mockMapper;
+    private readonly PersonService _service;
+    
+    public PersonServiceTests()
+    {
+        _mockRepository = new Mock<IPersonRepository>();
+        _mockMapper = new Mock<IMapper>();
+        _service = new PersonService(_mockRepository.Object, _mockMapper.Object);
+    }
+    
+    [Fact]
+    public async Task CreatePersonAsync_WithValidData_ShouldCreatePerson()
+    {
+        // Arrange
+        var request = new CreatePersonRequest { Name = "John Doe", Email = "john@example.com" };
+        var person = Person.Create(request.Name, new Email(request.Email));
+        var expectedDto = new PersonDto { Id = 1, Name = "John Doe", Email = "john@example.com" };
+        
+        _mockRepository.Setup(r => r.AddAsync(It.IsAny<Person>())).Returns(Task.CompletedTask);
+        _mockRepository.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        _mockMapper.Setup(m => m.Map<PersonDto>(It.IsAny<Person>())).Returns(expectedDto);
+        
+        // Act
+        var result = await _service.CreatePersonAsync(request);
+        
+        // Assert
+        result.Should().NotBeNull();
+        result.Name.Should().Be(request.Name);
+        result.Email.Should().Be(request.Email);
+        
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Person>()), Times.Once);
+        _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+    
+    [Fact]
+    public async Task CreatePersonAsync_WithInvalidEmail_ShouldThrowException()
+    {
+        // Arrange
+        var request = new CreatePersonRequest { Name = "John Doe", Email = "invalid-email" };
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePersonAsync(request));
+        
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Person>()), Times.Never);
+    }
+}
+
+// Domain entity testing
+public class PersonTests
+{
+    [Fact]
+    public void Create_WithValidData_ShouldCreatePerson()
+    {
+        // Arrange
+        var name = "John Doe";
+        var email = new Email("john@example.com");
+        
+        // Act
+        var person = Person.Create(name, email);
+        
+        // Assert
+        person.Should().NotBeNull();
+        person.Name.Should().Be(name);
+        person.Email.Should().Be(email);
+    }
+    
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    public void Create_WithInvalidName_ShouldThrowException(string invalidName)
+    {
+        // Arrange
+        var email = new Email("john@example.com");
+        
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => Person.Create(invalidName, email));
+    }
+}
+```
+
+## Test Categories
+- Use [Fact] for simple tests
+- Use [Theory] with [InlineData] for parameterized tests
+- Use [Trait] attributes for test categorization
+- Group related tests with nested classes
+- Use proper test method naming conventions
+
+## Continuous Integration
+- Ensure all tests pass before merging
+- Run tests in parallel for faster execution
+- Generate test coverage reports
+- Fail builds on test failures
+- Monitor test execution time and performance

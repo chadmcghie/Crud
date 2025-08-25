@@ -1,0 +1,50 @@
+# ASP.NET Core Web API - Clean Architecture
+
+## Project Context
+This is the main Web API layer in a Clean Architecture solution. It serves as the presentation layer, handling HTTP requests and coordinating with the Application layer through MediatR.
+
+## Architecture Guidelines
+- Follow Clean Architecture principles - this layer depends on Application and Infrastructure layers
+- Use dependency injection for all services
+- Controllers should be thin - delegate business logic to Application layer via MediatR
+- All business logic belongs in the Application or Domain layers, not here
+- Use DTOs for API contracts, never expose domain entities directly
+
+## Code Standards
+- Use controller-based routing with [ApiController] attribute
+- Implement proper HTTP status codes (200, 201, 400, 404, 500, etc.)
+- Use async/await for all I/O operations
+- Follow RESTful conventions for endpoint design
+- Use ActionResult<T> return types for type safety
+- Implement proper error handling with try-catch and return appropriate HTTP responses
+
+## Dependencies & Patterns
+- Use MediatR for CQRS pattern - send commands/queries to Application layer
+- Use AutoMapper for DTO mapping (configured in Program.cs)
+- CORS is configured for Angular frontend (localhost:4200)
+- Swagger/OpenAPI is enabled for development
+- Use FluentValidation for request validation (if implemented)
+
+## Testing
+- Write integration tests in Tests.Integration.Backend project
+- Use WebApplicationFactory for testing controllers
+- Mock external dependencies, use real in-memory database for integration tests
+- Test both success and error scenarios
+
+## Security
+- Implement proper authentication/authorization when required
+- Validate all inputs
+- Use HTTPS in production
+- Follow OWASP security guidelines
+
+## Performance
+- Use async/await for all database and external service calls
+- Implement caching where appropriate
+- Consider pagination for list endpoints
+- Use appropriate HTTP caching headers
+
+## File Organization
+- Controllers/ - API controllers grouped by domain
+- Dtos/ - Data transfer objects for API contracts
+- Program.cs - Application startup and DI configuration
+- Keep controllers focused on single domain areas (People, Roles, etc.)

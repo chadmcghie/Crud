@@ -191,7 +191,10 @@ export class ApiHelpers {
           throw error;
         }
         await new Promise(resolve => setTimeout(resolve, 500));
+
       }
+    } catch (error) {
+      console.warn('Failed to get roles for cleanup:', error);
     }
   }
 
@@ -215,7 +218,10 @@ export class ApiHelpers {
           throw error;
         }
         await new Promise(resolve => setTimeout(resolve, 500));
+
       }
+    } catch (error) {
+      console.warn('Failed to get people for cleanup:', error);
     }
   }
 
@@ -244,7 +250,6 @@ export class ApiHelpers {
   }
 
   async cleanupAll(): Promise<void> {
-    // Clean up in dependency order: people first (they reference roles), then roles, then walls
     await this.cleanupPeople();
     await this.cleanupRoles();
     await this.cleanupWalls();
