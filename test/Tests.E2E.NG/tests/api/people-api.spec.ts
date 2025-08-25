@@ -64,7 +64,7 @@ test.describe('People API', () => {
     const createdPerson = await apiHelpers.createPerson(testPerson);
     
     expect(createdPerson.roles).toHaveLength(2);
-    expect(createdPerson.roles.map(r => r.id)).toEqual(
+    expect(createdPerson.roles.map((r: any) => r.id)).toEqual(
       expect.arrayContaining([role1.id, role2.id])
     );
   });
@@ -131,10 +131,10 @@ test.describe('People API', () => {
     // Verify roles were updated
     const retrievedPerson = await apiHelpers.getPerson(createdPerson.id);
     expect(retrievedPerson.roles).toHaveLength(2);
-    expect(retrievedPerson.roles.map(r => r.id)).toEqual(
+    expect(retrievedPerson.roles.map((r: any) => r.id)).toEqual(
       expect.arrayContaining([role2.id, role3.id])
     );
-    expect(retrievedPerson.roles.map(r => r.id)).not.toContain(role1.id);
+    expect(retrievedPerson.roles.map((r: any) => r.id)).not.toContain(role1.id);
   });
 
   test('PUT /api/people/{id} - should return 404 for non-existent person', async ({ request }) => {

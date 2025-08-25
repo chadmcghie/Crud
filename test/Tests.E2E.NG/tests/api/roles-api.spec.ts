@@ -183,7 +183,7 @@ test.describe('Roles API', () => {
       // If creation succeeds, verify both roles exist
       const roles = await apiHelpers.getRoles();
       expect(roles.filter(r => r.name === roleName)).toHaveLength(2);
-    } catch (error) {
+    } catch (error: any) {
       // If creation fails due to uniqueness constraint, that's also valid
       expect(error.message).toContain('Failed to create role');
     }
