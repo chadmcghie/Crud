@@ -7,7 +7,7 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class PeopleControllerTests : IntegrationTestBase
 {
-    public PeopleControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
+    public PeopleControllerTests(TestWebApplicationFactoryFixture factory) : base(factory)
     {
     }
 

@@ -7,7 +7,7 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class RolesControllerTests : IntegrationTestBase
 {
-    public RolesControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
+    public RolesControllerTests(TestWebApplicationFactoryFixture factory) : base(factory)
     {
     }
 

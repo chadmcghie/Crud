@@ -7,7 +7,7 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class WallsControllerTests : IntegrationTestBase
 {
-    public WallsControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
+    public WallsControllerTests(TestWebApplicationFactoryFixture factory) : base(factory)
     {
     }
 

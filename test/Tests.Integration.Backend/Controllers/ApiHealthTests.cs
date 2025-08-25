@@ -9,7 +9,7 @@ namespace Tests.Integration.Backend.Controllers;
 /// </summary>
 public class ApiHealthTests : IntegrationTestBase
 {
-    public ApiHealthTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
+    public ApiHealthTests(TestWebApplicationFactoryFixture factory) : base(factory)
     {
     }
 

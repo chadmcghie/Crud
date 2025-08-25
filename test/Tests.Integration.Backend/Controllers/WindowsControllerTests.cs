@@ -7,7 +7,7 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class WindowsControllerTests : IntegrationTestBase
 {
-    public WindowsControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
+    public WindowsControllerTests(TestWebApplicationFactoryFixture factory) : base(factory)
     {
     }
 
