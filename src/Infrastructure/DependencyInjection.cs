@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddSingleton<IPersonRepository, InMemoryPersonRepository>();
         services.AddSingleton<IRoleRepository, InMemoryRoleRepository>();
         services.AddSingleton<IWallRepository, InMemoryWallRepository>();
+        services.AddSingleton<IWindowRepository, InMemoryWindowRepository>();
         return services;
     }
 }

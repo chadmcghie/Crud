@@ -1,0 +1,96 @@
+@baseUrl = https://localhost:7001
+@windowId = {{createWindow.response.body.id}}
+
+### Get all windows
+GET {{baseUrl}}/api/windows
+Accept: application/json
+
+### Create a new window
+# @name createWindow
+POST {{baseUrl}}/api/windows
+Content-Type: application/json
+
+{
+  "name": "Living Room South Window",
+  "description": "Large south-facing window in living room for natural light and solar gain",
+  "width": 6.0,
+  "height": 4.0,
+  "area": 24.0,
+  "frameType": "Vinyl",
+  "frameDetails": "White vinyl frame with reinforced corners",
+  "glazingType": "Double",
+  "glazingDetails": "Low-E coating, argon fill",
+  "uValue": 0.28,
+  "solarHeatGainCoefficient": 0.32,
+  "visibleTransmittance": 0.68,
+  "airLeakage": 0.1,
+  "energyStarRating": "Energy Star Certified",
+  "nfrcRating": "NFRC-100-2020",
+  "orientation": "South",
+  "location": "Living Room",
+  "installationType": "New Construction",
+  "operationType": "Double-hung",
+  "hasScreens": true,
+  "hasStormWindows": false
+}
+
+### Get window by ID
+GET {{baseUrl}}/api/windows/{{windowId}}
+Accept: application/json
+
+### Update window
+PUT {{baseUrl}}/api/windows/{{windowId}}
+Content-Type: application/json
+
+{
+  "name": "Living Room South Window - Updated",
+  "description": "Large south-facing window in living room for natural light and solar gain - Updated with better specs",
+  "width": 6.0,
+  "height": 4.0,
+  "area": 24.0,
+  "frameType": "Fiberglass",
+  "frameDetails": "White fiberglass frame with reinforced corners and improved insulation",
+  "glazingType": "Triple",
+  "glazingDetails": "Low-E coating, krypton fill, improved spacers",
+  "uValue": 0.20,
+  "solarHeatGainCoefficient": 0.28,
+  "visibleTransmittance": 0.65,
+  "airLeakage": 0.05,
+  "energyStarRating": "Energy Star Most Efficient",
+  "nfrcRating": "NFRC-100-2020",
+  "orientation": "South",
+  "location": "Living Room",
+  "installationType": "Replacement",
+  "operationType": "Casement",
+  "hasScreens": true,
+  "hasStormWindows": false
+}
+
+### Delete window
+DELETE {{baseUrl}}/api/windows/{{windowId}}
+
+### Create another window example - Kitchen Window
+POST {{baseUrl}}/api/windows
+Content-Type: application/json
+
+{
+  "name": "Kitchen East Window",
+  "description": "Small east-facing window above kitchen sink",
+  "width": 3.0,
+  "height": 2.5,
+  "area": 7.5,
+  "frameType": "Wood",
+  "frameDetails": "Pine frame with natural finish",
+  "glazingType": "Double",
+  "glazingDetails": "Clear glass, no special coatings",
+  "uValue": 0.35,
+  "solarHeatGainCoefficient": 0.65,
+  "visibleTransmittance": 0.85,
+  "airLeakage": 0.2,
+  "orientation": "East",
+  "location": "Kitchen",
+  "installationType": "Existing",
+  "operationType": "Fixed",
+  "hasScreens": false,
+  "hasStormWindows": true
+}
