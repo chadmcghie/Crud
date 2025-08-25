@@ -10,6 +10,11 @@ env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '20.x'
 
+# Database Strategy:
+# - Unit Tests: No database (pure business logic)
+# - Integration Tests: SQLite (fast, free, isolated)
+# - E2E Tests: SQL Server (realistic production-like environment)
+
 jobs:
   # Job 1a: Backend Unit Tests (Fast)
   backend-unit-tests:
@@ -65,25 +70,11 @@ jobs:
       working-directory: ./src/Angular
       run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
 
-  # Job 2: Backend Integration Tests (SQL Server Container)
+  # Job 2: Backend Integration Tests (SQLite - No External Dependencies)
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
     needs: backend-unit-tests
-    
-    services:
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          SA_PASSWORD: YourStrong@Passw0rd
-          ACCEPT_EULA: Y
-        ports:
-          - 1433:1433
-        options: >-
-          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     
     steps:
     - name: Checkout code
@@ -100,13 +91,12 @@ jobs:
     - name: Build solution
       run: dotnet build Crud.Backend.sln --no-restore --configuration Release
       
-    - name: Run Backend Integration Tests with SQL Server
+    - name: Run Backend Integration Tests with SQLite
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
       env:
-        # SQL Server connection for CI
+        # SQLite is used automatically - no external database needed
         CI: true
-        SQLSERVER_CONNECTION_STRING: "Server=localhost,1433;Database=CrudAppTest;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;"
-      timeout-minutes: 10
+      timeout-minutes: 5
       
     - name: Upload integration test results
       uses: actions/upload-artifact@v4
@@ -115,7 +105,8 @@ jobs:
         name: backend-integration-test-results
         path: TestResults/
 
-  # Job 3: End-to-End Tests (Full Stack)
+  # Job 3: End-to-End Tests (Full Stack with SQL Server)
+  # Note: E2E tests use SQL Server because the API needs a real database for realistic testing
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
@@ -245,7 +236,7 @@ jobs:
         echo "|---------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Domain & Application layer tests |" >> $GITHUB_STEP_SUMMARY
         echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Angular component & service tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Database & repository tests |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | SQLite database & repository tests |" >> $GITHUB_STEP_SUMMARY
         echo "| End-to-End Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Full application workflow tests |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📊 Overall Status" >> $GITHUB_STEP_SUMMARY
