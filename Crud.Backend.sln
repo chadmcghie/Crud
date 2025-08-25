@@ -3,12 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		Project Documentation\01-Getting Started\Big Picture.md = Project Documentation\01-Getting Started\Big Picture.md
-		Project Documentation\Layer Interaction Diagram.md = Project Documentation\Layer Interaction Diagram.md
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "src\Domain\Domain.csproj", "{87EDA1D2-4B5B-E524-38CE-D0BFCA5F4D6B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src\Shared\Shared.csproj", "{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}"
