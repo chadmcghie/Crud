@@ -133,12 +133,16 @@ export class PageHelpers {
 
   async submitPersonForm(): Promise<void> {
     await this.page.click('button[type="submit"]:has-text("Create Person")');
-    // Wait for form to be hidden or for a success indicator
+    
+    // Wait for either form to hide OR success state (new person appears in table)
     try {
-      await this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
+      await Promise.race([
+        this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }),
+        this.page.waitForSelector('.person-row', { timeout: 10000 }) // Wait for new person to appear
+      ]);
     } catch (error) {
-      // If form doesn't hide, check if submission was successful by looking for the person in the table
-      await this.page.waitForTimeout(2000);
+      // Fallback: wait for network to be idle
+      await this.page.waitForLoadState('networkidle', { timeout: 5000 });
     }
   }
 
@@ -150,12 +154,16 @@ export class PageHelpers {
 
   async updatePersonForm(): Promise<void> {
     await this.page.click('button[type="submit"]:has-text("Update Person")');
-    // Wait for form to be hidden or for a success indicator
+    
+    // Wait for either form to hide OR success state
     try {
-      await this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
+      await Promise.race([
+        this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }),
+        this.page.waitForLoadState('networkidle', { timeout: 5000 })
+      ]);
     } catch (error) {
-      // If form doesn't hide, check if update was successful
-      await this.page.waitForTimeout(2000);
+      // Fallback: small wait
+      await this.page.waitForTimeout(1000);
     }
   }
 
@@ -169,7 +177,18 @@ export class PageHelpers {
     });
     
     await personRow.locator('button:has-text("Delete")').click();
-    await this.page.waitForTimeout(500); // Wait for deletion to complete
+    
+    // Wait for the person to actually be removed from the table
+    try {
+      await this.page.waitForFunction(
+        (name) => !document.querySelector(`tr:has-text("${name}")`)?.isConnected,
+        personName,
+        { timeout: 10000 }
+      );
+    } catch (error) {
+      // Fallback: wait for network to be idle
+      await this.page.waitForLoadState('networkidle', { timeout: 5000 });
+    }
   }
 
   async getPersonRowCount(): Promise<number> {
@@ -178,10 +197,22 @@ export class PageHelpers {
   }
 
   async verifyPersonExists(personName: string): Promise<void> {
+    // Use retry logic with proper timeout
+    await this.page.waitForSelector(`tr:has-text("${personName}")`, { timeout: 10000 });
     await expect(this.page.locator(`tr:has-text("${personName}")`)).toBeVisible();
   }
 
   async verifyPersonNotExists(personName: string): Promise<void> {
+    // Wait for the element to be removed or not exist
+    try {
+      await this.page.waitForFunction(
+        (name) => !document.querySelector(`tr:has-text("${name}")`)?.isConnected,
+        personName,
+        { timeout: 10000 }
+      );
+    } catch (error) {
+      // Element might not exist at all, which is fine
+    }
     await expect(this.page.locator(`tr:has-text("${personName}")`)).not.toBeVisible();
   }
 

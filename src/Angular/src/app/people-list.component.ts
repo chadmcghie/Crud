@@ -194,6 +194,8 @@ import { ApiService, PersonResponse } from './api.service';
 })
 export class PeopleListComponent implements OnInit {
   people: PersonResponse[] = [];
+  isLoading = false;
+  error: string | null = null;
   @Output() editPerson = new EventEmitter<PersonResponse>();
   @Output() addPerson = new EventEmitter<void>();
 
@@ -204,8 +206,20 @@ export class PeopleListComponent implements OnInit {
   }
 
   loadPeople() {
-    this.api.listPeople().subscribe(people => {
-      this.people = people;
+    this.isLoading = true;
+    this.error = null;
+    
+    this.api.listPeople().subscribe({
+      next: (people) => {
+        this.people = people;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading people:', error);
+        this.error = 'Failed to load people. Please try again.';
+        this.isLoading = false;
+        this.people = []; // Clear the list on error
+      }
     });
   }
 
@@ -223,8 +237,15 @@ export class PeopleListComponent implements OnInit {
 
   onDeletePerson(person: PersonResponse) {
     if (confirm(`Are you sure you want to delete ${person.fullName}?`)) {
-      this.api.deletePerson(person.id).subscribe(() => {
-        this.loadPeople(); // Refresh the list
+      this.api.deletePerson(person.id).subscribe({
+        next: () => {
+          this.loadPeople(); // Refresh the list
+        },
+        error: (error) => {
+          console.error('Error deleting person:', error);
+          this.error = `Failed to delete ${person.fullName}. Please try again.`;
+          // Don't refresh the list on error, keep current state
+        }
       });
     }
   }

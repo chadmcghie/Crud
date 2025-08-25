@@ -249,6 +249,8 @@ export class PeopleComponent implements OnInit, OnChanges {
   form: FormGroup;
   selectedRoleIds = new Set<string>();
   isSubmitting = false;
+  error: string | null = null;
+  rolesError: string | null = null;
 
   constructor(private api: ApiService, private fb: FormBuilder) {
     this.form = this.fb.group({
@@ -273,8 +275,17 @@ export class PeopleComponent implements OnInit, OnChanges {
   }
 
   private loadRoles() {
-    this.api.listRoles().subscribe(roles => {
-      this.roles = roles;
+    this.rolesError = null;
+    
+    this.api.listRoles().subscribe({
+      next: (roles) => {
+        this.roles = roles;
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+        this.rolesError = 'Failed to load roles. Role assignment may not work properly.';
+        this.roles = []; // Clear roles on error
+      }
     });
   }
 
@@ -310,6 +321,7 @@ export class PeopleComponent implements OnInit, OnChanges {
     
     if (this.form.valid && !this.isSubmitting) {
       this.isSubmitting = true;
+      this.error = null;
       const formValue = this.form.value;
       
       const payload: CreatePersonRequest | UpdatePersonRequest = {
@@ -323,10 +335,12 @@ export class PeopleComponent implements OnInit, OnChanges {
         this.api.updatePerson(this.editingPerson.id, payload).subscribe({
           next: () => {
             this.isSubmitting = false;
+            this.error = null;
             this.personSaved.emit(this.editingPerson!);
           },
           error: (error: any) => {
             console.error('Error updating person:', error);
+            this.error = 'Failed to update person. Please check your input and try again.';
             this.isSubmitting = false;
           }
         });
@@ -335,11 +349,13 @@ export class PeopleComponent implements OnInit, OnChanges {
         this.api.createPerson(payload).subscribe({
           next: (person: PersonResponse) => {
             this.isSubmitting = false;
+            this.error = null;
             this.personSaved.emit(person);
             this.resetForm();
           },
           error: (error: any) => {
             console.error('Error creating person:', error);
+            this.error = 'Failed to create person. Please check your input and try again.';
             this.isSubmitting = false;
           }
         });
@@ -358,5 +374,6 @@ export class PeopleComponent implements OnInit, OnChanges {
   private resetForm() {
     this.form.reset();
     this.selectedRoleIds.clear();
+    this.error = null;
   }
 }
