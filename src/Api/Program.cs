@@ -6,12 +6,32 @@ namespace Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddApplication();
-            builder.Services.AddInfrastructureInMemory();
+            
+            // Configure database provider based on configuration
+            var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "InMemory";
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            switch (databaseProvider.ToLowerInvariant())
+            {
+                case "sqlserver":
+                    if (string.IsNullOrEmpty(connectionString))
+                        throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQL Server provider.");
+                    builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
+                    break;
+                case "entityframeworkinmemory":
+                    builder.Services.AddInfrastructureEntityFrameworkInMemory();
+                    break;
+                case "inmemory":
+                default:
+                    builder.Services.AddInfrastructureInMemory();
+                    break;
+            }
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAngular", policy =>
@@ -34,6 +54,12 @@ namespace Api
                 );
 
             var app = builder.Build();
+
+            // Ensure database is created for Entity Framework providers
+            if (databaseProvider.ToLowerInvariant() is "sqlserver" or "entityframeworkinmemory")
+            {
+                await app.Services.EnsureDatabaseAsync();
+            }
             
             if (app.Environment.IsDevelopment())
             {
@@ -46,7 +72,7 @@ namespace Api
             app.UseAuthorization();
             app.MapControllers();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }
