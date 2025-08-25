@@ -33,10 +33,10 @@ jobs:
         cache-dependency-path: 'src/Angular/package-lock.json'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.Angular.sln
       
     - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.Angular.sln --no-restore --configuration Release
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -76,10 +76,10 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.Angular.sln
       
     - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.Angular.sln --no-restore --configuration Release
       
     - name: Run Backend Integration Tests
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
@@ -114,10 +114,10 @@ jobs:
         cache-dependency-path: 'src/Angular/package-lock.json'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.Angular.sln
       
     - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.Angular.sln --no-restore --configuration Release
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
