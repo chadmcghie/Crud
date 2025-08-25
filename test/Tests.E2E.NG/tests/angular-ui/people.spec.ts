@@ -11,17 +11,39 @@ test.describe('People Management UI', () => {
     pageHelpers = new PageHelpers(page);
     apiHelpers = new ApiHelpers(request);
     
-    // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    // Clean up any existing data and wait for completion
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+        // Add a small delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.warn('Failed to cleanup before test:', error);
+      }
+    }
     
     // Navigate to the app (people tab is default)
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToPeopleTab();
+    
+    // Wait for the page to fully load and network to be idle
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
   });
 
-  test.afterEach(async () => {
-    // Clean up after each test
-    await apiHelpers.cleanupAll();
+  test.afterEach(async ({ page }) => {
+    // Clean up after each test and wait for completion
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+        // Add a small delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.warn('Failed to cleanup after test:', error);
+      }
+    }
+    
+    // Wait for any pending operations to complete
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
   });
 
   test('should display empty state when no people exist', async () => {

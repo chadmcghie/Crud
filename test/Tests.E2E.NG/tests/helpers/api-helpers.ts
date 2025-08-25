@@ -5,23 +5,53 @@ import { TestRole, TestPerson, TestWall } from './test-data';
 export class ApiHelpers {
   constructor(private request: APIRequestContext) {}
 
+  // Helper method for retrying operations
+  private async retryOperation<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    delayMs: number = 500
+  ): Promise<T> {
+    let lastError: Error;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`Operation failed (attempt ${attempt}/${maxRetries}):`, error);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+    
+    throw lastError!;
+  }
+
   // Role API helpers
   async createRole(role: TestRole): Promise<any> {
-    const response = await this.request.post('/api/roles', {
-      data: role
+    return this.retryOperation(async () => {
+      const response = await this.request.post('http://localhost:5172/api/roles', {
+        data: role
+      });
+      if (!response.ok()) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create role: ${response.status()} ${errorText}`);
+      }
+      return await response.json();
     });
-    if (!response.ok()) {
-      throw new Error(`Failed to create role: ${response.status()} ${await response.text()}`);
-    }
-    return await response.json();
   }
 
   async getRoles(): Promise<any[]> {
-    const response = await this.request.get('/api/roles');
-    if (!response.ok()) {
-      throw new Error(`Failed to get roles: ${response.status()}`);
-    }
-    return await response.json();
+    return this.retryOperation(async () => {
+      const response = await this.request.get('http://localhost:5172/api/roles');
+      if (!response.ok()) {
+        const errorText = await response.text();
+        throw new Error(`Failed to get roles: ${response.status()} ${errorText}`);
+      }
+      return await response.json();
+    });
   }
 
   async getRole(id: string): Promise<any> {
@@ -50,21 +80,27 @@ export class ApiHelpers {
 
   // Person API helpers
   async createPerson(person: TestPerson): Promise<any> {
-    const response = await this.request.post('/api/people', {
-      data: person
+    return this.retryOperation(async () => {
+      const response = await this.request.post('http://localhost:5172/api/people', {
+        data: person
+      });
+      if (!response.ok()) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create person: ${response.status()} ${errorText}`);
+      }
+      return await response.json();
     });
-    if (!response.ok()) {
-      throw new Error(`Failed to create person: ${response.status()} ${await response.text()}`);
-    }
-    return await response.json();
   }
 
   async getPeople(): Promise<any[]> {
-    const response = await this.request.get('/api/people');
-    if (!response.ok()) {
-      throw new Error(`Failed to get people: ${response.status()}`);
-    }
-    return await response.json();
+    return this.retryOperation(async () => {
+      const response = await this.request.get('http://localhost:5172/api/people');
+      if (!response.ok()) {
+        const errorText = await response.text();
+        throw new Error(`Failed to get people: ${response.status()} ${errorText}`);
+      }
+      return await response.json();
+    });
   }
 
   async getPerson(id: string): Promise<any> {
@@ -93,7 +129,7 @@ export class ApiHelpers {
 
   // Wall API helpers
   async createWall(wall: TestWall): Promise<any> {
-    const response = await this.request.post('/api/walls', {
+    const response = await this.request.post('http://localhost:5172/api/walls', {
       data: wall
     });
     if (!response.ok()) {
@@ -103,7 +139,7 @@ export class ApiHelpers {
   }
 
   async getWalls(): Promise<any[]> {
-    const response = await this.request.get('/api/walls');
+    const response = await this.request.get('http://localhost:5172/api/walls');
     if (!response.ok()) {
       throw new Error(`Failed to get walls: ${response.status()}`);
     }
@@ -134,18 +170,28 @@ export class ApiHelpers {
     }
   }
 
-  // Cleanup helpers
+  // Improved cleanup helpers with retry logic
   async cleanupRoles(): Promise<void> {
-    try {
-      const roles = await this.getRoles();
-      for (const role of roles) {
-        try {
-          await this.deleteRole(role.id);
-          // Small delay between deletions to avoid race conditions
-          await new Promise(resolve => setTimeout(resolve, 50));
-        } catch (error) {
-          console.warn(`Failed to cleanup role ${role.id}:`, error);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        const roles = await this.getRoles();
+        for (const role of roles) {
+          try {
+            await this.deleteRole(role.id);
+          } catch (error) {
+            console.warn(`Failed to cleanup role ${role.id}:`, error);
+          }
         }
+        break;
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          console.error('Failed to cleanup roles after retries:', error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+
       }
     } catch (error) {
       console.warn('Failed to get roles for cleanup:', error);
@@ -153,16 +199,26 @@ export class ApiHelpers {
   }
 
   async cleanupPeople(): Promise<void> {
-    try {
-      const people = await this.getPeople();
-      for (const person of people) {
-        try {
-          await this.deletePerson(person.id);
-          // Small delay between deletions to avoid race conditions
-          await new Promise(resolve => setTimeout(resolve, 50));
-        } catch (error) {
-          console.warn(`Failed to cleanup person ${person.id}:`, error);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        const people = await this.getPeople();
+        for (const person of people) {
+          try {
+            await this.deletePerson(person.id);
+          } catch (error) {
+            console.warn(`Failed to cleanup person ${person.id}:`, error);
+          }
         }
+        break;
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          console.error('Failed to cleanup people after retries:', error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+
       }
     } catch (error) {
       console.warn('Failed to get people for cleanup:', error);
@@ -170,24 +226,32 @@ export class ApiHelpers {
   }
 
   async cleanupWalls(): Promise<void> {
-    const walls = await this.getWalls();
-    for (const wall of walls) {
+    let retries = 3;
+    while (retries > 0) {
       try {
-        await this.deleteWall(wall.id);
+        const walls = await this.getWalls();
+        for (const wall of walls) {
+          try {
+            await this.deleteWall(wall.id);
+          } catch (error) {
+            console.warn(`Failed to cleanup wall ${wall.id}:`, error);
+          }
+        }
+        break;
       } catch (error) {
-        console.warn(`Failed to cleanup wall ${wall.id}:`, error);
+        retries--;
+        if (retries === 0) {
+          console.error('Failed to cleanup walls after retries:', error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
   }
 
   async cleanupAll(): Promise<void> {
-    // Clean up in order to avoid dependency issues
-    // People first (they might reference roles)
     await this.cleanupPeople();
     await this.cleanupRoles();
     await this.cleanupWalls();
-    
-    // Add a small delay to ensure cleanup is complete
-    await new Promise(resolve => setTimeout(resolve, 200));
   }
 }

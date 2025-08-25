@@ -7,13 +7,17 @@ test.describe('People API', () => {
 
   test.beforeEach(async ({ request }) => {
     apiHelpers = new ApiHelpers(request);
-    // Clean up any existing data
+    // Clean up any existing data and wait for completion
     await apiHelpers.cleanupAll();
+    // Add a small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   test.afterEach(async () => {
-    // Clean up after each test
+    // Clean up after each test and wait for completion
     await apiHelpers.cleanupAll();
+    // Add a small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   test('GET /api/people - should return empty array when no people exist', async () => {
