@@ -141,9 +141,26 @@ public class SharedSqlServerWebApplicationFactory : WebApplicationFactory<Api.Pr
         // Each test class gets its own unique database
         _databaseName = $"IntegrationTests_{GetType().Name}_{Guid.NewGuid():N}";
         
-        // Use LocalDB (comes with Visual Studio) or SQL Server Express
-        // LocalDB connection string format
-        _connectionString = $"Server=(localdb)\\mssqllocaldb;Database={_databaseName};Trusted_Connection=true;MultipleActiveResultSets=true;";
+        // Use different connection strings for CI vs local development
+        var isCI = Environment.GetEnvironmentVariable("CI") == "true";
+        if (isCI)
+        {
+            // CI environment - use SQL Server container
+            var ciConnectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") 
+                ?? "Server=localhost,1433;Database=CrudAppTest;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;";
+            
+            // Replace database name with our unique name
+            var builder = new SqlConnectionStringBuilder(ciConnectionString)
+            {
+                InitialCatalog = _databaseName
+            };
+            _connectionString = builder.ConnectionString;
+        }
+        else
+        {
+            // Local development - use LocalDB
+            _connectionString = $"Server=(localdb)\\mssqllocaldb;Database={_databaseName};Trusted_Connection=true;MultipleActiveResultSets=true;";
+        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -179,8 +196,25 @@ public class SharedSqlServerWebApplicationFactory : WebApplicationFactory<Api.Pr
             {
                 try
                 {
-                    // Connect to master database first to create our test database
-                    var masterConnectionString = $"Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=true;";
+                    // Use appropriate master connection string based on environment
+                    var isCI = Environment.GetEnvironmentVariable("CI") == "true";
+                    string masterConnectionString;
+                    
+                    if (isCI)
+                    {
+                        var ciConnectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") 
+                            ?? "Server=localhost,1433;Database=master;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true;";
+                        var builder = new SqlConnectionStringBuilder(ciConnectionString)
+                        {
+                            InitialCatalog = "master"
+                        };
+                        masterConnectionString = builder.ConnectionString;
+                    }
+                    else
+                    {
+                        masterConnectionString = $"Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=true;";
+                    }
+                    
                     using var masterConnection = new SqlConnection(masterConnectionString);
                     masterConnection.Open();
                     
