@@ -1,5 +1,6 @@
 using App;
 using Infrastructure;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Api
 {
@@ -24,6 +25,13 @@ namespace Api
             builder.Services.AddControllers();            
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            
+            builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));            
+            builder.Services.AddAutoMapper(
+                cfg => { },
+                typeof(App.DependencyInjection).Assembly, 
+                typeof(Infrastructure.DependencyInjection).Assembly
+                );
 
             var app = builder.Build();
             
