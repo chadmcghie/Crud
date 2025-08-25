@@ -12,16 +12,33 @@ test.describe('Roles Management UI', () => {
     apiHelpers = new ApiHelpers(request);
     
     // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+        // Wait a bit for cleanup to complete
+        await page.waitForTimeout(500);
+      } catch (error) {
+        console.warn('Failed to cleanup before test:', error);
+      }
+    }
     
     // Navigate to the app and switch to roles tab
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToRolesTab();
+    
+    // Wait for the page to fully load
+    await page.waitForTimeout(1000);
   });
 
   test.afterEach(async () => {
     // Clean up after each test
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+      } catch (error) {
+        console.warn('Failed to cleanup after test:', error);
+      }
+    }
   });
 
   test('should display empty state when no roles exist', async () => {

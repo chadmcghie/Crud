@@ -7,7 +7,7 @@ export class ApiHelpers {
 
   // Role API helpers
   async createRole(role: TestRole): Promise<any> {
-    const response = await this.request.post('/api/roles', {
+    const response = await this.request.post('http://localhost:5172/api/roles', {
       data: role
     });
     if (!response.ok()) {
@@ -17,7 +17,7 @@ export class ApiHelpers {
   }
 
   async getRoles(): Promise<any[]> {
-    const response = await this.request.get('/api/roles');
+    const response = await this.request.get('http://localhost:5172/api/roles');
     if (!response.ok()) {
       throw new Error(`Failed to get roles: ${response.status()}`);
     }
@@ -50,7 +50,7 @@ export class ApiHelpers {
 
   // Person API helpers
   async createPerson(person: TestPerson): Promise<any> {
-    const response = await this.request.post('/api/people', {
+    const response = await this.request.post('http://localhost:5172/api/people', {
       data: person
     });
     if (!response.ok()) {
@@ -60,7 +60,7 @@ export class ApiHelpers {
   }
 
   async getPeople(): Promise<any[]> {
-    const response = await this.request.get('/api/people');
+    const response = await this.request.get('http://localhost:5172/api/people');
     if (!response.ok()) {
       throw new Error(`Failed to get people: ${response.status()}`);
     }
@@ -93,7 +93,7 @@ export class ApiHelpers {
 
   // Wall API helpers
   async createWall(wall: TestWall): Promise<any> {
-    const response = await this.request.post('/api/walls', {
+    const response = await this.request.post('http://localhost:5172/api/walls', {
       data: wall
     });
     if (!response.ok()) {
@@ -103,7 +103,7 @@ export class ApiHelpers {
   }
 
   async getWalls(): Promise<any[]> {
-    const response = await this.request.get('/api/walls');
+    const response = await this.request.get('http://localhost:5172/api/walls');
     if (!response.ok()) {
       throw new Error(`Failed to get walls: ${response.status()}`);
     }

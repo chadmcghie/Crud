@@ -11,12 +11,24 @@ test.describe('Application Navigation and Layout', () => {
     apiHelpers = new ApiHelpers(request);
     
     // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+      } catch (error) {
+        console.warn('Failed to cleanup before test:', error);
+      }
+    }
   });
 
   test.afterEach(async () => {
     // Clean up after each test
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+      } catch (error) {
+        console.warn('Failed to cleanup after test:', error);
+      }
+    }
   });
 
   test('should load the application successfully', async ({ page }) => {

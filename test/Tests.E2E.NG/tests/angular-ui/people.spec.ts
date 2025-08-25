@@ -12,16 +12,33 @@ test.describe('People Management UI', () => {
     apiHelpers = new ApiHelpers(request);
     
     // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+        // Wait a bit for cleanup to complete
+        await page.waitForTimeout(500);
+      } catch (error) {
+        console.warn('Failed to cleanup before test:', error);
+      }
+    }
     
     // Navigate to the app (people tab is default)
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToPeopleTab();
+    
+    // Wait for the page to fully load
+    await page.waitForTimeout(1000);
   });
 
   test.afterEach(async () => {
     // Clean up after each test
-    await apiHelpers.cleanupAll();
+    if (apiHelpers) {
+      try {
+        await apiHelpers.cleanupAll();
+      } catch (error) {
+        console.warn('Failed to cleanup after test:', error);
+      }
+    }
   });
 
   test('should display empty state when no people exist', async () => {
