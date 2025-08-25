@@ -21,6 +21,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-
+  <ItemGroup>
+    <Compile Include="AngularUI\AppNavigationTests.cs" />
+    <Compile Include="AngularUI\PeopleManagementTests.cs" />
+    <Compile Include="AngularUI\RolesManagementTests.cs" />
+    <Compile Include="API\PeopleApiTests.cs" />
+    <Compile Include="API\RolesApiTests.cs" />
+    <Compile Include="API\WallsApiTests.cs" />
+    <Compile Include="Integration\FullWorkflowTests.cs" />
+  </ItemGroup>
 
 </Project>
