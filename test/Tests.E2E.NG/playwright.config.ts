@@ -69,7 +69,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'cd ../../src/Api && dotnet run',
-      port: 5000,
+      port: 5172,
       reuseExistingServer: !process.env.CI,
       env: {
         ASPNETCORE_ENVIRONMENT: 'Development'

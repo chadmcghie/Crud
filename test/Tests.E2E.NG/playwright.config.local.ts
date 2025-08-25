@@ -50,7 +50,7 @@ export default defineConfig({
   /* 
    * NOTE: webServer configuration removed for local development
    * You need to manually start:
-   * 1. API server on http://localhost:5000
+   * 1. API server on http://localhost:5172
    * 2. Angular dev server on http://localhost:4200
    */
 });

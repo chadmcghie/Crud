@@ -4,10 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		Project Documentation\01-Getting Started\Big Picture.md = Project Documentation\01-Getting Started\Big Picture.md
-		Project Documentation\Layer Interaction Diagram.md = Project Documentation\Layer Interaction Diagram.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src\Shared\Shared.csproj", "{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}"
 EndProject
@@ -19,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Angular", "src\Angular\Angu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{2D07D896-8D77-4383-87B2-606078182B99}"
 	ProjectSection(SolutionItems) = preProject
-		LaunchApi+NG.ps1 = LaunchApi+NG.ps1
+		Launch App.ps1 = Launch App.ps1
 	EndProjectSection
 EndProject
 Global
