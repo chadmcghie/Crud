@@ -7,31 +7,31 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class RolesControllerTests : IntegrationTestBase
 {
-    public RolesControllerTests(IntegrationTestWebApplicationFactory factory) : base(factory)
+    public RolesControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
     {
     }
 
     [Fact]
     public async Task GET_Roles_Should_Return_Empty_List_Initially()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Act
+            var response = await Client.GetAsync("/api/roles");
 
-        // Act
-        var response = await Client.GetAsync("/api/roles");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var roles = await ReadJsonAsync<List<RoleDto>>(response);
-        roles.Should().NotBeNull();
-        roles.Should().BeEmpty();
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var roles = await ReadJsonAsync<List<RoleDto>>(response);
+            roles.Should().NotBeNull();
+            roles.Should().BeEmpty();
+        });
     }
 
     [Fact]
     public async Task POST_Roles_Should_Create_Role_And_Return_201()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreateRoleRequest("Administrator", "System administrator role");
 
         // Act
@@ -55,7 +55,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task POST_Roles_Should_Return_400_For_Invalid_Data()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var invalidRequest = new { Name = "", Description = "Invalid role" }; // Empty name
 
         // Act
@@ -69,7 +69,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task GET_Roles_Should_Return_All_Roles()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         
         // Create test roles
         var role1 = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
@@ -116,7 +116,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task GET_Role_By_Id_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var nonExistentId = Guid.NewGuid();
 
         // Act
@@ -155,7 +155,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task PUT_Role_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var nonExistentId = Guid.NewGuid();
         var updateRequest = TestDataBuilders.UpdateRoleRequest("Updated", "Updated description");
 
@@ -170,7 +170,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task DELETE_Role_Should_Remove_Existing_Role()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreateRoleRequest("ToDelete", "Role to be deleted");
         var createResponse = await PostJsonAsync("/api/roles", createRequest);
         var createdRole = await ReadJsonAsync<RoleDto>(createResponse);
@@ -203,7 +203,7 @@ public class RolesControllerTests : IntegrationTestBase
     public async Task POST_Role_Should_Handle_Null_Description()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreateRoleRequest("SimpleRole", null);
 
         // Act

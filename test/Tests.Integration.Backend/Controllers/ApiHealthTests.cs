@@ -9,7 +9,7 @@ namespace Tests.Integration.Backend.Controllers;
 /// </summary>
 public class ApiHealthTests : IntegrationTestBase
 {
-    public ApiHealthTests(IntegrationTestWebApplicationFactory factory) : base(factory)
+    public ApiHealthTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
     {
     }
 
@@ -86,7 +86,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Handle_Large_Payloads()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var largeDescription = new string('A', 10000); // Very long description
         var createRequest = new
         {
@@ -106,7 +106,8 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Handle_Concurrent_Requests()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        await ClearDatabaseAsync(); // Start with clean database for health tests
+        
         var tasks = new List<Task<HttpResponseMessage>>();
 
         // Act - Send multiple concurrent requests
@@ -136,7 +137,8 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Maintain_Data_Consistency_Under_Load()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        await ClearDatabaseAsync(); // Start with clean database for health tests
+        
         
         // Create a role first
         var roleResponse = await PostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });

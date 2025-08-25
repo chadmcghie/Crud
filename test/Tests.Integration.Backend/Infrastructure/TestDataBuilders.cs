@@ -76,17 +76,17 @@ public static class TestDataBuilders
     {
         return new CreateWallRequest(
             name ?? _fixture.Create<string>(),
-            description ?? _fixture.Create<string>(),
+            description, // Keep null if passed as null
             length ?? _fixture.Create<double>(),
             height ?? _fixture.Create<double>(),
             thickness ?? _fixture.Create<double>(),
-            assemblyType ?? _fixture.Create<string>(),
-            assemblyDetails ?? _fixture.Create<string>(),
-            rValue ?? _fixture.Create<double>(),
-            uValue ?? _fixture.Create<double>(),
-            materialLayers ?? _fixture.Create<string>(),
-            orientation ?? _fixture.Create<string>(),
-            location ?? _fixture.Create<string>()
+            assemblyType ?? _fixture.Create<string>(), // Required field
+            assemblyDetails, // Keep null if passed as null
+            rValue, // Keep null if passed as null
+            uValue, // Keep null if passed as null
+            materialLayers, // Keep null if passed as null
+            orientation, // Keep null if passed as null
+            location // Keep null if passed as null
         );
     }
 
@@ -106,17 +106,17 @@ public static class TestDataBuilders
     {
         return new UpdateWallRequest(
             name ?? _fixture.Create<string>(),
-            description ?? _fixture.Create<string>(),
+            description, // Keep null if passed as null
             length ?? _fixture.Create<double>(),
             height ?? _fixture.Create<double>(),
             thickness ?? _fixture.Create<double>(),
-            assemblyType ?? _fixture.Create<string>(),
-            assemblyDetails ?? _fixture.Create<string>(),
-            rValue ?? _fixture.Create<double>(),
-            uValue ?? _fixture.Create<double>(),
-            materialLayers ?? _fixture.Create<string>(),
-            orientation ?? _fixture.Create<string>(),
-            location ?? _fixture.Create<string>()
+            assemblyType ?? _fixture.Create<string>(), // Required field
+            assemblyDetails, // Keep null if passed as null
+            rValue, // Keep null if passed as null
+            uValue, // Keep null if passed as null
+            materialLayers, // Keep null if passed as null
+            orientation, // Keep null if passed as null
+            location // Keep null if passed as null
         );
     }
 
@@ -149,26 +149,26 @@ public static class TestDataBuilders
     {
         return new CreateWindowRequest(
             name ?? _fixture.Create<string>(),
-            description ?? _fixture.Create<string>(),
+            description, // Keep null if passed as null
             width ?? _fixture.Create<double>(),
             height ?? _fixture.Create<double>(),
             area ?? _fixture.Create<double>(),
-            frameType ?? _fixture.Create<string>(),
-            frameDetails ?? _fixture.Create<string>(),
-            glazingType ?? _fixture.Create<string>(),
-            glazingDetails ?? _fixture.Create<string>(),
-            uValue ?? _fixture.Create<double>(),
-            solarHeatGainCoefficient ?? _fixture.Create<double>(),
-            visibleTransmittance ?? _fixture.Create<double>(),
-            airLeakage ?? _fixture.Create<double>(),
-            energyStarRating ?? _fixture.Create<string>(),
-            nfrcRating ?? _fixture.Create<string>(),
-            orientation ?? _fixture.Create<string>(),
-            location ?? _fixture.Create<string>(),
-            installationType ?? _fixture.Create<string>(),
-            operationType ?? _fixture.Create<string>(),
-            hasScreens ?? _fixture.Create<bool>(),
-            hasStormWindows ?? _fixture.Create<bool>()
+            frameType ?? "Vinyl", // Required field - use sensible default
+            frameDetails, // Keep null if passed as null
+            glazingType ?? "Double Pane", // Required field - use sensible default
+            glazingDetails, // Keep null if passed as null
+            uValue, // Keep null if passed as null
+            solarHeatGainCoefficient, // Keep null if passed as null
+            visibleTransmittance, // Keep null if passed as null
+            airLeakage, // Keep null if passed as null
+            energyStarRating, // Keep null if passed as null
+            nfrcRating, // Keep null if passed as null
+            orientation, // Keep null if passed as null
+            location, // Keep null if passed as null
+            installationType, // Keep null if passed as null
+            operationType, // Keep null if passed as null
+            hasScreens, // Keep null if passed as null
+            hasStormWindows // Keep null if passed as null
         );
     }
 
@@ -197,26 +197,26 @@ public static class TestDataBuilders
     {
         return new UpdateWindowRequest(
             name ?? _fixture.Create<string>(),
-            description ?? _fixture.Create<string>(),
+            description, // Keep null if passed as null
             width ?? _fixture.Create<double>(),
             height ?? _fixture.Create<double>(),
             area ?? _fixture.Create<double>(),
-            frameType ?? _fixture.Create<string>(),
-            frameDetails ?? _fixture.Create<string>(),
-            glazingType ?? _fixture.Create<string>(),
-            glazingDetails ?? _fixture.Create<string>(),
-            uValue ?? _fixture.Create<double>(),
-            solarHeatGainCoefficient ?? _fixture.Create<double>(),
-            visibleTransmittance ?? _fixture.Create<double>(),
-            airLeakage ?? _fixture.Create<double>(),
-            energyStarRating ?? _fixture.Create<string>(),
-            nfrcRating ?? _fixture.Create<string>(),
-            orientation ?? _fixture.Create<string>(),
-            location ?? _fixture.Create<string>(),
-            installationType ?? _fixture.Create<string>(),
-            operationType ?? _fixture.Create<string>(),
-            hasScreens ?? _fixture.Create<bool>(),
-            hasStormWindows ?? _fixture.Create<bool>()
+            frameType ?? "Vinyl", // Required field - use sensible default
+            frameDetails, // Keep null if passed as null
+            glazingType ?? "Double Pane", // Required field - use sensible default
+            glazingDetails, // Keep null if passed as null
+            uValue, // Keep null if passed as null
+            solarHeatGainCoefficient, // Keep null if passed as null
+            visibleTransmittance, // Keep null if passed as null
+            airLeakage, // Keep null if passed as null
+            energyStarRating, // Keep null if passed as null
+            nfrcRating, // Keep null if passed as null
+            orientation, // Keep null if passed as null
+            location, // Keep null if passed as null
+            installationType, // Keep null if passed as null
+            operationType, // Keep null if passed as null
+            hasScreens, // Keep null if passed as null
+            hasStormWindows // Keep null if passed as null
         );
     }
 

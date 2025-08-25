@@ -6,16 +6,17 @@ using Microsoft.Extensions.Logging;
 using Infrastructure.Data;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
 /// <summary>
-/// Base class for integration tests that provides a test server and HTTP client
+/// Base class for integration tests using shared SQL Server with transaction rollback isolation
 /// </summary>
-public class IntegrationTestBase : IClassFixture<IntegrationTestWebApplicationFactory>
+public abstract class IntegrationTestBase : IClassFixture<SharedSqlServerWebApplicationFactory>, IDisposable
 {
     protected readonly HttpClient Client;
-    protected readonly IntegrationTestWebApplicationFactory Factory;
+    protected readonly SharedSqlServerWebApplicationFactory Factory;
     protected readonly IServiceScope Scope;
     protected readonly ApplicationDbContext DbContext;
 
@@ -24,16 +25,63 @@ public class IntegrationTestBase : IClassFixture<IntegrationTestWebApplicationFa
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public IntegrationTestBase(IntegrationTestWebApplicationFactory factory)
+    protected IntegrationTestBase(SharedSqlServerWebApplicationFactory factory)
     {
         Factory = factory;
+        
+        // Ensure database is created before creating client
+        factory.EnsureDatabaseCreated();
+        
         Client = factory.CreateClient();
         Scope = factory.Services.CreateScope();
         DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        // Ensure database schema is created
+        DbContext.Database.EnsureCreated();
     }
 
     /// <summary>
-    /// Clears all data from the test database
+    /// Clears all data from the database for clean test isolation
+    /// This is more reliable than transaction rollback for HTTP-based integration tests
+    /// </summary>
+    protected async Task RunWithCleanDatabaseAsync(Func<Task> testAction)
+    {
+        // Clear database before test
+        await ClearDatabaseAsync();
+        
+        try
+        {
+            await testAction();
+        }
+        finally
+        {
+            // Clear database after test for next test
+            await ClearDatabaseAsync();
+        }
+    }
+
+    /// <summary>
+    /// Clears all data from the database for clean test isolation
+    /// This is more reliable than transaction rollback for HTTP-based integration tests
+    /// </summary>
+    protected async Task<T> RunWithCleanDatabaseAsync<T>(Func<Task<T>> testAction)
+    {
+        // Clear database before test
+        await ClearDatabaseAsync();
+        
+        try
+        {
+            return await testAction();
+        }
+        finally
+        {
+            // Clear database after test for next test
+            await ClearDatabaseAsync();
+        }
+    }
+
+    /// <summary>
+    /// Legacy method for tests that need database clearing (prefer RunInTransactionAsync)
     /// </summary>
     protected async Task ClearDatabaseAsync()
     {
@@ -43,16 +91,6 @@ public class IntegrationTestBase : IClassFixture<IntegrationTestWebApplicationFa
         DbContext.Walls.RemoveRange(DbContext.Walls);
         DbContext.Windows.RemoveRange(DbContext.Windows);
         
-        await DbContext.SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Seeds the database with test data
-    /// </summary>
-    protected async Task SeedDatabaseAsync()
-    {
-        await ClearDatabaseAsync();
-        // Add any common seed data here if needed
         await DbContext.SaveChangesAsync();
     }
 
@@ -88,11 +126,25 @@ public class IntegrationTestBase : IClassFixture<IntegrationTestWebApplicationFa
 }
 
 /// <summary>
-/// Custom WebApplicationFactory for integration tests
+/// Shared SQL Server WebApplicationFactory for integration tests
+/// Uses LocalDB or SQL Server Express with unique databases per test class
 /// </summary>
-public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Api.Program>
+public class SharedSqlServerWebApplicationFactory : WebApplicationFactory<Api.Program>
 {
-    private static readonly string DatabaseName = $"TestDb_{Guid.NewGuid()}";
+    private static readonly object _lockObject = new object();
+    private static bool _databaseInitialized = false;
+    private readonly string _databaseName;
+    private readonly string _connectionString;
+
+    public SharedSqlServerWebApplicationFactory()
+    {
+        // Each test class gets its own unique database
+        _databaseName = $"IntegrationTests_{GetType().Name}_{Guid.NewGuid():N}";
+        
+        // Use LocalDB (comes with Visual Studio) or SQL Server Express
+        // LocalDB connection string format
+        _connectionString = $"Server=(localdb)\\mssqllocaldb;Database={_databaseName};Trusted_Connection=true;MultipleActiveResultSets=true;";
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -105,10 +157,10 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Api.Pr
                 services.Remove(descriptor);
             }
 
-            // Add in-memory database for testing - use the same database name for all tests in this factory
+            // Add SQL Server with our unique database connection string
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase(DatabaseName);
+                options.UseSqlServer(_connectionString);
                 options.EnableSensitiveDataLogging();
             });
 
@@ -119,20 +171,50 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Api.Pr
         builder.UseEnvironment("Testing");
     }
 
+    public void EnsureDatabaseCreated()
+    {
+        lock (_lockObject)
+        {
+            if (!_databaseInitialized)
+            {
+                try
+                {
+                    // Connect to master database first to create our test database
+                    var masterConnectionString = $"Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=true;";
+                    using var masterConnection = new SqlConnection(masterConnectionString);
+                    masterConnection.Open();
+                    
+                    // Create database if it doesn't exist
+                    using var createDbCommand = new SqlCommand($"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '{_databaseName}') CREATE DATABASE [{_databaseName}]", masterConnection);
+                    createDbCommand.ExecuteNonQuery();
+                    
+                    _databaseInitialized = true;
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to initialize database '{_databaseName}'. " +
+                        $"Ensure SQL Server LocalDB is installed and running. " +
+                        $"Error: {ex.Message}", ex);
+                }
+            }
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             try
             {
-                // Clean up the database when the factory is disposed
+                // Clean up the test database
                 using var scope = Services.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 context.Database.EnsureDeleted();
             }
-            catch (ObjectDisposedException)
+            catch (Exception)
             {
-                // Services may already be disposed, which is fine
+                // Ignore cleanup errors
             }
         }
         base.Dispose(disposing);

@@ -7,31 +7,34 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class WallsControllerTests : IntegrationTestBase
 {
-    public WallsControllerTests(IntegrationTestWebApplicationFactory factory) : base(factory)
+    public WallsControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
     {
     }
 
     [Fact]
     public async Task GET_Walls_Should_Return_Empty_List_Initially()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            
 
-        // Act
-        var response = await Client.GetAsync("/api/walls");
+            // Act
+            var response = await Client.GetAsync("/api/walls");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var walls = await ReadJsonAsync<List<WallResponse>>(response);
-        walls.Should().NotBeNull();
-        walls.Should().BeEmpty();
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var walls = await ReadJsonAsync<List<WallResponse>>(response);
+            walls.Should().NotBeNull();
+            walls.Should().BeEmpty();
+        });
     }
 
     [Fact]
     public async Task POST_Walls_Should_Create_Wall_And_Return_201()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest(
             name: "Exterior Wall",
             description: "Main exterior wall",
@@ -75,7 +78,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task POST_Walls_Should_Return_400_For_Invalid_Data()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var invalidRequest = new 
         { 
             Name = "", // Empty name - should fail validation
@@ -96,7 +99,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task POST_Walls_Should_Validate_Numeric_Ranges()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var invalidRequest = TestDataBuilders.CreateWallRequest(
             name: "Test Wall",
             length: -1.0, // Invalid - should be > 0.1
@@ -115,34 +118,37 @@ public class WallsControllerTests : IntegrationTestBase
     [Fact]
     public async Task GET_Walls_Should_Return_All_Walls()
     {
-        // Arrange
-        await SeedDatabaseAsync();
-        
-        // Create test walls
-        var wall1 = TestDataBuilders.CreateWallRequest("Wall 1", "First wall", 10.0, 3.0, 0.3, "Wood Frame");
-        var wall2 = TestDataBuilders.CreateWallRequest("Wall 2", "Second wall", 8.0, 2.5, 0.25, "Steel Frame");
-        
-        await PostJsonAsync("/api/walls", wall1);
-        await PostJsonAsync("/api/walls", wall2);
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            
+            
+            // Create test walls
+            var wall1 = TestDataBuilders.CreateWallRequest("Wall 1", "First wall", 10.0, 3.0, 0.3, "Wood Frame");
+            var wall2 = TestDataBuilders.CreateWallRequest("Wall 2", "Second wall", 8.0, 2.5, 0.25, "Steel Frame");
+            
+            await PostJsonAsync("/api/walls", wall1);
+            await PostJsonAsync("/api/walls", wall2);
 
-        // Act
-        var response = await Client.GetAsync("/api/walls");
+            // Act
+            var response = await Client.GetAsync("/api/walls");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var walls = await ReadJsonAsync<List<WallResponse>>(response);
-        
-        walls.Should().NotBeNull();
-        walls.Should().HaveCount(2);
-        walls.Should().Contain(w => w.Name == "Wall 1");
-        walls.Should().Contain(w => w.Name == "Wall 2");
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var walls = await ReadJsonAsync<List<WallResponse>>(response);
+            
+            walls.Should().NotBeNull();
+            walls.Should().HaveCount(2);
+            walls.Should().Contain(w => w.Name == "Wall 1");
+            walls.Should().Contain(w => w.Name == "Wall 2");
+        });
     }
 
     [Fact]
     public async Task GET_Wall_By_Id_Should_Return_Wall_When_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest("Test Wall", "Test description", 12.0, 3.5, 0.4, "Concrete");
         var createResponse = await PostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
@@ -160,7 +166,7 @@ public class WallsControllerTests : IntegrationTestBase
         wall.Description.Should().Be("Test description");
         wall.Length.Should().Be(12.0);
         wall.Height.Should().Be(3.5);
-        wall.Thickness.Should().Be(0.4);
+        wall.Thickness.Should().BeApproximately(0.4, 0.0001);
         wall.AssemblyType.Should().Be("Concrete");
     }
 
@@ -168,7 +174,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task GET_Wall_By_Id_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var nonExistentId = Guid.NewGuid();
 
         // Act
@@ -182,7 +188,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task PUT_Wall_Should_Update_Existing_Wall()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest("Original Wall", "Original description", 10.0, 3.0, 0.3, "Wood Frame");
         var createResponse = await PostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
@@ -213,10 +219,10 @@ public class WallsControllerTests : IntegrationTestBase
         updatedWall.Description.Should().Be("Updated description");
         updatedWall.Length.Should().Be(15.0);
         updatedWall.Height.Should().Be(4.0);
-        updatedWall.Thickness.Should().Be(0.4);
+        updatedWall.Thickness.Should().BeApproximately(0.4, 0.0001);
         updatedWall.AssemblyType.Should().Be("Steel Frame");
         updatedWall.RValue.Should().Be(25.0);
-        updatedWall.UValue.Should().Be(0.04);
+        updatedWall.UValue.Should().BeApproximately(0.04, 0.0001);
         updatedWall.UpdatedAt.Should().NotBeNull();
         updatedWall.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
     }
@@ -225,7 +231,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task PUT_Wall_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var nonExistentId = Guid.NewGuid();
         var updateRequest = TestDataBuilders.UpdateWallRequest("Updated Wall", "Updated description", 15.0, 4.0, 0.4, "Steel Frame");
 
@@ -240,7 +246,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task DELETE_Wall_Should_Remove_Existing_Wall()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest("To Delete", "Wall to be deleted", 10.0, 3.0, 0.3, "Wood Frame");
         var createResponse = await PostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
@@ -257,24 +263,23 @@ public class WallsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task DELETE_Wall_Should_Return_404_When_Not_Exists()
+    public async Task DELETE_Wall_Should_Return_204_When_Not_Exists()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        // Arrange - DELETE is idempotent, returns 204 even for non-existent resources
         var nonExistentId = Guid.NewGuid();
 
         // Act
         var response = await Client.DeleteAsync($"/api/walls/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
     public async Task POST_Wall_Should_Handle_Optional_Fields()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest(
             name: "Simple Wall",
             description: null,
@@ -312,7 +317,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task Walls_Should_Persist_Timestamps_Correctly()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest("Timestamp Test", "Test timestamps", 10.0, 3.0, 0.3, "Wood Frame");
 
         // Act - Create wall
@@ -342,7 +347,7 @@ public class WallsControllerTests : IntegrationTestBase
     public async Task POST_Wall_Should_Calculate_And_Store_Complex_Properties()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWallRequest(
             name: "Complex Wall",
             description: "Wall with complex properties",

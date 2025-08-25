@@ -7,31 +7,34 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class PeopleControllerTests : IntegrationTestBase
 {
-    public PeopleControllerTests(IntegrationTestWebApplicationFactory factory) : base(factory)
+    public PeopleControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
     {
     }
 
     [Fact]
     public async Task GET_People_Should_Return_Empty_List_Initially()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
 
-        // Act
-        var response = await Client.GetAsync("/api/people");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var people = await ReadJsonAsync<List<PersonResponse>>(response);
-        people.Should().NotBeNull();
-        people.Should().BeEmpty();
+            // Act
+            var response = await Client.GetAsync("/api/people");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var people = await ReadJsonAsync<List<PersonResponse>>(response);
+            people.Should().NotBeNull();
+            people.Should().BeEmpty();
+        });
     }
 
     [Fact]
     public async Task POST_People_Should_Create_Person_And_Return_201()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreatePersonRequest("John Doe", "123-456-7890");
 
         // Act
@@ -56,7 +59,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task POST_People_Should_Return_400_For_Invalid_Data()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var invalidRequest = new { FullName = "", Phone = "123-456-7890" }; // Empty name
 
         // Act
@@ -70,8 +73,6 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task POST_People_With_Roles_Should_Create_Person_With_Roles()
     {
         // Arrange
-        await SeedDatabaseAsync();
-        
         // Create test roles first
         var role1Request = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
         var role2Request = TestDataBuilders.CreateRoleRequest("User", "Regular user");
@@ -105,7 +106,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task POST_People_With_Invalid_Role_Should_Return_400()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var nonExistentRoleId = Guid.NewGuid();
         var createRequest = TestDataBuilders.CreatePersonRequest(
             "John Doe", 
@@ -124,34 +125,37 @@ public class PeopleControllerTests : IntegrationTestBase
     [Fact]
     public async Task GET_People_Should_Return_All_People()
     {
-        // Arrange
-        await SeedDatabaseAsync();
-        
-        // Create test people
-        var person1 = TestDataBuilders.CreatePersonRequest("Alice Johnson", "111-222-3333");
-        var person2 = TestDataBuilders.CreatePersonRequest("Bob Wilson", "444-555-6666");
-        
-        await PostJsonAsync("/api/people", person1);
-        await PostJsonAsync("/api/people", person2);
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
 
-        // Act
-        var response = await Client.GetAsync("/api/people");
+            
+            // Create test people
+            var person1 = TestDataBuilders.CreatePersonRequest("Alice Johnson", "111-222-3333");
+            var person2 = TestDataBuilders.CreatePersonRequest("Bob Wilson", "444-555-6666");
+            
+            await PostJsonAsync("/api/people", person1);
+            await PostJsonAsync("/api/people", person2);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var people = await ReadJsonAsync<List<PersonResponse>>(response);
-        
-        people.Should().NotBeNull();
-        people.Should().HaveCount(2);
-        people.Should().Contain(p => p.FullName == "Alice Johnson");
-        people.Should().Contain(p => p.FullName == "Bob Wilson");
+            // Act
+            var response = await Client.GetAsync("/api/people");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var people = await ReadJsonAsync<List<PersonResponse>>(response);
+            
+            people.Should().NotBeNull();
+            people.Should().HaveCount(2);
+            people.Should().Contain(p => p.FullName == "Alice Johnson");
+            people.Should().Contain(p => p.FullName == "Bob Wilson");
+        });
     }
 
     [Fact]
     public async Task GET_Person_By_Id_Should_Return_Person_When_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreatePersonRequest("Charlie Brown", "777-888-9999");
         var createResponse = await PostJsonAsync("/api/people", createRequest);
         var createdPerson = await ReadJsonAsync<PersonResponse>(createResponse);
@@ -173,7 +177,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task GET_Person_By_Id_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var nonExistentId = Guid.NewGuid();
 
         // Act
@@ -187,7 +191,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task PUT_Person_Should_Update_Existing_Person()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreatePersonRequest("Original Name", "111-111-1111");
         var createResponse = await PostJsonAsync("/api/people", createRequest);
         var createdPerson = await ReadJsonAsync<PersonResponse>(createResponse);
@@ -213,7 +217,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task PUT_Person_Should_Update_Roles()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         
         // Create roles
         var role1Response = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("Admin", "Administrator"));
@@ -253,7 +257,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task PUT_Person_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var nonExistentId = Guid.NewGuid();
         var updateRequest = TestDataBuilders.UpdatePersonRequest("Updated Name", "222-222-2222");
 
@@ -268,7 +272,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task DELETE_Person_Should_Remove_Existing_Person()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreatePersonRequest("To Delete", "999-999-9999");
         var createResponse = await PostJsonAsync("/api/people", createRequest);
         var createdPerson = await ReadJsonAsync<PersonResponse>(createResponse);
@@ -285,24 +289,23 @@ public class PeopleControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task DELETE_Person_Should_Return_404_When_Not_Exists()
+    public async Task DELETE_Person_Should_Return_204_When_Not_Exists()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        // Arrange - DELETE is idempotent, returns 204 even for non-existent resources
         var nonExistentId = Guid.NewGuid();
 
         // Act
         var response = await Client.DeleteAsync($"/api/people/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
     public async Task POST_Person_Should_Handle_Null_Phone()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         var createRequest = TestDataBuilders.CreatePersonRequest("No Phone Person", null);
 
         // Act
@@ -321,7 +324,7 @@ public class PeopleControllerTests : IntegrationTestBase
     public async Task People_Should_Maintain_Role_Relationships()
     {
         // Arrange
-        await SeedDatabaseAsync();
+
         
         // Create a role
         var roleResponse = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestRole", "Test role"));

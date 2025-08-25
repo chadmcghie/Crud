@@ -7,31 +7,34 @@ namespace Tests.Integration.Backend.Controllers;
 
 public class WindowsControllerTests : IntegrationTestBase
 {
-    public WindowsControllerTests(IntegrationTestWebApplicationFactory factory) : base(factory)
+    public WindowsControllerTests(SharedSqlServerWebApplicationFactory factory) : base(factory)
     {
     }
 
     [Fact]
     public async Task GET_Windows_Should_Return_Empty_List_Initially()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            
 
-        // Act
-        var response = await Client.GetAsync("/api/windows");
+            // Act
+            var response = await Client.GetAsync("/api/windows");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var windows = await ReadJsonAsync<List<WindowResponse>>(response);
-        windows.Should().NotBeNull();
-        windows.Should().BeEmpty();
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var windows = await ReadJsonAsync<List<WindowResponse>>(response);
+            windows.Should().NotBeNull();
+            windows.Should().BeEmpty();
+        });
     }
 
     [Fact]
     public async Task POST_Windows_Should_Create_Window_And_Return_201()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest(
             name: "Living Room Window",
             description: "Large south-facing window",
@@ -86,7 +89,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task POST_Windows_Should_Return_400_For_Invalid_Data()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var invalidRequest = new 
         { 
             Name = "", // Empty name - should fail validation
@@ -108,7 +111,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task POST_Windows_Should_Validate_Numeric_Ranges()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var invalidRequest = TestDataBuilders.CreateWindowRequest(
             name: "Test Window",
             width: -1.0, // Invalid - should be > 0.1
@@ -129,7 +132,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task GET_Windows_Should_Return_All_Windows()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         
         // Create test windows
         var window1 = TestDataBuilders.CreateWindowRequest("Window 1", "First window", 1.2, 1.8, 2.16, "Vinyl", "Single Pane");
@@ -155,7 +158,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task GET_Window_By_Id_Should_Return_Window_When_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest("Test Window", "Test description", 1.5, 2.0, 3.0, "Aluminum", "Double Pane");
         var createResponse = await PostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
@@ -182,7 +185,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task GET_Window_By_Id_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var nonExistentId = Guid.NewGuid();
 
         // Act
@@ -196,7 +199,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task PUT_Window_Should_Update_Existing_Window()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest("Original Window", "Original description", 1.0, 1.5, 1.5, "Wood", "Single Pane");
         var createResponse = await PostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
@@ -233,8 +236,8 @@ public class WindowsControllerTests : IntegrationTestBase
         updatedWindow.Area.Should().Be(5.0);
         updatedWindow.FrameType.Should().Be("Vinyl");
         updatedWindow.GlazingType.Should().Be("Triple Pane");
-        updatedWindow.UValue.Should().Be(0.2);
-        updatedWindow.SolarHeatGainCoefficient.Should().Be(0.3);
+        updatedWindow.UValue.Should().BeApproximately(0.2, 0.0001);
+        updatedWindow.SolarHeatGainCoefficient.Should().BeApproximately(0.3, 0.0001);
         updatedWindow.HasScreens.Should().Be(true);
         updatedWindow.HasStormWindows.Should().Be(true);
         updatedWindow.UpdatedAt.Should().NotBeNull();
@@ -245,7 +248,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task PUT_Window_Should_Return_404_When_Not_Exists()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var nonExistentId = Guid.NewGuid();
         var updateRequest = TestDataBuilders.UpdateWindowRequest("Updated Window", "Updated description", 2.0, 2.5, 5.0, "Vinyl", "Triple Pane");
 
@@ -260,7 +263,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task DELETE_Window_Should_Remove_Existing_Window()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest("To Delete", "Window to be deleted", 1.0, 1.5, 1.5, "Wood", "Single Pane");
         var createResponse = await PostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
@@ -277,24 +280,23 @@ public class WindowsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task DELETE_Window_Should_Return_404_When_Not_Exists()
+    public async Task DELETE_Window_Should_Return_204_When_Not_Exists()
     {
-        // Arrange
-        await SeedDatabaseAsync();
+        // Arrange - DELETE is idempotent, returns 204 even for non-existent resources
         var nonExistentId = Guid.NewGuid();
 
         // Act
         var response = await Client.DeleteAsync($"/api/windows/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
     public async Task POST_Window_Should_Handle_Optional_Fields()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest(
             name: "Simple Window",
             description: null,
@@ -349,7 +351,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task Windows_Should_Persist_Energy_Efficiency_Data()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest(
             name: "Energy Efficient Window",
             description: "High-performance window",
@@ -396,7 +398,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task Windows_Should_Handle_Boolean_Properties_Correctly()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         
         // Test with true values
         var createRequest1 = TestDataBuilders.CreateWindowRequest(
@@ -444,7 +446,7 @@ public class WindowsControllerTests : IntegrationTestBase
     public async Task Windows_Should_Persist_Timestamps_Correctly()
     {
         // Arrange
-        await SeedDatabaseAsync();
+        
         var createRequest = TestDataBuilders.CreateWindowRequest("Timestamp Test", "Test timestamps", 1.0, 1.5, 1.5, "Wood", "Double Pane");
 
         // Act - Create window

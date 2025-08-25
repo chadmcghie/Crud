@@ -65,7 +65,7 @@ jobs:
       working-directory: ./src/Angular
       run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
 
-  # Job 2: Backend Integration Tests
+  # Job 2: Backend Integration Tests (SQL Server TestContainers)
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
@@ -80,14 +80,25 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
+    - name: Setup Docker for TestContainers
+      run: |
+        # Ensure Docker is running and accessible
+        docker --version
+        docker info
+        
     - name: Restore dependencies
       run: dotnet restore Crud.Backend.sln
       
     - name: Build solution
       run: dotnet build Crud.Backend.sln --no-restore --configuration Release
       
-    - name: Run Backend Integration Tests
+    - name: Run Backend Integration Tests with SQL Server
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      env:
+        # TestContainers configuration
+        TESTCONTAINERS_RYUK_DISABLED: true  # Disable resource cleanup in CI
+        DOCKER_HOST: unix:///var/run/docker.sock
+      timeout-minutes: 15  # Increased timeout for container startup
       
     - name: Upload integration test results
       uses: actions/upload-artifact@v4
