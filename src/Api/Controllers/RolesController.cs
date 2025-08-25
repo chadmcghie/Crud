@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [ApiController]
+[Tags("People")]
 [Route("api/[controller]")]
 public class RolesController(IRoleService roles) : ControllerBase
 {

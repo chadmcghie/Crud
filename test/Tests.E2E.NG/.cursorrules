@@ -1,0 +1,152 @@
+# Playwright End-to-End Testing - Angular & API
+
+## Project Context
+This project contains Playwright end-to-end tests for the Angular frontend and ASP.NET Core API. It tests complete user workflows and API functionality in a real browser environment.
+
+## Testing Strategy
+- Test critical user workflows end-to-end
+- Verify API functionality and contracts
+- Test integration between frontend and backend
+- Ensure cross-browser compatibility
+- Validate complete business scenarios
+
+## Playwright Guidelines
+- Use Page Object Model (POM) for maintainable tests
+- Create reusable helper functions for common actions
+- Use proper selectors (data-testid preferred over CSS selectors)
+- Implement proper waiting strategies (waitForLoadState, waitForSelector)
+- Use fixtures for test data setup and cleanup
+
+## Test Organization
+- **api/** - Direct API testing without UI
+- **angular-ui/** - Frontend UI testing
+- **integration/** - Full-stack workflow testing
+- **helpers/** - Reusable test utilities and page objects
+
+## Code Standards
+- Use TypeScript for type safety
+- Follow async/await patterns consistently
+- Implement proper error handling in tests
+- Use descriptive test names that explain the scenario
+- Keep tests independent and isolated
+- Use proper assertions with expect()
+
+## API Testing
+- Test all CRUD operations directly against API endpoints
+- Verify HTTP status codes and response formats
+- Test error scenarios and edge cases
+- Validate request/response data structures
+- Test authentication and authorization if implemented
+- Use proper test data management
+
+## UI Testing
+- Test user interactions and workflows
+- Verify UI elements and their behavior
+- Test form submissions and validations
+- Verify navigation and routing
+- Test responsive design on different viewports
+- Handle loading states and async operations
+
+## Test Data Management
+- Use factories or builders for test data creation
+- Clean up test data after each test
+- Use unique identifiers to avoid conflicts
+- Implement proper database seeding if needed
+- Use realistic test data that represents actual usage
+
+## Configuration
+- Use environment-specific configuration
+- Configure proper timeouts for different environments
+- Set up parallel execution appropriately
+- Configure proper reporting and screenshots
+- Use proper browser configurations for testing
+
+## Best Practices
+- Keep tests focused on single scenarios
+- Use proper test isolation and cleanup
+- Implement retry logic for flaky tests
+- Use proper logging and debugging
+- Test both positive and negative scenarios
+- Maintain test documentation
+
+## Performance
+- Run tests in parallel where possible
+- Use proper wait strategies to avoid unnecessary delays
+- Optimize test execution time
+- Use headless mode for CI/CD pipelines
+- Configure proper resource cleanup
+
+## CI/CD Integration
+- Configure tests to run in CI/CD pipelines
+- Use proper environment setup for automated testing
+- Generate test reports and artifacts
+- Handle test failures appropriately
+- Use proper test result reporting
+
+## File Organization
+```
+tests/
+├── api/                    # Direct API tests
+│   ├── people-api.spec.ts
+│   └── roles-api.spec.ts
+├── angular-ui/             # Frontend UI tests
+│   ├── people.spec.ts
+│   └── roles.spec.ts
+├── integration/            # Full-stack tests
+│   └── full-workflow.spec.ts
+└── helpers/                # Test utilities
+    ├── api-helpers.ts      # API test utilities
+    ├── page-helpers.ts     # UI test utilities
+    └── test-data.ts        # Test data factories
+```
+
+## Example Patterns
+```typescript
+// Page Object Model
+export class PeoplePage {
+  constructor(private page: Page) {}
+  
+  async navigateTo() {
+    await this.page.goto('/people');
+    await this.page.waitForLoadState('networkidle');
+  }
+  
+  async addPerson(name: string, email: string) {
+    await this.page.click('[data-testid="add-person-button"]');
+    await this.page.fill('[data-testid="name-input"]', name);
+    await this.page.fill('[data-testid="email-input"]', email);
+    await this.page.click('[data-testid="save-button"]');
+    await this.page.waitForSelector('[data-testid="success-message"]');
+  }
+  
+  async getPersonCount(): Promise<number> {
+    const rows = await this.page.locator('[data-testid="person-row"]').count();
+    return rows;
+  }
+}
+
+// API Helper
+export class ApiHelper {
+  constructor(private request: APIRequestContext) {}
+  
+  async createPerson(person: CreatePersonRequest): Promise<Person> {
+    const response = await this.request.post('/api/people', {
+      data: person
+    });
+    expect(response.status()).toBe(201);
+    return await response.json();
+  }
+  
+  async deletePerson(id: number): Promise<void> {
+    const response = await this.request.delete(`/api/people/${id}`);
+    expect(response.status()).toBe(204);
+  }
+}
+```
+
+## Debugging
+- Use Playwright Inspector for debugging tests
+- Enable video recording for failed tests
+- Use proper logging and console output
+- Take screenshots on test failures
+- Use trace viewer for detailed test analysis

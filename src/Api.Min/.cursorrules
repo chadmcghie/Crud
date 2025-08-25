@@ -1,0 +1,72 @@
+# ASP.NET Core Minimal API - Clean Architecture
+
+## Project Context
+This is a lightweight Minimal API implementation following Clean Architecture. It provides a simpler, more performant alternative to the full Web API with controller-based routing.
+
+## Architecture Guidelines
+- Follow Clean Architecture principles - depends on Application and Infrastructure layers
+- Use minimal API endpoints with route handlers
+- Keep endpoint handlers thin - delegate to Application layer via MediatR
+- All business logic belongs in Application or Domain layers
+- Use DTOs for API contracts, never expose domain entities directly
+
+## Minimal API Patterns
+- Use `app.MapGet()`, `app.MapPost()`, `app.MapPut()`, `app.MapDelete()` for endpoints
+- Group related endpoints using `app.MapGroup()` for better organization
+- Use route parameters and query parameters appropriately
+- Implement proper HTTP status codes with `Results.Ok()`, `Results.Created()`, etc.
+- Use `IResult` return types for flexibility
+
+## Code Standards
+- Use async/await for all I/O operations
+- Follow RESTful conventions for endpoint design
+- Use descriptive endpoint names and route patterns
+- Implement proper error handling with try-catch
+- Use dependency injection in endpoint handlers
+- Keep endpoint handlers focused and single-purpose
+
+## Dependencies & Patterns
+- Use MediatR for CQRS pattern - send commands/queries to Application layer
+- Use AutoMapper for DTO mapping if needed
+- Configure CORS for frontend applications
+- Enable Swagger/OpenAPI for development
+- Use FluentValidation for request validation (if implemented)
+
+## Performance Benefits
+- Minimal APIs have lower overhead than controller-based APIs
+- Faster startup time and reduced memory footprint
+- Better performance for simple CRUD operations
+- Use source generators where possible for better performance
+
+## Testing
+- Write integration tests using WebApplicationFactory
+- Test endpoints directly without controller abstraction
+- Use TestServer for in-memory testing
+- Mock external dependencies appropriately
+
+## Security
+- Implement authentication/authorization using minimal API security features
+- Validate all inputs at endpoint level
+- Use HTTPS in production
+- Apply security policies consistently across endpoints
+
+## File Organization
+- Program.cs - Application startup, DI configuration, and endpoint definitions
+- Endpoints/ - Separate endpoint definitions into logical groups if needed
+- Dtos/ - Data transfer objects for API contracts
+- Keep related endpoints grouped together logically
+
+## Example Patterns
+```csharp
+// Group endpoints
+var usersGroup = app.MapGroup("/api/users");
+usersGroup.MapGet("/", GetUsers);
+usersGroup.MapPost("/", CreateUser);
+
+// Async endpoint with dependency injection
+static async Task<IResult> GetUsers(IMediator mediator)
+{
+    var users = await mediator.Send(new GetUsersQuery());
+    return Results.Ok(users);
+}
+```

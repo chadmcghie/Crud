@@ -136,24 +136,36 @@ export class ApiHelpers {
 
   // Cleanup helpers
   async cleanupRoles(): Promise<void> {
-    const roles = await this.getRoles();
-    for (const role of roles) {
-      try {
-        await this.deleteRole(role.id);
-      } catch (error) {
-        console.warn(`Failed to cleanup role ${role.id}:`, error);
+    try {
+      const roles = await this.getRoles();
+      for (const role of roles) {
+        try {
+          await this.deleteRole(role.id);
+          // Small delay between deletions to avoid race conditions
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (error) {
+          console.warn(`Failed to cleanup role ${role.id}:`, error);
+        }
       }
+    } catch (error) {
+      console.warn('Failed to get roles for cleanup:', error);
     }
   }
 
   async cleanupPeople(): Promise<void> {
-    const people = await this.getPeople();
-    for (const person of people) {
-      try {
-        await this.deletePerson(person.id);
-      } catch (error) {
-        console.warn(`Failed to cleanup person ${person.id}:`, error);
+    try {
+      const people = await this.getPeople();
+      for (const person of people) {
+        try {
+          await this.deletePerson(person.id);
+          // Small delay between deletions to avoid race conditions
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (error) {
+          console.warn(`Failed to cleanup person ${person.id}:`, error);
+        }
       }
+    } catch (error) {
+      console.warn('Failed to get people for cleanup:', error);
     }
   }
 
@@ -169,10 +181,13 @@ export class ApiHelpers {
   }
 
   async cleanupAll(): Promise<void> {
-    await Promise.all([
-      this.cleanupPeople(),
-      this.cleanupRoles(),
-      this.cleanupWalls()
-    ]);
+    // Clean up in order to avoid dependency issues
+    // People first (they might reference roles)
+    await this.cleanupPeople();
+    await this.cleanupRoles();
+    await this.cleanupWalls();
+    
+    // Add a small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 }

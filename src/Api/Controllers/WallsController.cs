@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [ApiController]
+[Tags("Building")]
 [Route("api/[controller]")]
 public class WallsController(IWallService walls) : ControllerBase
 {

@@ -1,0 +1,113 @@
+# Infrastructure Layer - Clean Architecture External Concerns
+
+## Project Context
+This is the Infrastructure layer implementing external concerns like data persistence, external services, and cross-cutting concerns. It implements interfaces defined in the Application layer.
+
+## Architecture Guidelines
+- Implements abstractions defined in Application and Domain layers
+- Contains concrete implementations of repositories, external services, etc.
+- Handles data persistence, caching, messaging, file I/O, etc.
+- Should be easily replaceable without affecting business logic
+- Depends on Application and Domain layers through interfaces
+
+## Repository Pattern
+- Implement repository interfaces defined in Application layer
+- Use Entity Framework Core or other ORM for data access
+- Keep repositories focused on data access, not business logic
+- Implement proper async patterns for database operations
+- Use specifications pattern for complex queries if needed
+
+## Data Access Guidelines
+- Use Entity Framework Core with proper configuration
+- Implement DbContext with appropriate entity configurations
+- Use migrations for database schema changes
+- Implement proper connection string management
+- Use connection pooling and proper disposal patterns
+
+## Code Standards
+- Implement all interfaces from Application layer
+- Use async/await for all I/O operations
+- Implement proper error handling and logging
+- Use dependency injection for configuration and services
+- Follow repository and unit of work patterns
+- Keep implementations focused and single-purpose
+
+## Entity Framework Configuration
+- Configure entities using Fluent API or Data Annotations
+- Implement proper relationships and constraints
+- Use value converters for value objects
+- Configure indexes for performance
+- Implement soft delete if required by business rules
+
+## External Services
+- Implement HTTP clients for external API calls
+- Use proper timeout and retry policies (Polly)
+- Implement circuit breaker patterns for resilience
+- Cache responses where appropriate
+- Handle external service failures gracefully
+
+## Testing
+- Write integration tests for repository implementations
+- Use in-memory database or test containers for testing
+- Test both success and failure scenarios
+- Mock external services in integration tests
+- Test database migrations and configurations
+
+## Performance Considerations
+- Use appropriate caching strategies (in-memory, distributed)
+- Implement connection pooling for databases
+- Use bulk operations for large data sets
+- Optimize queries and avoid N+1 problems
+- Implement proper indexing strategies
+
+## Security
+- Implement proper connection string security
+- Use parameterized queries to prevent SQL injection
+- Implement proper authentication for external services
+- Handle sensitive data appropriately
+- Follow security best practices for data access
+
+## File Organization
+- Repositories/ - Repository implementations
+  - InMemory/ - In-memory implementations for development/testing
+  - EntityFramework/ - EF Core implementations (if used)
+- Services/ - External service implementations
+- Configuration/ - EF Core entity configurations
+- Migrations/ - Database migration files (if using EF Core)
+- DependencyInjection.cs - Service registration
+
+## Example Patterns
+```csharp
+public class PersonRepository : IPersonRepository
+{
+    private readonly ApplicationDbContext _context;
+    
+    public PersonRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<Person> GetByIdAsync(int id)
+    {
+        return await _context.People
+            .Include(p => p.Roles)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+    
+    public async Task AddAsync(Person person)
+    {
+        await _context.People.AddAsync(person);
+    }
+    
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
+}
+```
+
+## Configuration Management
+- Use IOptions pattern for configuration
+- Implement proper environment-specific settings
+- Use Azure Key Vault or similar for secrets in production
+- Validate configuration on startup
