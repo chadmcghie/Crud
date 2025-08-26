@@ -181,8 +181,14 @@ export class RolesListComponent implements OnInit {
   }
 
   loadRoles() {
-    this.api.listRoles().subscribe(roles => {
-      this.roles = roles;
+    this.api.listRoles().subscribe({
+      next: (roles) => {
+        this.roles = roles;
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+        this.roles = [];
+      }
     });
   }
 
@@ -200,8 +206,14 @@ export class RolesListComponent implements OnInit {
 
   onDeleteRole(role: RoleDto) {
     if (confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
-      this.api.deleteRole(role.id).subscribe(() => {
-        this.loadRoles(); // Refresh the list
+      this.api.deleteRole(role.id).subscribe({
+        next: () => {
+          this.loadRoles(); // Refresh the list
+        },
+        error: (error) => {
+          console.error('Error deleting role:', error);
+          // Could show user-friendly error message here
+        }
       });
     }
   }

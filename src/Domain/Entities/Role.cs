@@ -12,4 +12,8 @@ public class Role
 
     [MaxLength(500)]
     public string? Description { get; set; }
+
+    // Concurrency token for optimistic concurrency control
+    // Nullable for SQLite compatibility
+    public byte[]? RowVersion { get; set; }
 }

@@ -1,0 +1,235 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+  push:
+    branches: [ dev ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+# Database Strategy:
+# - Unit Tests: No database (pure business logic)
+# - Integration Tests: SQLite (fast, free, isolated)
+# - E2E Tests: SQLite (consistent, realistic, free)
+
+jobs:
+  # Job 1a: Backend Unit Tests (Fast)
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Restore .NET dependencies
+      run: dotnet restore Crud.Backend.sln
+      
+    - name: Build backend
+      run: dotnet build Crud.Backend.sln --no-restore --configuration Release
+      
+    - name: Run Backend Unit Tests
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      
+    - name: Upload backend unit test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-unit-test-results
+        path: TestResults/
+
+  # Job 1b: Frontend Unit Tests (Angular only)
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+      
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: npm ci
+      
+    - name: Run Angular Unit Tests
+      working-directory: ./src/Angular
+      run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+
+  # Job 2: Backend Integration Tests (SQLite - No External Dependencies)
+  backend-integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    needs: backend-unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Restore dependencies
+      run: dotnet restore Crud.Backend.sln
+      
+    - name: Build solution
+      run: dotnet build Crud.Backend.sln --no-restore --configuration Release
+      
+    - name: Run Backend Integration Tests with SQLite
+      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      env:
+        # SQLite is used automatically - no external database needed
+        CI: true
+      timeout-minutes: 5
+      
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-integration-test-results
+        path: TestResults/
+
+  # Job 3: End-to-End Tests (Full Stack with SQLite)
+  # Note: E2E tests now use SQLite for completely free testing
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    - name: Restore .NET dependencies
+      run: dotnet restore Crud.Angular.sln
+      
+    - name: Build solution
+      run: dotnet build Crud.Angular.sln --no-restore --configuration Release
+      
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: npm ci
+      
+    - name: Build Angular for production
+      working-directory: ./src/Angular
+      run: npm run build
+      
+    - name: Install E2E test dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: npm ci
+      
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: npx playwright install --with-deps chromium
+      
+    - name: Start API server
+      working-directory: ./src/Api
+      run: |
+        dotnet run --configuration Release &
+        echo "API_PID=$!" >> $GITHUB_ENV
+      env:
+        ASPNETCORE_ENVIRONMENT: E2E
+        ASPNETCORE_URLS: http://localhost:5172
+        # SQLite is used automatically - no external database needed
+        CI: true
+        DatabaseProvider: SQLite
+        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
+        
+    - name: Wait for API to be ready
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5172/health 2>/dev/null; do echo "Waiting for API health check..."; sleep 2; done'
+        echo "API is ready!"
+        
+    - name: Start Angular server
+      working-directory: ./src/Angular
+      run: |
+        npm start &
+        echo "ANGULAR_PID=$!" >> $GITHUB_ENV
+        
+    - name: Wait for Angular to be ready
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do sleep 2; done'
+        
+    - name: Run API E2E Tests
+      working-directory: ./test/Tests.E2E.NG
+      run: npm run test:api-only
+      env:
+        CI: true
+        
+    - name: Run Full E2E Tests
+      working-directory: ./test/Tests.E2E.NG
+      run: npm run test:local
+      env:
+        CI: true
+        
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: |
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+          
+    - name: Stop servers
+      if: always()
+      run: |
+        if [ ! -z "$API_PID" ]; then kill $API_PID || true; fi
+        if [ ! -z "$ANGULAR_PID" ]; then kill $ANGULAR_PID || true; fi
+
+  # Job 4: Test Summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    if: always()
+    
+    steps:
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      
+    - name: Display test summary
+      run: |
+        echo "## 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Category | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Domain & Application layer tests |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Angular component & service tests |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | SQLite database & repository tests |" >> $GITHUB_STEP_SUMMARY
+        echo "| End-to-End Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Full application workflow tests (SQLite DB) |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Overall Status" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && [ "${{ needs.backend-integration-tests.result }}" == "success" ] && [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+          echo "🎉 **All tests passed!** The pull request is ready for review." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ **Some tests failed.** Please review the failed tests before merging." >> $GITHUB_STEP_SUMMARY
+        fi

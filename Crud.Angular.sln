@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src\Shared\Shared.csproj", "{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.E2E.NG", "test\Tests.E2E.NG\Tests.E2E.NG.csproj", "{FD83C989-5590-3FAF-02C1-2F3A61C54C19}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.NG", "test\Tests.Integration.NG\Tests.Integration.NG.csproj", "{F92925FC-6865-C5BF-2394-69B7CB9F71E1}"
@@ -24,10 +20,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99507BA0-BB0B-3FD9-D8E2-2AE9B409CB73}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Release|Any CPU.ActiveCfg = Release|Any CPU
