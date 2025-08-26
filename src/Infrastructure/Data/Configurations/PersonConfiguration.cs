@@ -17,6 +17,14 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.Phone)
             .HasMaxLength(20);
 
+        // Configure concurrency token
+        // Note: SQLite doesn't support IsRowVersion() the same way as SQL Server
+        // For SQLite compatibility, we'll configure it as a regular byte array
+        builder.Property(p => p.RowVersion)
+            .HasColumnType("BLOB")
+            .IsRequired(false)
+            .IsConcurrencyToken();
+
         // Configure many-to-many relationship with Role
         builder.HasMany(p => p.Roles)
             .WithMany()

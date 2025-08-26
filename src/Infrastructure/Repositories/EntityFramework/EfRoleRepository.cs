@@ -32,24 +32,49 @@ public class EfRoleRepository : IRoleRepository
 
     public async Task<Role> AddAsync(Role role, CancellationToken ct = default)
     {
-        _context.Roles.Add(role);
-        await _context.SaveChangesAsync(ct);
-        return role;
+        try
+        {
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync(ct);
+            return role;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UNIQUE constraint failed") == true)
+        {
+            throw new InvalidOperationException($"A role with the name '{role.Name}' already exists.", ex);
+        }
     }
 
     public async Task UpdateAsync(Role role, CancellationToken ct = default)
     {
-        _context.Roles.Update(role);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            _context.Roles.Update(role);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new InvalidOperationException("The role was modified by another user. Please refresh and try again.", ex);
+        }
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var role = await _context.Roles.FindAsync(new object[] { id }, ct);
-        if (role != null)
+        try
         {
-            _context.Roles.Remove(role);
-            await _context.SaveChangesAsync(ct);
+            var role = await _context.Roles.FindAsync(new object[] { id }, ct);
+            if (role != null)
+            {
+                _context.Roles.Remove(role);
+                await _context.SaveChangesAsync(ct);
+            }
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new InvalidOperationException("The role was modified by another user. Please refresh and try again.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY constraint failed") == true)
+        {
+            throw new InvalidOperationException("Cannot delete role because it is assigned to one or more people.", ex);
         }
     }
 }

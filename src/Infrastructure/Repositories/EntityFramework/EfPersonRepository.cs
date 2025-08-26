@@ -30,24 +30,49 @@ public class EfPersonRepository : IPersonRepository
 
     public async Task<Person> AddAsync(Person person, CancellationToken ct = default)
     {
-        _context.People.Add(person);
-        await _context.SaveChangesAsync(ct);
-        return person;
+        try
+        {
+            _context.People.Add(person);
+            await _context.SaveChangesAsync(ct);
+            return person;
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new InvalidOperationException("Failed to create person. Please check that all referenced roles exist.", ex);
+        }
     }
 
     public async Task UpdateAsync(Person person, CancellationToken ct = default)
     {
-        _context.People.Update(person);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            _context.People.Update(person);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new InvalidOperationException("The person was modified by another user. Please refresh and try again.", ex);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new InvalidOperationException("Failed to update person. Please check that all referenced roles exist.", ex);
+        }
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var person = await _context.People.FindAsync(new object[] { id }, ct);
-        if (person != null)
+        try
         {
-            _context.People.Remove(person);
-            await _context.SaveChangesAsync(ct);
+            var person = await _context.People.FindAsync(new object[] { id }, ct);
+            if (person != null)
+            {
+                _context.People.Remove(person);
+                await _context.SaveChangesAsync(ct);
+            }
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new InvalidOperationException("The person was modified by another user. Please refresh and try again.", ex);
         }
     }
 }

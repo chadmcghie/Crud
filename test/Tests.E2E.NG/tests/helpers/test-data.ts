@@ -104,17 +104,33 @@ export function generateRandomString(length: number = 8): string {
   return result;
 }
 
-export function generateTestRole(overrides: Partial<TestRole> = {}): TestRole {
+// Get worker-specific prefix for test isolation
+export function getWorkerPrefix(workerIndex?: number): string {
+  // Use provided workerIndex or fallback to environment variable or default
+  const workerId = workerIndex !== undefined ? workerIndex.toString() : (process.env.TEST_WORKER_INDEX || '0');
+  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  return `W${workerId}_${timestamp}`;
+}
+
+export function generateTestRole(overrides: Partial<TestRole> = {}, workerIndex?: number): TestRole {
+  const prefix = getWorkerPrefix(workerIndex);
+  const workerId = workerIndex !== undefined ? workerIndex : 0;
+  const defaults = {
+    name: `${prefix}_Role_${generateRandomString(4)}`,
+    description: `Worker${workerId}: Auto-generated test role - ${generateRandomString(6)}`,
+  };
+  
+  // If name is provided in overrides, use it as-is, otherwise use generated name
   return {
-    name: `Test Role ${generateRandomString(4)}`,
-    description: `Auto-generated test role - ${generateRandomString(6)}`,
+    ...defaults,
     ...overrides
   };
 }
 
-export function generateTestPerson(overrides: Partial<TestPerson> = {}): TestPerson {
+export function generateTestPerson(overrides: Partial<TestPerson> = {}, workerIndex?: number): TestPerson {
+  const prefix = getWorkerPrefix(workerIndex);
   return {
-    fullName: `Test Person ${generateRandomString(4)}`,
+    fullName: `${prefix}_Person_${generateRandomString(4)}`,
     phone: `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
     ...overrides
   };

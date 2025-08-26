@@ -18,9 +18,7 @@ switch (databaseProvider.ToLowerInvariant())
             throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQL Server provider.");
         builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
         break;
-    case "entityframeworkinmemory":
-        builder.Services.AddInfrastructureEntityFrameworkInMemory();
-        break;
+    
     case "inmemory":
     default:
         builder.Services.AddInfrastructureInMemory();

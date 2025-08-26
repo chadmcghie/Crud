@@ -14,6 +14,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Run tests sequentially to avoid data conflicts */
   workers: 1, // Run tests sequentially to avoid data conflicts
+  /* Increase timeout for slow startup */
+  timeout: 60000, // 60 seconds per test
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
@@ -28,10 +30,10 @@ export default defineConfig({
     /* Record video on failure */
     video: 'retain-on-failure',
     /* Increase timeouts for better stability */
-    actionTimeout: 10000,
-    navigationTimeout: 30000,
+    actionTimeout: 15000,
+    navigationTimeout: 45000,
     /* Wait for network to be idle before considering navigation complete */
-    waitForLoadState: 'networkidle',
+    // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
   },
 
   /* Configure projects for major browsers */
@@ -78,6 +80,7 @@ export default defineConfig({
       command: 'cd ../../src/Api && dotnet run',
       port: 5172,
       reuseExistingServer: !process.env.CI,
+      timeout: 120000, // 2 minutes for API startup
       env: {
         ASPNETCORE_ENVIRONMENT: 'Development'
       }
@@ -86,6 +89,7 @@ export default defineConfig({
       command: 'cd ../../src/Angular && npm start',
       port: 4200,
       reuseExistingServer: !process.env.CI,
+      timeout: 180000, // 3 minutes for Angular startup (includes npm install if needed)
     }
   ],
 });

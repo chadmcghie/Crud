@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Local development configuration for Playwright tests
- * This version doesn't auto-start servers - you need to start them manually
+ * Parallel execution configuration for Playwright tests with true worker isolation
+ * Each worker gets its own API server and database for complete isolation
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
@@ -13,24 +13,27 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: 1, // Sequential execution for Respawn database reset isolation
+  /* Enable parallel execution with multiple workers */
+  workers: process.env.CI ? 2 : 3, // Use moderate number of workers for stability
   /* Ensure test isolation */
   globalSetup: undefined,
   globalTeardown: undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['json', { outputFile: 'test-results/results.json' }]
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:4200',
+    /* Base URL for shared API server */
+    baseURL: 'http://localhost:5172',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
-    /* Increase timeouts for better stability in parallel execution */
+    /* Increase timeouts for better stability with database resets */
     actionTimeout: 15000,
     navigationTimeout: 30000,
   },
@@ -38,26 +41,28 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
+      name: 'chromium-parallel',
       use: { ...devices['Desktop Chrome'] },
+      testMatch: ['**/api/*-parallel.spec.ts'], // Only run parallel-specific API tests
     },
 
-    // Temporarily disable firefox and webkit due to system dependency issues
+    // Uncomment when ready to test with other browsers
     // {
-    //   name: 'firefox',
+    //   name: 'firefox-parallel',
     //   use: { ...devices['Desktop Firefox'] },
+    //   testMatch: ['**/api/*.spec.ts'],
     // },
 
     // {
-    //   name: 'webkit',
+    //   name: 'webkit-parallel',
     //   use: { ...devices['Desktop Safari'] },
+    //   testMatch: ['**/api/*.spec.ts'],
     // },
   ],
 
   /* 
-   * NOTE: webServer configuration removed for local development
-   * You need to manually start:
-   * 1. API server on http://localhost:5172
-   * 2. Angular dev server on http://localhost:4200
+   * NOTE: Uses shared API server with database reset for isolation
+   * This provides good isolation with better resource efficiency
+   * Make sure API server is running on http://localhost:5172
    */
 });

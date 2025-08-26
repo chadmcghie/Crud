@@ -134,7 +134,9 @@ test.describe('Application Navigation and Layout', () => {
     
     // Refresh the page
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    // Wait for specific content instead of networkidle
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
+    await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
     
     // Should default back to people tab after refresh
     await expect(page.locator('app-people-list')).toBeVisible();

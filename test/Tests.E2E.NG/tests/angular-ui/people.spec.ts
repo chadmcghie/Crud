@@ -26,8 +26,9 @@ test.describe('People Management UI', () => {
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToPeopleTab();
     
-    // Wait for the page to fully load and network to be idle
-    await page.waitForLoadState('networkidle', { timeout: 10000 });
+    // Wait for the page to fully load - use specific selectors instead of networkidle
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 15000 });
+    await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -42,8 +43,13 @@ test.describe('People Management UI', () => {
       }
     }
     
-    // Wait for any pending operations to complete
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    // Wait for any pending operations to complete - use specific checks instead of networkidle
+    try {
+      await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 3000 });
+    } catch (error) {
+      // Page might be in a transitional state, that's okay for cleanup
+      console.warn('Page not fully loaded during cleanup, continuing...');
+    }
   });
 
   test('should display empty state when no people exist', async () => {

@@ -21,6 +21,14 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.HasIndex(r => r.Name)
             .IsUnique();
 
+        // Configure concurrency token
+        // Note: SQLite doesn't support IsRowVersion() the same way as SQL Server
+        // For SQLite compatibility, we'll configure it as a regular byte array
+        builder.Property(r => r.RowVersion)
+            .HasColumnType("BLOB")
+            .IsRequired(false)
+            .IsConcurrencyToken();
+
         builder.ToTable("Roles");
     }
 }

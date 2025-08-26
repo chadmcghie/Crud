@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './tests/api',
+  testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -33,6 +33,8 @@ export default defineConfig({
       use: { 
         // API tests don't need browser context
       },
+      testMatch: ['**/api/*.spec.ts'], // Exclude parallel tests
+      testIgnore: ['**/api/*-parallel.spec.ts'], // Explicitly ignore parallel tests
     },
   ],
 

@@ -8,6 +8,8 @@ The Playwright test suite has been successfully set up and is working correctly!
 - **✅ TypeScript Compilation**: All compilation errors fixed
 - **✅ Test Structure**: Properly organized test files and helpers
 - **✅ Multiple Configurations**: Different configs for different scenarios
+- **✅ Database Isolation**: Respawn-based database reset for clean test state
+- **✅ Parallel Execution**: Per-worker API servers for true isolation
 
 ## 🚀 Quick Start
 
@@ -25,6 +27,15 @@ npm run test:list-api
 
 # Run API tests (requires API server on localhost:5172)
 npm run test:api-only
+```
+
+#### **Parallel Tests** (New - Fast execution with isolation)
+```bash
+# List parallel tests
+npm run test:list-parallel
+
+# Run parallel tests (each worker gets own API server)
+npm run test:parallel
 ```
 
 #### **All Tests** (UI + API + Integration)

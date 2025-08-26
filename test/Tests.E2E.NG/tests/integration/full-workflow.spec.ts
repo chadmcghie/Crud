@@ -7,9 +7,9 @@ test.describe('Full Workflow Integration Tests', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, request }, testInfo) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request);
+    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
     
     // Clean up any existing data
     await apiHelpers.cleanupAll();
@@ -223,10 +223,11 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.switchToRolesTab();
     await pageHelpers.clickAddRole();
     
-    // Try to submit empty form
-    await page.click('button[type="submit"]');
+    // Verify submit button is disabled when form is empty (proper validation behavior)
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeDisabled();
     
-    // Should show validation error and not create role
+    // Verify no role was created (since form couldn't be submitted)
     const roles = await apiHelpers.getRoles();
     expect(roles).toHaveLength(0);
     
