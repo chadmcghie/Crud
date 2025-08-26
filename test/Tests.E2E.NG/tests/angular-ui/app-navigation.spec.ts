@@ -6,14 +6,14 @@ test.describe('Application Navigation and Layout', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, request }, testInfo) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request);
+    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
     
     // Clean up any existing data
     if (apiHelpers) {
       try {
-        await apiHelpers.cleanupAll();
+        await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
       } catch (error) {
         console.warn('Failed to cleanup before test:', error);
       }
@@ -24,7 +24,7 @@ test.describe('Application Navigation and Layout', () => {
     // Clean up after each test
     if (apiHelpers) {
       try {
-        await apiHelpers.cleanupAll();
+        await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
       } catch (error) {
         console.warn('Failed to cleanup after test:', error);
       }

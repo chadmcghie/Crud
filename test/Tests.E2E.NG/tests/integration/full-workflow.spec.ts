@@ -302,10 +302,21 @@ test.describe('Full Workflow Integration Tests', () => {
     
     // Refresh the browser
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    
+    // Wait for page to load with more flexible approach
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 8000 });
+    } catch (error) {
+      console.warn('Network idle timeout, falling back to domcontentloaded');
+      await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+    }
+    
+    // Wait for Angular to fully load
+    await page.waitForSelector('app-root', { timeout: 8000 });
+    await page.waitForTimeout(1000); // Additional wait for Angular initialization
     
     // Should default to people tab and show data
-    await expect(page.locator('app-people-list')).toBeVisible();
+    await expect(page.locator('app-people-list')).toBeVisible({ timeout: 10000 });
     await pageHelpers.verifyPersonExists(person.fullName);
     
     // Switch to roles tab and verify data

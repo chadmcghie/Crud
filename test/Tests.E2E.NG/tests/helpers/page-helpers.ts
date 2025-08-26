@@ -114,6 +114,9 @@ export class PageHelpers {
   async deleteRole(roleName: string): Promise<void> {
     const roleRow = this.page.locator(`tr:has-text("${roleName}")`);
     
+    // Wait for the row to be visible first
+    await roleRow.waitFor({ state: 'visible', timeout: 10000 });
+    
     // Handle the confirmation dialog - use once() to avoid multiple handlers
     this.page.once('dialog', async dialog => {
       expect(dialog.type()).toBe('confirm');
@@ -121,18 +124,20 @@ export class PageHelpers {
     });
     
     await roleRow.locator('button:has-text("Delete")').click();
-    // Wait for deletion to complete and UI to refresh
-    await this.page.waitForTimeout(1000);
-    // Verify the role is actually removed from the DOM
+    
+    // Wait for the role to actually be removed from the DOM
     await this.page.waitForFunction(
       (name) => {
         const rows = document.querySelectorAll('tr');
-        const element = Array.from(rows).find(row => row.textContent?.includes(name)) as HTMLElement;
-        return !element || element.style.display === 'none';
+        const element = Array.from(rows).find(row => row.textContent?.includes(name));
+        return !element;
       },
       roleName,
-      { timeout: 5000 }
+      { timeout: 10000 }
     );
+    
+    // Additional wait for UI to stabilize
+    await this.page.waitForTimeout(500);
   }
 
   async getRoleRowCount(): Promise<number> {
@@ -216,8 +221,19 @@ export class PageHelpers {
 
   async editPerson(personName: string): Promise<void> {
     const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    
+    // Wait for the row to be visible first
+    await personRow.waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Click the edit button
     await personRow.locator('button:has-text("Edit")').click();
-    await this.page.waitForSelector('app-people form');
+    
+    // Wait for the form to appear and be ready
+    await this.page.waitForSelector('app-people form', { timeout: 10000 });
+    await this.page.waitForSelector('input#fullName', { timeout: 5000 });
+    
+    // Additional wait for form to be fully loaded
+    await this.page.waitForTimeout(500);
   }
 
   async updatePersonForm(): Promise<void> {
@@ -238,6 +254,9 @@ export class PageHelpers {
   async deletePerson(personName: string): Promise<void> {
     const personRow = this.page.locator(`tr:has-text("${personName}")`);
     
+    // Wait for the row to be visible first
+    await personRow.waitFor({ state: 'visible', timeout: 10000 });
+    
     // Handle the confirmation dialog - use once() to avoid multiple handlers
     this.page.once('dialog', async dialog => {
       expect(dialog.type()).toBe('confirm');
@@ -245,20 +264,20 @@ export class PageHelpers {
     });
     
     await personRow.locator('button:has-text("Delete")').click();
-
     
-    // Wait for the person to actually be removed from the table
-    try {
-      await this.page.waitForFunction(
-        (name) => !document.querySelector(`tr:has-text("${name}")`)?.isConnected,
-        personName,
-        { timeout: 10000 }
-      );
-    } catch (error) {
-      // Fallback: wait for network to be idle
-      await this.page.waitForLoadState('networkidle', { timeout: 5000 });
-    }
-
+    // Wait for the person to actually be removed from the DOM
+    await this.page.waitForFunction(
+      (name) => {
+        const rows = document.querySelectorAll('tr');
+        const element = Array.from(rows).find(row => row.textContent?.includes(name));
+        return !element;
+      },
+      personName,
+      { timeout: 10000 }
+    );
+    
+    // Additional wait for UI to stabilize
+    await this.page.waitForTimeout(500);
   }
 
   async getPersonRowCount(): Promise<number> {
@@ -277,7 +296,11 @@ export class PageHelpers {
     // Wait for the element to be removed or not exist
     try {
       await this.page.waitForFunction(
-        (name) => !document.querySelector(`tr:has-text("${name}")`)?.isConnected,
+        (name) => {
+          const rows = document.querySelectorAll('tr');
+          const element = Array.from(rows).find(row => row.textContent?.includes(name));
+          return !element;
+        },
         personName,
         { timeout: 10000 }
       );

@@ -169,16 +169,22 @@ export class ApiHelpers {
 
   // Role API helpers with resilience
   async createRole(role: TestRole): Promise<any> {
-    // Add worker-specific prefix to avoid naming conflicts
-    const uniqueRole = {
+    // If role name already has worker prefix or is an explicit test name, use as-is
+    const hasWorkerPrefix = role.name.match(/^W\d+_/);
+    const isExplicitTestName = role.name.includes('ParallelTest_') || role.name.includes('ConcurrentRole_') || 
+                               role.name.includes('CleanStateTest_') || role.name.includes('Worker') ||
+                               role.name === 'API Role' || role.name === 'UI Role';
+    const hasExplicitDescription = role.description && (role.description.includes('Test role for') || role.description.includes('Worker'));
+    
+    const roleData = {
       ...role,
-      name: `${this.generateUniqueId()}_Role_${role.name}`,
-      description: role.description ? `Worker${this.workerId}: ${role.description}` : undefined
+      name: (hasWorkerPrefix || isExplicitTestName) ? role.name : `${this.generateUniqueId()}_Role_${role.name}`,
+      description: role.description ? ((hasWorkerPrefix || isExplicitTestName || hasExplicitDescription) ? role.description : `Worker${this.workerId}: ${role.description}`) : undefined
     };
 
     return this.retryOperation(async () => {
       const response = await this.request.post('http://localhost:5172/api/roles', {
-        data: uniqueRole
+        data: roleData
       });
       if (!response.ok()) {
         const errorText = await response.text();
@@ -237,16 +243,20 @@ export class ApiHelpers {
 
   // Person API helpers with resilience
   async createPerson(person: TestPerson): Promise<any> {
-    // Add worker-specific prefix to avoid naming conflicts
-    const uniquePerson = {
+    // If person name already has worker prefix or is an explicit test name, use as-is
+    const hasWorkerPrefix = person.fullName.match(/^W\d+_/);
+    const isExplicitTestName = person.fullName.includes('Rapid Person') || person.fullName.includes('API Person') ||
+                               person.fullName === 'UI Person';
+    
+    const personData = {
       ...person,
-      fullName: `${this.generateUniqueId()}_Person_${person.fullName}`,
+      fullName: (hasWorkerPrefix || isExplicitTestName) ? person.fullName : `${this.generateUniqueId()}_Person_${person.fullName}`,
       phone: person.phone || `+1-555-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
     };
 
     return this.retryOperation(async () => {
       const response = await this.request.post('http://localhost:5172/api/people', {
-        data: uniquePerson
+        data: personData
       });
       if (!response.ok()) {
         const errorText = await response.text();
@@ -385,12 +395,21 @@ export class ApiHelpers {
         
         // Force immediate cleanup for integration tests
         if (forceImmediate) {
-          // Clean up any test-related roles (including "UI Role")
-          return role.name === 'UI Role' || role.name.includes('W') && role.name.includes('_');
+          // Clean up any test-related roles (including "UI Role" and generated test roles)
+          return role.name === 'UI Role' || 
+                 (role.name.includes('W') && role.name.includes('_')) ||
+                 role.name.startsWith('Test Role') ||
+                 role.name.includes('Unique Role') ||
+                 role.name.includes('Rapid Role') ||
+                 role.name.includes('API Role');
         }
         
         // Only cleanup test roles that are old enough (safe for both sequential and parallel)
-        if (role.name.includes('W') && role.name.includes('_')) {
+        if ((role.name.includes('W') && role.name.includes('_')) || 
+            role.name.startsWith('Test Role') || 
+            role.name.includes('Unique Role') ||
+            role.name.includes('Rapid Role') ||
+            role.name.includes('API Role')) {
           
           // Handle both timestamp formats:
           // New format: W{worker}_T{timestamp}_... 
@@ -452,12 +471,17 @@ export class ApiHelpers {
       const peopleToCleanup = people.filter(person => {
         // Force immediate cleanup for integration tests
         if (forceImmediate) {
-          // Clean up any test-related people (including "UI Person")
-          return person.fullName === 'UI Person' || person.fullName.includes('W') && person.fullName.includes('_');
+          // Clean up any test-related people (including "UI Person" and generated test people)
+          return person.fullName === 'UI Person' || 
+                 (person.fullName.includes('W') && person.fullName.includes('_')) ||
+                 person.fullName.includes('Rapid Person') ||
+                 person.fullName.includes('API Person');
         }
         
         // Only cleanup test people that are old enough
-        if (person.fullName.includes('W') && person.fullName.includes('_')) {
+        if ((person.fullName.includes('W') && person.fullName.includes('_')) ||
+            person.fullName.includes('Rapid Person') ||
+            person.fullName.includes('API Person')) {
           // Handle both timestamp formats:
           // New format: W{worker}_T{timestamp}_... 
           // Old format: W{worker}_{6-digit-timestamp}_...
