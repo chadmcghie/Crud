@@ -23,7 +23,7 @@ cd test/Tests.E2E.NG
 # List API tests (58 tests)
 npm run test:list-api
 
-# Run API tests (requires API server on localhost:5000)
+# Run API tests (requires API server on localhost:5172)
 npm run test:api-only
 ```
 
@@ -63,14 +63,14 @@ npx playwright test --grep "should create a new role" --config=playwright.config
 ## 🔧 Prerequisites for Running Tests
 
 ### For API Tests Only
-1. **API Server** running on `http://localhost:5000`
+1. **API Server** running on `http://localhost:5172`
    ```bash
    cd ../../src/Api
    dotnet run
    ```
 
 ### For UI Tests
-1. **API Server** on `http://localhost:5000` (as above)
+1. **API Server** on `http://localhost:5172` (as above)
 2. **Angular Dev Server** on `http://localhost:4200`
    ```bash
    cd ../../src/Angular
@@ -138,7 +138,7 @@ npm run test:local       # For all tests
 
 ### Issue: Tests fail with connection errors
 **Solution**: Ensure the required servers are running:
-- API: `http://localhost:5000`
+- API: `http://localhost:5172`
 - Angular: `http://localhost:4200`
 
 ### Issue: "write EPIPE" when listing tests

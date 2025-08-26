@@ -84,7 +84,7 @@ Tests.E2E.NG/
    ```
 
 3. **Ensure the API and Angular applications are configured:**
-   - API should run on `http://localhost:5000`
+   - API should run on `http://localhost:5172`
    - Angular should run on `http://localhost:4200`
 
 ## Running Tests
@@ -137,7 +137,7 @@ The tests are configured to:
 
 The `playwright.config.ts` file includes:
 - **Base URL**: `http://localhost:4200`
-- **API Server**: Automatically started on port 5000
+- **API Server**: Automatically started on port 5172
 - **Angular Server**: Automatically started on port 4200
 - **Browsers**: Chrome, Firefox, WebKit
 - **Retries**: 2 retries on CI, 0 locally

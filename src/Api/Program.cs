@@ -50,6 +50,7 @@ namespace Api
             builder.Services.AddControllers();            
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddHealthChecks();
             
             builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));            
             builder.Services.AddAutoMapper(
@@ -76,6 +77,7 @@ namespace Api
             app.UseCors("AllowAngular");
             app.UseAuthorization();
             app.MapControllers();
+            app.MapHealthChecks("/health");
 
             await app.RunAsync();
         }
