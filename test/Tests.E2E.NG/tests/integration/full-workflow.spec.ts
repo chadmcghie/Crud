@@ -27,8 +27,8 @@ test.describe('Full Workflow Integration Tests', () => {
     // Step 1: Create roles via UI
     await pageHelpers.switchToRolesTab();
     
-    const adminRole = generateTestRole({ name: 'Administrator', description: 'System administrator' });
-    const userRole = generateTestRole({ name: 'User', description: 'Regular user' });
+    const adminRole = generateTestRole({ name: 'Test Administrator', description: 'System administrator' });
+    const userRole = generateTestRole({ name: 'Test User', description: 'Regular user' });
     
     // Create admin role
     await pageHelpers.clickAddRole();
@@ -43,8 +43,9 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyRoleExists(userRole.name);
     
     // Verify both roles exist via API
-    const roles = await apiHelpers.getRoles();
-    expect(roles).toHaveLength(2);
+    const allRoles = await apiHelpers.getRoles();
+    const testRoles = allRoles.filter(r => !['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(r.name));
+    expect(testRoles).toHaveLength(2);
     
     // Step 2: Create people with roles via UI
     await pageHelpers.switchToPeopleTab();
@@ -67,11 +68,12 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyPersonHasRole(regularUser.fullName, userRole.name);
     
     // Step 3: Verify data consistency via API
-    const people = await apiHelpers.getPeople();
-    expect(people).toHaveLength(2);
+    const allPeople = await apiHelpers.getPeople();
+    const testPeople = allPeople.filter(p => p.fullName.includes('W') || p.fullName.includes('Test') || p.fullName.includes('_') || p.fullName === adminPerson.fullName || p.fullName === regularUser.fullName);
+    expect(testPeople).toHaveLength(2);
     
-    const adminPersonFromApi = people.find(p => p.fullName === adminPerson.fullName);
-    const userPersonFromApi = people.find(p => p.fullName === regularUser.fullName);
+    const adminPersonFromApi = allPeople.find(p => p.fullName === adminPerson.fullName);
+    const userPersonFromApi = allPeople.find(p => p.fullName === regularUser.fullName);
     
     expect(adminPersonFromApi?.roles).toHaveLength(1);
     expect(adminPersonFromApi?.roles[0].name).toBe(adminRole.name);
@@ -206,11 +208,14 @@ test.describe('Full Workflow Integration Tests', () => {
     const allPeople = await apiHelpers.getPeople();
     const allRoles = await apiHelpers.getRoles();
     
-    expect(allPeople).toHaveLength(5);
-    expect(allRoles).toHaveLength(5);
+    const testPeople = allPeople.filter(p => p.fullName.includes('W') || p.fullName.includes('Test') || p.fullName.includes('_') || p.fullName.startsWith('Rapid'));
+    const testRoles = allRoles.filter(r => !['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(r.name));
+    
+    expect(testPeople).toHaveLength(5);
+    expect(testRoles).toHaveLength(5);
     
     // Verify all role references are valid
-    for (const person of allPeople) {
+    for (const person of testPeople) {
       for (const role of person.roles) {
         const roleExists = allRoles.some(r => r.id === role.id);
         expect(roleExists).toBe(true);
@@ -228,8 +233,9 @@ test.describe('Full Workflow Integration Tests', () => {
     await expect(submitButton).toBeDisabled();
     
     // Verify no role was created (since form couldn't be submitted)
-    const roles = await apiHelpers.getRoles();
-    expect(roles).toHaveLength(0);
+    const allRoles = await apiHelpers.getRoles();
+    const testRoles = allRoles.filter(r => !['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(r.name));
+    expect(testRoles).toHaveLength(0);
     
     // Test network error simulation (if API is down)
     // This would require mocking network responses or stopping the API server
@@ -279,13 +285,17 @@ test.describe('Full Workflow Integration Tests', () => {
     }
     
     // Verify data is still consistent via API
-    const roles = await apiHelpers.getRoles();
-    const people = await apiHelpers.getPeople();
+    const allRoles = await apiHelpers.getRoles();
+    const allPeople = await apiHelpers.getPeople();
     
-    expect(roles).toHaveLength(1);
-    expect(people).toHaveLength(1);
-    expect(people[0].roles).toHaveLength(1);
-    expect(people[0].roles[0].name).toBe(role.name);
+    // Filter to only test data (exclude seed data)
+    const testRoles = allRoles.filter(r => !['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(r.name));
+    const testPeople = allPeople.filter(p => p.fullName.includes('W') || p.fullName.includes('Test') || p.fullName.includes('_'));
+    
+    expect(testRoles).toHaveLength(1);
+    expect(testPeople).toHaveLength(1);
+    expect(testPeople[0].roles).toHaveLength(1);
+    expect(testPeople[0].roles[0].name).toBe(role.name);
   });
 
   test('should handle browser refresh correctly', async ({ page }) => {

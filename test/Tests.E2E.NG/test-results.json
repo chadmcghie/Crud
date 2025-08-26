@@ -1,0 +1,527 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/playwright.config.no-download.ts",
+    "rootDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests",
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/chadmcghie/Crud/commit/de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+        "commitHash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+        "buildHref": "https://github.com/chadmcghie/Crud/actions/runs/17250576048"
+      },
+      "gitCommit": {
+        "shortHash": "de389d8",
+        "hash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+        "subject": "Complete e2e test analysis and fixing documentation",
+        "body": "Complete e2e test analysis and fixing documentation\n\nCo-authored-by: chadmcghie <57805661+chadmcghie@users.noreply.github.com>\n",
+        "author": {
+          "name": "copilot-swe-agent[bot]",
+          "email": "198982749+Copilot@users.noreply.github.com",
+          "time": 1756242170000
+        },
+        "committer": {
+          "name": "copilot-swe-agent[bot]",
+          "email": "198982749+Copilot@users.noreply.github.com",
+          "time": 1756242170000
+        },
+        "branch": "copilot/fix-d0cb3665-4d58-416d-84be-ea58997f88c3"
+      },
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/chadmcghie/Crud/commit/de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "commitHash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "buildHref": "https://github.com/chadmcghie/Crud/actions/runs/17250576048"
+          },
+          "gitCommit": {
+            "shortHash": "de389d8",
+            "hash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "subject": "Complete e2e test analysis and fixing documentation",
+            "body": "Complete e2e test analysis and fixing documentation\n\nCo-authored-by: chadmcghie <57805661+chadmcghie@users.noreply.github.com>\n",
+            "author": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "committer": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "branch": "copilot/fix-d0cb3665-4d58-416d-84be-ea58997f88c3"
+          },
+          "actualWorkers": 1
+        },
+        "id": "api-tests",
+        "name": "api-tests",
+        "testDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests",
+        "testIgnore": [
+          "**/api/*-parallel.spec.ts"
+        ],
+        "testMatch": [
+          "**/api/*.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/chadmcghie/Crud/commit/de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "commitHash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "buildHref": "https://github.com/chadmcghie/Crud/actions/runs/17250576048"
+          },
+          "gitCommit": {
+            "shortHash": "de389d8",
+            "hash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "subject": "Complete e2e test analysis and fixing documentation",
+            "body": "Complete e2e test analysis and fixing documentation\n\nCo-authored-by: chadmcghie <57805661+chadmcghie@users.noreply.github.com>\n",
+            "author": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "committer": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "branch": "copilot/fix-d0cb3665-4d58-416d-84be-ea58997f88c3"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chrome-system",
+        "name": "chrome-system",
+        "testDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/angular-ui/*.spec.ts",
+          "**/integration/*.spec.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/chadmcghie/Crud/commit/de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "commitHash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "buildHref": "https://github.com/chadmcghie/Crud/actions/runs/17250576048"
+          },
+          "gitCommit": {
+            "shortHash": "de389d8",
+            "hash": "de389d81ff45dbb7d9408ef4ed6eccd819353d24",
+            "subject": "Complete e2e test analysis and fixing documentation",
+            "body": "Complete e2e test analysis and fixing documentation\n\nCo-authored-by: chadmcghie <57805661+chadmcghie@users.noreply.github.com>\n",
+            "author": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "committer": {
+              "name": "copilot-swe-agent[bot]",
+              "email": "198982749+Copilot@users.noreply.github.com",
+              "time": 1756242170000
+            },
+            "branch": "copilot/fix-d0cb3665-4d58-416d-84be-ea58997f88c3"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-system",
+        "name": "chromium-system",
+        "testDir": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/angular-ui/*.spec.ts",
+          "**/integration/*.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "integration/full-workflow.spec.ts",
+      "file": "integration/full-workflow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Full Workflow Integration Tests",
+          "file": "integration/full-workflow.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should complete full role and person management workflow",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome-system",
+                  "projectName": "chrome-system",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 14740,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5",
+                        "location": {
+                          "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                          "column": 24,
+                          "line": 368
+                        },
+                        "snippet": "   at helpers/page-helpers.ts:368\n\n\u001b[0m \u001b[90m 366 |\u001b[39m       \u001b[90m// If no empty state element, verify table is empty\u001b[39m\n \u001b[90m 367 |\u001b[39m       \u001b[36mconst\u001b[39m rowCount \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m tableRows\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 368 |\u001b[39m       expect(rowCount)\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 369 |\u001b[39m     }\n \u001b[90m 370 |\u001b[39m\n \u001b[90m 371 |\u001b[39m   }\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                            "column": 24,
+                            "line": 368
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n\n   at helpers/page-helpers.ts:368\n\n  366 |       // If no empty state element, verify table is empty\n  367 |       const rowCount = await tableRows.count();\n> 368 |       expect(rowCount).toBe(0);\n      |                        ^\n  369 |     }\n  370 |\n  371 |   }\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🧹 Worker 0: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: Comprehensive cleanup completed\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 0: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 0: Comprehensive cleanup completed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-26T21:40:51.427Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                        "column": 24,
+                        "line": 368
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 14694,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5",
+                        "location": {
+                          "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                          "column": 24,
+                          "line": 368
+                        },
+                        "snippet": "   at helpers/page-helpers.ts:368\n\n\u001b[0m \u001b[90m 366 |\u001b[39m       \u001b[90m// If no empty state element, verify table is empty\u001b[39m\n \u001b[90m 367 |\u001b[39m       \u001b[36mconst\u001b[39m rowCount \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m tableRows\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 368 |\u001b[39m       expect(rowCount)\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 369 |\u001b[39m     }\n \u001b[90m 370 |\u001b[39m\n \u001b[90m 371 |\u001b[39m   }\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                            "column": 24,
+                            "line": 368
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n\n   at helpers/page-helpers.ts:368\n\n  366 |       // If no empty state element, verify table is empty\n  367 |       const rowCount = await tableRows.count();\n> 368 |       expect(rowCount).toBe(0);\n      |                        ^\n  369 |     }\n  370 |\n  371 |   }\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🧹 Worker 1: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: Comprehensive cleanup completed\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 1: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 1: Comprehensive cleanup completed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-08-26T21:41:06.924Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system-retry1/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                        "column": 24,
+                        "line": 368
+                      }
+                    },
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 14720,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5",
+                        "location": {
+                          "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                          "column": 24,
+                          "line": 368
+                        },
+                        "snippet": "   at helpers/page-helpers.ts:368\n\n\u001b[0m \u001b[90m 366 |\u001b[39m       \u001b[90m// If no empty state element, verify table is empty\u001b[39m\n \u001b[90m 367 |\u001b[39m       \u001b[36mconst\u001b[39m rowCount \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m tableRows\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 368 |\u001b[39m       expect(rowCount)\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 369 |\u001b[39m     }\n \u001b[90m 370 |\u001b[39m\n \u001b[90m 371 |\u001b[39m   }\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                            "column": 24,
+                            "line": 368
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m10\u001b[39m\n\n   at helpers/page-helpers.ts:368\n\n  366 |       // If no empty state element, verify table is empty\n  367 |       const rowCount = await tableRows.count();\n> 368 |       expect(rowCount).toBe(0);\n      |                        ^\n  369 |     }\n  370 |\n  371 |   }\n    at PageHelpers.verifyEmptyState (/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts:368:24)\n    at /home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/integration/full-workflow.spec.ts:109:5"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🧹 Worker 2: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: Comprehensive cleanup completed\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting comprehensive cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting people cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting role cleanup...\n"
+                        },
+                        {
+                          "text": "🧹 Worker 2: Starting walls cleanup...\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale people to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale roles to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: No stale walls to cleanup\n"
+                        },
+                        {
+                          "text": "✅ Worker 2: Comprehensive cleanup completed\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2025-08-26T21:41:22.364Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system-retry2/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/test-results/integration-full-workflow--f6bf1--person-management-workflow-chrome-system-retry2/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/runner/work/Crud/Crud/test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+                        "column": 24,
+                        "line": 368
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "113fcceb75fd302cceda-139dada2e47807bcc7eb",
+              "file": "integration/full-workflow.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-08-26T21:40:50.658Z",
+    "duration": 46647.698,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
