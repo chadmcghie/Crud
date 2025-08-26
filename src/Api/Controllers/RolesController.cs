@@ -1,5 +1,7 @@
 using Api.Dtos;
-using App.Abstractions;
+using App.Commands.Roles;
+using App.Queries.Roles;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -7,19 +9,19 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class RolesController(IRoleService roles) : ControllerBase
+public class RolesController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
-        var items = await roles.ListAsync(ct);
+        var items = await mediator.Send(new ListRolesQuery(), ct);
         return Ok(items.Select(r => new RoleDto(r.Id, r.Name, r.Description)));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
-        var r = await roles.GetAsync(id, ct);
+        var r = await mediator.Send(new GetRoleQuery(id), ct);
         if (r is null) return NotFound();
         return Ok(new RoleDto(r.Id, r.Name, r.Description));
     }
@@ -27,7 +29,7 @@ public class RolesController(IRoleService roles) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
-        var r = await roles.CreateAsync(request.Name, request.Description, ct);
+        var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
         return CreatedAtAction(nameof(Get), new { id = r.Id }, new RoleDto(r.Id, r.Name, r.Description));
     }
 
@@ -36,7 +38,7 @@ public class RolesController(IRoleService roles) : ControllerBase
     {
         try
         {
-            await roles.UpdateAsync(id, request.Name, request.Description, ct);
+            await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -50,7 +52,7 @@ public class RolesController(IRoleService roles) : ControllerBase
     {
         try
         {
-            await roles.DeleteAsync(id, ct);
+            await mediator.Send(new DeleteRoleCommand(id), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
