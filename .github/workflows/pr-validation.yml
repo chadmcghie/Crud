@@ -16,10 +16,38 @@ env:
 # - E2E Tests: SQLite (consistent, realistic, free)
 
 jobs:
+  # Pre-check: Determine if workflow should run
+  should-run:
+    name: Check if workflow should run
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+    - name: Check if should run
+      id: check
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "✅ Running for pull request"
+        elif [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "${{ github.event.head_commit.author.email }}" == *"copilot"* ]] || [[ "${{ github.event.head_commit.author.name }}" == *"copilot"* ]]; then
+            echo "should-run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping workflow - push from Copilot detected"
+          else
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            echo "✅ Running for regular push"
+          fi
+        else
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "✅ Running for other event type"
+        fi
+
   # Job 1a: Backend Unit Tests (Fast)
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
+    needs: should-run
+    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -50,6 +78,8 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
+    needs: should-run
+    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -74,7 +104,8 @@ jobs:
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: backend-unit-tests
+    needs: [should-run, backend-unit-tests]
+    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -110,7 +141,8 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    needs: [should-run, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -209,8 +241,8 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
-    if: always()
+    needs: [should-run, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    if: always() && needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Download all test results
