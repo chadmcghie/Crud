@@ -13,7 +13,7 @@ env:
 # Database Strategy:
 # - Unit Tests: No database (pure business logic)
 # - Integration Tests: SQLite (fast, free, isolated)
-# - E2E Tests: In-Memory EF (completely free, fast)
+# - E2E Tests: SQLite (consistent, realistic, free)
 
 jobs:
   # Job 1a: Backend Unit Tests (Fast)
@@ -160,7 +160,8 @@ jobs:
         ASPNETCORE_URLS: http://localhost:5172
         # SQLite is used automatically - no external database needed
         CI: true
-        DatabaseProvider: EntityFrameworkInMemory
+        DatabaseProvider: SQLite
+        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
         
     - name: Wait for API to be ready
       run: |
@@ -223,7 +224,7 @@ jobs:
         echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Domain & Application layer tests |" >> $GITHUB_STEP_SUMMARY
         echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Angular component & service tests |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | SQLite database & repository tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| End-to-End Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Full application workflow tests (in-memory DB) |" >> $GITHUB_STEP_SUMMARY
+        echo "| End-to-End Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Full application workflow tests (SQLite DB) |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📊 Overall Status" >> $GITHUB_STEP_SUMMARY
         if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && [ "${{ needs.backend-integration-tests.result }}" == "success" ] && [ "${{ needs.e2e-tests.result }}" == "success" ]; then
