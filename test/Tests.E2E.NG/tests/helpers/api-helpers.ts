@@ -378,17 +378,19 @@ export class ApiHelpers {
       // Unless forceImmediate is true, then cleanup all test roles
       const oneSecondAgo = new Date(Date.now() - 1 * 1000);
       const rolesToCleanup = roles.filter(role => {
-        // Skip seed data roles
-        if (['Administrator', 'Manager', 'Developer', 'Analyst', 'User', 'UI Role'].includes(role.name)) {
+        // Skip seed data roles (but not test roles like "UI Role")
+        if (['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(role.name)) {
           return false;
         }
         
+        // Force immediate cleanup for integration tests
+        if (forceImmediate) {
+          // Clean up any test-related roles (including "UI Role")
+          return role.name === 'UI Role' || role.name.includes('W') && role.name.includes('_');
+        }
+        
         // Only cleanup test roles that are old enough (safe for both sequential and parallel)
-        // Unless forceImmediate is true
         if (role.name.includes('W') && role.name.includes('_')) {
-          if (forceImmediate) {
-            return true; // Clean up all test roles immediately
-          }
           
           // Handle both timestamp formats:
           // New format: W{worker}_T{timestamp}_... 
@@ -439,14 +441,21 @@ export class ApiHelpers {
     }
   }
 
-  async cleanupPeople(): Promise<void> {
+  async cleanupPeople(forceImmediate: boolean = false): Promise<void> {
     console.log(`🧹 Worker ${this.workerId}: Starting people cleanup...`);
     
     try {
       const people = await this.getPeople();
       // Only cleanup OLD test people (older than 1 second) for sequential execution
+      // Unless forceImmediate is true, then cleanup all test people
       const oneSecondAgo = new Date(Date.now() - 1 * 1000);
       const peopleToCleanup = people.filter(person => {
+        // Force immediate cleanup for integration tests
+        if (forceImmediate) {
+          // Clean up any test-related people (including "UI Person")
+          return person.fullName === 'UI Person' || person.fullName.includes('W') && person.fullName.includes('_');
+        }
+        
         // Only cleanup test people that are old enough
         if (person.fullName.includes('W') && person.fullName.includes('_')) {
           // Handle both timestamp formats:
@@ -563,7 +572,7 @@ export class ApiHelpers {
     try {
       // Cleanup people and roles in parallel, but handle failures gracefully
       const cleanupPromises = [
-        this.cleanupPeople().catch(error => {
+        this.cleanupPeople(forceImmediate).catch(error => {
           console.warn(`⚠️  Worker ${this.workerId}: People cleanup failed:`, error);
           return null; // Don't fail the entire cleanup
         }),

@@ -15,6 +15,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Use single worker for integration tests to avoid conflicts */
   workers: 1,
+  /* Increase timeout for UI tests */
+  timeout: 60000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],

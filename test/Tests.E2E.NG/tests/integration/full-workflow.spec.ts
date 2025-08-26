@@ -11,16 +11,16 @@ test.describe('Full Workflow Integration Tests', () => {
     pageHelpers = new PageHelpers(page);
     apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
     
-    // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    // Force immediate cleanup for UI tests to ensure complete isolation
+    await apiHelpers.cleanupAll(true);
     
     // Navigate to the app
     await pageHelpers.navigateToApp();
   });
 
   test.afterEach(async () => {
-    // Clean up after each test
-    await apiHelpers.cleanupAll();
+    // Force immediate cleanup after each test
+    await apiHelpers.cleanupAll(true);
   });
 
   test('should complete full role and person management workflow', async () => {
