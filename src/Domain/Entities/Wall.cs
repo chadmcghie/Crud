@@ -1,17 +1,39 @@
-using System.ComponentModel.DataAnnotations;
+using Ardalis.GuardClauses;
 
 namespace Domain.Entities
 {
     public class Wall
     {
+        private string _name = string.Empty;
+        private string? _description;
+        private string _assemblyType = string.Empty;
+        private string? _assemblyDetails;
+
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
-        [MaxLength(200)]
-        public string Name { get; set; } = string.Empty;
+        public string Name 
+        { 
+            get => _name;
+            set
+            {
+                Guard.Against.NullOrWhiteSpace(value, nameof(value));
+                Guard.Against.StringTooLong(value, 200, nameof(value));
+                _name = value;
+            }
+        }
 
-        [MaxLength(1000)]
-        public string? Description { get; set; }
+        public string? Description 
+        { 
+            get => _description;
+            set
+            {
+                if (value != null)
+                {
+                    Guard.Against.StringTooLong(value, 1000, nameof(value));
+                }
+                _description = value;
+            }
+        }
 
         // Geometry properties
         public double Length { get; set; } // in feet
@@ -19,12 +41,29 @@ namespace Domain.Entities
         public double Thickness { get; set; } // in inches
 
         // Assembly type properties
-        [Required]
-        [MaxLength(500)]
-        public string AssemblyType { get; set; } = string.Empty; // e.g., "2x4 16\" on center with R13 fiberglass insulation"
+        public string AssemblyType 
+        { 
+            get => _assemblyType;
+            set
+            {
+                Guard.Against.NullOrWhiteSpace(value, nameof(value));
+                Guard.Against.StringTooLong(value, 500, nameof(value));
+                _assemblyType = value;
+            }
+        }
 
-        [MaxLength(1000)]
-        public string? AssemblyDetails { get; set; } // Additional details about the assembly
+        public string? AssemblyDetails 
+        { 
+            get => _assemblyDetails;
+            set
+            {
+                if (value != null)
+                {
+                    Guard.Against.StringTooLong(value, 1000, nameof(value));
+                }
+                _assemblyDetails = value;
+            }
+        }
 
         // Energy modeling properties
         public double? RValue { get; set; } // Thermal resistance
@@ -38,5 +77,18 @@ namespace Domain.Entities
         // Metadata
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        public Wall(string name, string assemblyType, string? description = null, string? assemblyDetails = null)
+        {
+            Name = name; // This will use the setter validation
+            AssemblyType = assemblyType; // This will use the setter validation
+            Description = description; // This will use the setter validation
+            AssemblyDetails = assemblyDetails; // This will use the setter validation
+        }
+
+        // Parameterless constructor for EF Core and other frameworks
+        public Wall()
+        {
+        }
     }
 }
