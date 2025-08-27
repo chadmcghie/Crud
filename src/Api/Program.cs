@@ -1,159 +1,142 @@
 using App;
 using Infrastructure;
-using static System.Net.Mime.MediaTypeNames;
+using Serilog;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Api
 {
     /// <summary>
-    /// Custom DateTime converter that ensures UTC DateTime values are serialized with "Z" suffix
+    /// DateTime converter that round-trips as UTC and writes "Z".
     /// </summary>
-    public class UtcDateTimeConverter : JsonConverter<DateTime>
+    public sealed class UtcDateTimeConverter : JsonConverter<DateTime>
     {
         public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return DateTime.Parse(reader.GetString()!);
+            // System.Text.Json handles ISO 8601 including "Z" correctly here
+            var dt = reader.GetDateTime();
+            return dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
         }
 
         public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
         {
-            // Ensure the DateTime is treated as UTC and formatted with "Z" suffix
-            var utcValue = value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(value, DateTimeKind.Utc) : value.ToUniversalTime();
-            writer.WriteStringValue(utcValue.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
+            var utc = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+            writer.WriteStringValue(utc.ToString("O")); // "O" adds Z for UTC
         }
     }
 
     /// <summary>
-    /// Custom nullable DateTime converter that ensures UTC DateTime values are serialized with "Z" suffix
+    /// Nullable variant of UtcDateTimeConverter.
     /// </summary>
-    public class UtcNullableDateTimeConverter : JsonConverter<DateTime?>
+    public sealed class UtcNullableDateTimeConverter : JsonConverter<DateTime?>
     {
         public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var stringValue = reader.GetString();
-            return string.IsNullOrEmpty(stringValue) ? null : DateTime.Parse(stringValue);
+            if (reader.TokenType == JsonTokenType.Null) return null;
+            var dt = reader.GetDateTime();
+            return dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
         }
 
         public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
         {
-            if (value.HasValue)
-            {
-                // Ensure the DateTime is treated as UTC and formatted with "Z" suffix
-                var utcValue = value.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : value.Value.ToUniversalTime();
-                writer.WriteStringValue(utcValue.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"));
-            }
-            else
+            if (!value.HasValue)
             {
                 writer.WriteNullValue();
+                return;
             }
+
+            var utc = value.Value.Kind == DateTimeKind.Utc ? value.Value : value.Value.ToUniversalTime();
+            writer.WriteStringValue(utc.ToString("O"));
         }
     }
+
     public class Program
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            // 1) Bootstrap Serilog from configuration before building the host
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
+                    .Build())
+                .CreateLogger();
 
-            builder.Services.AddApplication();
-            
-            // Configure database provider based on configuration
-            var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite";
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            
-            // Support worker-specific databases for E2E test isolation
-            var workerDatabase = Environment.GetEnvironmentVariable("WORKER_DATABASE");
-            var workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX");
-            
-            if (!string.IsNullOrEmpty(workerDatabase) && databaseProvider.ToLowerInvariant() == "sqlite")
+            try
             {
-                connectionString = $"Data Source={workerDatabase}";
-                Console.WriteLine($"🗄️  Using worker-specific database: {workerDatabase}");
-            }
-            else if (!string.IsNullOrEmpty(workerIndex) && databaseProvider.ToLowerInvariant() == "sqlite")
-            {
-                // Auto-generate worker-specific database name
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var workerDbName = $"CrudAppTest_Worker{workerIndex}_{timestamp}.db";
-                connectionString = $"Data Source={workerDbName}";
-                Console.WriteLine($"🗄️  Auto-generated worker database for worker {workerIndex}: {workerDbName}");
-            }
-            
-            // Support tenant-based isolation for E2E tests
-            var tenantPrefix = Environment.GetEnvironmentVariable("TENANT_PREFIX");
-            if (!string.IsNullOrEmpty(tenantPrefix))
-            {
-                Console.WriteLine($"🏢 Using tenant-based isolation with prefix: {tenantPrefix}");
-            }
+                Log.Information("Starting Crud API application");
 
-            switch (databaseProvider.ToLowerInvariant())
-            {
-                case "sqlserver":
-                    if (string.IsNullOrEmpty(connectionString))
-                        throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQL Server provider.");
-                    builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
-                    break;
-                case "sqlite":
-                default:
-                    if (string.IsNullOrEmpty(connectionString))
-                        throw new InvalidOperationException("Connection string 'DefaultConnection' is required when using SQLite provider.");
-                    builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
-                    break;
-            }
+                var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAngular", policy =>
+                // Replace default logging with Serilog
+                builder.Host.UseSerilog();
+
+                // 2) Observability: OpenTelemetry (logs/traces/metrics)
+                builder.Services.AddOpenTelemetry()
+                    .ConfigureResource(r => r
+                        .AddService(serviceName: "Crud.Api", serviceVersion: "1.0.0")
+                        .AddAttributes(new Dictionary<string, object>
+                        {
+                            ["deployment.environment"] = builder.Environment.EnvironmentName
+                        }))
+                    .WithTracing(t => t
+                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddConsoleExporter())
+                    .WithMetrics(m => m
+                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddConsoleExporter());
+
+                // 3) App & Infra
+                builder.Services.AddApplication();
+
+                var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+                // E2E test isolation helpers (only for SQLite)
+                var workerDatabase = Environment.GetEnvironmentVariable("WORKER_DATABASE");
+                var workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX");
+
+                if (databaseProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
                 {
-                    policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-            });
-            builder.Services.AddControllers()
-                .AddJsonOptions(options =>
+                    if (!string.IsNullOrWhiteSpace(workerDatabase))
+                    {
+                        connectionString = $"Data Source={workerDatabase}";
+                        Log.Information("🗄️ Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(workerIndex))
+                    {
+                        var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        var workerDbName = $"CrudAppTest_Worker{workerIndex}_{ts}.db";
+                        connectionString = $"Data Source={workerDbName}";
+                        Log.Information("🗄️ Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                    }
+
+                    var tenantPrefix = Environment.GetEnvironmentVariable("TENANT_PREFIX");
+                    if (!string.IsNullOrWhiteSpace(tenantPrefix))
+                    {
+                        Log.Information("🏢 Tenant-based isolation prefix: {TenantPrefix}", tenantPrefix);
+                    }
+                }
+
+                bool usingEfProvider = false;
+
+                switch (databaseProvider.ToLowerInvariant())
                 {
-                    // Configure DateTime serialization to include UTC "Z" suffix
-                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                    // Configure property naming to camelCase
-                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-                    // Add custom DateTime converters to ensure UTC "Z" suffix
-                    options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
-                    options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
-                });            
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            builder.Services.AddHealthChecks();
-            
-            builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));            
-            builder.Services.AddAutoMapper(
-                cfg => { },
-                typeof(App.DependencyInjection).Assembly, 
-                typeof(Infrastructure.DependencyInjection).Assembly
-                );
+                    case "sqlserver":
+                        if (string.IsNullOrWhiteSpace(connectionString))
+                            throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQL Server.");
+                        builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
+                        Log.Information("Using SQL Server provider");
+                        usingEfProvider = true;
+                        break;
 
-            var app = builder.Build();
-
-            // Ensure database is created for Entity Framework providers
-            if (databaseProvider.ToLowerInvariant() is "sqlserver" or "sqlite" or "entityframeworkinmemory")
-            {
-                await app.Services.EnsureDatabaseAsync();
-            }
-            
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseCors("AllowAngular");
-            app.UseAuthorization();
-            app.MapControllers();
-            app.MapHealthChecks("/health");
-
-            await app.RunAsync();
-        }
-    }
-}
+                    case "sqlite":
+                        if (string.IsNullOrWhiteSpace(connectionString))
+                            throw new InvalidOperationException("Connection string
