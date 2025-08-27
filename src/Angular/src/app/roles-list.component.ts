@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService, RoleDto } from './api.service';
 
@@ -173,8 +173,8 @@ export class RolesListComponent implements OnInit {
   roles: RoleDto[] = [];
   @Output() editRole = new EventEmitter<RoleDto>();
   @Output() addRole = new EventEmitter<void>();
-
-  constructor(private api: ApiService) {}
+  
+  private api = inject(ApiService);
 
   ngOnInit() {
     this.loadRoles();

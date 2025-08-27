@@ -6,7 +6,7 @@ export class CustomValidators {
       const value = control.value;
       if (!value) return null;
       
-      const namePattern = /^[a-zA-Z\s\-'\.]+$/;
+      const namePattern = /^[a-zA-Z\s\-'.]+$/;
       if (!namePattern.test(value)) {
         return { invalidFullName: 'Full name contains invalid characters' };
       }
@@ -24,7 +24,7 @@ export class CustomValidators {
       const value = control.value;
       if (!value) return null;
       
-      const phonePattern = /^\+?[\d\s\-\(\)\.]{7,15}$/;
+      const phonePattern = /^\+?[\d\s\-().]{7,15}$/;
       if (!phonePattern.test(value)) {
         return { invalidPhone: 'Phone number must be a valid format' };
       }
@@ -79,7 +79,7 @@ export class CustomValidators {
       if (!value || !Array.isArray(value)) return null;
       
       const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const invalidGuids = value.filter((id: any) => 
+      const invalidGuids = value.filter((id: unknown) => 
         typeof id !== 'string' || !guidPattern.test(id)
       );
       

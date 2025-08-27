@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService, PersonResponse } from './api.service';
 
@@ -198,8 +198,8 @@ export class PeopleListComponent implements OnInit {
   error: string | null = null;
   @Output() editPerson = new EventEmitter<PersonResponse>();
   @Output() addPerson = new EventEmitter<void>();
-
-  constructor(private api: ApiService) {}
+  
+  private api = inject(ApiService);
 
   ngOnInit() {
     this.loadPeople();

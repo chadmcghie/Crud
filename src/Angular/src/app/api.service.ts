@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -34,8 +34,7 @@ export interface UpdatePersonRequest {
 export class ApiService {
   // Use relative base URL so dev server proxy can forward to API
   private baseUrl = '/api';
-
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   // Roles
   listRoles(): Observable<RoleDto[]> {
