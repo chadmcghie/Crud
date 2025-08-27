@@ -16,8 +16,7 @@ This project follows Clean Architecture principles with the following structure:
 
 - **Backend**: .NET 8, Entity Framework Core
 - **APIs**: 
-  - ASP.NET Core Web API (Full-featured)
-  - ASP.NET Core Minimal API (Lightweight)
+  - ASP.NET Core Web API
 - **Frontends**:
   - Angular (Web)
   - .NET MAUI (Cross-platform mobile/desktop)
@@ -30,8 +29,7 @@ src/
 ├── Domain/           # Core business logic and entities
 ├── Infrastructure/   # Data access and external services
 ├── App/             # Application layer (use cases)
-├── Api/             # Full ASP.NET Core Web API
-├── Api.Min/         # Minimal API implementation
+├── Api/             # ASP.NET Core Web API
 ├── Angular/         # Angular web frontend
 ├── Maui/            # .NET MAUI cross-platform app
 └── Shared/          # Shared components and utilities
@@ -72,12 +70,8 @@ docs/
 
 #### Backend APIs
 ```bash
-# Full API
+# API
 cd src/Api
-dotnet run
-
-# Minimal API
-cd src/Api.Min
 dotnet run
 ```
 

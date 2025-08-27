@@ -19,19 +19,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "src\App\App.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "src\Infrastructure\Infrastructure.csproj", "{3D745DFE-AF9A-E111-755D-FD3FFF280728}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maui", "src\Maui\Maui.csproj", "{D19076CF-350B-0C2D-EA96-B3E6077D26DD}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.E2E.NG", "test\Tests.E2E.NG\Tests.E2E.NG.csproj", "{FD83C989-5590-3FAF-02C1-2F3A61C54C19}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.NG", "test\Tests.Integration.NG\Tests.Integration.NG.csproj", "{F92925FC-6865-C5BF-2394-69B7CB9F71E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Unit.Backend", "test\Tests.Unit.Backend\Tests.Unit.Backend.csproj", "{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.E2E.Maui", "test\Tests.E2E.Maui\Tests.E2E.Maui.csproj", "{76292923-43C1-0162-BAB5-B61037642FCC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.Backend", "test\Tests.Integration.Backend\Tests.Integration.Backend.csproj", "{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.Maui", "test\Tests.Integration.Maui\Tests.Integration.Maui.csproj", "{D49971AF-8611-4BC9-453C-5A878EB12222}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Angular", "src\Angular\Angular.csproj", "{F159DA47-09D5-8396-2542-58BB954E014A}"
 EndProject
@@ -61,11 +55,6 @@ Global
 		{3D745DFE-AF9A-E111-755D-FD3FFF280728}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D745DFE-AF9A-E111-755D-FD3FFF280728}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D745DFE-AF9A-E111-755D-FD3FFF280728}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D19076CF-350B-0C2D-EA96-B3E6077D26DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D19076CF-350B-0C2D-EA96-B3E6077D26DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D19076CF-350B-0C2D-EA96-B3E6077D26DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D19076CF-350B-0C2D-EA96-B3E6077D26DD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D19076CF-350B-0C2D-EA96-B3E6077D26DD}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD83C989-5590-3FAF-02C1-2F3A61C54C19}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -78,18 +67,10 @@ Global
 		{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}.Release|Any CPU.Build.0 = Release|Any CPU
-		{76292923-43C1-0162-BAB5-B61037642FCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{76292923-43C1-0162-BAB5-B61037642FCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{76292923-43C1-0162-BAB5-B61037642FCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{76292923-43C1-0162-BAB5-B61037642FCC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D49971AF-8611-4BC9-453C-5A878EB12222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D49971AF-8611-4BC9-453C-5A878EB12222}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D49971AF-8611-4BC9-453C-5A878EB12222}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D49971AF-8611-4BC9-453C-5A878EB12222}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F159DA47-09D5-8396-2542-58BB954E014A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F159DA47-09D5-8396-2542-58BB954E014A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F159DA47-09D5-8396-2542-58BB954E014A}.Release|Any CPU.ActiveCfg = Release|Any CPU

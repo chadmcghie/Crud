@@ -45,7 +45,7 @@ export class WorkerServerManager {
         ConnectionStrings__DefaultConnection: `Data Source=${this.workerDatabase}`
       };
 
-      this.apiProcess = spawn('dotnet', ['run'], {
+      this.apiProcess = spawn('dotnet', ['run', '--no-launch-profile'], {
         cwd: '../../src/Api',
         env: apiEnv,
         stdio: ['pipe', 'pipe', 'pipe']

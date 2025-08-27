@@ -156,7 +156,11 @@ namespace Api
                 {
                     options.AddPolicy("AllowAngular", policy =>
                     {
-                        policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200")
+                        policy.WithOrigins(
+                                "http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200",
+                                "http://localhost:4210", "http://localhost:4220", "http://localhost:4230",
+                                "http://localhost:4240", "http://localhost:4250", "http://localhost:4260"
+                              )
                               .AllowAnyHeader()
                               .AllowAnyMethod()
                               .AllowCredentials();
