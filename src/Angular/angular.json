@@ -53,6 +53,14 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "test": {
+              "optimization": true,
+              "extractLicenses": false,
+              "sourceMap": false,
+              "namedChunks": false,
+              "aot": true,
+              "outputHashing": "none"
             }
           },
           "defaultConfiguration": "production"

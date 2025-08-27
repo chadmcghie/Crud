@@ -3,11 +3,13 @@ import { WorkerInfo } from '@playwright/test';
 import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
-import { WorkerStartupQueue } from './worker-queue';
+import { createServer } from 'http';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import * as express from 'express';
 
-export class WorkerServerManager {
+export class OptimizedWorkerServerManager {
   private apiProcess: ChildProcess | null = null;
-  private angularProcess: ChildProcess | null = null;
+  private angularServer: any = null;  // Express server for Angular
   private apiPort: number;
   private angularPort: number;
   private workerDatabase: string;
@@ -25,42 +27,15 @@ export class WorkerServerManager {
   }
 
   async startServers(): Promise<void> {
-    // Use queue to prevent port conflicts
-    const queue = WorkerStartupQueue.getInstance();
-    await queue.enqueue(this.workerIndex);
+    console.log(`🚀 Starting optimized servers for worker ${this.workerIndex}...`);
     
-    try {
-      console.log(`🚀 Starting servers for worker ${this.workerIndex}...`);
-      
-      // Create worker-specific proxy config for Angular
-      this.createProxyConfig();
-      
-      // Start API server
-      await this.startApiServer();
-      
-      // Start Angular dev server
-      await this.startAngularServer();
-      
-      console.log(`✅ Worker ${this.workerIndex} servers ready`);
-    } finally {
-      // Mark worker as complete in queue
-      queue.complete(this.workerIndex);
-    }
-  }
-
-  private createProxyConfig(): void {
-    const proxyConfig = {
-      "/api": {
-        "target": `http://localhost:${this.apiPort}`,
-        "secure": false,
-        "changeOrigin": true,
-        "logLevel": "debug"
-      }
-    };
+    // Start API server
+    await this.startApiServer();
     
-    const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
-    fs.writeFileSync(proxyPath, JSON.stringify(proxyConfig, null, 2));
-    console.log(`📝 Created proxy config for worker ${this.workerIndex} at ${proxyPath}`);
+    // Serve pre-built Angular with proxy
+    await this.startAngularStaticServer();
+    
+    console.log(`✅ Worker ${this.workerIndex} servers ready`);
   }
 
   private async startApiServer(): Promise<void> {
@@ -110,22 +85,74 @@ export class WorkerServerManager {
     });
   }
 
-  private async startAngularServer(): Promise<void> {
+  private async startAngularStaticServer(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const app = express();
+
+      // Proxy API calls to the worker's API server
+      app.use('/api', createProxyMiddleware({
+        target: `http://localhost:${this.apiPort}`,
+        changeOrigin: true,
+        logLevel: 'warn'
+      }));
+
+      // Check if Angular is pre-built
+      const angularDistPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', 'dist', 'angular', 'browser');
+      
+      if (!fs.existsSync(angularDistPath)) {
+        console.log(`⚠️ Angular not pre-built. Building now for worker ${this.workerIndex}...`);
+        // Fall back to development server
+        this.startAngularDevServer().then(resolve).catch(reject);
+        return;
+      }
+
+      // Serve pre-built Angular files
+      app.use(express.static(angularDistPath));
+
+      // Fallback to index.html for Angular routing
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(angularDistPath, 'index.html'));
+      });
+
+      this.angularServer = app.listen(this.angularPort, () => {
+        console.log(`✅ Angular static server started for worker ${this.workerIndex} on port ${this.angularPort}`);
+        // Quick health check
+        setTimeout(() => {
+          this.waitForAngularHealth().then(resolve).catch(reject);
+        }, 500);
+      });
+
+      this.angularServer.on('error', (error: any) => {
+        reject(new Error(`Angular server for worker ${this.workerIndex} failed: ${error.message}`));
+      });
+    });
+  }
+
+  private async startAngularDevServer(): Promise<void> {
+    // Fallback to original dev server implementation
     return new Promise((resolve, reject) => {
       const angularEnv = {
         ...process.env,
         PORT: this.angularPort.toString(),
         NG_CLI_ANALYTICS: 'false',
-        NODE_OPTIONS: '--max-old-space-size=4096'  // Increase memory for faster compilation
+        NODE_OPTIONS: '--max-old-space-size=4096'
       };
 
-      // Angular needs to proxy to the correct API port for this worker
-      const proxyConfig = `--proxy-config=proxy.worker${this.workerIndex}.conf.json`;
-      const portConfig = `--port=${this.angularPort}`;
-      // Add optimization flags for faster startup in test environment
-      const optimizationFlags = '--poll=2000 --live-reload=false --hmr=false';
+      const proxyConfig = {
+        "/api": {
+          "target": `http://localhost:${this.apiPort}`,
+          "secure": false,
+          "changeOrigin": true
+        }
+      };
       
-      this.angularProcess = spawn('npm', ['start', '--', portConfig, proxyConfig, optimizationFlags], {
+      const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
+      fs.writeFileSync(proxyPath, JSON.stringify(proxyConfig, null, 2));
+
+      const proxyConfigArg = `--proxy-config=proxy.worker${this.workerIndex}.conf.json`;
+      const portConfig = `--port=${this.angularPort}`;
+      
+      const angularProcess = spawn('npm', ['start', '--', portConfig, proxyConfigArg], {
         cwd: '../../src/Angular',
         env: angularEnv,
         stdio: ['pipe', 'pipe', 'pipe']
@@ -134,50 +161,24 @@ export class WorkerServerManager {
       let angularStarted = false;
       const timeout = setTimeout(() => {
         if (!angularStarted) {
-          console.error(`❌ Angular server for worker ${this.workerIndex} timeout after 5 minutes`);
-          reject(new Error(`Angular server for worker ${this.workerIndex} failed to start within timeout`));
+          reject(new Error(`Angular dev server for worker ${this.workerIndex} failed to start within timeout`));
         }
-      }, 300000); // 5 minutes - increased timeout
+      }, 300000);
 
-      this.angularProcess.stdout?.on('data', (data) => {
+      angularProcess.stdout?.on('data', (data) => {
         const output = data.toString();
-        // Log Angular output for debugging
-        if (output.trim()) {
-          console.log(`Angular Worker ${this.workerIndex} output:`, output.trim());
-        }
-        // Check for various Angular startup messages - improved detection
-        if (output.includes('webpack compiled') || 
-            output.includes('Local:') || 
-            output.includes('Compiled successfully') ||
-            output.includes('Angular Live Development Server') ||
-            output.includes('Application bundle generation complete') ||
-            output.includes('Watch mode enabled') ||
-            output.includes('Build completed')) {
+        if (output.includes('compiled') || output.includes('Local:')) {
           if (!angularStarted) {
             angularStarted = true;
             clearTimeout(timeout);
-            console.log(`✅ Angular compilation detected for worker ${this.workerIndex}`);
-            // Give Angular a bit more time to fully initialize before health check
-            setTimeout(() => {
-              this.waitForAngularHealth().then(resolve).catch(reject);
-            }, 2000);
+            this.waitForAngularHealth().then(resolve).catch(reject);
           }
         }
       });
 
-      this.angularProcess.stderr?.on('data', (data) => {
-        const errorOutput = data.toString();
-        // Log all stderr for better debugging but don't fail on warnings
-        console.log(`Angular Worker ${this.workerIndex} stderr:`, errorOutput.trim());
-        // Check for actual errors
-        if (errorOutput.includes('Error:') || errorOutput.includes('ERROR')) {
-          console.error(`⚠️ Angular Worker ${this.workerIndex} error detected`);
-        }
-      });
-
-      this.angularProcess.on('error', (error) => {
+      angularProcess.on('error', (error) => {
         clearTimeout(timeout);
-        reject(new Error(`Angular server for worker ${this.workerIndex} failed: ${error.message}`));
+        reject(new Error(`Angular dev server for worker ${this.workerIndex} failed: ${error.message}`));
       });
     });
   }
@@ -206,31 +207,21 @@ export class WorkerServerManager {
   }
 
   private async waitForAngularHealth(): Promise<void> {
-    const maxAttempts = 60;  // Increased attempts
-    const delayMs = 2000;
-
-    console.log(`🔍 Starting Angular health check for worker ${this.workerIndex} on port ${this.angularPort}`);
+    const maxAttempts = 30;
+    const delayMs = 1000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const response = await fetch(`http://localhost:${this.angularPort}`);
         if (response.ok) {
-          // Double-check Angular is actually serving the app
           const text = await response.text();
           if (text.includes('<app-root>') || text.includes('angular') || text.includes('<!doctype html>')) {
-            console.log(`✅ Angular health check passed for worker ${this.workerIndex} on attempt ${attempt}`);
+            console.log(`✅ Angular health check passed for worker ${this.workerIndex}`);
             return;
-          } else {
-            console.log(`⚠️ Angular response received but doesn't look like Angular app for worker ${this.workerIndex}`);
           }
-        } else {
-          console.log(`⚠️ Angular health check got status ${response.status} for worker ${this.workerIndex}`);
         }
       } catch (error) {
-        // Angular not ready yet - this is expected during startup
-        if (attempt % 10 === 0) {
-          console.log(`⏳ Still waiting for Angular to start for worker ${this.workerIndex} (attempt ${attempt}/${maxAttempts})...`);
-        }
+        // Angular not ready yet
       }
 
       if (attempt < maxAttempts) {
@@ -238,7 +229,7 @@ export class WorkerServerManager {
       }
     }
 
-    throw new Error(`Angular health check failed for worker ${this.workerIndex} after ${maxAttempts} attempts (${maxAttempts * delayMs / 1000} seconds)`);
+    throw new Error(`Angular health check failed for worker ${this.workerIndex} after ${maxAttempts} attempts`);
   }
 
   async stopServers(): Promise<void> {
@@ -249,17 +240,16 @@ export class WorkerServerManager {
       this.apiProcess = null;
     }
 
-    if (this.angularProcess) {
-      this.angularProcess.kill('SIGTERM');
-      this.angularProcess = null;
+    if (this.angularServer) {
+      this.angularServer.close();
+      this.angularServer = null;
     }
-    
-    // Clean up proxy config file
+
+    // Clean up proxy config file if exists
     try {
       const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
       if (fs.existsSync(proxyPath)) {
         fs.unlinkSync(proxyPath);
-        console.log(`🧹 Removed proxy config for worker ${this.workerIndex}`);
       }
     } catch (error) {
       // Ignore cleanup errors

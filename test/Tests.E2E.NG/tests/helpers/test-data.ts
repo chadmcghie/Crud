@@ -147,11 +147,23 @@ export function generateTestPerson(overrides: Partial<TestPerson> = {}, workerIn
     };
   }
   
-  // Otherwise generate a unique name with prefix
-  const prefix = getWorkerPrefix(workerIndex);
+  // Generate realistic names for testing
+  const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'Robert', 'Maria', 'David', 'Emily', 'James', 'Lisa'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+  
+  // Use worker index and timestamp to ensure uniqueness
+  const workerId = workerIndex !== undefined ? workerIndex : 0;
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of timestamp
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  
+  // Create a realistic but unique name using middle initials for uniqueness
+  const middleInitial = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
+  const suffix = workerId > 0 ? ` Jr.` : '';
+  const fullName = `${firstName} ${middleInitial}. ${lastName}${suffix}`;
   
   return {
-    fullName: `${prefix}_Person_${generateRandomString(4)}`,
+    fullName: fullName,
     phone: overrides.phone || `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
     // Apply any other overrides
     ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'fullName' && key !== 'phone'))

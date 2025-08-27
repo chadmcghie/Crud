@@ -11,12 +11,19 @@
     "test:api-only": "playwright test --config=playwright.config.api-only.ts",
     "test:parallel": "playwright test --config=playwright.config.parallel.ts",
     "test:integration": "playwright test --config=playwright.config.integration.ts",
+    "test:fast": "playwright test --config=playwright.config.fast.ts",
+    "test:ci": "playwright test --config=playwright.config.ci.ts",
     "test:list": "playwright test --list --config=playwright.config.local.ts",
     "test:list-api": "playwright test --list --config=playwright.config.api-only.ts",
     "test:list-parallel": "playwright test --list --config=playwright.config.parallel.ts",
     "test:list-integration": "playwright test --list --config=playwright.config.integration.ts",
+    "prebuild": "./scripts/prebuild-angular.sh",
+    "prebuild:test": "npm run prebuild && npm test",
+    "test:single": "playwright test --workers=1",
+    "test:stable": "npm run prebuild && playwright test --config=playwright.config.fast.ts --workers=1",
     "report": "playwright show-report",
-    "install-browsers": "playwright install"
+    "install-browsers": "playwright install",
+    "clean": "rm -rf test-results playwright-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",

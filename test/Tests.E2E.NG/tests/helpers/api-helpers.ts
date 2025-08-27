@@ -243,14 +243,9 @@ export class ApiHelpers {
 
   // Person API helpers with resilience
   async createPerson(person: TestPerson): Promise<any> {
-    // If person name already has worker prefix or is an explicit test name, use as-is
-    const hasWorkerPrefix = person.fullName.match(/^W\d+_/);
-    const isExplicitTestName = person.fullName.includes('Rapid Person') || person.fullName.includes('API Person') ||
-                               person.fullName === 'UI Person';
-    
+    // Use the name as-is since generateTestPerson now creates valid names
     const personData = {
       ...person,
-      fullName: (hasWorkerPrefix || isExplicitTestName) ? person.fullName : `${this.generateUniqueId()}_Person_${person.fullName}`,
       phone: person.phone || `+1-555-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
     };
 

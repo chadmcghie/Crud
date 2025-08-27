@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../setup/test-fixture';
 import { PageHelpers } from '../helpers/page-helpers';
 import { ApiHelpers } from '../helpers/api-helpers';
 import { generateTestRole, testRoles } from '../helpers/test-data';
@@ -7,9 +7,9 @@ test.describe('Roles Management UI', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }, testInfo) => {
+  test.beforeEach(async ({ page, apiContext, workerIndex }) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
+    apiHelpers = new ApiHelpers(apiContext, workerIndex);
     
     // Clean up any existing data
     if (apiHelpers) {
