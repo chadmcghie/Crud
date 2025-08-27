@@ -23,13 +23,22 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
     public SqliteTestWebApplicationFactory()
     {
-        // Get worker index from environment or generate a unique one
+        // Get worker index from environment or generate a unique one per factory instance
         _workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX") != null 
             ? int.Parse(Environment.GetEnvironmentVariable("WORKER_INDEX")!) 
-            : Environment.ProcessId % 1000; // Fallback to process-based isolation
+            : GenerateUniqueWorkerIndex(); // Generate unique index per factory instance
             
         _databaseFactory = new TestDatabaseFactory(
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<TestDatabaseFactory>());
+    }
+
+    private static int GenerateUniqueWorkerIndex()
+    {
+        // Combine process ID with a random number and current ticks for uniqueness
+        var processId = Environment.ProcessId;
+        var random = Random.Shared.Next(1000, 9999);
+        var ticks = DateTime.UtcNow.Ticks % 10000;
+        return Math.Abs((processId + random + (int)ticks).GetHashCode()) % 100000;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
