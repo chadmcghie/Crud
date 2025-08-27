@@ -52,7 +52,7 @@ jobs:
       
     - name: Run Angular lint
       working-directory: ./src/Angular
-      run: npm run lint || true  # Don't fail on lint warnings
+      run: npm run lint
       
     - name: Run Angular unit tests
       working-directory: ./src/Angular
