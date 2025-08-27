@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using Ardalis.GuardClauses;
 
 namespace Domain.Entities
 {
@@ -6,10 +6,13 @@ namespace Domain.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
-        public string FullName { get; set; } = string.Empty;
+        private string _fullName = string.Empty;
+        public string FullName 
+        { 
+            get => _fullName;
+            set => _fullName = Guard.Against.NullOrEmpty(value, nameof(value));
+        }
 
-        [Phone]
         public string? Phone { get; set; }
 
         // A person can have many roles. Roles are extensible and managed separately
