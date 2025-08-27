@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using Ardalis.GuardClauses;
 
 namespace Domain.Entities
 {
@@ -6,12 +6,30 @@ namespace Domain.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
-        [MaxLength(200)]
-        public string Name { get; set; } = string.Empty;
+        private string _name = string.Empty;
+        public string Name 
+        { 
+            get => _name;
+            set 
+            {
+                _name = Guard.Against.NullOrEmpty(value, nameof(value));
+                Guard.Against.StringTooLong(value, 200, nameof(value));
+            }
+        }
 
-        [MaxLength(1000)]
-        public string? Description { get; set; }
+        private string? _description;
+        public string? Description 
+        { 
+            get => _description;
+            set 
+            {
+                if (value != null)
+                {
+                    Guard.Against.StringTooLong(value, 1000, nameof(value));
+                }
+                _description = value;
+            }
+        }
 
         // Geometry properties
         public double Length { get; set; } // in feet
@@ -19,12 +37,30 @@ namespace Domain.Entities
         public double Thickness { get; set; } // in inches
 
         // Assembly type properties
-        [Required]
-        [MaxLength(500)]
-        public string AssemblyType { get; set; } = string.Empty; // e.g., "2x4 16\" on center with R13 fiberglass insulation"
+        private string _assemblyType = string.Empty;
+        public string AssemblyType 
+        { 
+            get => _assemblyType;
+            set 
+            {
+                _assemblyType = Guard.Against.NullOrEmpty(value, nameof(value));
+                Guard.Against.StringTooLong(value, 500, nameof(value));
+            }
+        }
 
-        [MaxLength(1000)]
-        public string? AssemblyDetails { get; set; } // Additional details about the assembly
+        private string? _assemblyDetails;
+        public string? AssemblyDetails 
+        { 
+            get => _assemblyDetails;
+            set 
+            {
+                if (value != null)
+                {
+                    Guard.Against.StringTooLong(value, 1000, nameof(value));
+                }
+                _assemblyDetails = value;
+            }
+        }
 
         // Energy modeling properties
         public double? RValue { get; set; } // Thermal resistance
