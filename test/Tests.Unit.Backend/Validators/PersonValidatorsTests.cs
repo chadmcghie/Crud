@@ -1,4 +1,4 @@
-using Api.Dtos;
+using Shared.Dtos;
 using Api.Validators;
 using FluentAssertions;
 using FluentValidation.TestHelper;

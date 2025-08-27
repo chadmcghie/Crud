@@ -1,6 +1,7 @@
-using Api.Dtos;
+using Shared.Dtos;
 using App.Abstractions;
 using App.Features.Roles;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,13 +10,13 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class RolesController(IMediator mediator) : ControllerBase
+public class RolesController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
-        return Ok(items.Select(r => new RoleDto(r.Id, r.Name, r.Description)));
+        return Ok(mapper.Map<IEnumerable<RoleDto>>(items));
     }
 
     [HttpGet("{id:guid}")]
@@ -23,14 +24,14 @@ public class RolesController(IMediator mediator) : ControllerBase
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);
         if (r is null) return NotFound();
-        return Ok(new RoleDto(r.Id, r.Name, r.Description));
+        return Ok(mapper.Map<RoleDto>(r));
     }
 
     [HttpPost]
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
-        return CreatedAtAction(nameof(Get), new { id = r.Id }, new RoleDto(r.Id, r.Name, r.Description));
+        return CreatedAtAction(nameof(Get), new { id = r.Id }, mapper.Map<RoleDto>(r));
     }
 
     [HttpPut("{id:guid}")]

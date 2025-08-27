@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Api.Dtos;
+namespace Shared.Dtos;
 
 public record CreatePersonRequest(
     [param: Required] string FullName,

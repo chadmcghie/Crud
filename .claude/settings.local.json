@@ -6,7 +6,12 @@
       "Bash(git checkout:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(mkdir:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build:*)",
+      "Bash(find:*)",
+      "Bash(dotnet test:*)"
     ],
     "deny": [],
     "ask": []

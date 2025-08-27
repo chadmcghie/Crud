@@ -1,5 +1,6 @@
-using Api.Dtos;
+using Shared.Dtos;
 using App.Features.Walls;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,29 +9,13 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-public class WallsController(IMediator mediator) : ControllerBase
+public class WallsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWallsQuery(), ct);
-        return Ok(items.Select(w => new WallResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Length,
-            w.Height,
-            w.Thickness,
-            w.AssemblyType,
-            w.AssemblyDetails,
-            w.RValue,
-            w.UValue,
-            w.MaterialLayers,
-            w.Orientation,
-            w.Location,
-            w.CreatedAt,
-            w.UpdatedAt
-        )));
+        return Ok(mapper.Map<IEnumerable<WallResponse>>(items));
     }
 
     [HttpGet("{id:guid}")]
@@ -38,23 +23,7 @@ public class WallsController(IMediator mediator) : ControllerBase
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);
         if (w is null) return NotFound();
-        return Ok(new WallResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Length,
-            w.Height,
-            w.Thickness,
-            w.AssemblyType,
-            w.AssemblyDetails,
-            w.RValue,
-            w.UValue,
-            w.MaterialLayers,
-            w.Orientation,
-            w.Location,
-            w.CreatedAt,
-            w.UpdatedAt
-        ));
+        return Ok(mapper.Map<WallResponse>(w));
     }
 
     [HttpPost]
@@ -74,23 +43,7 @@ public class WallsController(IMediator mediator) : ControllerBase
             request.Orientation,
             request.Location
         ), ct);
-        return CreatedAtAction(nameof(Get), new { id = w.Id }, new WallResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Length,
-            w.Height,
-            w.Thickness,
-            w.AssemblyType,
-            w.AssemblyDetails,
-            w.RValue,
-            w.UValue,
-            w.MaterialLayers,
-            w.Orientation,
-            w.Location,
-            w.CreatedAt,
-            w.UpdatedAt
-        ));
+        return CreatedAtAction(nameof(Get), new { id = w.Id }, mapper.Map<WallResponse>(w));
     }
 
     [HttpPut("{id:guid}")]
