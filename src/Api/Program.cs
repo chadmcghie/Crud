@@ -26,7 +26,7 @@ namespace Api
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             
-            builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));            
+            builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(App.DependencyInjection).Assembly));            
             builder.Services.AddAutoMapper(
                 cfg => { },
                 typeof(App.DependencyInjection).Assembly, 
