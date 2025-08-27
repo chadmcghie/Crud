@@ -1,4 +1,6 @@
 using App;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Infrastructure;
 using Serilog;
 using OpenTelemetry.Logs;
