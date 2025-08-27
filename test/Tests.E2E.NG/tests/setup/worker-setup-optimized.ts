@@ -21,7 +21,8 @@ export class OptimizedWorkerServerManager {
     this.angularPort = 4200 + (this.workerIndex * 10);
     
     const timestamp = Date.now();
-    this.workerDatabase = `/tmp/CrudTest_Worker${this.workerIndex}_${timestamp}.db`;
+    const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+    this.workerDatabase = path.join(tempDir, `CrudTest_Worker${this.workerIndex}_${timestamp}.db`);
     
     console.log(`🔧 Worker ${this.workerIndex}: API=${this.apiPort}, Angular=${this.angularPort}, DB=${this.workerDatabase}`);
   }

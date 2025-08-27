@@ -17,7 +17,8 @@ async function globalSetup(config: FullConfig) {
     
     // Create worker-specific database path
     const timestamp = Date.now();
-    const workerDatabase = `/tmp/CrudTest_Worker${workerIndex}_${timestamp}.db`;
+    const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+    const workerDatabase = `${tempDir}${process.platform === 'win32' ? '\\' : '/'}CrudTest_Worker${workerIndex}_${timestamp}.db`;
     
     console.log(`📦 Worker ${workerIndex}: API=${apiPort}, Angular=${angularPort}, DB=${workerDatabase}`);
     

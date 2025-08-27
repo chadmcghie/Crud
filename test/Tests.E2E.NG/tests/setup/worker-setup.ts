@@ -19,7 +19,8 @@ export class WorkerServerManager {
     this.angularPort = 4200 + (this.workerIndex * 10);
     
     const timestamp = Date.now();
-    this.workerDatabase = `/tmp/CrudTest_Worker${this.workerIndex}_${timestamp}.db`;
+    const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+    this.workerDatabase = path.join(tempDir, `CrudTest_Worker${this.workerIndex}_${timestamp}.db`);
     
     console.log(`🔧 Worker ${this.workerIndex}: API=${this.apiPort}, Angular=${this.angularPort}, DB=${this.workerDatabase}`);
   }
@@ -58,7 +59,7 @@ export class WorkerServerManager {
       }
     };
     
-    const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
+    const proxyPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
     fs.writeFileSync(proxyPath, JSON.stringify(proxyConfig, null, 2));
     console.log(`📝 Created proxy config for worker ${this.workerIndex} at ${proxyPath}`);
   }
@@ -75,10 +76,14 @@ export class WorkerServerManager {
         ConnectionStrings__DefaultConnection: `Data Source=${this.workerDatabase}`
       };
 
+      const apiPath = path.resolve(process.cwd(), '..', '..', 'src', 'Api');
+      console.log(`🔧 Starting API from: ${apiPath}`);
+      
       this.apiProcess = spawn('dotnet', ['run', '--no-launch-profile'], {
-        cwd: '../../src/Api',
+        cwd: apiPath,
         env: apiEnv,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: true
       });
 
       let apiStarted = false;
@@ -125,10 +130,15 @@ export class WorkerServerManager {
       // Add optimization flags for faster startup in test environment
       const optimizationFlags = '--poll=2000 --live-reload=false --hmr=false';
       
-      this.angularProcess = spawn('npm', ['start', '--', portConfig, proxyConfig, optimizationFlags], {
-        cwd: '../../src/Angular',
+      const angularPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular');
+      console.log(`🔧 Starting Angular from: ${angularPath}`);
+      
+      const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+      this.angularProcess = spawn(npmCommand, ['start', '--', portConfig, proxyConfig, optimizationFlags], {
+        cwd: angularPath,
         env: angularEnv,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: false
       });
 
       let angularStarted = false;
@@ -256,7 +266,7 @@ export class WorkerServerManager {
     
     // Clean up proxy config file
     try {
-      const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
+      const proxyPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
       if (fs.existsSync(proxyPath)) {
         fs.unlinkSync(proxyPath);
         console.log(`🧹 Removed proxy config for worker ${this.workerIndex}`);
