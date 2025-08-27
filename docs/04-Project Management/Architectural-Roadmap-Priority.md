@@ -1,47 +1,66 @@
 # Architectural Roadmap - Priority Order
 **Date**: 2025-08-27  
-**Status**: Active
+**Status**: Active (Updated)
 
 ## Overview
 Based on the conformance review, this roadmap prioritizes architectural improvements by impact and dependency relationships.
 
-## 🚨 Critical Priority (Immediate - This Week)
+## ✅ Completed Tasks
 
-### 1. MediatR Registration Fix
+### 1. MediatR Registration Fix ✅
+**Status**: ✅ **COMPLETED** (2025-08-27)
 **Issue**: MediatR only scanning Api assembly instead of App assembly where handlers should live  
 **Impact**: CQRS pattern not working, services bypassing command/query pattern  
-**Action**: 
-- Register MediatR with App assembly: `AddServicesFromAssemblyContaining<App.DependencyInjection>()`
-- Add command/query handlers in App layer
-- Refactor controllers to use IMediator
+**Completed Actions**: 
+- ✅ Fixed MediatR registration to scan App assembly
+- ✅ Implemented command/query handlers for all entities (People, Roles, Walls, Windows)
+- ✅ Refactored all controllers to use IMediator pattern
+- ✅ Full CQRS implementation with proper separation of concerns
 
-### 2. Fix API Test Failures  
+### 2. FluentValidation Implementation ✅ 
+**Status**: ✅ **COMPLETED** (2025-08-27)
+**Issue**: Packages included but not configured or used  
+**Impact**: No request validation, potential security vulnerabilities
+**Completed Actions**:
+- ✅ Added FluentValidation validators for all DTOs and commands
+- ✅ Implemented MediatR validation pipeline behavior
+- ✅ Added domain entity validators
+- ✅ Created client-side validation with Angular validators
+- ✅ Added global error handling middleware
+- ✅ Comprehensive validation at all layers (client, API, application, domain)
+
+### 3. API Test Failures Fix ✅
+**Status**: ✅ **COMPLETED** (2025-08-27)
 **Issue**: 29 API tests failing due to data persistence and timing issues  
 **Impact**: Unreliable test suite blocking development confidence  
-**Action**:
-- Add transaction completion waits
-- Implement proper test data isolation
-- Fix async operation handling in cleanup
+**Completed Actions**:
+- ✅ Fixed transaction completion waits
+- ✅ Implemented proper test data isolation
+- ✅ Fixed async operation handling in cleanup
+- ✅ All tests now passing reliably
 
-### 3. FluentValidation & AutoMapper Wiring
-**Issue**: Packages included but not configured or used  
-**Impact**: No request validation, manual mapping causing maintenance burden  
-**Action**:
-- Add FluentValidation validators for DTOs/commands
-- Create AutoMapper profiles in App layer
-- Wire validation pipeline in MediatR or controllers
+## 🚨 Critical Priority (Immediate - This Week)
 
-## 🔧 High Priority (Next Sprint)
-
-### 4. Authentication & Authorization
+### 1. Authentication & Authorization (CRITICAL SECURITY GAP)
 **Issue**: UseAuthorization without authentication schemes (no-op)  
-**Impact**: Security gap, all endpoints public  
+**Impact**: Security gap, all endpoints public - **PRODUCTION BLOCKER**
 **Action**:
 - Implement JWT bearer authentication
 - Add authorization policies
+- Secure endpoints with [Authorize] attributes
 - Consider OpenIddict for OIDC if needed
 
-### 5. Proper Database Migration Strategy
+### 2. AutoMapper Configuration
+**Issue**: Package installed but not configured  
+**Impact**: Manual mapping causing maintenance burden  
+**Action**:
+- Create AutoMapper profiles in App layer
+- Replace manual DTO mapping in controllers
+- Configure AutoMapper in dependency injection
+
+## 🔧 High Priority (Next Sprint)
+
+### 3. Proper Database Migration Strategy
 **Issue**: Using EnsureCreatedAsync instead of MigrateAsync  
 **Impact**: Production deployment issues  
 **Action**:
@@ -49,7 +68,7 @@ Based on the conformance review, this roadmap prioritizes architectural improvem
 - Add migration rollback strategy
 - Configure for production environments
 
-### 6. Serilog Configuration
+### 4. Serilog Enhancement
 **Issue**: Serilog referenced but not configured  
 **Impact**: Missing structured logging capabilities  
 **Action**:
@@ -140,9 +159,10 @@ Based on the conformance review, this roadmap prioritizes architectural improvem
 - **Security**: All endpoints properly authenticated/authorized
 
 ## 🎯 Current Sprint Focus
-1. Fix MediatR registration and add basic handlers
-2. Resolve API test failures for reliable test suite
-3. Implement FluentValidation and AutoMapper
-4. Plan authentication strategy for next sprint
+1. ~~Fix MediatR registration and add basic handlers~~ ✅ COMPLETED
+2. ~~Resolve API test failures for reliable test suite~~ ✅ COMPLETED
+3. ~~Implement FluentValidation~~ ✅ COMPLETED
+4. **PRIORITY**: Implement Authentication & Authorization (critical security gap - production blocker)
+5. Configure AutoMapper profiles to eliminate manual mapping
 
 This roadmap balances immediate technical debt with strategic architectural improvements while maintaining system stability.

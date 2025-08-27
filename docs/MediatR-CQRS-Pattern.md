@@ -1,5 +1,7 @@
 # MediatR CQRS Implementation Pattern
-1
+
+**Status**: ✅ **FULLY IMPLEMENTED** (2025-08-27)
+
 This document describes how to implement MediatR CQRS commands and queries for controllers in the application.
 
 ## Overview
@@ -70,18 +72,26 @@ public class {Entity}Controller(IMediator mediator) : ControllerBase
 
 ## Implementation Status
 
-### ✅ Completed
+### ✅ Completed (All Controllers)
 - **RolesController**: Fully implemented with MediatR CQRS pattern
   - Commands: CreateRoleCommand, UpdateRoleCommand, DeleteRoleCommand
   - Queries: GetRoleQuery, ListRolesQuery
   - All CRUD operations tested and working
 
-### 🔄 Remaining Controllers
-The following controllers still use direct service calls and can be migrated to MediatR:
+- **PeopleController**: Fully implemented with MediatR CQRS pattern
+  - Commands: CreatePersonCommand, UpdatePersonCommand, DeletePersonCommand
+  - Queries: GetPersonQuery, ListPeopleQuery
+  - All CRUD operations tested and working
 
-- **PeopleController**: Uses `IPersonService` directly
-- **WallsController**: Uses `IWallService` directly  
-- **WindowsController**: Uses `IWindowService` directly
+- **WallsController**: Fully implemented with MediatR CQRS pattern
+  - Commands: CreateWallCommand, UpdateWallCommand, DeleteWallCommand
+  - Queries: GetWallQuery, ListWallsQuery
+  - All CRUD operations tested and working
+
+- **WindowsController**: Fully implemented with MediatR CQRS pattern
+  - Commands: CreateWindowCommand, UpdateWindowCommand, DeleteWindowCommand
+  - Queries: GetWindowQuery, ListWindowsQuery
+  - All CRUD operations tested and working
 
 ## Benefits of MediatR CQRS Implementation
 
@@ -91,11 +101,18 @@ The following controllers still use direct service calls and can be migrated to 
 4. **Testability**: Each handler can be tested independently
 5. **Consistency**: Standardized request/response pattern across the application
 
-## Next Steps
+## Completed Features
 
-To complete the MediatR implementation:
+The MediatR CQRS implementation is now complete for all controllers with:
 
-1. Apply the same pattern to PeopleController
-2. Apply the same pattern to WallsController  
-3. Apply the same pattern to WindowsController
-4. Add MediatR pipeline behaviors for cross-cutting concerns (validation, logging, etc.)
+1. ✅ All controllers migrated to use IMediator
+2. ✅ Complete command/query separation for all entities
+3. ✅ Validation pipeline behavior implemented with FluentValidation
+4. ✅ Error handling integrated through global middleware
+5. ✅ Full test coverage for all handlers
+
+## Additional Pipeline Behaviors
+
+The following pipeline behaviors have been implemented:
+- **ValidationBehavior**: Validates all requests using FluentValidation before handler execution
+- **Global Exception Handling**: Catches and properly formats all errors
