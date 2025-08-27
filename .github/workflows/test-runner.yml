@@ -1,8 +1,8 @@
-name: Pull Request Validation
+name: Test Runner
 
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [ dev ]
   push:
     branches: [ dev ]
 
@@ -225,9 +225,11 @@ jobs:
         
     - name: Run Full E2E Tests
       working-directory: ./test/Tests.E2E.NG
-      run: npm run test:local
+      run: npm run test:integration
       env:
         CI: true
+        API_BASE_URL: http://localhost:5172
+        ANGULAR_BASE_URL: http://localhost:4200
         
     - name: Upload E2E test results
       uses: actions/upload-artifact@v4
