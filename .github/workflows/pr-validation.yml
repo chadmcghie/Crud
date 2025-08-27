@@ -127,7 +127,7 @@ jobs:
       env:
         # SQLite is used automatically - no external database needed
         CI: true
-      timeout-minutes: 5
+      timeout-minutes: 10
       
     - name: Upload integration test results
       uses: actions/upload-artifact@v4
