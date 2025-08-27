@@ -242,7 +242,7 @@ export class App {
     this.showPeopleForm = true;
   }
 
-  onPersonSaved() {
+  onPersonSaved(_person: PersonResponse) {
     this.showPeopleForm = false;
     this.editingPerson = null;
     // Refresh the people list
@@ -267,7 +267,7 @@ export class App {
     this.showRolesForm = true;
   }
 
-  onRoleSaved() {
+  onRoleSaved(_role: RoleDto) {
     this.showRolesForm = false;
     this.editingRole = null;
     // Refresh the roles list
