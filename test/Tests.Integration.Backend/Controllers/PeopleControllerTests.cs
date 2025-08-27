@@ -33,26 +33,28 @@ public class PeopleControllerTests : IntegrationTestBase
     [Fact]
     public async Task POST_People_Should_Create_Person_And_Return_201()
     {
-        // Arrange
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            var createRequest = TestDataBuilders.CreatePersonRequest("John Doe", "123-456-7890");
 
-        var createRequest = TestDataBuilders.CreatePersonRequest("John Doe", "123-456-7890");
+            // Act
+            var response = await PostJsonAsync("/api/people", createRequest);
 
-        // Act
-        var response = await PostJsonAsync("/api/people", createRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            var createdPerson = await ReadJsonAsync<PersonResponse>(response);
+            
+            createdPerson.Should().NotBeNull();
+            createdPerson!.Id.Should().NotBeEmpty();
+            createdPerson.FullName.Should().Be("John Doe");
+            createdPerson.Phone.Should().Be("123-456-7890");
+            createdPerson.Roles.Should().BeEmpty();
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPerson = await ReadJsonAsync<PersonResponse>(response);
-        
-        createdPerson.Should().NotBeNull();
-        createdPerson!.Id.Should().NotBeEmpty();
-        createdPerson.FullName.Should().Be("John Doe");
-        createdPerson.Phone.Should().Be("123-456-7890");
-        createdPerson.Roles.Should().BeEmpty();
-
-        // Verify location header
-        response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.ToString().ToLowerInvariant().Should().Contain($"/api/people/{createdPerson.Id}".ToLowerInvariant());
+            // Verify location header
+            response.Headers.Location.Should().NotBeNull();
+            response.Headers.Location!.ToString().ToLowerInvariant().Should().Contain($"/api/people/{createdPerson.Id}".ToLowerInvariant());
+        });
     }
 
     [Fact]

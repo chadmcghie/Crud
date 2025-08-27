@@ -81,17 +81,18 @@ public class DatabaseTestService
     {
         try
         {
-            lock (_respawnerLock)
+            // Initialize Respawner if needed (async-safe)
+            if (_respawner == null)
             {
-                if (_respawner == null)
+                lock (_respawnerLock)
                 {
-                    // Configure Respawn for SQLite - limited support but worth trying
-                    _respawner = Respawner.CreateAsync(connectionString, new RespawnerOptions
+                    if (_respawner == null)
                     {
-                        // SQLite doesn't support some advanced features, so keep it simple
-                        TablesToIgnore = new[] { new Table("__EFMigrationsHistory") },
-                        CheckTemporalTables = false, // SQLite doesn't support temporal tables
-                    }).Result;
+                        // For SQLite, Respawn has limited support and can cause issues
+                        // Skip Respawn for SQLite and use EF Core cleanup instead
+                        _logger.LogDebug("Skipping Respawn for SQLite database, using EF Core cleanup for worker {WorkerIndex}", workerIndex);
+                        return false;
+                    }
                 }
             }
 
@@ -111,36 +112,41 @@ public class DatabaseTestService
     }
 
     /// <summary>
-    /// Resets database using EF Core with proper transaction handling
+    /// Resets database using EF Core with optimized bulk operations
     /// </summary>
     private async Task ResetWithEfCoreAsync(int workerIndex)
     {
-        _logger.LogInformation("Resetting database for worker {WorkerIndex} using EF Core", workerIndex);
+        _logger.LogDebug("Resetting database for worker {WorkerIndex} using EF Core", workerIndex);
 
-        // Use transaction for atomicity to ensure all-or-nothing cleanup
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        
         try
         {
-            // Delete all data from tables in correct order (respecting foreign keys)
-            // The PersonRoles junction table will be automatically cleared when People are deleted
+            // For SQLite, we can use more efficient bulk operations without explicit transactions
+            // since SQLite handles this automatically and transactions can cause locking issues
             
-            // First, delete entities with foreign key dependencies
-            _context.People.RemoveRange(_context.People);
-            await _context.SaveChangesAsync();
+            // Check if database has any data first (optimization)
+            var hasData = await _context.People.AnyAsync() || 
+                         await _context.Roles.AnyAsync() || 
+                         await _context.Windows.AnyAsync() || 
+                         await _context.Walls.AnyAsync();
             
-            // Then delete independent entities (no foreign key dependencies)
-            _context.Roles.RemoveRange(_context.Roles);
-            _context.Windows.RemoveRange(_context.Windows);
-            _context.Walls.RemoveRange(_context.Walls);
-            await _context.SaveChangesAsync();
+            if (!hasData)
+            {
+                _logger.LogDebug("Database already clean for worker {WorkerIndex}", workerIndex);
+                return;
+            }
             
-            await transaction.CommitAsync();
-            _logger.LogInformation("Database reset completed using EF Core for worker {WorkerIndex}", workerIndex);
+            // Use ExecuteDeleteAsync for better performance (EF Core 7+)
+            // This generates efficient DELETE statements instead of loading entities
+            await _context.People.ExecuteDeleteAsync();
+            await _context.Roles.ExecuteDeleteAsync();
+            await _context.Windows.ExecuteDeleteAsync();
+            await _context.Walls.ExecuteDeleteAsync();
+            
+            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex}", workerIndex);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            _logger.LogError(ex, "EF Core database reset failed for worker {WorkerIndex}", workerIndex);
             throw;
         }
     }
