@@ -183,7 +183,6 @@ namespace Api
                 builder.Services.AddSwaggerGen();
                 builder.Services.AddHealthChecks();
 
-                builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));
                 builder.Services.AddAutoMapper(
                     cfg => { },
                     typeof(App.DependencyInjection).Assembly,

@@ -1,5 +1,6 @@
 using Api.Dtos;
-using App.Abstractions;
+using App.Features.Windows;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -7,12 +8,12 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-public class WindowsController(IWindowService windows) : ControllerBase
+public class WindowsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
-        var items = await windows.ListAsync(ct);
+        var items = await mediator.Send(new ListWindowsQuery(), ct);
         return Ok(items.Select(w => new WindowResponse(
             w.Id,
             w.Name,
@@ -44,7 +45,7 @@ public class WindowsController(IWindowService windows) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
-        var w = await windows.GetAsync(id, ct);
+        var w = await mediator.Send(new GetWindowQuery(id), ct);
         if (w is null) return NotFound();
         return Ok(new WindowResponse(
             w.Id,
@@ -77,7 +78,7 @@ public class WindowsController(IWindowService windows) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<WindowResponse>> Create([FromBody] CreateWindowRequest request, CancellationToken ct)
     {
-        var w = await windows.CreateAsync(
+        var w = await mediator.Send(new CreateWindowCommand(
             request.Name,
             request.Description,
             request.Width,
@@ -98,9 +99,8 @@ public class WindowsController(IWindowService windows) : ControllerBase
             request.InstallationType,
             request.OperationType,
             request.HasScreens,
-            request.HasStormWindows,
-            ct
-        );
+            request.HasStormWindows
+        ), ct);
         return CreatedAtAction(nameof(Get), new { id = w.Id }, new WindowResponse(
             w.Id,
             w.Name,
@@ -134,7 +134,7 @@ public class WindowsController(IWindowService windows) : ControllerBase
     {
         try
         {
-            await windows.UpdateAsync(
+            await mediator.Send(new UpdateWindowCommand(
                 id,
                 request.Name,
                 request.Description,
@@ -156,9 +156,8 @@ public class WindowsController(IWindowService windows) : ControllerBase
                 request.InstallationType,
                 request.OperationType,
                 request.HasScreens,
-                request.HasStormWindows,
-                ct
-            );
+                request.HasStormWindows
+            ), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -170,7 +169,7 @@ public class WindowsController(IWindowService windows) : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await windows.DeleteAsync(id, ct);
+        await mediator.Send(new DeleteWindowCommand(id), ct);
         return NoContent();
     }
 }

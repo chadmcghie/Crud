@@ -1,5 +1,6 @@
 using Api.Dtos;
-using App.Abstractions;
+using App.Features.Walls;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -7,12 +8,12 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-public class WallsController(IWallService walls) : ControllerBase
+public class WallsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
-        var items = await walls.ListAsync(ct);
+        var items = await mediator.Send(new ListWallsQuery(), ct);
         return Ok(items.Select(w => new WallResponse(
             w.Id,
             w.Name,
@@ -35,7 +36,7 @@ public class WallsController(IWallService walls) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
-        var w = await walls.GetAsync(id, ct);
+        var w = await mediator.Send(new GetWallQuery(id), ct);
         if (w is null) return NotFound();
         return Ok(new WallResponse(
             w.Id,
@@ -59,7 +60,7 @@ public class WallsController(IWallService walls) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<WallResponse>> Create([FromBody] CreateWallRequest request, CancellationToken ct)
     {
-        var w = await walls.CreateAsync(
+        var w = await mediator.Send(new CreateWallCommand(
             request.Name,
             request.Description,
             request.Length,
@@ -71,9 +72,8 @@ public class WallsController(IWallService walls) : ControllerBase
             request.UValue,
             request.MaterialLayers,
             request.Orientation,
-            request.Location,
-            ct
-        );
+            request.Location
+        ), ct);
         return CreatedAtAction(nameof(Get), new { id = w.Id }, new WallResponse(
             w.Id,
             w.Name,
@@ -98,7 +98,7 @@ public class WallsController(IWallService walls) : ControllerBase
     {
         try
         {
-            await walls.UpdateAsync(
+            await mediator.Send(new UpdateWallCommand(
                 id,
                 request.Name,
                 request.Description,
@@ -111,9 +111,8 @@ public class WallsController(IWallService walls) : ControllerBase
                 request.UValue,
                 request.MaterialLayers,
                 request.Orientation,
-                request.Location,
-                ct
-            );
+                request.Location
+            ), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -127,7 +126,7 @@ public class WallsController(IWallService walls) : ControllerBase
     {
         try
         {
-            await walls.DeleteAsync(id, ct);
+            await mediator.Send(new DeleteWallCommand(id), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)

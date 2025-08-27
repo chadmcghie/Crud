@@ -1,5 +1,6 @@
 using Api.Dtos;
-using App.Abstractions;
+using App.Features.People;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -7,12 +8,12 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class PeopleController(IPersonService people) : ControllerBase
+public class PeopleController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> List(CancellationToken ct)
     {
-        var items = await people.ListAsync(ct);
+        var items = await mediator.Send(new ListPeopleQuery(), ct);
         return Ok(items.Select(p => new PersonResponse(
             p.Id,
             p.FullName,
@@ -24,7 +25,7 @@ public class PeopleController(IPersonService people) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
-        var p = await people.GetAsync(id, ct);
+        var p = await mediator.Send(new GetPersonQuery(id), ct);
         if (p is null) return NotFound();
         return Ok(new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
     }
@@ -34,7 +35,7 @@ public class PeopleController(IPersonService people) : ControllerBase
     {
         try
         {
-            var p = await people.CreateAsync(request.FullName, request.Phone, request.RoleIds, ct);
+            var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
             return CreatedAtAction(nameof(Get), new { id = p.Id }, new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
         }
         catch (KeyNotFoundException ex)
@@ -48,7 +49,7 @@ public class PeopleController(IPersonService people) : ControllerBase
     {
         try
         {
-            await people.UpdateAsync(id, request.FullName, request.Phone, request.RoleIds, ct);
+            await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -62,7 +63,7 @@ public class PeopleController(IPersonService people) : ControllerBase
     {
         try
         {
-            await people.DeleteAsync(id, ct);
+            await mediator.Send(new DeletePersonCommand(id), ct);
             return NoContent();
         }
         catch (KeyNotFoundException)
