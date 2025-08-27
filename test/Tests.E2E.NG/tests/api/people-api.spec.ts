@@ -1,35 +1,17 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../setup/test-fixture';
 import { ApiHelpers } from '../helpers/api-helpers';
 import { generateTestPerson, generateTestRole, testPeople } from '../helpers/test-data';
 
 test.describe('People API', () => {
   let apiHelpers: ApiHelpers;
 
-  test.beforeAll(async ({ request }) => {
-    // Global cleanup at the start to remove any leftover data from previous runs
-    const globalApiHelpers = new ApiHelpers(request, 0);
-    await globalApiHelpers.cleanupAll();
-  });
-
-  test.beforeEach(async ({ request }, testInfo) => {
-    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
-    // Clean up any existing data and wait for completion
-    await apiHelpers.cleanupAll();
-    // Add a small delay to ensure cleanup is complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-  });
-
-  test.afterEach(async () => {
-    // Clean up after each test and wait for completion
-    await apiHelpers.cleanupAll();
-    // Add a small delay to ensure cleanup is complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+  test.beforeEach(async ({ apiContext, workerIndex, cleanDatabase }) => {
+    // cleanDatabase fixture handles automatic database cleanup
+    apiHelpers = new ApiHelpers(apiContext, workerIndex);
+    console.log(`🧪 People API test starting with worker ${workerIndex} - database automatically cleaned`);
   });
 
   test('GET /api/people - should return empty array when no people exist', async () => {
-    // Clean up any existing data first
-    await apiHelpers.cleanupAll();
-    
     const people = await apiHelpers.getPeople();
     // Should have no test-specific people (may have seed data)
     const testPeople = people.filter(p => p.fullName.includes('W') && p.fullName.includes('_T'));
@@ -37,8 +19,6 @@ test.describe('People API', () => {
   });
 
   test('POST /api/people - should create a new person successfully', async () => {
-    // Clean up any existing data first
-    await apiHelpers.cleanupAll();
     
     const testPerson = generateTestPerson();
     

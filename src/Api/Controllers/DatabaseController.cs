@@ -132,6 +132,85 @@ public class DatabaseController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Validates the database state before test execution.
+    /// Only available in Development and Testing environments.
+    /// </summary>
+    [HttpGet("validate-pre-test")]
+    public async Task<IActionResult> ValidatePreTestState([FromQuery] int workerIndex)
+    {
+        // Security check - only allow in non-production environments
+        if (!_environment.IsDevelopment() && _environment.EnvironmentName != "Testing")
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var validation = await _databaseTestService.ValidatePreTestStateAsync(workerIndex);
+            return Ok(validation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to validate pre-test database state for worker {WorkerIndex}", workerIndex);
+            return StatusCode(500, new { Error = "Failed to validate database state", Details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Validates the database state after test execution.
+    /// Only available in Development and Testing environments.
+    /// </summary>
+    [HttpGet("validate-post-test")]
+    public async Task<IActionResult> ValidatePostTestState([FromQuery] int workerIndex)
+    {
+        // Security check - only allow in non-production environments
+        if (!_environment.IsDevelopment() && _environment.EnvironmentName != "Testing")
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var validation = await _databaseTestService.ValidatePostTestStateAsync(workerIndex);
+            return Ok(validation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to validate post-test database state for worker {WorkerIndex}", workerIndex);
+            return StatusCode(500, new { Error = "Failed to validate database state", Details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Performs database integrity verification.
+    /// Only available in Development and Testing environments.
+    /// </summary>
+    [HttpGet("verify-integrity")]
+    public async Task<IActionResult> VerifyDatabaseIntegrity([FromQuery] int workerIndex)
+    {
+        // Security check - only allow in non-production environments
+        if (!_environment.IsDevelopment() && _environment.EnvironmentName != "Testing")
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var isValid = await _databaseTestService.VerifyDatabaseIntegrityAsync(workerIndex);
+            return Ok(new { 
+                IsValid = isValid,
+                WorkerIndex = workerIndex,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to verify database integrity for worker {WorkerIndex}", workerIndex);
+            return StatusCode(500, new { Error = "Failed to verify database integrity", Details = ex.Message });
+        }
+    }
+
 
 }
 

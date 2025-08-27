@@ -1,25 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../setup/test-fixture';
 import { ApiHelpers } from '../helpers/api-helpers';
 import { generateTestWall, testWalls } from '../helpers/test-data';
 
 test.describe('Walls API', () => {
   let apiHelpers: ApiHelpers;
 
-  test.beforeAll(async ({ request }) => {
-    // Global cleanup at the start to remove any leftover data from previous runs
-    const globalApiHelpers = new ApiHelpers(request, 0);
-    await globalApiHelpers.cleanupAll();
-  });
-
-  test.beforeEach(async ({ request }, testInfo) => {
-    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
-    // Clean up any existing data
-    await apiHelpers.cleanupAll();
-  });
-
-  test.afterEach(async () => {
-    // Clean up after each test
-    await apiHelpers.cleanupAll();
+  test.beforeEach(async ({ apiContext, workerIndex, cleanDatabase }) => {
+    // cleanDatabase fixture handles automatic database cleanup
+    apiHelpers = new ApiHelpers(apiContext, workerIndex);
+    console.log(`🧪 Walls API test starting with worker ${workerIndex} - database automatically cleaned`);
   });
 
   test('GET /api/walls - should return no test walls when clean', async () => {

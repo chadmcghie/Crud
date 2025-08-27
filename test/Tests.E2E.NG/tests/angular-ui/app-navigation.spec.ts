@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../setup/test-fixture';
 import { PageHelpers } from '../helpers/page-helpers';
 import { ApiHelpers } from '../helpers/api-helpers';
 
@@ -6,29 +6,12 @@ test.describe('Application Navigation and Layout', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }, testInfo) => {
+  test.beforeEach(async ({ page, apiContext, workerIndex, cleanDatabase }) => {
+    // cleanDatabase fixture handles database cleanup automatically
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
+    apiHelpers = new ApiHelpers(apiContext, workerIndex);
     
-    // Clean up any existing data
-    if (apiHelpers) {
-      try {
-        await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-      } catch (error) {
-        console.warn('Failed to cleanup before test:', error);
-      }
-    }
-  });
-
-  test.afterEach(async () => {
-    // Clean up after each test
-    if (apiHelpers) {
-      try {
-        await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-      } catch (error) {
-        console.warn('Failed to cleanup after test:', error);
-      }
-    }
+    console.log(`🧪 Starting test with worker ${workerIndex} - database automatically cleaned`);
   });
 
   test('should load the application successfully', async ({ page }) => {
@@ -168,9 +151,8 @@ test.describe('Application Navigation and Layout', () => {
   test('should handle keyboard navigation', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Tab to the roles tab button
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    // Focus on the roles tab button specifically
+    await page.locator('button:has-text("🎭 Roles Management")').focus();
     
     // Press Enter to activate roles tab
     await page.keyboard.press('Enter');

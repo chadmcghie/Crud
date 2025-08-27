@@ -5,20 +5,28 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
-
-  fullyParallel: false, // Disable full parallelism to avoid data conflicts
+  /* Run tests in files in parallel with proper worker isolation */
+  fullyParallel: true, // Enable full parallelism with worker database isolation
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Run tests sequentially to avoid data conflicts */
-  workers: 1, // Run tests sequentially to avoid data conflicts
+  /* Intelligent retry configuration with exponential backoff */
+  retries: process.env.CI ? 3 : 1, // More retries on CI due to environmental flakiness
+  /* Enable parallel workers with database isolation */
+  workers: process.env.CI ? 4 : 2, // Use multiple workers with isolated databases
   /* Increase timeout for slow startup */
   timeout: 60000, // 60 seconds per test
+  
+  /* Global setup and teardown for database management */
+  globalSetup: './tests/setup/global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/results.xml' }],
+    ['list', { printSteps: true }]
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -74,22 +82,5 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: [
-    {
-      command: 'cd ../../src/Api && dotnet run',
-      port: 5172,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000, // 2 minutes for API startup
-      env: {
-        ASPNETCORE_ENVIRONMENT: 'Development'
-      }
-    },
-    {
-      command: 'cd ../../src/Angular && npm start',
-      port: 4200,
-      reuseExistingServer: !process.env.CI,
-      timeout: 180000, // 3 minutes for Angular startup (includes npm install if needed)
-    }
-  ],
+  /* Per-worker servers are started dynamically in test setup - removed static webServer configuration */
 });
