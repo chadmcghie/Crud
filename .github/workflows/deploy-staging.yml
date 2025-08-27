@@ -57,7 +57,7 @@ jobs:
       run: |
         dotnet restore Crud.All.sln
         dotnet build Crud.All.sln --configuration Release
-        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical" || true
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical"
         
     - name: Frontend smoke test
       working-directory: ./src/Angular
