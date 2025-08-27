@@ -1,6 +1,5 @@
 using App;
 using Infrastructure;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Api
 {
