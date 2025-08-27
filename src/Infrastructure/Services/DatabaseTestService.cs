@@ -79,27 +79,10 @@ public class DatabaseTestService
     {
         try
         {
-            // Initialize Respawner if needed (async-safe)
-            if (_respawner == null)
-            {
-                lock (_respawnerLock)
-                {
-                    if (_respawner == null)
-                    {
-                        // For SQLite, Respawn has limited support and can cause issues
-                        // Skip Respawn for SQLite and use EF Core cleanup instead
-                        _logger.LogDebug("Skipping Respawn for SQLite database, using EF Core cleanup for worker {WorkerIndex}", workerIndex);
-                        return false;
-                    }
-                }
-            }
-
-            using var connection = _context.Database.GetDbConnection();
-            await connection.OpenAsync();
-            await _respawner.ResetAsync(connection);
-            
-            _logger.LogInformation("Database reset completed using Respawn for worker {WorkerIndex}", workerIndex);
-            return true;
+            // For SQLite, Respawn has limited support and can cause issues
+            // Skip Respawn for SQLite and use EF Core cleanup instead
+            _logger.LogDebug("Skipping Respawn for SQLite database, using EF Core cleanup for worker {WorkerIndex}", workerIndex);
+            return false;
         }
         catch (Exception ex)
         {
