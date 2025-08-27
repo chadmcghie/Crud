@@ -9,8 +9,12 @@
     "test:debug": "playwright test --debug",
     "test:local": "playwright test --config=playwright.config.local.ts",
     "test:api-only": "playwright test --config=playwright.config.api-only.ts",
+    "test:parallel": "playwright test --config=playwright.config.parallel.ts",
+    "test:integration": "playwright test --config=playwright.config.integration.ts",
     "test:list": "playwright test --list --config=playwright.config.local.ts",
     "test:list-api": "playwright test --list --config=playwright.config.api-only.ts",
+    "test:list-parallel": "playwright test --list --config=playwright.config.parallel.ts",
+    "test:list-integration": "playwright test --list --config=playwright.config.integration.ts",
     "report": "playwright show-report",
     "install-browsers": "playwright install"
   },

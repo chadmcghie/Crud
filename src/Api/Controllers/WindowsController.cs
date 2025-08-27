@@ -132,32 +132,39 @@ public class WindowsController(IWindowService windows) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWindowRequest request, CancellationToken ct)
     {
-        await windows.UpdateAsync(
-            id,
-            request.Name,
-            request.Description,
-            request.Width,
-            request.Height,
-            request.Area,
-            request.FrameType,
-            request.FrameDetails,
-            request.GlazingType,
-            request.GlazingDetails,
-            request.UValue,
-            request.SolarHeatGainCoefficient,
-            request.VisibleTransmittance,
-            request.AirLeakage,
-            request.EnergyStarRating,
-            request.NFRCRating,
-            request.Orientation,
-            request.Location,
-            request.InstallationType,
-            request.OperationType,
-            request.HasScreens,
-            request.HasStormWindows,
-            ct
-        );
-        return NoContent();
+        try
+        {
+            await windows.UpdateAsync(
+                id,
+                request.Name,
+                request.Description,
+                request.Width,
+                request.Height,
+                request.Area,
+                request.FrameType,
+                request.FrameDetails,
+                request.GlazingType,
+                request.GlazingDetails,
+                request.UValue,
+                request.SolarHeatGainCoefficient,
+                request.VisibleTransmittance,
+                request.AirLeakage,
+                request.EnergyStarRating,
+                request.NFRCRating,
+                request.Orientation,
+                request.Location,
+                request.InstallationType,
+                request.OperationType,
+                request.HasScreens,
+                request.HasStormWindows,
+                ct
+            );
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpDelete("{id:guid}")]

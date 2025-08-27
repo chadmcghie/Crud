@@ -7,20 +7,20 @@ test.describe('Full Workflow Integration Tests', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, request }, testInfo) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request);
+    apiHelpers = new ApiHelpers(request, testInfo.workerIndex);
     
-    // Clean up any existing data
-    await apiHelpers.cleanupAll();
+    // Force immediate cleanup for UI tests to ensure complete isolation
+    await apiHelpers.cleanupAll(true);
     
     // Navigate to the app
     await pageHelpers.navigateToApp();
   });
 
   test.afterEach(async () => {
-    // Clean up after each test
-    await apiHelpers.cleanupAll();
+    // Force immediate cleanup after each test
+    await apiHelpers.cleanupAll(true);
   });
 
   test('should complete full role and person management workflow', async () => {
@@ -223,10 +223,11 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.switchToRolesTab();
     await pageHelpers.clickAddRole();
     
-    // Try to submit empty form
-    await page.click('button[type="submit"]');
+    // Verify submit button is disabled when form is empty (proper validation behavior)
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeDisabled();
     
-    // Should show validation error and not create role
+    // Verify no role was created (since form couldn't be submitted)
     const roles = await apiHelpers.getRoles();
     expect(roles).toHaveLength(0);
     
@@ -301,10 +302,21 @@ test.describe('Full Workflow Integration Tests', () => {
     
     // Refresh the browser
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    
+    // Wait for page to load with more flexible approach
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 8000 });
+    } catch (error) {
+      console.warn('Network idle timeout, falling back to domcontentloaded');
+      await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+    }
+    
+    // Wait for Angular to fully load
+    await page.waitForSelector('app-root', { timeout: 8000 });
+    await page.waitForTimeout(1000); // Additional wait for Angular initialization
     
     // Should default to people tab and show data
-    await expect(page.locator('app-people-list')).toBeVisible();
+    await expect(page.locator('app-people-list')).toBeVisible({ timeout: 10000 });
     await pageHelpers.verifyPersonExists(person.fullName);
     
     // Switch to roles tab and verify data

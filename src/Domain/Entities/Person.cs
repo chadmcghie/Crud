@@ -14,5 +14,9 @@ namespace Domain.Entities
 
         // A person can have many roles. Roles are extensible and managed separately
         public ICollection<Role> Roles { get; set; } = new HashSet<Role>();
+
+            // Concurrency token for optimistic concurrency control
+    // Nullable for SQLite compatibility
+    public byte[]? RowVersion { get; set; }
     }
 }
