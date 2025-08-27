@@ -65,11 +65,15 @@ describe('PeopleListComponent', () => {
   it('should handle loading error', () => {
     apiService.listPeople.and.returnValue(throwError(() => new Error('API Error')));
     
+    // Suppress expected console error during test
+    spyOn(console, 'error');
+    
     fixture.detectChanges();
     
     expect(component.error).toBe('Failed to load people. Please try again.');
     expect(component.people).toEqual([]);
     expect(component.isLoading).toBe(false);
+    expect(console.error).toHaveBeenCalledWith('Error loading people:', jasmine.any(Error));
   });
 
   it('should set loading state during API call', () => {
@@ -142,12 +146,16 @@ describe('PeopleListComponent', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     apiService.deletePerson.and.returnValue(throwError(() => new Error('Delete failed')));
     
+    // Suppress expected console error during test
+    spyOn(console, 'error');
+    
     fixture.detectChanges();
     
     const personToDelete = mockPeople[0];
     component.onDeletePerson(personToDelete);
     
     expect(component.error).toBe('Failed to delete John Doe. Please try again.');
+    expect(console.error).toHaveBeenCalledWith('Error deleting person:', jasmine.any(Error));
     expect(apiService.listPeople).toHaveBeenCalledTimes(1); // Only the initial load, not after failed delete
   });
 

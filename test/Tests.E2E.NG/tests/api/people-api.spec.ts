@@ -1,25 +1,15 @@
-import { test, expect } from '../setup/test-fixture';
-import { ApiHelpers } from '../helpers/api-helpers';
+import { test, expect } from '../setup/api-only-fixture';
 import { generateTestPerson, generateTestRole, testPeople } from '../helpers/test-data';
 
 test.describe('People API', () => {
-  let apiHelpers: ApiHelpers;
-
-  test.beforeEach(async ({ apiContext, workerIndex, cleanDatabase }) => {
-    // cleanDatabase fixture handles automatic database cleanup
-    apiHelpers = new ApiHelpers(apiContext, workerIndex);
-    console.log(`🧪 People API test starting with worker ${workerIndex} - database automatically cleaned`);
-  });
-
-  test('GET /api/people - should return empty array when no people exist', async () => {
+  test('GET /api/people - should return empty array when no people exist', async ({ apiHelpers }) => {
     const people = await apiHelpers.getPeople();
     // Should have no test-specific people (may have seed data)
     const testPeople = people.filter(p => p.fullName.includes('W') && p.fullName.includes('_T'));
     expect(testPeople).toEqual([]);
   });
 
-  test('POST /api/people - should create a new person successfully', async () => {
-    
+  test('POST /api/people - should create a new person successfully', async ({ apiHelpers }) => {
     const testPerson = generateTestPerson();
     
     const createdPerson = await apiHelpers.createPerson(testPerson);
@@ -38,7 +28,7 @@ test.describe('People API', () => {
     expect(createdPersonInList).toMatchObject(createdPerson);
   });
 
-  test('POST /api/people - should create person with only required fields', async () => {
+  test('POST /api/people - should create person with only required fields', async ({ apiHelpers }) => {
     const testPerson = { fullName: 'Test Person Required Only' };
     
     const createdPerson = await apiHelpers.createPerson(testPerson);
@@ -51,7 +41,7 @@ test.describe('People API', () => {
     });
   });
 
-  test('POST /api/people - should create person with roles', async () => {
+  test('POST /api/people - should create person with roles', async ({ apiHelpers }) => {
     // First create some roles
     const role1 = await apiHelpers.createRole(generateTestRole());
     const role2 = await apiHelpers.createRole(generateTestRole());
@@ -68,16 +58,16 @@ test.describe('People API', () => {
     );
   });
 
-  test('POST /api/people - should validate required fields', async ({ request }) => {
+  test('POST /api/people - should validate required fields', async ({ apiContext }) => {
     // Try to create person without fullName
-    const response = await request.post('/api/people', {
+    const response = await apiContext.post('/api/people', {
       data: { phone: '+1-555-0123' }
     });
     
     expect(response.status()).toBe(400);
   });
 
-  test('GET /api/people/{id} - should return specific person', async () => {
+  test('GET /api/people/{id} - should return specific person', async ({ apiHelpers }) => {
     const testPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(testPerson);
     
@@ -86,14 +76,14 @@ test.describe('People API', () => {
     expect(retrievedPerson).toMatchObject(createdPerson);
   });
 
-  test('GET /api/people/{id} - should return 404 for non-existent person', async ({ request }) => {
+  test('GET /api/people/{id} - should return 404 for non-existent person', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
-    const response = await request.get(`/api/people/${nonExistentId}`);
+    const response = await apiContext.get(`/api/people/${nonExistentId}`);
     expect(response.status()).toBe(404);
   });
 
-  test('PUT /api/people/{id} - should update existing person', async () => {
+  test('PUT /api/people/{id} - should update existing person', async ({ apiHelpers }) => {
     const originalPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(originalPerson);
     
@@ -109,7 +99,7 @@ test.describe('People API', () => {
     });
   });
 
-  test('PUT /api/people/{id} - should update person roles', async () => {
+  test('PUT /api/people/{id} - should update person roles', async ({ apiHelpers }) => {
     // Create roles
     const role1 = await apiHelpers.createRole(generateTestRole());
     const role2 = await apiHelpers.createRole(generateTestRole());
@@ -136,11 +126,11 @@ test.describe('People API', () => {
     expect(retrievedPerson.roles.map((r: any) => r.id)).not.toContain(role1.id);
   });
 
-  test('PUT /api/people/{id} - should return 404 for non-existent person', async ({ request }) => {
+  test('PUT /api/people/{id} - should return 404 for non-existent person', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     const updateData = generateTestPerson();
     
-    const response = await request.put(`/api/people/${nonExistentId}`, {
+    const response = await apiContext.put(`/api/people/${nonExistentId}`, {
       data: updateData
     });
     
@@ -148,7 +138,7 @@ test.describe('People API', () => {
     expect([404, 500, 204]).toContain(response.status());
   });
 
-  test('DELETE /api/people/{id} - should delete existing person', async () => {
+  test('DELETE /api/people/{id} - should delete existing person', async ({ apiHelpers }) => {
     // Clean up any existing data first
     await apiHelpers.cleanupAll();
     
@@ -169,15 +159,15 @@ test.describe('People API', () => {
     expect(deletedPersonStillExists).toBeUndefined();
   });
 
-  test('DELETE /api/people/{id} - should return 404 for non-existent person', async ({ request }) => {
+  test('DELETE /api/people/{id} - should return 404 for non-existent person', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
-    const response = await request.delete(`/api/people/${nonExistentId}`);
+    const response = await apiContext.delete(`/api/people/${nonExistentId}`);
     // API may return 404, 500, or 204 for non-existent resources
     expect([404, 500, 204]).toContain(response.status());
   });
 
-  test('should handle multiple people correctly', async () => {
+  test('should handle multiple people correctly', async ({ apiHelpers }) => {
     // Clean up any existing data first
     await apiHelpers.cleanupAll();
     
@@ -201,12 +191,12 @@ test.describe('People API', () => {
     }
   });
 
-  test('should handle invalid role IDs gracefully', async ({ request }) => {
+  test('should handle invalid role IDs gracefully', async ({ apiContext }) => {
     const testPerson = generateTestPerson({
       roleIds: ['invalid-role-id', '00000000-0000-0000-0000-000000000000']
     });
     
-    const response = await request.post('/api/people', {
+    const response = await apiContext.post('/api/people', {
       data: testPerson
     });
     
@@ -220,7 +210,7 @@ test.describe('People API', () => {
     }
   });
 
-  test('should handle role deletion with proper referential integrity', async () => {
+  test('should handle role deletion with proper referential integrity', async ({ apiHelpers }) => {
     // Clean up any existing data first
     await apiHelpers.cleanupAll();
     
@@ -251,7 +241,7 @@ test.describe('People API', () => {
     expect(roles.find(r => r.id === role.id)).toBeUndefined();
   });
 
-  test('should handle special characters in person data', async () => {
+  test('should handle special characters in person data', async ({ apiHelpers }) => {
     const testPerson = generateTestPerson({
       fullName: 'Person with Special Characters: !@#$%^&*() 你好 🌟',
       phone: '+1-555-0123 ext. 456'
@@ -267,7 +257,7 @@ test.describe('People API', () => {
     expect(retrievedPerson).toMatchObject(createdPerson);
   });
 
-  test('should handle phone number formats', async () => {
+  test('should handle phone number formats', async ({ apiHelpers }) => {
     const phoneFormats = [
       '+1-555-0123',
       '(555) 012-3456',
@@ -290,32 +280,32 @@ test.describe('People API', () => {
     }
   });
 
-  test('should return proper HTTP status codes', async ({ request }) => {
+  test('should return proper HTTP status codes', async ({ apiContext }) => {
     const testPerson = generateTestPerson();
     
     // POST should return 201 Created
-    const createResponse = await request.post('/api/people', {
+    const createResponse = await apiContext.post('/api/people', {
       data: testPerson
     });
     expect(createResponse.status()).toBe(201);
     const createdPerson = await createResponse.json();
     
     // GET should return 200 OK
-    const getResponse = await request.get(`/api/people/${createdPerson.id}`);
+    const getResponse = await apiContext.get(`/api/people/${createdPerson.id}`);
     expect(getResponse.status()).toBe(200);
     
     // PUT should return 204 No Content
-    const updateResponse = await request.put(`/api/people/${createdPerson.id}`, {
+    const updateResponse = await apiContext.put(`/api/people/${createdPerson.id}`, {
       data: generateTestPerson()
     });
     expect(updateResponse.status()).toBe(204);
     
     // DELETE should return 204 No Content
-    const deleteResponse = await request.delete(`/api/people/${createdPerson.id}`);
+    const deleteResponse = await apiContext.delete(`/api/people/${createdPerson.id}`);
     expect(deleteResponse.status()).toBe(204);
   });
 
-  test('should handle concurrent operations correctly', async () => {
+  test('should handle concurrent operations correctly', async ({ apiHelpers }) => {
     // Clean up any existing data first
     await apiHelpers.cleanupAll();
     
@@ -340,7 +330,7 @@ test.describe('People API', () => {
     expect(foundPerson2).toMatchObject(createdPerson2);
   });
 
-  test('should handle role assignment edge cases', async () => {
+  test('should handle role assignment edge cases', async ({ apiHelpers }) => {
     // Create person with empty role array
     const testPerson1 = generateTestPerson({ roleIds: [] });
     const createdPerson1 = await apiHelpers.createPerson(testPerson1);

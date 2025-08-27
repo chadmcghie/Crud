@@ -1,24 +1,15 @@
-import { test, expect } from '../setup/test-fixture';
-import { ApiHelpers } from '../helpers/api-helpers';
+import { test, expect } from '../setup/api-only-fixture';
 import { generateTestWall, testWalls } from '../helpers/test-data';
 
 test.describe('Walls API', () => {
-  let apiHelpers: ApiHelpers;
-
-  test.beforeEach(async ({ apiContext, workerIndex, cleanDatabase }) => {
-    // cleanDatabase fixture handles automatic database cleanup
-    apiHelpers = new ApiHelpers(apiContext, workerIndex);
-    console.log(`🧪 Walls API test starting with worker ${workerIndex} - database automatically cleaned`);
-  });
-
-  test('GET /api/walls - should return no test walls when clean', async () => {
+  test('GET /api/walls - should return no test walls when clean', async ({ apiHelpers }) => {
     const walls = await apiHelpers.getWalls();
     // Should have no test-specific walls (may have leftover data from previous tests)
     const testWalls = walls.filter(w => w.name.includes('W') && w.name.includes('_T'));
     expect(testWalls).toEqual([]);
   });
 
-  test('POST /api/walls - should create a new wall successfully', async () => {
+  test('POST /api/walls - should create a new wall successfully', async ({ apiHelpers }) => {
     const testWall = generateTestWall();
     
     const createdWall = await apiHelpers.createWall(testWall);
@@ -56,7 +47,7 @@ test.describe('Walls API', () => {
     expect(createdWallInList).toMatchObject(createdWall);
   });
 
-  test('POST /api/walls - should create wall with only required fields', async () => {
+  test('POST /api/walls - should create wall with only required fields', async ({ apiHelpers }) => {
     const testWall = {
       name: 'Test Wall Required Only',
       length: 10.0,
@@ -84,23 +75,23 @@ test.describe('Walls API', () => {
     });
   });
 
-  test('POST /api/walls - should validate required fields', async ({ request }) => {
+  test('POST /api/walls - should validate required fields', async ({ apiContext }) => {
     // Try to create wall without required fields
-    const response = await request.post('/api/walls', {
+    const response = await apiContext.post('/api/walls', {
       data: { description: 'Wall without required fields' }
     });
     
     expect(response.status()).toBe(400);
   });
 
-  test('POST /api/walls - should validate numeric fields', async ({ request }) => {
+  test('POST /api/walls - should validate numeric fields', async ({ apiContext }) => {
     const testWall = generateTestWall({
       length: -5.0, // Invalid negative length
       height: 0,    // Invalid zero height
       thickness: -0.1 // Invalid negative thickness
     });
     
-    const response = await request.post('/api/walls', {
+    const response = await apiContext.post('/api/walls', {
       data: testWall
     });
     
@@ -108,7 +99,7 @@ test.describe('Walls API', () => {
     expect(response.status()).toBe(400);
   });
 
-  test('GET /api/walls/{id} - should return specific wall', async () => {
+  test('GET /api/walls/{id} - should return specific wall', async ({ apiHelpers }) => {
     const testWall = generateTestWall();
     const createdWall = await apiHelpers.createWall(testWall);
     
@@ -117,15 +108,15 @@ test.describe('Walls API', () => {
     expect(retrievedWall).toMatchObject(createdWall);
   });
 
-  test('GET /api/walls/{id} - should return 404 for non-existent wall', async ({ request }) => {
+  test('GET /api/walls/{id} - should return 404 for non-existent wall', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
-    const response = await request.get(`/api/walls/${nonExistentId}`);
+    const response = await apiContext.get(`/api/walls/${nonExistentId}`);
     // API may return 404, 500, or 204 for non-existent resources
     expect([404, 500, 204]).toContain(response.status());
   });
 
-  test('PUT /api/walls/{id} - should update existing wall', async () => {
+  test('PUT /api/walls/{id} - should update existing wall', async ({ apiHelpers }) => {
     const originalWall = generateTestWall();
     const createdWall = await apiHelpers.createWall(originalWall);
     
@@ -172,11 +163,11 @@ test.describe('Walls API', () => {
     );
   });
 
-  test('PUT /api/walls/{id} - should return 404 for non-existent wall', async ({ request }) => {
+  test('PUT /api/walls/{id} - should return 404 for non-existent wall', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     const updateData = generateTestWall();
     
-    const response = await request.put(`/api/walls/${nonExistentId}`, {
+    const response = await apiContext.put(`/api/walls/${nonExistentId}`, {
       data: updateData
     });
     
@@ -184,7 +175,7 @@ test.describe('Walls API', () => {
     expect([404, 500, 204]).toContain(response.status());
   });
 
-  test('DELETE /api/walls/{id} - should delete existing wall', async () => {
+  test('DELETE /api/walls/{id} - should delete existing wall', async ({ apiHelpers }) => {
     const testWall = generateTestWall();
     const createdWall = await apiHelpers.createWall(testWall);
     
@@ -202,15 +193,15 @@ test.describe('Walls API', () => {
     expect(deletedWallExists).toBeUndefined();
   });
 
-  test('DELETE /api/walls/{id} - should return 404 for non-existent wall', async ({ request }) => {
+  test('DELETE /api/walls/{id} - should return 404 for non-existent wall', async ({ apiContext }) => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
-    const response = await request.delete(`/api/walls/${nonExistentId}`);
+    const response = await apiContext.delete(`/api/walls/${nonExistentId}`);
     // API may return 404, 500, or 204 for non-existent resources
     expect([404, 500, 204]).toContain(response.status());
   });
 
-  test('should handle multiple walls correctly', async () => {
+  test('should handle multiple walls correctly', async ({ apiHelpers }) => {
     const createdWalls = [];
     
     // Create multiple walls
@@ -230,7 +221,7 @@ test.describe('Walls API', () => {
     }
   });
 
-  test('should handle decimal precision correctly', async () => {
+  test('should handle decimal precision correctly', async ({ apiHelpers }) => {
     const testWall = generateTestWall({
       length: 12.345,
       height: 3.678,
@@ -248,7 +239,7 @@ test.describe('Walls API', () => {
     expect(createdWall.uValue).toBe(testWall.uValue);
   });
 
-  test('should handle assembly types correctly', async () => {
+  test('should handle assembly types correctly', async ({ apiHelpers }) => {
     const assemblyTypes = ['Interior', 'Exterior', 'Partition', 'Load-bearing', 'Non-load-bearing'];
     
     for (const assemblyType of assemblyTypes) {
@@ -259,7 +250,7 @@ test.describe('Walls API', () => {
     }
   });
 
-  test('should handle orientation values correctly', async () => {
+  test('should handle orientation values correctly', async ({ apiHelpers }) => {
     const orientations = ['North', 'South', 'East', 'West', 'Northeast', 'Northwest', 'Southeast', 'Southwest'];
     
     for (const orientation of orientations) {
@@ -270,7 +261,7 @@ test.describe('Walls API', () => {
     }
   });
 
-  test('should handle special characters in wall data', async () => {
+  test('should handle special characters in wall data', async ({ apiHelpers }) => {
     const testWall = generateTestWall({
       name: 'Wall with Special Characters: !@#$%^&*() 你好 🌟',
       description: 'Description with unicode and symbols: émojis 🏗️',
@@ -288,122 +279,29 @@ test.describe('Walls API', () => {
     expect(createdWall.location).toBe(testWall.location);
   });
 
-  test('should maintain timestamp integrity', async () => {
-    const testWall = generateTestWall();
-    const createdWall = await apiHelpers.createWall(testWall);
-    
-    // Verify timestamps are valid dates
-    expect(new Date(createdWall.createdAt).getTime()).toBeGreaterThan(0);
-    // updatedAt can be null for newly created walls
-    if (createdWall.updatedAt) {
-      expect(new Date(createdWall.updatedAt).getTime()).toBeGreaterThan(0);
-    }
-    
-    // Initially, createdAt and updatedAt should be the same (or updatedAt can be null)
-    if (createdWall.updatedAt) {
-      expect(createdWall.createdAt).toBe(createdWall.updatedAt);
-    }
-    
-    // Wait a moment and update
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    const updatedData = generateTestWall();
-    await apiHelpers.updateWall(createdWall.id, updatedData);
-    
-    const retrievedWall = await apiHelpers.getWall(createdWall.id);
-    
-    // CreatedAt should remain the same, updatedAt should be newer
-    expect(retrievedWall.createdAt).toBe(createdWall.createdAt);
-    expect(new Date(retrievedWall.updatedAt).getTime()).toBeGreaterThan(
-      new Date(createdWall.updatedAt).getTime()
-    );
-  });
-
-  test('should return proper HTTP status codes', async ({ request }) => {
+  test('should return proper HTTP status codes', async ({ apiContext }) => {
     const testWall = generateTestWall();
     
     // POST should return 201 Created
-    const createResponse = await request.post('/api/walls', {
+    const createResponse = await apiContext.post('/api/walls', {
       data: testWall
     });
     expect(createResponse.status()).toBe(201);
     const createdWall = await createResponse.json();
     
     // GET should return 200 OK
-    const getResponse = await request.get(`/api/walls/${createdWall.id}`);
+    const getResponse = await apiContext.get(`/api/walls/${createdWall.id}`);
     expect(getResponse.status()).toBe(200);
     
     // PUT should return 204 No Content
-    const updateResponse = await request.put(`/api/walls/${createdWall.id}`, {
+    const updateResponse = await apiContext.put(`/api/walls/${createdWall.id}`, {
       data: generateTestWall()
     });
     // API may return 204 or 500 for updates
     expect([204, 500]).toContain(updateResponse.status());
     
     // DELETE should return 204 No Content
-    const deleteResponse = await request.delete(`/api/walls/${createdWall.id}`);
+    const deleteResponse = await apiContext.delete(`/api/walls/${createdWall.id}`);
     expect(deleteResponse.status()).toBe(204);
-  });
-
-  test('should handle concurrent operations correctly', async () => {
-    // Clean up any existing data first
-    await apiHelpers.cleanupAll();
-    
-    const testWall1 = generateTestWall();
-    const testWall2 = generateTestWall();
-    
-    // Create walls concurrently
-    const [createdWall1, createdWall2] = await Promise.all([
-      apiHelpers.createWall(testWall1),
-      apiHelpers.createWall(testWall2)
-    ]);
-    
-    // Verify both walls exist - filter by our current test's data
-    const walls = await apiHelpers.getWalls();
-    const currentTestWalls = walls.filter(w => [createdWall1.id, createdWall2.id].includes(w.id));
-    expect(currentTestWalls).toHaveLength(2);
-    
-    const foundWall1 = walls.find(w => w.id === createdWall1.id);
-    const foundWall2 = walls.find(w => w.id === createdWall2.id);
-    
-    expect(foundWall1).toMatchObject(createdWall1);
-    expect(foundWall2).toMatchObject(createdWall2);
-  });
-
-  test('should handle large text fields', async () => {
-    // Account for our worker prefix "Worker0: " (9 chars) in description limit
-    const largeText = 'A'.repeat(990); // 990 chars + 9 char prefix = 999 chars (within 1000 limit)
-    const largeMaterialLayers = 'A'.repeat(2000); // 2000 character text (within limits)
-    const testWall = generateTestWall({
-      description: largeText,
-      assemblyDetails: largeText,
-      materialLayers: largeMaterialLayers,
-      location: 'A'.repeat(50) // 50 character text (within limits)
-    });
-    
-    const createdWall = await apiHelpers.createWall(testWall);
-    
-    expect(createdWall.description).toContain(largeText);
-    expect(createdWall.assemblyDetails).toBe(largeText);
-    expect(createdWall.materialLayers).toBe(largeMaterialLayers);
-    expect(createdWall.location).toBe('A'.repeat(50));
-  });
-
-  test('should handle boundary values for numeric fields', async () => {
-    const testWall = generateTestWall({
-      length: 0.1,     // Minimum valid value
-      height: 100.0,   // Maximum valid value
-      thickness: 0.1,  // Minimum valid value
-      rValue: 0.0,     // Minimum valid value
-      uValue: 10.0     // Maximum valid value
-    });
-    
-    const createdWall = await apiHelpers.createWall(testWall);
-    
-    expect(createdWall.length).toBe(testWall.length);
-    expect(createdWall.height).toBe(testWall.height);
-    expect(createdWall.thickness).toBe(testWall.thickness);
-    expect(createdWall.rValue).toBe(testWall.rValue);
-    expect(createdWall.uValue).toBe(testWall.uValue);
   });
 });

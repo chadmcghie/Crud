@@ -55,19 +55,48 @@ public class RoleTests
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
-        public void WithInvalidName_ShouldStillCreateRole_ValidationHandledByDataAnnotations(string invalidName)
+        public void WithInvalidName_ShouldThrowArgumentException(string invalidName)
         {
-            // Note: Entity creation doesn't enforce validation - that's handled by the framework
-            // This test documents current behavior
+            // Domain entities now use GuardClauses for immediate validation
+            // This enforces invariants at the domain level
             
-            // Arrange & Act
-            var role = RoleTestDataBuilder.Default()
+            // Arrange & Act & Assert
+            var action = () => RoleTestDataBuilder.Default()
                 .WithName(invalidName)
                 .Build();
 
-            // Assert
-            role.Should().NotBeNull();
-            role.Name.Should().Be(invalidName);
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Required input*was empty*");
+        }
+
+        [Fact]
+        public void WithNameTooLong_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var longName = new string('a', 101); // Max length is 100
+            
+            // Act & Assert
+            var action = () => RoleTestDataBuilder.Default()
+                .WithName(longName)
+                .Build();
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Input*too long*");
+        }
+
+        [Fact]
+        public void WithDescriptionTooLong_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var longDescription = new string('a', 501); // Max length is 500
+            
+            // Act & Assert
+            var action = () => RoleTestDataBuilder.Default()
+                .WithDescription(longDescription)
+                .Build();
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Input*too long*");
         }
     }
 }

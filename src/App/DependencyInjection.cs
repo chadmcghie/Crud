@@ -12,6 +12,10 @@ public static class DependencyInjection
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IWallService, WallService>();
         services.AddScoped<IWindowService, WindowService>();
+        
+        // Register MediatR
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+        
         return services;
     }
 }

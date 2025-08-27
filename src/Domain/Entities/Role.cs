@@ -12,7 +12,7 @@ public class Role
         get => _name;
         set 
         {
-            _name = Guard.Against.NullOrEmpty(value, nameof(value));
+            _name = Guard.Against.NullOrWhiteSpace(value, nameof(value));
             Guard.Against.StringTooLong(value, 100, nameof(value));
         }
     }
@@ -30,4 +30,6 @@ public class Role
             _description = value;
         }
     }
+
+    public byte[]? RowVersion { get; set; }
 }

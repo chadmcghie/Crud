@@ -10,7 +10,11 @@ namespace Domain.Entities
         public string FullName 
         { 
             get => _fullName;
-            set => _fullName = Guard.Against.NullOrEmpty(value, nameof(value));
+            set 
+            {
+                _fullName = Guard.Against.NullOrWhiteSpace(value, nameof(value));
+                Guard.Against.StringTooLong(value, 200, nameof(value));
+            }
         }
 
         public string? Phone { get; set; }

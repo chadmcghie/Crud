@@ -67,10 +67,14 @@ describe('PeopleComponent', () => {
   it('should handle roles loading error', () => {
     apiService.listRoles.and.returnValue(throwError(() => new Error('API Error')));
     
+    // Suppress expected console error during test
+    spyOn(console, 'error');
+    
     fixture.detectChanges();
     
     expect(component.rolesError).toBe('Failed to load roles. Role assignment may not work properly.');
     expect(component.roles).toEqual([]);
+    expect(console.error).toHaveBeenCalledWith('Error loading roles:', jasmine.any(Error));
   });
 
   it('should populate form when editing person', () => {
@@ -172,6 +176,9 @@ describe('PeopleComponent', () => {
   it('should handle create person error', () => {
     apiService.createPerson.and.returnValue(throwError(() => new Error('API Error')));
     
+    // Suppress expected console error during test
+    spyOn(console, 'error');
+    
     fixture.detectChanges();
     
     component.form.patchValue({
@@ -183,11 +190,15 @@ describe('PeopleComponent', () => {
     
     expect(component.error).toBe('Failed to create person. Please check your input and try again.');
     expect(component.isSubmitting).toBe(false);
+    expect(console.error).toHaveBeenCalledWith('Error creating person:', jasmine.any(Error));
   });
 
   it('should handle update person error', () => {
     component.editingPerson = mockPerson;
     apiService.updatePerson.and.returnValue(throwError(() => new Error('API Error')));
+    
+    // Suppress expected console error during test
+    spyOn(console, 'error');
     
     fixture.detectChanges();
     
@@ -199,6 +210,7 @@ describe('PeopleComponent', () => {
     
     expect(component.error).toBe('Failed to update person. Please check your input and try again.');
     expect(component.isSubmitting).toBe(false);
+    expect(console.error).toHaveBeenCalledWith('Error updating person:', jasmine.any(Error));
   });
 
   it('should not submit invalid form', () => {

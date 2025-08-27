@@ -91,19 +91,33 @@ public class PersonTests
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
-        public void WithInvalidFullName_ShouldStillCreatePerson_ValidationHandledByDataAnnotations(string invalidName)
+        public void WithInvalidFullName_ShouldThrowArgumentException(string invalidName)
         {
-            // Note: Entity creation doesn't enforce validation - that's handled by the framework
-            // This test documents current behavior
+            // Domain entities now use GuardClauses for immediate validation
+            // This enforces invariants at the domain level
             
-            // Arrange & Act
-            var person = PersonTestDataBuilder.Default()
+            // Arrange & Act & Assert
+            var action = () => PersonTestDataBuilder.Default()
                 .WithFullName(invalidName)
                 .Build();
 
-            // Assert
-            person.Should().NotBeNull();
-            person.FullName.Should().Be(invalidName);
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Required input*was empty*");
+        }
+
+        [Fact]
+        public void WithFullNameTooLong_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var longFullName = new string('a', 201); // Max length is 200
+            
+            // Act & Assert
+            var action = () => PersonTestDataBuilder.Default()
+                .WithFullName(longFullName)
+                .Build();
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Input*too long*");
         }
     }
 }
