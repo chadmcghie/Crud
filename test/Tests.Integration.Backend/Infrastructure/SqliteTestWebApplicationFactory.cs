@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Infrastructure.Data;
+using Infrastructure.Services;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -15,22 +16,33 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 {
     private static readonly object _lockObject = new object();
     private static bool _databaseInitialized = false;
-    private readonly string _databaseName;
-    private readonly string _connectionString;
+    private readonly int _workerIndex;
+    private readonly TestDatabaseFactory _databaseFactory;
+    private string? _databasePath;
+    private string? _connectionString;
 
     public SqliteTestWebApplicationFactory()
     {
-        // Each test class gets its own unique SQLite database file
-        _databaseName = $"IntegrationTests_{GetType().Name}_{Guid.NewGuid():N}.db";
-        
-        // Use file-based SQLite database for reliable testing
-        _connectionString = $"Data Source={_databaseName}";
+        // Get worker index from environment or generate a unique one
+        _workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX") != null 
+            ? int.Parse(Environment.GetEnvironmentVariable("WORKER_INDEX")!) 
+            : Environment.ProcessId % 1000; // Fallback to process-based isolation
+            
+        _databaseFactory = new TestDatabaseFactory(
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<TestDatabaseFactory>());
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
+            // Initialize worker-specific database if not already done
+            if (string.IsNullOrEmpty(_connectionString))
+            {
+                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).Result;
+                _connectionString = $"Data Source={_databasePath}";
+            }
+
             // Remove the existing DbContext registration
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
             if (descriptor != null)
@@ -38,12 +50,18 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 services.Remove(descriptor);
             }
 
-            // Add SQLite with our unique database connection string
+            // Add SQLite with our worker-specific database connection string
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseSqlite(_connectionString);
                 options.EnableSensitiveDataLogging();
             });
+
+            // Register the TestDatabaseFactory as a service
+            services.AddSingleton(_databaseFactory);
+            
+            // Register DatabaseTestService for improved database cleanup
+            services.AddScoped<DatabaseTestService>();
 
             // Reduce logging noise in tests
             services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Warning));
@@ -63,7 +81,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                     using var scope = Services.CreateScope();
                     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                     
-                    // Ensure the database schema is created
+                    // Ensure the database schema is created (should already be done by TestDatabaseFactory)
                     context.Database.EnsureCreated();
                     
                     _databaseInitialized = true;
@@ -71,7 +89,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 catch (Exception ex)
                 {
                     throw new InvalidOperationException(
-                        $"Failed to initialize SQLite database '{_databaseName}'. " +
+                        $"Failed to initialize SQLite database for worker {_workerIndex}. " +
                         $"Error: {ex.Message}", ex);
                 }
             }
@@ -81,15 +99,10 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     public async Task ClearDatabaseAsync()
     {
         using var scope = Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var databaseService = scope.ServiceProvider.GetRequiredService<DatabaseTestService>();
         
-        // Clear in order to respect foreign key constraints
-        context.People.RemoveRange(context.People);
-        context.Roles.RemoveRange(context.Roles);
-        context.Walls.RemoveRange(context.Walls);
-        context.Windows.RemoveRange(context.Windows);
-        
-        await context.SaveChangesAsync();
+        // Use the improved database reset logic with proper transaction handling
+        await databaseService.ResetDatabaseAsync(_workerIndex);
     }
 
     protected override void Dispose(bool disposing)
@@ -98,20 +111,12 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         {
             try
             {
-                // Clean up the test database
-                using var scope = Services.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureDeleted();
-                
-                // Also delete the SQLite file if it exists
-                if (File.Exists(_databaseName))
-                {
-                    File.Delete(_databaseName);
-                }
+                // Clean up the worker-specific database
+                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).Wait();
             }
             catch (Exception)
             {
-                // Ignore cleanup errors
+                // Ignore cleanup errors during disposal
             }
         }
         base.Dispose(disposing);

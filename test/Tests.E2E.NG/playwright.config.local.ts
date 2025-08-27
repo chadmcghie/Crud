@@ -13,8 +13,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: 1, // Sequential execution for Respawn database reset isolation
+  /* Sequential execution for E2E tests - shared database requires sequential execution */
+  workers: 1, // E2E tests must be sequential due to shared database
   /* Ensure test isolation */
   globalSetup: undefined,
   globalTeardown: undefined,
