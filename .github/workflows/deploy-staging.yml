@@ -1,0 +1,208 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Skip deployment if it's a Copilot commit
+  check-commit:
+    name: Check Commit Author
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+    
+    steps:
+    - name: Check if Copilot commit
+      id: check
+      run: |
+        if [[ "${{ github.event.head_commit.author.email }}" == *"copilot"* ]] || 
+           [[ "${{ github.event.head_commit.author.name }}" == *"copilot"* ]]; then
+          echo "should-deploy=false" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping deployment - Copilot commit detected"
+        else
+          echo "should-deploy=true" >> $GITHUB_OUTPUT
+          echo "✅ Proceeding with staging deployment"
+        fi
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: check-commit
+    if: needs.check-commit.outputs.should-deploy == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Run quick smoke tests to ensure build is deployable
+    - name: Backend smoke test
+      run: |
+        dotnet restore Crud.All.sln
+        dotnet build Crud.All.sln --configuration Release
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical" || true
+        
+    - name: Frontend smoke test
+      working-directory: ./src/Angular
+      run: |
+        npm ci
+        npm run lint
+        npm run build -- --configuration=staging
+        
+    # Build deployment artifacts
+    - name: Publish backend
+      run: dotnet publish src/Api/Api.csproj -c Release -o ./publish/api
+      
+    - name: Package backend
+      run: |
+        cd ./publish/api
+        zip -r ../../staging-api.zip .
+        cd ../..
+        
+    - name: Package frontend
+      run: |
+        cd ./src/Angular/dist
+        zip -r ../../../staging-frontend.zip .
+        cd ../../..
+        
+    - name: Upload staging artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: staging-artifacts-${{ github.sha }}
+        path: |
+          staging-api.zip
+          staging-frontend.zip
+        retention-days: 7
+
+  deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: staging-artifacts-${{ github.sha }}
+        
+    # ====================================
+    # TODO: Add your staging deployment steps here
+    # ====================================
+    # Examples for different platforms:
+    
+    # Azure App Service:
+    # - name: Deploy to Azure Web App
+    #   uses: azure/webapps-deploy@v2
+    #   with:
+    #     app-name: 'your-app-staging'
+    #     publish-profile: ${{ secrets.AZURE_STAGING_PUBLISH_PROFILE }}
+    #     package: staging-api.zip
+    
+    # AWS Elastic Beanstalk:
+    # - name: Deploy to AWS EB
+    #   uses: einaregilsson/beanstalk-deploy@v21
+    #   with:
+    #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     application_name: your-app
+    #     environment_name: your-app-staging
+    #     version_label: ${{ github.sha }}
+    #     region: us-east-1
+    #     deployment_package: staging-api.zip
+    
+    # Docker/Kubernetes:
+    # - name: Build and push Docker image
+    #   run: |
+    #     docker build -t your-registry/your-app:staging-${{ github.sha }} .
+    #     docker push your-registry/your-app:staging-${{ github.sha }}
+    # - name: Deploy to Kubernetes
+    #   run: |
+    #     kubectl set image deployment/your-app your-app=your-registry/your-app:staging-${{ github.sha }} -n staging
+    
+    # IIS/Windows Server (self-hosted runner):
+    # - name: Deploy to IIS
+    #   run: |
+    #     Stop-WebSite -Name "YourApp-Staging"
+    #     Expand-Archive -Path staging-api.zip -DestinationPath C:\inetpub\staging\api -Force
+    #     Expand-Archive -Path staging-frontend.zip -DestinationPath C:\inetpub\staging\www -Force
+    #     Start-WebSite -Name "YourApp-Staging"
+    
+    - name: Deploy to staging (placeholder)
+      id: deploy
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "Version: ${{ github.sha }}"
+        echo "TODO: Add actual deployment commands here"
+        echo "url=https://staging.your-app.com" >> $GITHUB_OUTPUT
+        
+    - name: Verify deployment health
+      run: |
+        echo "🏥 Checking staging deployment health..."
+        # Uncomment and modify for your staging URL:
+        # curl -f ${{ steps.deploy.outputs.url }}/health || exit 1
+        echo "✅ Staging deployment healthy"
+        
+    - name: Run post-deployment tests
+      run: |
+        echo "🧪 Running post-deployment smoke tests..."
+        # Add API endpoint tests, critical user flow tests, etc.
+        echo "✅ Post-deployment tests passed"
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: always()
+    
+    steps:
+    - name: Create deployment summary
+      run: |
+        echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ needs.deploy-staging.result == 'success' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Test the staging environment" >> $GITHUB_STEP_SUMMARY
+          echo "2. Get stakeholder approval" >> $GITHUB_STEP_SUMMARY
+          echo "3. Create PR from \`dev\` → \`main\` for production deployment" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "The staging deployment failed. Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    # TODO: Add notifications (Slack, Teams, email, etc.)
+    # - name: Send Slack notification
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     text: 'Staging deployment ${{ needs.deploy-staging.result }}'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}

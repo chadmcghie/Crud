@@ -106,6 +106,36 @@ dotnet test
 dotnet test test/Tests.Unit.Backend/
 ```
 
+## 🚀 CI/CD Pipeline
+
+Our continuous integration and deployment pipeline ensures code quality and automates deployments:
+
+### Branch Strategy
+- **`dev`** - Default branch, integration point for all features
+- **`main`** - Production branch, requires management approval
+- **`feature/*`** - Feature development branches
+- **`bugfix/*`** - Bug fix branches
+- **`hotfix/*`** - Emergency production fixes
+
+### Automated Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `feature-branch-tests.yml` | Push to feature/* | Quick unit tests for rapid feedback |
+| `pr-validation.yml` | PR to dev | Full test suite validation |
+| `deploy-staging.yml` | Merge to dev | Auto-deploy to staging environment |
+| `deploy-production.yml` | Merge to main | Production deployment with approvals |
+
+### Development Workflow
+1. Create feature branch from `dev`
+2. Push commits (triggers quick tests)
+3. Open PR to `dev` (triggers full test suite)
+4. After merge, auto-deploys to staging
+5. Management reviews staging
+6. PR from `dev` to `main` for production
+
+For detailed CI/CD configuration, see [Branch Protection Rules](.github/BRANCH_PROTECTION_RULES.md)
+
 ## 📚 Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
