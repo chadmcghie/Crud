@@ -75,20 +75,20 @@ public class DatabaseTestService
     /// <summary>
     /// Attempts to reset database using Respawn (more reliable but limited SQLite support)
     /// </summary>
-    private async Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex)
+    private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex)
     {
         try
         {
             // For SQLite, Respawn has limited support and can cause issues
             // Skip Respawn for SQLite and use EF Core cleanup instead
             _logger.LogDebug("Skipping Respawn for SQLite database, using EF Core cleanup for worker {WorkerIndex}", workerIndex);
-            return false;
+            return Task.FromResult(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning("Respawn reset failed for worker {WorkerIndex}, falling back to EF Core: {Error}", 
                 workerIndex, ex.Message);
-            return false;
+            return Task.FromResult(false);
         }
     }
 
