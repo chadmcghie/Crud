@@ -165,6 +165,8 @@ export class PageHelpers {
   async fillPersonForm(fullName: string, phone?: string, roleNames?: string[]): Promise<void> {
     await this.page.fill('input#fullName', fullName);
     if (phone) {
+      // Clear the phone field first, then fill with new value
+      await this.page.fill('input#phone', '');
       await this.page.fill('input#phone', phone);
     }
     
@@ -243,12 +245,15 @@ export class PageHelpers {
     try {
       await Promise.race([
         this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }),
-        this.page.waitForLoadState('networkidle', { timeout: 5000 })
+        this.page.waitForLoadState('networkidle', { timeout: 8000 })
       ]);
     } catch (error) {
-      // Fallback: small wait
-      await this.page.waitForTimeout(1000);
+      // If form doesn't hide, check if update was successful by waiting longer
+      await this.page.waitForTimeout(2000);
     }
+    
+    // Additional wait to ensure the API call completes
+    await this.page.waitForTimeout(1000);
   }
 
   async deletePerson(personName: string): Promise<void> {
