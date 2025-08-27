@@ -71,9 +71,15 @@ public class WindowConfiguration : IEntityTypeConfiguration<Window>
             .HasMaxLength(100);
 
         builder.Property(w => w.CreatedAt)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion(
+                v => v.ToUniversalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
-        builder.Property(w => w.UpdatedAt);
+        builder.Property(w => w.UpdatedAt)
+            .HasConversion(
+                v => v.HasValue ? v.Value.ToUniversalTime() : (DateTime?)null,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null);
 
         builder.ToTable("Windows");
     }

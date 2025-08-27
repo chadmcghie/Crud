@@ -139,4 +139,85 @@ namespace Api
 
                     case "sqlite":
                         if (string.IsNullOrWhiteSpace(connectionString))
-                            throw new InvalidOperationException("Connection string
+                            throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQLite.");
+                        builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+                        Log.Information("Using SQLite provider with connection: {ConnectionString}", connectionString);
+                        usingEfProvider = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException($"Unsupported database provider: {databaseProvider}");
+                }
+
+                // 4) CORS, Controllers, and other services
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowAngular", policy =>
+                    {
+                        policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200")
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
+                    });
+                });
+
+                builder.Services.AddControllers()
+                    .AddJsonOptions(options =>
+                    {
+                        // Configure DateTime serialization to include UTC "Z" suffix
+                        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                        // Configure property naming to camelCase
+                        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                        // Add custom DateTime converters to ensure UTC "Z" suffix
+                        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+                        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
+                    });
+
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+                builder.Services.AddHealthChecks();
+
+                builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));
+                builder.Services.AddAutoMapper(
+                    cfg => { },
+                    typeof(App.DependencyInjection).Assembly,
+                    typeof(Infrastructure.DependencyInjection).Assembly
+                );
+
+                var app = builder.Build();
+
+                // Ensure database is created for Entity Framework providers
+                if (usingEfProvider)
+                {
+                    await app.Services.EnsureDatabaseAsync();
+                    Log.Information("Database ensured successfully");
+                }
+
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
+                    Log.Information("Swagger UI enabled for development environment");
+                }
+
+                app.UseHttpsRedirection();
+                app.UseCors("AllowAngular");
+                app.UseAuthorization();
+                app.MapControllers();
+                app.MapHealthChecks("/health");
+
+                Log.Information("Application configured successfully. Starting web host...");
+                await app.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application terminated unexpectedly");
+                throw;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+    }
+}
