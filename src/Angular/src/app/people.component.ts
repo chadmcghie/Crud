@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonRequest } from './api.service';
+import { CustomValidators } from './validators/custom-validators';
 
 @Component({
   selector: 'app-people',
@@ -24,7 +25,9 @@ import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonR
             [class.error]="isFieldInvalid('fullName')"
           />
           <div class="error-message" *ngIf="isFieldInvalid('fullName')">
-            Full name is required
+            <span *ngIf="form.get('fullName')?.errors?.['required']">Full name is required</span>
+            <span *ngIf="form.get('fullName')?.errors?.['invalidFullName']">{{ form.get('fullName')?.errors?.['invalidFullName'] }}</span>
+            <span *ngIf="form.get('fullName')?.errors?.['maxLength']">{{ form.get('fullName')?.errors?.['maxLength'] }}</span>
           </div>
         </div>
 
@@ -36,7 +39,11 @@ import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonR
             placeholder="Enter phone number" 
             formControlName="phone" 
             class="form-control"
+            [class.error]="isFieldInvalid('phone')"
           />
+          <div class="error-message" *ngIf="isFieldInvalid('phone')">
+            <span *ngIf="form.get('phone')?.errors?.['invalidPhone']">{{ form.get('phone')?.errors?.['invalidPhone'] }}</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -254,8 +261,8 @@ export class PeopleComponent implements OnInit, OnChanges {
 
   constructor(private api: ApiService, private fb: FormBuilder) {
     this.form = this.fb.group({
-      fullName: ['', Validators.required],
-      phone: ['']
+      fullName: ['', [Validators.required, CustomValidators.fullName()]],
+      phone: ['', [CustomValidators.phoneNumber()]]
     });
   }
 
@@ -340,7 +347,7 @@ export class PeopleComponent implements OnInit, OnChanges {
           },
           error: (error: any) => {
             console.error('Error updating person:', error);
-            this.error = 'Failed to update person. Please check your input and try again.';
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
@@ -355,7 +362,7 @@ export class PeopleComponent implements OnInit, OnChanges {
           },
           error: (error: any) => {
             console.error('Error creating person:', error);
-            this.error = 'Failed to create person. Please check your input and try again.';
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
@@ -375,5 +382,21 @@ export class PeopleComponent implements OnInit, OnChanges {
     this.form.reset();
     this.selectedRoleIds.clear();
     this.error = null;
+  }
+
+  private handleApiError(error: any) {
+    if (error.error?.errors) {
+      const errors = error.error.errors;
+      const errorMessages = Object.keys(errors).map(key => 
+        `${key}: ${errors[key].join(', ')}`
+      ).join('; ');
+      this.error = errorMessages;
+    } else if (error.error?.detail) {
+      this.error = error.error.detail;
+    } else if (error.error?.title) {
+      this.error = error.error.title;
+    } else {
+      this.error = 'An error occurred. Please check your input and try again.';
+    }
   }
 }

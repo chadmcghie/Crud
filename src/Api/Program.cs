@@ -1,6 +1,6 @@
+using Api.Middleware;
 using App;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Infrastructure;
 using Serilog;
 using OpenTelemetry.Logs;
@@ -167,6 +167,10 @@ namespace Api
                     });
                 });
 
+                // Add FluentValidation validators
+                builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+                builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
+
                 builder.Services.AddControllers()
                     .AddJsonOptions(options =>
                     {
@@ -206,6 +210,7 @@ namespace Api
                 }
 
                 app.UseHttpsRedirection();
+                app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
                 app.UseAuthorization();
                 app.MapControllers();

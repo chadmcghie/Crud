@@ -1,5 +1,8 @@
 using App.Abstractions;
+using App.Behaviors;
 using App.Services;
+using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace App;
@@ -15,6 +18,12 @@ public static class DependencyInjection
         
         // Register MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+        
+        // Register Validation Pipeline Behavior
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        
+        // Register Validators
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         
         return services;
     }
