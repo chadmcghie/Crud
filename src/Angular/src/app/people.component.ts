@@ -347,7 +347,7 @@ export class PeopleComponent implements OnInit, OnChanges {
           },
           error: (error: any) => {
             console.error('Error updating person:', error);
-            this.handleApiError(error);
+            this.handleApiError(error, 'update');
             this.isSubmitting = false;
           }
         });
@@ -362,7 +362,7 @@ export class PeopleComponent implements OnInit, OnChanges {
           },
           error: (error: any) => {
             console.error('Error creating person:', error);
-            this.handleApiError(error);
+            this.handleApiError(error, 'create');
             this.isSubmitting = false;
           }
         });
@@ -384,7 +384,7 @@ export class PeopleComponent implements OnInit, OnChanges {
     this.error = null;
   }
 
-  private handleApiError(error: any) {
+  private handleApiError(error: any, operation?: 'create' | 'update') {
     if (error.error?.errors) {
       const errors = error.error.errors;
       const errorMessages = Object.keys(errors).map(key => 
@@ -396,7 +396,14 @@ export class PeopleComponent implements OnInit, OnChanges {
     } else if (error.error?.title) {
       this.error = error.error.title;
     } else {
-      this.error = 'An error occurred. Please check your input and try again.';
+      // Provide specific error messages based on operation
+      if (operation === 'create') {
+        this.error = 'Failed to create person. Please check your input and try again.';
+      } else if (operation === 'update') {
+        this.error = 'Failed to update person. Please check your input and try again.';
+      } else {
+        this.error = 'An error occurred. Please check your input and try again.';
+      }
     }
   }
 }

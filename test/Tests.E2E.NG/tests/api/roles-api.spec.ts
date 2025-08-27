@@ -62,7 +62,8 @@ test.describe('Roles API', () => {
   });
 
   test('GET /api/roles/{id} - should return 404 for non-existent role', async ({ apiContext }) => {
-    const nonExistentId = '00000000-0000-0000-0000-000000000000';
+    // Use a valid but non-existent GUID
+    const nonExistentId = '550e8400-e29b-41d4-a716-446655440000';
     
     const response = await apiContext.get(`/api/roles/${nonExistentId}`);
     expect(response.status()).toBe(404);

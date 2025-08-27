@@ -1,237 +1,224 @@
-# End-to-End Tests for Angular Application and API
+# E2E Tests for Angular & API
 
-This project contains comprehensive Playwright end-to-end tests for the Angular CRUD application and its API endpoints.
+Comprehensive end-to-end tests for the Angular frontend and .NET API backend.
 
-## Test Coverage
+## Quick Start
 
-### Angular UI Tests
-- **Roles Management** (`tests/angular-ui/roles.spec.ts`)
-  - Create, read, update, delete roles
-  - Form validation and error handling
-  - UI interactions and state management
-
-- **People Management** (`tests/angular-ui/people.spec.ts`)
-  - Create, read, update, delete people
-  - Role assignment and management
-  - Form validation and error handling
-
-- **Application Navigation** (`tests/angular-ui/app-navigation.spec.ts`)
-  - Tab switching and navigation
-  - Responsive design testing
-  - Layout and styling verification
-
-### API Tests
-- **Roles API** (`tests/api/roles-api.spec.ts`)
-  - Full CRUD operations for roles
-  - HTTP status code validation
-  - Data validation and error handling
-  - Concurrent operations testing
-
-- **People API** (`tests/api/people-api.spec.ts`)
-  - Full CRUD operations for people
-  - Role assignment and relationship management
-  - Data validation and edge cases
-  - Referential integrity testing
-
-- **Walls API** (`tests/api/walls-api.spec.ts`)
-  - Full CRUD operations for walls
-  - Numeric field validation
-  - Timestamp integrity
-  - Complex data structure handling
-
-### Integration Tests
-- **Full Workflow** (`tests/integration/full-workflow.spec.ts`)
-  - End-to-end user workflows
-  - Mixed UI and API operations
-  - Data consistency across operations
-  - Error scenario handling
-
-## Project Structure
-
-```
-Tests.E2E.NG/
-├── tests/
-│   ├── angular-ui/          # Angular UI tests
-│   ├── api/                 # API endpoint tests
-│   ├── integration/         # Integration tests
-│   └── helpers/             # Test utilities and helpers
-│       ├── api-helpers.ts   # API interaction helpers
-│       ├── page-helpers.ts  # UI interaction helpers
-│       └── test-data.ts     # Test data generators
-├── playwright.config.ts     # Playwright configuration
-├── package.json            # Node.js dependencies
-├── tsconfig.json           # TypeScript configuration
-└── README.md               # This file
-```
-
-## Prerequisites
-
-1. **.NET 8 SDK** - For running the API
-2. **Node.js 18+** - For running Angular and Playwright
-3. **Angular CLI** - For the Angular application
-
-## Setup
-
-1. **Install Node.js dependencies:**
-   ```bash
-   cd test/Tests.E2E.NG
-   npm install
-   ```
-
-2. **Install Playwright browsers:**
-   ```bash
-   npm run install-browsers
-   ```
-
-3. **Ensure the API and Angular applications are configured:**
-   - API should run on `http://localhost:5172`
-   - Angular should run on `http://localhost:4200`
-
-## Running Tests
-
-### All Tests
 ```bash
+# Install dependencies
+npm install
+
+# Run all tests (recommended for first run)
+npm run test:stable
+
+# Run tests with UI
+npm run test:ui
+```
+
+## Test Commands
+
+### Basic Commands
+- `npm test` - Run all tests with default configuration
+- `npm run test:headed` - Run tests with browser window visible
+- `npm run test:ui` - Open Playwright UI mode
+- `npm run test:debug` - Run tests in debug mode
+
+### Optimized Commands
+- `npm run test:stable` - **Recommended**: Pre-builds Angular and runs tests with single worker for maximum stability
+- `npm run test:fast` - Fast configuration with reduced workers
+- `npm run test:single` - Run tests with single worker (most stable)
+- `npm run prebuild:test` - Pre-build Angular then run tests
+
+### Specific Test Suites
+- `npm run test:api-only` - Run only API tests (no UI)
+- `npm run test:integration` - Run integration tests
+- `npm run test:parallel` - Run tests with maximum parallelization
+
+### CI/CD
+- `npm run test:ci` - Optimized configuration for CI environments
+- `npm run prebuild` - Pre-build Angular application for faster startup
+
+### Utilities
+- `npm run report` - Show HTML test report
+- `npm run clean` - Clean test results and reports
+- `npm run install-browsers` - Install Playwright browsers
+
+## Performance Optimizations
+
+### 1. Pre-built Angular (Fastest Startup)
+The tests can use a pre-built Angular application for much faster startup:
+
+```bash
+# Build Angular once
+npm run prebuild
+
+# Run tests using the pre-built version
 npm test
 ```
 
-### Specific Test Suites
-```bash
-# Angular UI tests only
-npx playwright test tests/angular-ui
+### 2. Worker Queue System
+Tests use a queue system to prevent port conflicts when running multiple workers in parallel.
 
-# API tests only
-npx playwright test tests/api
+### 3. Static File Server
+When Angular is pre-built, tests use a lightweight static file server instead of the Angular dev server.
 
-# Integration tests only
-npx playwright test tests/integration
-```
+## Configuration Files
 
-### Interactive Mode
-```bash
-# Run tests with UI
-npm run test:ui
-
-# Run tests in headed mode (visible browser)
-npm run test:headed
-
-# Debug mode
-npm run test:debug
-```
-
-### Test Reports
-```bash
-# View HTML report
-npm run report
-```
-
-## Configuration
-
-The tests are configured to:
-- **Automatically start** the API and Angular servers before running tests
-- **Run in parallel** across multiple browsers (Chrome, Firefox, Safari)
-- **Capture screenshots** on failure
-- **Record videos** on failure
-- **Generate traces** for debugging
-
-### Environment Configuration
-
-The `playwright.config.ts` file includes:
-- **Base URL**: `http://localhost:4200`
-- **API Server**: Automatically started on port 5172
-- **Angular Server**: Automatically started on port 4200
-- **Browsers**: Chrome, Firefox, WebKit
-- **Retries**: 2 retries on CI, 0 locally
-- **Parallel execution**: Enabled
-
-## Test Data Management
-
-Tests use generated test data to ensure:
-- **Isolation**: Each test runs with fresh data
-- **Randomization**: Reduces test interdependencies
-- **Cleanup**: Automatic cleanup after each test
-
-### Test Data Generators
-- `generateTestRole()`: Creates random role data
-- `generateTestPerson()`: Creates random person data
-- `generateTestWall()`: Creates random wall data
-
-## Helper Classes
-
-### ApiHelpers
-Provides methods for direct API interactions:
-- CRUD operations for all entities
-- Bulk cleanup operations
-- Error handling and validation
-
-### PageHelpers
-Provides methods for UI interactions:
-- Form filling and submission
-- Navigation and tab switching
-- Element verification and validation
-
-## Best Practices
-
-1. **Test Isolation**: Each test cleans up its data
-2. **Parallel Execution**: Tests can run concurrently
-3. **Error Handling**: Comprehensive error scenario coverage
-4. **Data Validation**: Both positive and negative test cases
-5. **Cross-browser Testing**: Ensures compatibility
-6. **Responsive Testing**: Mobile and desktop viewports
-
-## Debugging
-
-### Failed Tests
-1. Check the HTML report: `npm run report`
-2. View screenshots in `test-results/`
-3. Watch recorded videos for failed tests
-4. Use trace viewer for detailed debugging
-
-### Local Development
-```bash
-# Run specific test file
-npx playwright test tests/angular-ui/roles.spec.ts
-
-# Run with debug mode
-npx playwright test --debug tests/angular-ui/roles.spec.ts
-
-# Run in headed mode
-npx playwright test --headed tests/angular-ui/roles.spec.ts
-```
-
-## Continuous Integration
-
-The tests are configured for CI environments:
-- **Retry Logic**: Failed tests are retried automatically
-- **Parallel Workers**: Optimized for CI performance
-- **Artifact Collection**: Screenshots, videos, and traces
-- **Server Management**: Automatic startup and cleanup
+- `playwright.config.ts` - Default configuration
+- `playwright.config.fast.ts` - Optimized for speed with single worker
+- `playwright.config.ci.ts` - CI/CD optimized with sharding support
+- `playwright.config.api-only.ts` - API tests only (no browser)
+- `playwright.config.parallel.ts` - Maximum parallelization
+- `playwright.config.local.ts` - Local development configuration
 
 ## Troubleshooting
 
-### Common Issues
+### Angular Server Timeout
+If you encounter Angular server startup timeouts:
 
-1. **Port Conflicts**: Ensure ports 4200 and 5000 are available
-2. **Browser Installation**: Run `npm run install-browsers`
-3. **Server Startup**: Check that both API and Angular start correctly
-4. **Network Issues**: Verify localhost connectivity
+1. **Use single worker mode**:
+   ```bash
+   npm run test:single
+   ```
 
-### Debug Commands
-```bash
-# Check Playwright installation
-npx playwright --version
+2. **Pre-build Angular**:
+   ```bash
+   npm run test:stable
+   ```
 
-# List available browsers
-npx playwright install --dry-run
+3. **Increase memory**:
+   ```bash
+   NODE_OPTIONS="--max-old-space-size=8192" npm test
+   ```
 
-# Test configuration
-npx playwright test --list
+### Port Conflicts
+If you see "address already in use" errors:
+
+1. **Check for running processes**:
+   ```bash
+   lsof -i :4200,4210,5172,5173
+   ```
+
+2. **Kill stuck processes**:
+   ```bash
+   kill -9 <PID>
+   ```
+
+3. **Use single worker mode**:
+   ```bash
+   npm run test:single
+   ```
+
+### Test Failures
+For intermittent test failures:
+
+1. **Run with retries**:
+   ```bash
+   npx playwright test --retries=3
+   ```
+
+2. **Use stable configuration**:
+   ```bash
+   npm run test:stable
+   ```
+
+3. **Debug specific test**:
+   ```bash
+   npx playwright test --debug path/to/test.spec.ts
+   ```
+
+## CI/CD Integration
+
+### GitHub Actions
+The repository includes a GitHub Actions workflow (`.github/workflows/e2e-tests.yml`) that:
+- Runs tests in parallel using sharding
+- Caches Angular builds for faster CI
+- Uploads test results and reports
+- Comments on PRs with test results
+
+### Running in CI
+```yaml
+- name: Run E2E Tests
+  run: npm run test:ci
 ```
+
+## Architecture
+
+### Test Structure
+```
+tests/
+├── angular-ui/     # UI tests using Playwright
+├── api/           # API tests
+├── integration/   # Full workflow tests
+├── helpers/       # Test utilities
+├── fixtures/      # Test data and fixtures
+└── setup/         # Test configuration and setup
+```
+
+### Worker Isolation
+Each test worker runs with:
+- Dedicated API server port (5172 + workerIndex)
+- Dedicated Angular server port (4200 + workerIndex * 10)
+- Isolated SQLite database
+- Automatic cleanup between tests
+
+### Key Components
+1. **WorkerServerManager** - Manages server lifecycle per worker
+2. **WorkerStartupQueue** - Prevents port conflicts during startup
+3. **ApiHelpers** - API testing utilities with retry logic
+4. **PageHelpers** - UI testing utilities
+5. **Test Fixtures** - Ensures proper server startup before tests
+
+## Best Practices
+
+1. **Always use custom test fixtures** in UI tests:
+   ```typescript
+   import { test, expect } from '../setup/test-fixture';
+   ```
+
+2. **Clean up data between tests**:
+   ```typescript
+   test.beforeEach(async ({ apiContext }) => {
+     await apiHelpers.cleanupAll();
+   });
+   ```
+
+3. **Use retry logic for API calls**:
+   ```typescript
+   await apiHelpers.retryOperation(() => apiHelpers.createPerson(data));
+   ```
+
+4. **Wait for specific elements instead of arbitrary timeouts**:
+   ```typescript
+   await page.waitForSelector('button:has-text("Save")');
+   ```
+
+## Development Tips
+
+1. **Fast iteration**: Use `npm run test:ui` for interactive development
+2. **Debugging**: Use `npm run test:debug` with breakpoints
+3. **Specific tests**: Use `--grep` to run specific tests:
+   ```bash
+   npm test -- --grep="should create"
+   ```
+4. **Single file**: Test a specific file:
+   ```bash
+   npx playwright test tests/api/people-api.spec.ts
+   ```
+
+## Performance Metrics
+
+Typical execution times:
+- Cold start (no pre-build): ~30-60s per worker
+- With pre-build: ~5-10s per worker
+- API tests only: ~2-5s per test
+- UI tests: ~5-15s per test
 
 ## Contributing
 
 When adding new tests:
-1. Follow the existing test structure
-2. Use the helper classes for common operations
-3. Ensure proper cleanup in `afterEach` hooks
-4. Add appropriate test data generators
-5. Include both positive and negative test cases
+1. Use the appropriate test fixture (`test-fixture.ts` for UI, `api-only-fixture.ts` for API)
+2. Follow existing patterns for data cleanup
+3. Add meaningful test descriptions
+4. Use data-testid attributes for reliable element selection
+5. Consider adding to both API and UI test suites
