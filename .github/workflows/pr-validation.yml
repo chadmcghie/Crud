@@ -59,10 +59,10 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.Backend.sln
+      run: dotnet restore Crud.All.sln
       
     - name: Build backend
-      run: dotnet build Crud.Backend.sln --no-restore --configuration Release
+      run: dotnet build Crud.All.sln --no-restore --configuration Release
       
     - name: Run Backend Unit Tests
       run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
@@ -117,10 +117,10 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore Crud.Backend.sln
+      run: dotnet restore Crud.All.sln
       
     - name: Build solution
-      run: dotnet build Crud.Backend.sln --no-restore --configuration Release
+      run: dotnet build Crud.All.sln --no-restore --configuration Release
       
     - name: Run Backend Integration Tests with SQLite
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
@@ -161,10 +161,10 @@ jobs:
         cache-dependency-path: 'src/Angular/package-lock.json'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.Angular.sln
+      run: dotnet restore Crud.All.sln
       
     - name: Build solution
-      run: dotnet build Crud.Angular.sln --no-restore --configuration Release
+      run: dotnet build Crud.All.sln --no-restore --configuration Release
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -182,10 +182,17 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: npx playwright install --with-deps chromium
       
+    - name: Kill any existing processes on test ports
+      run: |
+        # Kill any processes that might be using our test ports
+        sudo lsof -ti:5172,5173,5174,5175,4200,4210,4220,4230 | xargs -r kill -9 || true
+        # Wait a moment for cleanup
+        sleep 2
+      
     - name: Start API server
       working-directory: ./src/Api
       run: |
-        dotnet run --configuration Release &
+        dotnet run --no-launch-profile --configuration Release &
         echo "API_PID=$!" >> $GITHUB_ENV
       env:
         ASPNETCORE_ENVIRONMENT: E2E
