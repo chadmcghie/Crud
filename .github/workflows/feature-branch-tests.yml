@@ -1,0 +1,68 @@
+name: Feature Branch Tests
+
+on:
+  push:
+    branches: 
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Quick feedback for developers working on feature branches
+  quick-validation:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Backend checks
+    - name: Restore .NET dependencies
+      run: dotnet restore Crud.All.sln
+      
+    - name: Build backend
+      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      
+    - name: Run backend unit tests only
+      run: |
+        echo "🧪 Running backend unit tests..."
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
+      
+    # Frontend checks
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: npm ci
+      
+    - name: Run Angular lint
+      working-directory: ./src/Angular
+      run: npm run lint
+      
+    - name: Run Angular unit tests
+      working-directory: ./src/Angular
+      run: npm run test -- --watch=false --browsers=ChromeHeadless
+      
+    - name: Summary
+      if: always()
+      run: |
+        echo "## 🏃 Quick Validation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Feature branch validation completed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This is a quick validation only. Full test suite will run when PR is created." >> $GITHUB_STEP_SUMMARY

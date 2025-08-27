@@ -1,51 +1,19 @@
-name: Test Runner - Push
+name: Pull Request Validation
 
 on:
-  push:
+  pull_request:
     branches: [ dev ]
+    types: [opened, synchronize, reopened]
 
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '20.x'
 
-# Database Strategy:
-# - Unit Tests: No database (pure business logic)
-# - Integration Tests: SQLite (fast, free, isolated)
-# - E2E Tests: SQLite (consistent, realistic, free)
-
 jobs:
-  # Pre-check: Determine if workflow should run
-  should-run:
-    name: Check if workflow should run
-    runs-on: ubuntu-latest
-    outputs:
-      should-run: ${{ steps.check.outputs.should-run }}
-    steps:
-    - name: Check if should run
-      id: check
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          echo "should-run=true" >> $GITHUB_OUTPUT
-          echo "✅ Running for pull request"
-        elif [[ "${{ github.event_name }}" == "push" ]]; then
-          if [[ "${{ github.event.head_commit.author.email }}" == *"copilot"* ]] || [[ "${{ github.event.head_commit.author.name }}" == *"copilot"* ]]; then
-            echo "should-run=false" >> $GITHUB_OUTPUT
-            echo "⏭️ Skipping workflow - push from Copilot detected"
-          else
-            echo "should-run=true" >> $GITHUB_OUTPUT
-            echo "✅ Running for regular push"
-          fi
-        else
-          echo "should-run=true" >> $GITHUB_OUTPUT
-          echo "✅ Running for other event type"
-        fi
-
-  # Job 1a: Backend Unit Tests (Fast)
+  # Full test suite for PRs targeting dev branch
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: should-run
-    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -69,15 +37,12 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-unit-test-results
+        name: backend-unit-test-results-${{ github.run_number }}
         path: TestResults/
 
-  # Job 1b: Frontend Unit Tests (Angular only)
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    needs: should-run
-    if: needs.should-run.outputs.should-run == 'true'
     
     steps:
     - name: Checkout code
@@ -94,16 +59,25 @@ jobs:
       working-directory: ./src/Angular
       run: npm ci
       
-    - name: Run Angular Unit Tests
+    - name: Lint check
+      working-directory: ./src/Angular
+      run: npm run lint
+      
+    - name: Run Angular Unit Tests with Coverage
       working-directory: ./src/Angular
       run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+      
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: frontend-coverage-${{ github.run_number }}
+        path: src/Angular/coverage/
 
-  # Job 2: Backend Integration Tests (SQLite - No External Dependencies)
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [should-run, backend-unit-tests]
-    if: needs.should-run.outputs.should-run == 'true'
+    needs: backend-unit-tests
     
     steps:
     - name: Checkout code
@@ -123,7 +97,6 @@ jobs:
     - name: Run Backend Integration Tests with SQLite
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
       env:
-        # SQLite is used automatically - no external database needed
         CI: true
       timeout-minutes: 10
       
@@ -131,16 +104,13 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-integration-test-results
+        name: backend-integration-test-results-${{ github.run_number }}
         path: TestResults/
 
-  # Job 3: End-to-End Tests (Full Stack with SQLite)
-  # Note: E2E tests now use SQLite for completely free testing
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: [should-run, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
-    if: needs.should-run.outputs.should-run == 'true'
+    needs: [backend-unit-tests, frontend-unit-tests]
     
     steps:
     - name: Checkout code
@@ -182,9 +152,7 @@ jobs:
       
     - name: Kill any existing processes on test ports
       run: |
-        # Kill any processes that might be using our test ports
-        sudo lsof -ti:5172,5173,5174,5175,4200,4210,4220,4230 | xargs -r kill -9 || true
-        # Wait a moment for cleanup
+        sudo lsof -ti:5172,4200 | xargs -r kill -9 || true
         sleep 2
       
     - name: Start API server
@@ -195,14 +163,13 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: E2E
         ASPNETCORE_URLS: http://localhost:5172
-        # SQLite is used automatically - no external database needed
         CI: true
         DatabaseProvider: SQLite
         ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
         
     - name: Wait for API to be ready
       run: |
-        timeout 60 bash -c 'until curl -f http://localhost:5172/health 2>/dev/null; do echo "Waiting for API health check..."; sleep 2; done'
+        timeout 60 bash -c 'until curl -f http://localhost:5172/health 2>/dev/null; do echo "Waiting for API..."; sleep 2; done'
         echo "API is ready!"
         
     - name: Start Angular server
@@ -213,17 +180,14 @@ jobs:
         
     - name: Wait for Angular to be ready
       run: |
-        timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do sleep 2; done'
+        timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do echo "Waiting for Angular..."; sleep 2; done'
+        echo "Angular is ready!"
         
-    - name: Run API E2E Tests
+    - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
-      run: npm run test:api-only
-      env:
-        CI: true
-        
-    - name: Run Full E2E Tests
-      working-directory: ./test/Tests.E2E.NG
-      run: npm run test:integration
+      run: |
+        npm run test:api-only
+        npm run test:integration
       env:
         CI: true
         API_BASE_URL: http://localhost:5172
@@ -233,7 +197,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-test-results
+        name: e2e-test-results-${{ github.run_number }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -244,31 +208,34 @@ jobs:
         if [ ! -z "$API_PID" ]; then kill $API_PID || true; fi
         if [ ! -z "$ANGULAR_PID" ]; then kill $ANGULAR_PID || true; fi
 
-  # Job 4: Test Summary
-  test-summary:
-    name: Test Summary
+  pr-validation-summary:
+    name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [should-run, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
-    if: always() && needs.should-run.outputs.should-run == 'true'
+    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    if: always()
     
     steps:
-    - name: Download all test results
-      uses: actions/download-artifact@v4
-      
-    - name: Display test summary
+    - name: PR Status Check
       run: |
-        echo "## 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔍 Pull Request Validation Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Test Category | Status | Details |" >> $GITHUB_STEP_SUMMARY
-        echo "|---------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Domain & Application layer tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Angular component & service tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | SQLite database & repository tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| End-to-End Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} | Full application workflow tests (SQLite DB) |" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 Overall Status" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && [ "${{ needs.backend-integration-tests.result }}" == "success" ] && [ "${{ needs.e2e-tests.result }}" == "success" ]; then
-          echo "🎉 **All tests passed!** The pull request is ready for review." >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && 
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && 
+           [ "${{ needs.backend-integration-tests.result }}" == "success" ] && 
+           [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+          echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+          echo "This PR is ready for review." >> $GITHUB_STEP_SUMMARY
         else
-          echo "⚠️ **Some tests failed.** Please review the failed tests before merging." >> $GITHUB_STEP_SUMMARY
+          echo "### ❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please fix the failing tests before merging." >> $GITHUB_STEP_SUMMARY
+          exit 1
         fi
