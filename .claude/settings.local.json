@@ -18,7 +18,10 @@
       "Bash(npm run test:fast:*)",
       "Bash(npm run prebuild:*)",
       "Bash(npm run test:single:*)",
-      "Bash(npm run test:stable:*)"
+      "Bash(npm run test:stable:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(dotnet run:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": [],

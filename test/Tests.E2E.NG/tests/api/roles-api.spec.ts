@@ -197,9 +197,9 @@ test.describe('Roles API', () => {
     expect(createdRole2.name).toContain(roleName);
   });
 
-  test('should handle special characters in role data', async ({ apiHelpers }) => {
+  test('should handle valid special characters in role data', async ({ apiHelpers }) => {
     const testRole = generateTestRole({
-      name: 'Role with Special Characters: !@#$%^&*()',
+      name: 'Role with Valid Special Chars - Test_Role.Name',
       description: 'Description with unicode: 你好 🌟 émojis and symbols'
     });
     
@@ -211,6 +211,28 @@ test.describe('Roles API', () => {
     // Verify retrieval works correctly
     const retrievedRole = await apiHelpers.getRole(createdRole.id);
     expect(retrievedRole).toMatchObject(createdRole);
+  });
+
+  test('should reject invalid special characters in role name', async ({ apiContext }) => {
+    // Test that special characters not allowed by validation are rejected
+    const testRole = {
+      name: 'Role with Invalid Chars: !@#$%^&*()',
+      description: 'Valid description'
+    };
+    
+    const response = await apiContext.post('/api/roles', {
+      data: testRole
+    });
+    
+    // Should fail validation
+    expect(response.status()).toBe(400);
+    
+    if (response.status() === 400) {
+      const errorBody = await response.json();
+      // Verify the validation error message if available
+      const errorMessage = JSON.stringify(errorBody).toLowerCase();
+      expect(errorMessage).toContain('role name');
+    }
   });
 
   test('should handle large description text', async ({ apiHelpers }) => {
