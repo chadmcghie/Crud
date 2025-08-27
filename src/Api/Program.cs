@@ -1,4 +1,6 @@
 using App;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Infrastructure;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -22,7 +24,12 @@ namespace Api
                           .AllowCredentials();
                 });
             });
-            builder.Services.AddControllers();            
+            builder.Services.AddControllers();
+
+            // Add FluentValidation
+            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+            builder.Services.AddFluentValidationAutoValidation();
+            
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             
