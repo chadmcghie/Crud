@@ -96,7 +96,7 @@ namespace Api
                 builder.Services.AddApplication();
                 
                 // Configure database provider based on configuration
-                var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "InMemory";
+                var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite";
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
                 
                 // Support worker-specific databases for E2E test isolation
@@ -124,18 +124,57 @@ namespace Api
                     Log.Information("🏢 Using tenant-based isolation with prefix: {TenantPrefix}", tenantPrefix);
                 }
 
-                // For now, use InMemory until Entity Framework infrastructure is available
+                // Check if Entity Framework infrastructure is available
+                bool hasEntityFrameworkInfrastructure = false;
+                
                 switch (databaseProvider.ToLowerInvariant())
                 {
                     case "sqlserver":
-                        Log.Warning("SQL Server provider requested but not available, falling back to InMemory");
-                        builder.Services.AddInfrastructureInMemory();
+                        try
+                        {
+                            // Try to use reflection to call Entity Framework method if available
+                            var infraType = typeof(Infrastructure.DependencyInjection);
+                            var sqlServerMethod = infraType.GetMethod("AddInfrastructureEntityFrameworkSqlServer");
+                            if (sqlServerMethod != null && !string.IsNullOrEmpty(connectionString))
+                            {
+                                sqlServerMethod.Invoke(null, new object[] { builder.Services, connectionString });
+                                Log.Information("Using SQL Server database provider");
+                                hasEntityFrameworkInfrastructure = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Entity Framework SQL Server infrastructure not available");
+                            }
+                        }
+                        catch
+                        {
+                            Log.Warning("SQL Server provider requested but Entity Framework infrastructure not available, falling back to InMemory");
+                            builder.Services.AddInfrastructureInMemory();
+                        }
                         break;
                     case "sqlite":
-                        Log.Warning("SQLite provider requested but not available, falling back to InMemory");
-                        builder.Services.AddInfrastructureInMemory();
+                        try
+                        {
+                            // Try to use reflection to call Entity Framework method if available
+                            var infraType = typeof(Infrastructure.DependencyInjection);
+                            var sqliteMethod = infraType.GetMethod("AddInfrastructureEntityFrameworkSqlite");
+                            if (sqliteMethod != null && !string.IsNullOrEmpty(connectionString))
+                            {
+                                sqliteMethod.Invoke(null, new object[] { builder.Services, connectionString });
+                                Log.Information("Using SQLite database provider");
+                                hasEntityFrameworkInfrastructure = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Entity Framework SQLite infrastructure not available");
+                            }
+                        }
+                        catch
+                        {
+                            Log.Warning("SQLite provider requested but Entity Framework infrastructure not available, falling back to InMemory");
+                            builder.Services.AddInfrastructureInMemory();
+                        }
                         break;
-                    case "inmemory":
                     default:
                         Log.Information("Using InMemory database provider");
                         builder.Services.AddInfrastructureInMemory();
@@ -175,6 +214,32 @@ namespace Api
                     );
 
                 var app = builder.Build();
+
+                // Ensure database is created for Entity Framework providers
+                if (hasEntityFrameworkInfrastructure)
+                {
+                    try
+                    {
+                        // Try to call EnsureDatabaseAsync if available
+                        var serviceProviderType = app.Services.GetType();
+                        var ensureMethod = serviceProviderType.GetMethod("EnsureDatabaseAsync") ?? 
+                                         typeof(Infrastructure.DependencyInjection).GetMethod("EnsureDatabaseAsync");
+                        
+                        if (ensureMethod != null)
+                        {
+                            var task = ensureMethod.Invoke(null, new object[] { app.Services }) as Task;
+                            if (task != null)
+                            {
+                                await task;
+                                Log.Information("Database ensured successfully");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to ensure database creation");
+                    }
+                }
                 
                 if (app.Environment.IsDevelopment())
                 {
