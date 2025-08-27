@@ -33,6 +33,10 @@ public class Role
         }
     }
 
+    // Concurrency token for optimistic concurrency control
+    // Nullable for SQLite compatibility
+    public byte[]? RowVersion { get; set; }
+
     public Role(string name, string? description = null)
     {
         Name = name; // This will use the setter validation
