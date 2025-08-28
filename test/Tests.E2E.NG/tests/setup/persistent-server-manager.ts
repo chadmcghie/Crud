@@ -180,7 +180,8 @@ export class PersistentServerManager {
         env: apiEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: true,
-        detached: true  // Allow process to persist
+        detached: true,  // Allow process to persist
+        windowsHide: true  // Hide console window on Windows
       });
       
       let started = false;
@@ -232,7 +233,8 @@ export class PersistentServerManager {
         env: angularEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: false,
-        detached: true  // Allow process to persist
+        detached: true,  // Allow process to persist
+        windowsHide: true  // Hide console window on Windows
       });
       
       let started = false;

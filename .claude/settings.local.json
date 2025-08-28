@@ -32,7 +32,8 @@
       "Bash(npm run test:improved:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(rmdir:*)"
+      "Bash(rmdir:*)",
+      "Bash(npm run start:ci:*)"
     ],
     "deny": [],
     "ask": [],

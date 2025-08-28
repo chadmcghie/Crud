@@ -172,7 +172,8 @@ class ServerPoolManager {
         cwd: apiPath,
         env: apiEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
-        shell: true
+        shell: true,
+        windowsHide: true  // Hide console window on Windows
       });
       
       let apiStarted = false;
@@ -226,7 +227,8 @@ class ServerPoolManager {
         cwd: angularPath,
         env: angularEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
-        shell: false
+        shell: false,
+        windowsHide: true  // Hide console window on Windows
       });
       
       let angularStarted = false;
