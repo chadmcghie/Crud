@@ -72,9 +72,15 @@
 - Critical business scenarios.  
 
 **Frameworks & Tools**  
-- Playwright for .NET (modern E2E browser testing).  
-- Selenium/Appium (for MAUI UI testing if needed).  
-- SpecFlow (if BDD acceptance tests desired).  
+- Playwright (TypeScript) - Primary E2E framework.  
+- Serial execution strategy for reliability.  
+- SQLite with file-based cleanup.  
+
+**Execution Strategy (Updated 2025-08-28)**  
+- **Serial execution only** - No parallel workers due to SQLite/EF Core limitations.  
+- **Categorized tests**: @smoke (2 min), @critical (5 min), @extended (10 min).  
+- **Single browser default** - Cross-browser only for critical paths.  
+- **Shared servers** - Start once, use for all tests.  
 
 **Examples**  
 - User logs in (Angular UI) → token retrieved → secured API call succeeds.  
