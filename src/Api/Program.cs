@@ -4,12 +4,12 @@ using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
-using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
