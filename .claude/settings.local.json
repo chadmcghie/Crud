@@ -22,7 +22,9 @@
       "Bash(npm run lint)",
       "WebFetch(domain:github.com)",
       "Bash(dotnet run:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],

@@ -44,7 +44,13 @@ Our CI/CD pipeline implements a GitFlow-inspired branching strategy optimized fo
 
 ### 3. Progressive Testing Strategy
 
-**Decision**: Different test depths at different stages
+**Decision**: Different test depths at different stages with serial E2E execution
+
+**Update (2025-08-28)**: E2E tests now run serially with categorized execution:
+- **Smoke Tests**: 2 minutes - Critical paths only
+- **Critical Tests**: 5 minutes - Core business features  
+- **Full Suite**: 10 minutes - Comprehensive validation
+- **Cross-Browser**: 15 minutes - Nightly/release only
 
 ```mermaid
 graph LR
