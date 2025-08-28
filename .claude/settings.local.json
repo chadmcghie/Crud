@@ -30,7 +30,9 @@
       "Bash(git rm:*)",
       "Bash(dotnet add package:*)",
       "Bash(npm run test:improved:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)"
     ],
     "deny": [],
     "ask": [],
