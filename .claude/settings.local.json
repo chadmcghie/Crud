@@ -24,7 +24,11 @@
       "Bash(dotnet run:*)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run test:integration:*)",
+      "Bash(git rm:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(npm run test:improved:*)"
     ],
     "deny": [],
     "ask": [],

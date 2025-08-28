@@ -9,8 +9,8 @@ export default defineConfig({
   fullyParallel: true, // Enable full parallelism with worker database isolation
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Intelligent retry configuration with exponential backoff */
-  retries: process.env.CI ? 3 : 1, // More retries on CI due to environmental flakiness
+  /* Retry configuration */
+  retries: process.env.CI ? 3 : 0, // Disable retries locally to avoid server restart overhead
   /* Enable parallel workers with database isolation */
   workers: process.env.CI ? 4 : 2, // Use multiple workers with isolated databases
   /* Increase timeout for slow startup */

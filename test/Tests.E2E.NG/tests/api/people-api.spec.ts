@@ -243,7 +243,7 @@ test.describe('People API', () => {
 
   test('should handle special characters in person data', async ({ apiHelpers }) => {
     const testPerson = generateTestPerson({
-      fullName: "Jean-Marie O'Connor-Smith Jr.",
+      fullName: "Person with Valid-Special Chars O'Brien St. James-Wilson",
       phone: '+1-555-0123'
     });
     

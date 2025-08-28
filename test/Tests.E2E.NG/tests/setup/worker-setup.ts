@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkerStartupQueue } from './worker-queue';
+import { checkPortsAvailable, killProcessOnPort, findAvailablePort } from './port-utils';
 
 export class WorkerServerManager {
   private apiProcess: ChildProcess | null = null;
@@ -33,6 +34,43 @@ export class WorkerServerManager {
     try {
       console.log(`🚀 Starting servers for worker ${this.workerIndex}...`);
       
+      // Check if ports are available before starting
+      const portsToCheck = [this.apiPort, this.angularPort];
+      const portCheck = await checkPortsAvailable(portsToCheck);
+      
+      if (!portCheck.available) {
+        console.error(`❌ Ports already in use for worker ${this.workerIndex}: ${portCheck.conflicts.join(', ')}`);
+        
+        // Try to kill existing processes or find alternative ports
+        const killExisting = process.env.KILL_EXISTING_SERVERS === 'true';
+        
+        if (killExisting) {
+          console.log(`🔪 Attempting to kill processes on conflicting ports...`);
+          for (const port of portCheck.conflicts) {
+            await killProcessOnPort(port);
+          }
+          
+          // Re-check ports after killing
+          const recheckPorts = await checkPortsAvailable(portsToCheck);
+          if (!recheckPorts.available) {
+            throw new Error(`Failed to free up ports ${recheckPorts.conflicts.join(', ')} for worker ${this.workerIndex}`);
+          }
+        } else {
+          // Find alternative ports
+          console.log(`🔍 Finding alternative ports for worker ${this.workerIndex}...`);
+          
+          if (portCheck.conflicts.includes(this.apiPort)) {
+            this.apiPort = await findAvailablePort(this.apiPort);
+            console.log(`📍 Using alternative API port: ${this.apiPort}`);
+          }
+          
+          if (portCheck.conflicts.includes(this.angularPort)) {
+            this.angularPort = await findAvailablePort(this.angularPort);
+            console.log(`📍 Using alternative Angular port: ${this.angularPort}`);
+          }
+        }
+      }
+      
       // Create worker-specific proxy config for Angular
       this.createProxyConfig();
       
@@ -42,7 +80,7 @@ export class WorkerServerManager {
       // Start Angular dev server
       await this.startAngularServer();
       
-      console.log(`✅ Worker ${this.workerIndex} servers ready`);
+      console.log(`✅ Worker ${this.workerIndex} servers ready on ports API:${this.apiPort}, Angular:${this.angularPort}`);
     } finally {
       // Mark worker as complete in queue
       queue.complete(this.workerIndex);
@@ -134,7 +172,12 @@ export class WorkerServerManager {
       console.log(`🔧 Starting Angular from: ${angularPath}`);
       
       const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-      this.angularProcess = spawn(npmCommand, ['start', '--', portConfig, proxyConfig, optimizationFlags], {
+      // Split optimization flags into array
+      const args = ['start', '--', portConfig, proxyConfig];
+      const optimizationFlagsArray = optimizationFlags.split(' ').filter(arg => arg);
+      args.push(...optimizationFlagsArray);
+      
+      this.angularProcess = spawn(npmCommand, args, {
         cwd: angularPath,
         env: angularEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -254,14 +297,47 @@ export class WorkerServerManager {
   async stopServers(): Promise<void> {
     console.log(`🛑 Stopping servers for worker ${this.workerIndex}...`);
 
+    // Kill processes more forcefully on Windows
+    const killSignal = process.platform === 'win32' ? 'SIGKILL' : 'SIGTERM';
+
     if (this.apiProcess) {
-      this.apiProcess.kill('SIGTERM');
+      try {
+        this.apiProcess.kill(killSignal);
+        // Give it a moment to terminate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force kill if still running
+        if (this.apiProcess && !this.apiProcess.killed) {
+          this.apiProcess.kill('SIGKILL');
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error killing API process for worker ${this.workerIndex}:`, error);
+      }
       this.apiProcess = null;
     }
 
     if (this.angularProcess) {
-      this.angularProcess.kill('SIGTERM');
+      try {
+        this.angularProcess.kill(killSignal);
+        // Give it a moment to terminate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force kill if still running
+        if (this.angularProcess && !this.angularProcess.killed) {
+          this.angularProcess.kill('SIGKILL');
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error killing Angular process for worker ${this.workerIndex}:`, error);
+      }
       this.angularProcess = null;
+    }
+    
+    // Also try to kill by port as a backup
+    try {
+      await killProcessOnPort(this.apiPort);
+      await killProcessOnPort(this.angularPort);
+    } catch (error) {
+      // Ignore port cleanup errors
     }
     
     // Clean up proxy config file
