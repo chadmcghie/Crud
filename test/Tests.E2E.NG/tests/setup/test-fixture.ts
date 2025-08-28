@@ -2,35 +2,23 @@ import { test as base, TestInfo, APIRequestContext, Page } from '@playwright/tes
 import { PersistentServerManager } from './persistent-server-manager';
 
 export interface TestFixtures {
-  parallelIndex: number;
   apiContext: APIRequestContext;
   cleanDatabase: void;
   apiUrl: string;
   angularUrl: string;
-  workerIndex: number;  // Keep for backward compatibility
   serverInfo: { apiUrl: string; angularUrl: string; database: string };
 }
 
 // Test-scoped fixtures only - no worker fixtures needed since servers persist
 export const test = base.extend<TestFixtures>({
-  // Get server info for this parallel worker
-  serverInfo: async ({ }, use, workerInfo) => {
-    const parallelIndex = workerInfo.parallelIndex;
-    console.log(`🔧 Getting servers for parallel ${parallelIndex} (worker ${workerInfo.workerIndex})...`);
+  // Get server info (single instance for serial execution)
+  serverInfo: async ({ }, use) => {
+    console.log(`🔧 Getting server info...`);
     
-    const manager = new PersistentServerManager(parallelIndex);
+    const manager = PersistentServerManager.getInstance();
     const info = await manager.ensureServers();
     
     await use(info);
-  },
-  
-  parallelIndex: async ({ }, use, workerInfo) => {
-    await use(workerInfo.parallelIndex);
-  },
-  
-  workerIndex: async ({ }, use, testInfo) => {
-    // Provide workerIndex for backward compatibility
-    await use(testInfo.workerIndex);
   },
 
   apiUrl: async ({ serverInfo }, use) => {
@@ -53,23 +41,12 @@ export const test = base.extend<TestFixtures>({
     await context.dispose();
   },
 
-  cleanDatabase: [async ({ apiContext, parallelIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for parallel ${parallelIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Pre-test database cleanup
-    try {
-      const response = await apiContext.post('/api/database/reset', {
-        data: { parallelIndex }
-      });
-      
-      if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for parallel ${parallelIndex}: ${response.status()}`);
-      } else {
-        console.log(`✅ Database reset completed for parallel ${parallelIndex}`);
-      }
-    } catch (error) {
-      console.error(`❌ Database cleanup failed for parallel ${parallelIndex}:`, error);
-    }
+    // For serial execution, we can clean the database more aggressively
+    const manager = PersistentServerManager.getInstance();
+    await manager.cleanDatabase();
     
     await use();
   }, { auto: true }],

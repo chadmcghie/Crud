@@ -16,8 +16,8 @@ export default defineConfig({
   /* Retry failed tests for stability */
   retries: 2,
   
-  /* Use 4 workers on CI for optimal parallelism */
-  workers: 4,
+  /* Use single worker for serial execution per ADR-001 */
+  workers: 1,
   
   /* Timeout configuration */
   timeout: 90000, // 90 seconds per test

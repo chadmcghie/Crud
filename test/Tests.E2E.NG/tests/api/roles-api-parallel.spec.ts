@@ -6,13 +6,13 @@ import { generateTestRole } from '../helpers/test-data';
 
 test.describe('Roles API - Parallel Execution', () => {
   
-  test('should create role in isolated worker environment', async ({ isolatedApiHelpers, workerIndex }) => {
-    console.log(`🧪 Running test in worker ${workerIndex}`);
+  test('should create role in isolated worker environment', async ({ isolatedApiHelpers }) => {
+    console.log('🧪 Running test in serial execution mode');
     
-    // Generate unique test data for this worker
+    // Generate unique test data for serial execution
     const testRole = generateTestRole({ 
-      name: `ParallelTest_W${workerIndex}_${Date.now()}` 
-    }, workerIndex);
+      name: `SerialTest_${Date.now()}` 
+    }, 0);
     
     // Create role
     const createdRole = await isolatedApiHelpers.createRole(testRole);
@@ -26,14 +26,14 @@ test.describe('Roles API - Parallel Execution', () => {
     expect(foundRole!.name).toBe(testRole.name);
   });
 
-  test('should handle concurrent role creation without interference', async ({ isolatedApiHelpers, workerIndex }) => {
-    console.log(`🧪 Running concurrent test in worker ${workerIndex}`);
+  test('should handle concurrent role creation without interference', async ({ isolatedApiHelpers }) => {
+    console.log('🧪 Running concurrent test in serial execution mode');
     
-    // Create multiple roles concurrently within this worker
+    // Create multiple roles concurrently in serial execution
     const rolePromises = Array.from({ length: 3 }, (_, i) => {
       const testRole = generateTestRole({ 
-        name: `ConcurrentRole_W${workerIndex}_${i}_${Date.now()}` 
-      }, workerIndex);
+        name: `ConcurrentRole_${i}_${Date.now()}` 
+      }, 0);
       return isolatedApiHelpers.createRole(testRole);
     });
     
@@ -42,7 +42,7 @@ test.describe('Roles API - Parallel Execution', () => {
     // Verify all roles were created successfully
     expect(createdRoles).toHaveLength(3);
     createdRoles.forEach((role, index) => {
-      expect(role.name).toContain(`ConcurrentRole_W${workerIndex}_${index}`);
+      expect(role.name).toContain(`ConcurrentRole_${index}`);
     });
     
     // Verify they all exist in the database
@@ -54,7 +54,7 @@ test.describe('Roles API - Parallel Execution', () => {
   });
 
   test('should have clean database state for each test', async ({ isolatedApiHelpers, databaseRespawn }) => {
-    console.log(`🧪 Testing clean state in worker ${databaseRespawn.getWorkerIndex()}`);
+    console.log('🧪 Testing clean state in serial execution mode');
     
     // Check that we start with a clean database
     const initialRoles = await isolatedApiHelpers.getRoles();
@@ -62,10 +62,9 @@ test.describe('Roles API - Parallel Execution', () => {
     expect(testRoles).toHaveLength(0); // Should be no test data from previous tests
     
     // Create a test role
-    const workerIndex = databaseRespawn.getWorkerIndex();
     const testRole = generateTestRole({ 
       name: `CleanStateTest_${Date.now()}` 
-    }, workerIndex);
+    }, 0);
     const createdRole = await isolatedApiHelpers.createRole(testRole);
     
     // Verify it was created
@@ -76,27 +75,27 @@ test.describe('Roles API - Parallel Execution', () => {
     // Note: The next test will start with a clean database due to the fixture
   });
 
-  test('should verify database isolation between workers', async ({ isolatedApiHelpers, workerIndex }) => {
-    console.log(`🧪 Testing isolation in worker ${workerIndex}`);
+  test('should verify database isolation in serial execution', async ({ isolatedApiHelpers }) => {
+    console.log('🧪 Testing database state in serial execution mode');
     
-    // Create a role with worker-specific name
+    // Create a role with serial-specific name
     const testRole = generateTestRole({ 
-      name: `Worker${workerIndex}_IsolationTest_${Date.now()}` 
-    }, workerIndex);
+      name: `Serial_IsolationTest_${Date.now()}` 
+    }, 0);
     const createdRole = await isolatedApiHelpers.createRole(testRole);
     
     // Verify the role exists
     const roles = await isolatedApiHelpers.getRoles();
     const foundRole = roles.find(r => r.id === createdRole.id);
     expect(foundRole).toBeDefined();
-    expect(foundRole!.name).toContain(`Worker${workerIndex}_`);
+    expect(foundRole!.name).toContain('Serial_');
     
-    // Note: With database reset, we shouldn't see roles from other workers
-    // since each worker starts with a clean database
-    const otherWorkerRoles = roles.filter(r => 
+    // Note: In serial execution, we have a clean database for each test
+    // so we shouldn't see roles from other test runs
+    const otherTestRoles = roles.filter(r => 
       r.name.includes('Worker') && 
-      !r.name.includes(`Worker${workerIndex}_`)
+      !r.name.includes('Serial_')
     );
-    expect(otherWorkerRoles).toHaveLength(0);
+    expect(otherTestRoles).toHaveLength(0);
   });
 });
