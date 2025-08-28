@@ -352,6 +352,15 @@ dist/
 tmp/
 out-tsc/
 
+# Test-generated proxy configurations
+src/Angular/proxy.worker*.conf.json
+
+# Playwright test artifacts
+test/Tests.E2E.NG/test-results/
+test/Tests.E2E.NG/playwright-report/
+test/Tests.E2E.NG/test-results.json
+test/Tests.E2E.NG/test-failures.js
+
 # MAUI
 *.appx
 *.appxbundle

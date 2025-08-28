@@ -1,22 +1,40 @@
 import { test as base, APIRequestContext } from '@playwright/test';
 import { ApiHelpers } from '../helpers/api-helpers';
+import { PersistentServerManager } from './persistent-server-manager';
 
 export interface ApiOnlyFixtures {
   apiContext: APIRequestContext;
   apiHelpers: ApiHelpers;
   cleanDatabase: void;
   workerIndex: number;
+  parallelIndex: number;
+  serverInfo: { apiUrl: string; angularUrl: string; database: string };
 }
 
-// Simple API-only fixture that assumes a single server is running
+// Simple API-only fixture that reuses servers
 export const test = base.extend<ApiOnlyFixtures>({
+  // Get server info for this parallel worker
+  serverInfo: async ({ }, use, workerInfo) => {
+    const parallelIndex = workerInfo.parallelIndex;
+    console.log(`🔧 Getting servers for parallel ${parallelIndex} (worker ${workerInfo.workerIndex})...`);
+    
+    const manager = new PersistentServerManager(parallelIndex);
+    const info = await manager.ensureServers();
+    
+    await use(info);
+  },
+  
+  parallelIndex: async ({ }, use, workerInfo) => {
+    await use(workerInfo.parallelIndex);
+  },
+  
   workerIndex: async ({}, use, testInfo) => {
     await use(testInfo.workerIndex);
   },
 
-  apiContext: async ({ playwright }, use) => {
+  apiContext: async ({ playwright, serverInfo }, use) => {
     const context = await playwright.request.newContext({
-      baseURL: 'http://localhost:5172',
+      baseURL: serverInfo.apiUrl,
       extraHTTPHeaders: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -31,22 +49,22 @@ export const test = base.extend<ApiOnlyFixtures>({
     await use(helpers);
   },
 
-  cleanDatabase: [async ({ apiContext, workerIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for worker ${workerIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext, parallelIndex }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for parallel ${parallelIndex}, test: ${testInfo.title}`);
     
     // Pre-test database cleanup using the shared database service
     try {
       const response = await apiContext.post('/api/database/reset', {
-        data: { workerIndex }
+        data: { parallelIndex }
       });
       
       if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for worker ${workerIndex}: ${response.status()}`);
+        console.warn(`⚠️ Database reset failed for parallel ${parallelIndex}: ${response.status()}`);
       } else {
-        console.log(`✅ Database reset completed for worker ${workerIndex}`);
+        console.log(`✅ Database reset completed for parallel ${parallelIndex}`);
       }
     } catch (error) {
-      console.error(`❌ Database cleanup failed for worker ${workerIndex}:`, error);
+      console.error(`❌ Database cleanup failed for parallel ${parallelIndex}:`, error);
     }
     
     await use();

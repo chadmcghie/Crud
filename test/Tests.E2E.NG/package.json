@@ -7,6 +7,9 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
+    "test:improved": "playwright test --config=playwright-improved.config.ts",
+    "test:improved:headed": "playwright test --config=playwright-improved.config.ts --headed",
+    "test:improved:clean": "cross-env CLEANUP_BEFORE_TESTS=true CLEANUP_AFTER_TESTS=true playwright test --config=playwright-improved.config.ts",
     "test:local": "playwright test --config=playwright.config.local.ts",
     "test:api-only": "playwright test --config=playwright.config.api-only.ts",
     "test:parallel": "playwright test --config=playwright.config.parallel.ts",
@@ -21,6 +24,8 @@
     "prebuild:test": "npm run prebuild && npm test",
     "test:single": "playwright test --workers=1",
     "test:stable": "npm run prebuild && playwright test --config=playwright.config.fast.ts --workers=1",
+    "test:clean": "cross-env CLEANUP_BEFORE_TESTS=true KILL_EXISTING_SERVERS=true playwright test",
+    "clean:servers": "node -e \"require('./tests/setup/port-utils.js').killAllTestServers().then(() => console.log('Done')).catch(e => console.error(e))\"",
     "report": "playwright show-report",
     "install-browsers": "playwright install",
     "clean": "rm -rf test-results playwright-report"
@@ -28,6 +33,7 @@
   "devDependencies": {
     "@playwright/test": "^1.54.0",
     "@types/node": "^20.0.0",
+    "cross-env": "^10.0.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
