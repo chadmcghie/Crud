@@ -61,7 +61,7 @@
 [^](#hardware--infrastructure-architecture-categories)
 
 ## Storage
-- **Relational DBs** → SQL Server, Postgres, MySQL.  
+- **Relational DBs** → SQL Server, Postgres, MySQL, SQLITE.  
 - **NoSQL DBs** → MongoDB, Cassandra, DynamoDB, Cosmos DB.  
 - **Blob / Object Storage** → S3, Azure Blob.  
 - **File Systems** → NFS, Azure Files, EFS.  
