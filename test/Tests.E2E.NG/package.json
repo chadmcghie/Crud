@@ -28,7 +28,7 @@
     "clean:servers": "node -e \"require('./tests/setup/port-utils.js').killAllTestServers().then(() => console.log('Done')).catch(e => console.error(e))\"",
     "report": "playwright show-report",
     "install-browsers": "playwright install",
-    "clean": "rm -rf test-results playwright-report"
+    "clean": "rm -rf ./test-results ./playwright-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",

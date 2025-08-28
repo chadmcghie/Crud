@@ -3,14 +3,16 @@ using App;
 using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
-using Serilog;
+using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
+using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 
 namespace Api
 {
@@ -98,11 +100,10 @@ namespace Api
                         .AddConsoleExporter());
 
                 // 3) App & Infra
-                builder.Services.AddApplication();
+                builder.Services.AddApplication();                
 
-                // Configure Polly for HTTP clients
                 builder.Services.AddHttpClient("default")
-                    .AddPolicyHandler(PollyPolicies.GetCombinedHttpPolicy);
+                    .AddPolicyHandler((sp, request) => PollyPolicies.GetCombinedHttpPolicy(sp));
 
                 var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

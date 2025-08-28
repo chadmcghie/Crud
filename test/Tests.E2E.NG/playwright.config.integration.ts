@@ -19,9 +19,11 @@ export default defineConfig({
   timeout: 60000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/integration-results.json' }]
+    ['html', { outputFolder: './test-results/html' }],
+    ['json', { outputFile: './test-results/integration-results.json' }]
   ],
+  /* Output directory for test artifacts */
+  outputDir: './test-results/',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL for Angular app */
