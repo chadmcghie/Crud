@@ -1,4 +1,4 @@
-using Api.Dtos;
+using Shared.Dtos;
 using AutoFixture;
 
 namespace Tests.Integration.Backend.Infrastructure;

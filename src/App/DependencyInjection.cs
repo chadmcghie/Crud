@@ -25,6 +25,9 @@ public static class DependencyInjection
         // Register Validators
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         
+        // Register AutoMapper
+        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
+        
         return services;
     }
 }

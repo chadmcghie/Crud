@@ -9,6 +9,7 @@
       "Bash(git push:*)",
       "Bash(dotnet test:*)",
       "Bash(dotnet build:*)",
+      "Bash(dotnet restore:*)",
       "Bash(npm test:*)",
       "Bash(npx playwright test:*)",
       "Bash(curl:*)",
@@ -28,7 +29,8 @@
       "Bash(npm run test:integration:*)",
       "Bash(git rm:*)",
       "Bash(dotnet add package:*)",
-      "Bash(npm run test:improved:*)"
+      "Bash(npm run test:improved:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": [],

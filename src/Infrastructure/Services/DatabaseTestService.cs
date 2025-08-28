@@ -15,6 +15,8 @@ public class DatabaseTestService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
+    private Respawner? _respawner;
+    private readonly object _respawnerLock = new();
 
     public DatabaseTestService(ApplicationDbContext context, ILogger<DatabaseTestService> logger)
     {

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Api.Dtos;
+namespace Shared.Dtos;
 
 public record CreateRoleRequest(
     [param: Required] string Name,

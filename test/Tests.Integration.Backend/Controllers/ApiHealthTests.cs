@@ -1,5 +1,5 @@
 using System.Net;
-using Api.Dtos;
+using Shared.Dtos;
 using Tests.Integration.Backend.Infrastructure;
 
 namespace Tests.Integration.Backend.Controllers;
