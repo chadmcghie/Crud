@@ -6,20 +6,7 @@ This document explains how to configure different database providers in the CRUD
 
 The application supports three database configurations:
 
-### 1. InMemory (Default)
-- **Use Case**: Simple development and unit testing
-- **Configuration**: `"DatabaseProvider": "InMemory"`
-- **Description**: Uses simple in-memory dictionaries, no database required
-- **Persistence**: Data is lost when application stops
-
-### 2. EntityFrameworkInMemory
-- **Use Case**: Testing Entity Framework behavior without persistent storage
-- **Configuration**: `"DatabaseProvider": "EntityFrameworkInMemory"`
-- **Description**: Uses Entity Framework with in-memory database provider
-- **Persistence**: Data is lost when application stops
-- **Benefits**: Tests EF queries, relationships, and configurations
-
-### 3. SqlServer
+### 3. SQLITE
 - **Use Case**: Production and end-to-end testing
 - **Configuration**: `"DatabaseProvider": "SqlServer"`
 - **Description**: Uses Entity Framework with SQL Server database
