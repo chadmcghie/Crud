@@ -33,7 +33,16 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(rmdir:*)",
-      "Bash(npm run start:ci:*)"
+      "Bash(npm run start:ci:*)",
+      "Bash(set KILL_EXISTING_SERVERS=true)",
+      "Bash(timeout:*)",
+      "Bash(set ASPNETCORE_ENVIRONMENT=Development)",
+      "Bash(set \"ASPNETCORE_URLS=http://localhost:5172\")",
+      "Bash(set DatabaseProvider=SQLite)",
+      "Bash(set \"ConnectionStrings__DefaultConnection=Data Source=C:\\temp\\test.db\")",
+      "Bash($env:ASPNETCORE_ENVIRONMENT=\"Development\")",
+      "Bash($env:ASPNETCORE_URLS=\"http://localhost:5172\")",
+      "Bash($env:DatabaseProvider=\"SQLite\")"
     ],
     "deny": [],
     "ask": [],
