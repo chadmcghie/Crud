@@ -116,3 +116,27 @@ export async function findAvailablePort(startPort: number, maxPort: number = sta
   }
   throw new Error(`No available ports found between ${startPort} and ${maxPort}`);
 }
+
+export async function waitForServer(url: string, timeout: number = 30000): Promise<boolean> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      
+      if (response.ok || response.status === 404) {
+        // Server is responding
+        return true;
+      }
+    } catch (error) {
+      // Server not ready yet, wait and retry
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  return false;
+}

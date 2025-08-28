@@ -1,0 +1,226 @@
+import { test, expect, tagTest, helpers } from './fixtures/serial-test-fixture';
+
+/**
+ * Example test file demonstrating serial test execution with proper tagging
+ * This shows the patterns to follow for all test files
+ */
+
+test.describe('People Management - Serial Tests', () => {
+  let apiUrl: string;
+  
+  test.beforeAll(async () => {
+    // Shared setup that runs once for all tests in this file
+    apiUrl = process.env.API_URL || 'http://localhost:5172';
+    console.log(`📍 Running tests against API: ${apiUrl}`);
+  });
+  
+  // Smoke tests - quick validation of core functionality (2 min total)
+  test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}/people`);
+    await expect(page).toHaveTitle(/People/i);
+    await expect(page.locator('h1, h2').first()).toContainText(/People/i);
+  });
+  
+  test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}/people`);
+    const addButton = page.locator('button:has-text("Add"), a:has-text("Add")').first();
+    await expect(addButton).toBeVisible();
+  });
+  
+  // Critical tests - essential user workflows (5 min total)
+  test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}/people`);
+    
+    // Click add button
+    await page.click('button:has-text("Add"), a:has-text("Add")');
+    
+    // Fill in the form
+    const timestamp = Date.now();
+    const testName = `Test Person ${timestamp}`;
+    
+    await page.fill('input[name="fullName"], input[placeholder*="name" i]', testName);
+    await page.fill('input[name="phone"], input[placeholder*="phone" i]', '555-0123');
+    
+    // Submit the form
+    await page.click('button[type="submit"], button:has-text("Save")');
+    
+    // Verify success - wait for navigation or success message
+    await page.waitForURL(/people/i, { timeout: 10000 }).catch(() => {
+      // Some apps show success message instead of navigating
+    });
+    
+    // Verify the person appears in the list
+    await page.goto(`${baseURL}/people`);
+    await expect(page.locator(`text=${testName}`)).toBeVisible({ timeout: 10000 });
+  });
+  
+  test(tagTest('should edit an existing person', 'critical'), async ({ page, baseURL, apiUrl }) => {
+    // Create test data via API for consistent state
+    const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
+      fullName: `Edit Test ${Date.now()}`,
+      phone: '555-0100'
+    });
+    
+    // Navigate to people list
+    await page.goto(`${baseURL}/people`);
+    
+    // Find and click edit for the test person
+    const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    await row.locator('button:has-text("Edit"), a:has-text("Edit")').click();
+    
+    // Update the name
+    const updatedName = `${testPerson.fullName} Updated`;
+    await page.fill('input[name="fullName"]', updatedName);
+    
+    // Save changes
+    await page.click('button[type="submit"], button:has-text("Save")');
+    
+    // Verify the update
+    await page.goto(`${baseURL}/people`);
+    await expect(page.locator(`text=${updatedName}`)).toBeVisible();
+    
+    // Cleanup
+    await helpers.cleanupTestData(page, apiUrl, 'api/people', testPerson.id);
+  });
+  
+  test(tagTest('should delete a person', 'critical'), async ({ page, baseURL, apiUrl }) => {
+    // Create test data
+    const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
+      fullName: `Delete Test ${Date.now()}`,
+      phone: '555-0200'
+    });
+    
+    // Navigate to people list
+    await page.goto(`${baseURL}/people`);
+    
+    // Find and click delete for the test person
+    const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    await row.locator('button:has-text("Delete"), a:has-text("Delete")').click();
+    
+    // Confirm deletion if there's a confirmation dialog
+    const confirmButton = page.locator('button:has-text("Confirm"), button:has-text("Yes")');
+    if (await confirmButton.isVisible({ timeout: 2000 })) {
+      await confirmButton.click();
+    }
+    
+    // Verify the person is deleted
+    await page.waitForTimeout(1000); // Give time for deletion
+    await page.reload();
+    await expect(page.locator(`text=${testPerson.fullName}`)).not.toBeVisible();
+  });
+  
+  // Extended tests - comprehensive scenarios (10 min total)
+  test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}/people`);
+    
+    // Click add button
+    await page.click('button:has-text("Add"), a:has-text("Add")');
+    
+    // Try to submit empty form
+    await page.click('button[type="submit"], button:has-text("Save")');
+    
+    // Check for validation errors
+    const errorMessage = page.locator('.error, .invalid-feedback, [role="alert"]').first();
+    await expect(errorMessage).toBeVisible();
+  });
+  
+  test(tagTest('should filter people list by search term', 'extended'), async ({ page, baseURL, apiUrl }) => {
+    // Create multiple test people
+    const people = await Promise.all([
+      helpers.createTestData(page, apiUrl, 'api/people', {
+        fullName: 'Alice Searchtest',
+        phone: '555-0301'
+      }),
+      helpers.createTestData(page, apiUrl, 'api/people', {
+        fullName: 'Bob Searchtest',
+        phone: '555-0302'
+      }),
+      helpers.createTestData(page, apiUrl, 'api/people', {
+        fullName: 'Charlie Different',
+        phone: '555-0303'
+      })
+    ]);
+    
+    // Navigate to people list
+    await page.goto(`${baseURL}/people`);
+    
+    // Search for "Searchtest"
+    const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
+    if (await searchInput.isVisible({ timeout: 2000 })) {
+      await searchInput.fill('Searchtest');
+      await page.waitForTimeout(500); // Debounce delay
+      
+      // Verify filtered results
+      await expect(page.locator('text=Alice Searchtest')).toBeVisible();
+      await expect(page.locator('text=Bob Searchtest')).toBeVisible();
+      await expect(page.locator('text=Charlie Different')).not.toBeVisible();
+    }
+    
+    // Cleanup
+    for (const person of people) {
+      await helpers.cleanupTestData(page, apiUrl, 'api/people', person.id);
+    }
+  });
+  
+  test(tagTest('should paginate through people list', 'extended'), async ({ page, baseURL, apiUrl }) => {
+    // Create enough people to trigger pagination (assuming 10 per page)
+    const people = [];
+    for (let i = 1; i <= 15; i++) {
+      people.push(await helpers.createTestData(page, apiUrl, 'api/people', {
+        fullName: `Pagination Test ${i.toString().padStart(2, '0')}`,
+        phone: `555-04${i.toString().padStart(2, '0')}`
+      }));
+    }
+    
+    // Navigate to people list
+    await page.goto(`${baseURL}/people`);
+    
+    // Check if pagination controls exist
+    const nextButton = page.locator('button:has-text("Next"), a:has-text("Next"), [aria-label="Next"]').first();
+    if (await nextButton.isVisible({ timeout: 2000 })) {
+      // Go to next page
+      await nextButton.click();
+      await page.waitForTimeout(500);
+      
+      // Verify we're on page 2 (some items from second batch should be visible)
+      const page2Item = page.locator('text=Pagination Test 11').first();
+      await expect(page2Item).toBeVisible();
+    }
+    
+    // Cleanup
+    for (const person of people) {
+      await helpers.cleanupTestData(page, apiUrl, 'api/people', person.id);
+    }
+  });
+});
+
+// API-only tests (no UI interaction)
+test.describe('People API - Serial Tests', () => {
+  test(tagTest('should handle concurrent API requests', 'extended'), async ({ page, apiUrl }) => {
+    // Create multiple people concurrently
+    const promises = [];
+    for (let i = 0; i < 5; i++) {
+      promises.push(
+        page.request.post(`${apiUrl}/api/people`, {
+          data: {
+            fullName: `Concurrent Test ${i}`,
+            phone: `555-05${i}0`
+          }
+        })
+      );
+    }
+    
+    const responses = await Promise.all(promises);
+    
+    // All should succeed
+    for (const response of responses) {
+      expect(response.ok()).toBe(true);
+    }
+    
+    // Cleanup
+    for (const response of responses) {
+      const person = await response.json();
+      await page.request.delete(`${apiUrl}/api/people/${person.id}`);
+    }
+  });
+});

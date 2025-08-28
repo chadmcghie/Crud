@@ -42,15 +42,18 @@ Our CI/CD pipeline implements a GitFlow-inspired branching strategy optimized fo
 └── test-runner.yml             # (deprecated)
 ```
 
-### 3. Progressive Testing Strategy
+### 3. Progressive Testing Strategy with Serial E2E Execution
 
-**Decision**: Different test depths at different stages with serial E2E execution
+**Decision**: Serial E2E test execution with progressive categorization (see [ADR-001](ADR-001-Serial-E2E-Testing.md))
 
-**Update (2025-08-28)**: E2E tests now run serially with categorized execution:
-- **Smoke Tests**: 2 minutes - Critical paths only
-- **Critical Tests**: 5 minutes - Core business features  
-- **Full Suite**: 10 minutes - Comprehensive validation
-- **Cross-Browser**: 15 minutes - Nightly/release only
+**Current Strategy (Adopted 2025-08-28)**:
+- **Architecture Constraint**: SQLite + EF Core requires serial execution
+- **Execution Model**: Single worker (`workers: 1`) for all E2E tests
+- **Test Categories**:
+  - **Smoke Tests**: 2 minutes - Critical paths only (@smoke tag)
+  - **Critical Tests**: 5 minutes - Core business features (@critical tag)
+  - **Extended Tests**: 10 minutes - Comprehensive validation (@extended tag)
+  - **Cross-Browser**: On-demand only (not in regular CI)
 
 ```mermaid
 graph LR
@@ -115,9 +118,10 @@ Each stage has specific quality gates:
 
 ### GitHub Actions Strategy
 
-**Parallel Job Execution**:
-- Backend and frontend tests run in parallel
-- Unit and integration tests run in parallel where possible
+**Test Execution Strategy**:
+- Backend and frontend unit tests run in parallel
+- Integration tests run in parallel where possible
+- **E2E tests run serially** (single worker, no parallelization)
 - E2E tests run after unit tests complete
 
 **Caching Strategy**:
@@ -126,9 +130,10 @@ Each stage has specific quality gates:
 - Build artifacts cached between jobs
 
 **Resource Optimization**:
-- SQLite for test databases (no external dependencies)
-- Headless browsers for E2E tests
-- Matrix builds for multiple configurations
+- SQLite for test databases (requires serial execution)
+- Single shared server instance for all E2E tests
+- Single headless browser (Chromium) for most tests
+- No matrix builds for E2E (serial constraint)
 
 ### Security Considerations
 
@@ -204,6 +209,8 @@ Each stage has specific quality gates:
 | 2024-08 | Use dev as default branch | AI assistant compatibility |
 | 2024-08 | SQLite for test databases | Cost and speed optimization |
 | 2024-08 | Require PR reviews for dev | Code quality enforcement |
+| 2025-08-28 | Serial E2E test execution | SQLite/EF Core constraints (ADR-001) |
+| 2025-08-28 | Test categorization (@smoke, @critical, @extended) | Fast feedback with serial constraint |
 
 ## References
 

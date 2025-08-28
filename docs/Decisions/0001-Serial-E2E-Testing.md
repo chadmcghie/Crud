@@ -104,6 +104,7 @@ We will adopt a **serial E2E test execution strategy** with aggressive performan
 2025-09-28 (1 month after implementation)
 
 ## References
-- [Analysis Discussion](/test/Tests.E2E.NG/ISOLATION-PROBLEM-EXPLAINED.md)
-- [Implementation Plan](/test/Tests.E2E.NG/SERIAL-TEST-OPTIMIZATION-PLAN.md)
+- [Serial Testing Guide](/docs/05-Quality Control/Testing/SERIAL-TESTING-GUIDE.md)
+- [Implementation Plan](/docs/05-Quality Control/Testing/SERIAL-TEST-OPTIMIZATION-PLAN.md)
+- [Migration Summary](/docs/05-Quality Control/Testing/E2E-Test-Migration-Summary.md)
 - [Todo List](/docs/04-Project Management/To Do Lists/E2E-Test-Optimization-Todo.md)
