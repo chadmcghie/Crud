@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Shared.Dtos;
+namespace Api.Dtos;
 
 public record CreateWindowRequest(
     [param: Required] string Name,

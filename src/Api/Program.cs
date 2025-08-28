@@ -196,6 +196,7 @@ namespace Api
 
                 builder.Services.AddAutoMapper(
                     cfg => { },
+                    typeof(Program).Assembly,
                     typeof(App.DependencyInjection).Assembly,
                     typeof(Infrastructure.DependencyInjection).Assembly
                 );

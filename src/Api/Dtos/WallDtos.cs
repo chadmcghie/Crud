@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Shared.Dtos;
+namespace Api.Dtos;
 
 public record CreateWallRequest(
     [param: Required] string Name,

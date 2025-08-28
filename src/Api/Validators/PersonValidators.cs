@@ -1,5 +1,5 @@
 using FluentValidation;
-using Shared.Dtos;
+using Api.Dtos;
 
 namespace Api.Validators;
 

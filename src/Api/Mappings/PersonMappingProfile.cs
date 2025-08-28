@@ -1,8 +1,8 @@
-using Shared.Dtos;
+using Api.Dtos;
 using AutoMapper;
 using Domain.Entities;
 
-namespace App.Mappings;
+namespace Api.Mappings;
 
 public class PersonMappingProfile : Profile
 {

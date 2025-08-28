@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using Shared.Dtos;
+using Api.Dtos;
 using Tests.Integration.Backend.Infrastructure;
 
 namespace Tests.Integration.Backend.Controllers;

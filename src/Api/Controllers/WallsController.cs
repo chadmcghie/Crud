@@ -1,4 +1,4 @@
-using Shared.Dtos;
+using Api.Dtos;
 using App.Features.Walls;
 using AutoMapper;
 using MediatR;

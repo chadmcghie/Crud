@@ -1,4 +1,4 @@
-using Shared.Dtos;
+using Api.Dtos;
 using App.Features.Windows;
 using AutoMapper;
 using MediatR;
