@@ -13,8 +13,8 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         
-        // Use SQL Server for migrations - this connection string is only used for design-time operations
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=CrudAppDesignTime;Trusted_Connection=true;MultipleActiveResultSets=true");
+        // Use SQLite for migrations - this connection string is only used for design-time operations
+        optionsBuilder.UseSqlite("Data Source=CrudAppDesignTime.db");
 
         return new ApplicationDbContext(optionsBuilder.Options);
     }

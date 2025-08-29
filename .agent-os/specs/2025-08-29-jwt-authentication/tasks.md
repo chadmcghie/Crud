@@ -10,15 +10,15 @@
   - [x] 1.5 Create IPasswordHasher and IUserRepository interfaces
   - [x] 1.6 Verify all domain tests pass
 
-- [ ] 2. Implement Infrastructure Layer Components
-  - [ ] 2.1 Write tests for BCryptPasswordHasher service
-  - [ ] 2.2 Implement BCryptPasswordHasher using BCrypt.Net-Next
-  - [ ] 2.3 Write tests for JwtTokenService
-  - [ ] 2.4 Implement JwtTokenService for token generation and validation
-  - [ ] 2.5 Create EF Core configurations for User and RefreshToken entities
-  - [ ] 2.6 Generate and apply database migration for authentication tables
-  - [ ] 2.7 Implement UserRepository with EF Core
-  - [ ] 2.8 Verify all infrastructure tests pass
+- [x] 2. Implement Infrastructure Layer Components
+  - [x] 2.1 Write tests for BCryptPasswordHasher service
+  - [x] 2.2 Implement BCryptPasswordHasher using BCrypt.Net-Next
+  - [x] 2.3 Write tests for JwtTokenService
+  - [x] 2.4 Implement JwtTokenService for token generation and validation
+  - [x] 2.5 Create EF Core configurations for User and RefreshToken entities
+  - [x] 2.6 Generate and apply database migration for authentication tables
+  - [x] 2.7 Implement UserRepository with EF Core
+  - [x] 2.8 Verify all infrastructure tests pass
 
 - [ ] 3. Implement Application Layer Commands and Queries
   - [ ] 3.1 Write tests for RegisterUserCommand handler
