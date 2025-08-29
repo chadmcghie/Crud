@@ -56,7 +56,10 @@ async function simpleGlobalSetup(config: FullConfig) {
   console.log('🚀 Starting API server...');
   const apiProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Api');
   
-  apiServerProcess = spawn('dotnet', ['run', '--no-build'], {
+  // Use --no-build only in CI where we pre-build, otherwise allow building
+  const dotnetArgs = process.env.CI ? ['run', '--no-build', '--configuration', 'Release'] : ['run'];
+  
+  apiServerProcess = spawn('dotnet', dotnetArgs, {
     cwd: apiProjectPath,
     env: {
       ...process.env,
