@@ -74,9 +74,10 @@ test.describe('People Management - Serial Tests', () => {
   });
   
   test(tagTest('should edit an existing person', 'critical'), async ({ page, baseURL, apiUrl }) => {
-    // Create test data via API for consistent state
+    // Create test data via API for consistent state with unique name
+    const uniqueLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
     const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
-      fullName: `Edit Test Person`,
+      fullName: `Edit Test Person ${uniqueLetter}`,
       phone: '555-0100'
     });
     
@@ -85,14 +86,17 @@ test.describe('People Management - Serial Tests', () => {
     
     // Find and click edit for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
-    await row.locator('button:has-text("Edit"), a:has-text("Edit")').click();
+    await row.locator('button:has-text("Edit")').click();
+    
+    // Wait for the edit form to appear
+    await page.waitForSelector('.people-form-container', { timeout: 5000 });
     
     // Update the name
     const updatedName = `${testPerson.fullName} Updated`;
-    await page.fill('input[name="fullName"]', updatedName);
+    await page.fill('input#fullName', updatedName);
     
-    // Save changes
-    await page.click('button[type="submit"], button:has-text("Save")');
+    // Save changes - look for Update Person button
+    await page.click('button[type="submit"]:has-text("Update Person")');
     
     // Verify the update
     await page.goto(`${baseURL}/people`);
@@ -103,9 +107,10 @@ test.describe('People Management - Serial Tests', () => {
   });
   
   test(tagTest('should delete a person', 'critical'), async ({ page, baseURL, apiUrl }) => {
-    // Create test data
+    // Create test data with unique name using letters
+    const uniqueLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
     const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
-      fullName: `Delete Test ${Date.now()}`,
+      fullName: `Delete Test Person ${uniqueLetter}`,
       phone: '555-0200'
     });
     
@@ -114,18 +119,19 @@ test.describe('People Management - Serial Tests', () => {
     
     // Find and click delete for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
-    await row.locator('button:has-text("Delete"), a:has-text("Delete")').click();
     
-    // Confirm deletion if there's a confirmation dialog
-    const confirmButton = page.locator('button:has-text("Confirm"), button:has-text("Yes")');
-    if (await confirmButton.isVisible({ timeout: 2000 })) {
-      await confirmButton.click();
-    }
+    // Handle the confirm dialog that will appear
+    page.once('dialog', async dialog => {
+      await dialog.accept(); // Click OK on the confirm dialog
+    });
     
-    // Verify the person is deleted
-    await page.waitForTimeout(1000); // Give time for deletion
-    await page.reload();
-    await expect(page.locator(`text=${testPerson.fullName}`)).not.toBeVisible();
+    await row.locator('button:has-text("Delete")').click();
+    
+    // Wait for the deletion to complete and list to refresh
+    await page.waitForTimeout(2000); // Give time for deletion and refresh
+    
+    // Verify the person is deleted - use first() to avoid multiple matches
+    await expect(page.locator(`td:has-text("${testPerson.fullName}")`).first()).not.toBeVisible({ timeout: 5000 });
   });
   
   // Extended tests - comprehensive scenarios (10 min total)
@@ -186,7 +192,7 @@ test.describe('People Management - Serial Tests', () => {
     const people = [];
     for (let i = 1; i <= 15; i++) {
       people.push(await helpers.createTestData(page, apiUrl, 'api/people', {
-        fullName: `Pagination Test ${i.toString().padStart(2, '0')}`,
+        fullName: `Pagination Test Person ${String.fromCharCode(65 + i - 1)}`,  // A, B, C, etc.
         phone: `555-04${i.toString().padStart(2, '0')}`
       }));
     }
@@ -202,7 +208,7 @@ test.describe('People Management - Serial Tests', () => {
       await page.waitForTimeout(500);
       
       // Verify we're on page 2 (some items from second batch should be visible)
-      const page2Item = page.locator('text=Pagination Test 11').first();
+      const page2Item = page.locator('text=Pagination Test Person K').first();
       await expect(page2Item).toBeVisible();
     }
     
@@ -222,7 +228,7 @@ test.describe('People API - Serial Tests', () => {
       promises.push(
         page.request.post(`${apiUrl}/api/people`, {
           data: {
-            fullName: `Concurrent Test ${i}`,
+            fullName: `Concurrent Test Person ${String.fromCharCode(65 + i)}`,  // A, B, C, etc.
             phone: `555-05${i}0`
           }
         })

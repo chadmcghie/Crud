@@ -161,8 +161,9 @@ export function generateTestPerson(overrides: Partial<TestPerson> = {}, workerIn
   // Use middle name instead of initial to avoid periods
   const middleNames = ['Anne', 'Lee', 'Marie', 'Lynn', 'Rose', 'Ray', 'Jay', 'Kay', 'Max', 'Sky'];
   const middleName = middleNames[Math.floor(Math.random() * middleNames.length)];
-  // Add number suffix for uniqueness instead of Jr.
-  const uniqueSuffix = workerId > 0 ? ` ${timestamp}` : '';
+  // Add letter suffix for uniqueness (no numbers allowed in names)
+  const suffixLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const uniqueSuffix = workerId > 0 ? ` ${suffixLetters[workerId % 10]}` : '';
   const fullName = `${firstName} ${middleName} ${lastName}${uniqueSuffix}`;
   
   return {

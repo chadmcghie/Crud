@@ -7,6 +7,9 @@ import fetch from 'node-fetch';
 let apiServerProcess: ChildProcess | null = null;
 let angularServerProcess: ChildProcess | null = null;
 
+// Check if running on Windows
+const isWindows = process.platform === 'win32';
+
 /**
  * Simple wait for server readiness
  */
@@ -63,8 +66,19 @@ async function simpleGlobalSetup(config: FullConfig) {
       'DatabaseProvider': 'SQLite',
       'Logging__LogLevel__Default': 'Warning',
     },
-    shell: true,
+    shell: isWindows, // Only use shell on Windows
     stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  
+  // Log server output for debugging
+  apiServerProcess.stdout?.on('data', (data) => {
+    if (process.env.CI) {
+      console.log(`[API] ${data.toString()}`);
+    }
+  });
+  
+  apiServerProcess.stderr?.on('data', (data) => {
+    console.error(`[API Error] ${data.toString()}`);
   });
   
   apiServerProcess.on('error', (error) => {
@@ -89,8 +103,19 @@ async function simpleGlobalSetup(config: FullConfig) {
       ...process.env,
       'API_URL': `http://localhost:${apiPort}`,
     },
-    shell: true,
+    shell: isWindows, // Only use shell on Windows
     stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  
+  // Log server output for debugging
+  angularServerProcess.stdout?.on('data', (data) => {
+    if (process.env.CI) {
+      console.log(`[Angular] ${data.toString()}`);
+    }
+  });
+  
+  angularServerProcess.stderr?.on('data', (data) => {
+    console.error(`[Angular Error] ${data.toString()}`);
   });
   
   angularServerProcess.on('error', (error) => {

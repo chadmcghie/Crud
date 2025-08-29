@@ -8,10 +8,20 @@ import * as path from 'path';
 export const test = base.extend({
   // Automatic database cleanup before each test
   page: async ({ page }, use) => {
-    // Reset database before test
-    if (process.env.DATABASE_PATH) {
-      console.log(`🔄 Resetting database for test: ${test.info().title}`);
-      await resetDatabase(process.env.DATABASE_PATH);
+    // Reset database via API before test
+    const apiUrl = process.env.API_URL || 'http://localhost:5172';
+    console.log(`🔄 Resetting database for test: ${test.info().title}`);
+    
+    try {
+      const response = await page.request.post(`${apiUrl}/api/database/reset`, {
+        data: { workerIndex: 0, preserveSchema: true }
+      });
+      
+      if (!response.ok()) {
+        console.warn(`Database reset failed: ${response.status()}`);
+      }
+    } catch (error) {
+      console.warn(`Could not reset database: ${error}`);
     }
     
     // Set up page with default navigation timeout
