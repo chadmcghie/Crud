@@ -15,8 +15,12 @@ async function simpleGlobalTeardown(config: FullConfig) {
     try {
       await fs.unlink(process.env.DATABASE_PATH);
       console.log('🗑️ Cleaned up test database');
-    } catch (err) {
-      console.warn('⚠️ Could not clean up test database:', err);
+    } catch (err: any) {
+      // Only warn if it's not a "file not found" error
+      // File not found is actually good - means it was already cleaned
+      if (err.code !== 'ENOENT') {
+        console.warn('⚠️ Could not clean up test database:', err.message);
+      }
     }
   }
   

@@ -30,7 +30,7 @@ export default defineConfig({
   reporter: [
     ['junit', { outputFile: './test-results/junit.xml' }],
     ['json', { outputFile: './test-results/results.json' }],
-    ['html', { open: 'never', outputFolder: './test-results/html' }],
+    ['html', { open: 'never', outputFolder: './playwright-report-ci' }],
     ['github'], // GitHub Actions annotations
     ['list'] // Console output
   ],
@@ -91,7 +91,7 @@ export default defineConfig({
   ],
 
   /* Output test results to a specific folder */
-  outputDir: './test-results/',
+  outputDir: './test-artifacts/',
 
   /* Preserve test outputs */
   preserveOutput: 'failures-only',
