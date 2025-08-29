@@ -137,8 +137,8 @@ test.describe('Walls API', () => {
         if (attempts >= maxAttempts) {
           throw new Error(`Wall ${createdWall.id} not found after update - may have been cleaned up by another worker`);
         }
-        // Small delay before retry
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Exponential backoff before retry
+        await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, attempts - 1), 500)));
       }
     }
     expect(retrievedWall).toMatchObject({

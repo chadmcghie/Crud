@@ -17,7 +17,14 @@
       "Read(C:\\Users\\chadm\\source\\repos\\Crud/**)",
       "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
       "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
-      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)"
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Bash(npx playwright show-report:*)",
+      "Bash(dir:*)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)"
     ],
     "deny": [],
     "ask": []

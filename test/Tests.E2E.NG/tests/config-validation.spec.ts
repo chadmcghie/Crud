@@ -150,8 +150,8 @@ test.describe('Performance Targets', () => {
     if (timeoutMatch) {
       const timeout = parseInt(timeoutMatch[1]);
       
-      // Should be reasonable for serial execution (30-60 seconds)
-      expect(timeout).toBeGreaterThanOrEqual(30000);
+      // Should be reasonable for serial execution (15-60 seconds)
+      expect(timeout).toBeGreaterThanOrEqual(15000);
       expect(timeout).toBeLessThanOrEqual(60000);
     }
     

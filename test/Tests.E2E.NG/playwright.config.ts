@@ -14,7 +14,7 @@ export default defineConfig({
   /* Single worker for serial execution */
   workers: 1, // Single worker to prevent database conflicts (ADR-001)
   /* Reasonable timeout for serial execution */
-  timeout: 30000, // 30 seconds per test
+  timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   
   /* Global setup and teardown for simple server management */
   globalSetup: './tests/setup/simple-global-setup.ts',
@@ -40,9 +40,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
-    /* Increase timeouts for better stability */
-    actionTimeout: 15000,
-    navigationTimeout: 45000,
+    /* Reasonable timeouts without arbitrary waits */
+    actionTimeout: 10000,
+    navigationTimeout: 15000,
     /* Wait for network to be idle before considering navigation complete */
     // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
   },

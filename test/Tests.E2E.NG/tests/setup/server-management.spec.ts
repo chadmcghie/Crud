@@ -19,17 +19,35 @@ test.afterAll(async () => {
   // Clean up any test processes
   if (apiProcess) {
     apiProcess.kill('SIGTERM');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!apiProcess.killed) {
-      apiProcess.kill('SIGKILL');
-    }
+    // Wait for process to exit
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        if (!apiProcess.killed) {
+          apiProcess.kill('SIGKILL');
+        }
+        resolve();
+      }, 1000);
+      apiProcess.once('exit', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
   }
   if (angularProcess) {
     angularProcess.kill('SIGTERM');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!angularProcess.killed) {
-      angularProcess.kill('SIGKILL');
-    }
+    // Wait for process to exit
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        if (!angularProcess.killed) {
+          angularProcess.kill('SIGKILL');
+        }
+        resolve();
+      }, 1000);
+      angularProcess.once('exit', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
   }
   // Clean up test database
   try {
@@ -63,19 +81,30 @@ test('should start API server with simple spawn @smoke', async () => {
 test('should wait for server readiness with simple fetch loop @smoke', async ({ page }) => {
   const waitForServer = async (url: string, timeout: number = 30000): Promise<boolean> => {
     const startTime = Date.now();
+    const pollInterval = 500; // Reduced from 2000ms to 500ms
     
-    while (Date.now() - startTime < timeout) {
-      try {
-        const response = await page.request.get(url);
-        if (response.ok()) {
-          return true;
+    return new Promise<boolean>((resolve) => {
+      const checkServer = async () => {
+        if (Date.now() - startTime >= timeout) {
+          resolve(false);
+          return;
         }
-      } catch {
-        // Server not ready yet
-      }
-      await page.waitForTimeout(2000);
-    }
-    return false;
+        
+        try {
+          const response = await page.request.get(url);
+          if (response.ok()) {
+            resolve(true);
+            return;
+          }
+        } catch {
+          // Server not ready yet
+        }
+        
+        setTimeout(checkServer, pollInterval);
+      };
+      
+      checkServer();
+    });
   };
 
   // Mock server for testing  
@@ -90,7 +119,14 @@ test('should wait for server readiness with simple fetch loop @smoke', async ({ 
     expect(isReady).toBe(true);
   } finally {
     mockServer.kill();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for process to actually exit
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => resolve(), 1000);
+      mockServer.once('exit', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
   }
 });
 
@@ -111,7 +147,7 @@ test('should handle server startup errors gracefully @smoke', async () => {
       resolve();
     });
     
-    // Timeout to avoid hanging
+    // Timeout to avoid hanging - Keep this as 5 seconds is needed for error handling
     setTimeout(() => resolve(), 5000);
   });
 });
@@ -144,14 +180,23 @@ test('should kill processes cleanly on teardown @smoke', async () => {
   
   // Try graceful shutdown first
   mockProcess.kill('SIGTERM');
-  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Force kill if needed
-  if (!mockProcess.killed) {
-    mockProcess.kill('SIGKILL');
-  }
+  // Wait for process to exit with timeout
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+      // Force kill if needed
+      if (!mockProcess.killed) {
+        mockProcess.kill('SIGKILL');
+      }
+      setTimeout(() => resolve(), 500);
+    }, 1000);
+    
+    mockProcess.once('exit', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
   
-  await new Promise(resolve => setTimeout(resolve, 500));
   expect(mockProcess.killed).toBe(true);
 });
 
