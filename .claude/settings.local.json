@@ -44,7 +44,10 @@
       "Bash($env:ASPNETCORE_URLS=\"http://localhost:5172\")",
       "Bash($env:DatabaseProvider=\"SQLite\")",
       "Bash(npx tsc:*)",
-      "Bash(npx playwright show-report:*)"
+      "Bash(npx playwright show-report:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": [],
