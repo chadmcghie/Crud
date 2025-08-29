@@ -69,7 +69,7 @@ test.describe('People Management - Serial Tests', () => {
     });
     
     // Verify the person appears in the list
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     await expect(page.locator(`text=${testName}`)).toBeVisible({ timeout: 10000 });
   });
   
@@ -82,7 +82,7 @@ test.describe('People Management - Serial Tests', () => {
     });
     
     // Navigate to people list
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     
     // Find and click edit for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
@@ -99,7 +99,7 @@ test.describe('People Management - Serial Tests', () => {
     await page.click('button[type="submit"]:has-text("Update Person")');
     
     // Verify the update
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     await expect(page.locator(`text=${updatedName}`)).toBeVisible();
     
     // Cleanup
@@ -115,7 +115,7 @@ test.describe('People Management - Serial Tests', () => {
     });
     
     // Navigate to people list
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     
     // Find and click delete for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
@@ -136,7 +136,7 @@ test.describe('People Management - Serial Tests', () => {
   
   // Extended tests - comprehensive scenarios (10 min total)
   test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     
     // Click add button
     await page.click('button:has-text("Add"), a:has-text("Add")');
@@ -167,7 +167,7 @@ test.describe('People Management - Serial Tests', () => {
     ]);
     
     // Navigate to people list
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     
     // Search for "Searchtest"
     const searchInput = page.locator('input[type="search"], input[placeholder*="search" i]').first();
@@ -198,7 +198,7 @@ test.describe('People Management - Serial Tests', () => {
     }
     
     // Navigate to people list
-    await page.goto(`${baseURL}/people`);
+    await page.goto(`${baseURL}`);
     
     // Check if pagination controls exist
     const nextButton = page.locator('button:has-text("Next"), a:has-text("Next"), [aria-label="Next"]').first();

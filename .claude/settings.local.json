@@ -51,7 +51,9 @@
       "Bash(npx tsx:*)",
       "Bash(gh pr diff:*)",
       "Bash(gh api:*)",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": [],
     "ask": [],
