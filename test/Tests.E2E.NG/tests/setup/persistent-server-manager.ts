@@ -194,14 +194,8 @@ export class PersistentServerManager {
     return new Promise((resolve, reject) => {
       const apiPath = path.resolve(process.cwd(), '..', '..', 'src', 'Api');
       
-      // On Windows with shell:true, we need to set env vars inline
-      const command = process.platform === 'win32' 
-        ? `set ASPNETCORE_ENVIRONMENT=Development && set ASPNETCORE_URLS=http://localhost:${this.apiPort} && set DatabaseProvider=SQLite && set "ConnectionStrings__DefaultConnection=Data Source=${this.database}" && dotnet run --no-launch-profile`
-        : 'dotnet';
-      
-      const args = process.platform === 'win32' ? [] : ['run', '--no-launch-profile'];
-      
-      const apiEnv = process.platform === 'win32' ? process.env : {
+      // Pass environment variables directly to spawn, not through shell
+      const apiEnv = {
         ...process.env,
         ASPNETCORE_ENVIRONMENT: 'Development',
         ASPNETCORE_URLS: `http://localhost:${this.apiPort}`,
@@ -209,52 +203,30 @@ export class PersistentServerManager {
         ConnectionStrings__DefaultConnection: `Data Source=${this.database}`
       };
       
-      this.apiProcess = spawn(command, args, {
+      this.apiProcess = spawn('dotnet', ['run', '--no-launch-profile'], {
         cwd: apiPath,
         env: apiEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
-        shell: true,
+        shell: false,  // Don't use shell - pass env directly
         detached: true,
-        windowsHide: false  // Show console window (user requested visibility)
+        windowsHide: true  // Hide window for CI/CD
       });
       
       let started = false;
-      const timeout = setTimeout(() => {
-        if (!started) reject(new Error(`API server timeout`));
-      }, 120000);
-      
-      // Buffer to accumulate output
-      let outputBuffer = '';
       
       this.apiProcess.stdout?.on('data', (data) => {
-        const output = data.toString();
-        outputBuffer += output;
-        console.log(`API output: ${output.substring(0, 200)}`);
-        
-        // Check for various startup indicators
-        if ((outputBuffer.includes('Now listening on:') || 
-             outputBuffer.includes('Application started') || 
-             outputBuffer.includes('Content root path:') ||
-             outputBuffer.includes('service.name: Crud.Api') ||
-             outputBuffer.includes('telemetry.sdk.version')) && !started) {
-          started = true;
-          clearTimeout(timeout);
-          console.log(`API server detected as started, waiting for health check...`);
-          // Give it a moment to fully start - API needs more time after telemetry output
-          setTimeout(() => {
-            this.waitForHealth(this.apiPort, 'API').then(resolve).catch(reject);
-          }, 10000);
-        }
+        console.log(`[API] ${data.toString().trim()}`);
       });
       
       this.apiProcess.stderr?.on('data', (data) => {
-        console.error(`API Error: ${data}`);
+        console.error(`[API Error] ${data.toString().trim()}`);
       });
       
-      this.apiProcess.on('error', (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
+      this.apiProcess.on('error', reject);
+      
+      // Just wait for health check - don't rely on console output
+      console.log(`Waiting for API server to be ready on port ${this.apiPort}...`);
+      this.waitForHealth(this.apiPort, 'API').then(resolve).catch(reject);
       
       this.apiProcess.unref();
     });
@@ -265,74 +237,44 @@ export class PersistentServerManager {
       const angularEnv = {
         ...process.env,
         NG_CLI_ANALYTICS: 'false',
-        NG_CLI_COMPLETION: 'false',  // Disable autocompletion prompt
-        NG_DISABLE_VERSION_CHECK: 'true',
-        NODE_OPTIONS: '--max-old-space-size=4096',
+        NG_CLI_COMPLETION: 'false',
         CI: 'true'  // This should prevent ALL interactive prompts
       };
       
       const angularPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular');
-      const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
       
+      // Use npx to run ng directly, avoiding npm wrapper issues
       const args = [
-        'start', '--',
-        `--port=${this.angularPort}`,
-        '--poll=2000',
-        '--live-reload=false',
-        '--hmr=false'
+        'ng', 'serve',
+        '--port', this.angularPort.toString(),
+        '--proxy-config', 'proxy.conf.json',
+        '--poll', '2000',
+        '--live-reload', 'false',
+        '--hmr', 'false'
       ];
       
-      this.angularProcess = spawn(npmCommand, args, {
+      this.angularProcess = spawn('npx', args, {
         cwd: angularPath,
         env: angularEnv,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        shell: process.platform === 'win32',  // Windows needs shell for npm.cmd
+        stdio: ['ignore', 'pipe', 'pipe'],  // Ignore stdin to prevent prompts
+        shell: false,
         detached: true,
-        windowsHide: false  // Show console window (user requested visibility)
+        windowsHide: true  // Hide window for CI/CD
       });
       
-      // Continuously write 'n' to stdin to handle any prompts
-      if (this.angularProcess.stdin) {
-        // Send 'n' immediately
-        this.angularProcess.stdin.write('n\n');
-        // Keep sending 'n' every second for the first 10 seconds
-        const promptHandler = setInterval(() => {
-          if (this.angularProcess?.stdin?.writable) {
-            this.angularProcess.stdin.write('n\n');
-          }
-        }, 1000);
-        setTimeout(() => clearInterval(promptHandler), 10000);
-      }
-      
-      let started = false;
-      const timeout = setTimeout(() => {
-        if (!started) reject(new Error(`Angular server timeout`));
-      }, 300000);
-      
       this.angularProcess.stdout?.on('data', (data) => {
-        const output = data.toString();
-        console.log(`Angular output: ${output.substring(0, 100)}`);
-        if ((output.includes('webpack compiled') || 
-             output.includes('Compiled successfully') ||
-             output.includes('Build completed') ||
-             output.includes('Angular Live Development Server')) && !started) {
-          started = true;
-          clearTimeout(timeout);
-          console.log(`Angular server detected as started, waiting for health check...`);
-          setTimeout(() => {
-            this.waitForHealth(this.angularPort, 'Angular').then(resolve).catch(reject);
-          }, 5000);
-        }
+        console.log(`[Angular] ${data.toString().trim()}`);
       });
       
       this.angularProcess.stderr?.on('data', (data) => {
-        console.error(`Angular Error: ${data}`);
+        console.error(`[Angular Error] ${data.toString().trim()}`);
       });
       
-      this.angularProcess.on('error', (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
+      this.angularProcess.on('error', reject);
+      
+      // Just wait for health check
+      console.log(`Waiting for Angular server to be ready on port ${this.angularPort}...`);
+      this.waitForHealth(this.angularPort, 'Angular').then(resolve).catch(reject);
       
       this.angularProcess.unref();
     });
