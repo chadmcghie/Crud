@@ -103,29 +103,16 @@ public class DatabaseTestService
 
         try
         {
-            // For SQLite, we can use more efficient bulk operations without explicit transactions
-            // since SQLite handles this automatically and transactions can cause locking issues
+            // Execute each DELETE separately as SQLite doesn't support multiple statements in one command
+            // Use EF Core's ExecuteSqlRawAsync to manage connections properly
+            var peopleDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM People");
+            var rolesDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Roles");
+            var windowsDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Windows");
+            var wallsDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Walls");
             
-            // Check if database has any data first (optimization)
-            var hasData = await _context.People.AnyAsync() || 
-                         await _context.Roles.AnyAsync() || 
-                         await _context.Windows.AnyAsync() || 
-                         await _context.Walls.AnyAsync();
+            var totalDeleted = peopleDeleted + rolesDeleted + windowsDeleted + wallsDeleted;
             
-            if (!hasData)
-            {
-                _logger.LogDebug("Database already clean for worker {WorkerIndex}", workerIndex);
-                return;
-            }
-            
-            // Use ExecuteDeleteAsync for better performance (EF Core 7+)
-            // This generates efficient DELETE statements instead of loading entities
-            await _context.People.ExecuteDeleteAsync();
-            await _context.Roles.ExecuteDeleteAsync();
-            await _context.Windows.ExecuteDeleteAsync();
-            await _context.Walls.ExecuteDeleteAsync();
-            
-            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex}", workerIndex);
+            _logger.LogDebug("Database reset completed for worker {WorkerIndex}, deleted {Rows} rows", workerIndex, totalDeleted);
         }
         catch (Exception ex)
         {
