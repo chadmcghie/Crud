@@ -137,10 +137,11 @@ Execute all assigned parent tasks and their subtasks using @.agent-os/instructio
 <task_status_check>
   AFTER each task execution:
     CHECK tasks.md for remaining tasks
-    IF all assigned tasks complete:
-      PROCEED to next step
+    IF all assigned parent tasks complete:
+      PROCEED to Phase 3 (Step 5 - Post-Execution Tasks)
     ELSE:
-      CONTINUE with next task
+      CONTINUE with next parent task
+      DO NOT run post-execution-tasks yet
 </task_status_check>
 
 <instructions>
@@ -161,9 +162,9 @@ Execute all assigned parent tasks and their subtasks using @.agent-os/instructio
 
 ### Step 5: Run the task completion steps
 
-**CRITICAL**: This step MUST be executed after all tasks are implemented. Do not end the process without completing this phase.
+**CRITICAL**: This step MUST be executed ONLY after ALL tasks in the spec's tasks.md are marked complete. Do not run this after individual tasks - only after the ENTIRE spec is finished.
 
-After all tasks in tasks.md have been implemented, use @.agent-os/instructions/core/post-execution-tasks.md to run our series of steps we always run when finishing and delivering a new feature.
+After ALL tasks in tasks.md have been implemented (typically tasks 1-5 or however many parent tasks exist), use @.agent-os/instructions/core/post-execution-tasks.md to run our series of steps we always run when finishing and delivering a new feature.
 
 <instructions>
   LOAD: @.agent-os/instructions/core/post-execution-tasks.md once
@@ -176,6 +177,8 @@ After all tasks in tasks.md have been implemented, use @.agent-os/instructions/c
     - Creating recap document
     - Generating completion summary
     - Playing notification sound
+  
+  **REMINDER**: Only run this after ALL parent tasks (e.g., Tasks 1-5) are complete, not after individual tasks
 </instructions>
 
 </step>
