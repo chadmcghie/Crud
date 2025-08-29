@@ -15,7 +15,7 @@ namespace Tests.Unit.Backend.Domain
             var expiresAt = DateTime.UtcNow.AddDays(7);
 
             // Act
-            var refreshToken = new RefreshToken(token, userId, expiresAt);
+            var refreshToken = new RefreshToken(token, expiresAt, userId);
 
             // Assert
             refreshToken.Should().NotBeNull();
@@ -39,7 +39,7 @@ namespace Tests.Unit.Backend.Domain
             var expiresAt = DateTime.UtcNow.AddDays(7);
 
             // Act
-            var action = () => new RefreshToken(invalidToken, userId, expiresAt);
+            var action = () => new RefreshToken(invalidToken, expiresAt, userId);
 
             // Assert
             action.Should().Throw<ArgumentException>()
@@ -55,7 +55,7 @@ namespace Tests.Unit.Backend.Domain
             var expiresAt = DateTime.UtcNow.AddDays(7);
 
             // Act
-            var action = () => new RefreshToken(token, userId, expiresAt);
+            var action = () => new RefreshToken(token, expiresAt, userId);
 
             // Assert
             action.Should().Throw<ArgumentException>()
@@ -71,7 +71,7 @@ namespace Tests.Unit.Backend.Domain
             var expiresAt = DateTime.UtcNow.AddDays(-1);
 
             // Act
-            var action = () => new RefreshToken(token, userId, expiresAt);
+            var action = () => new RefreshToken(token, expiresAt, userId);
 
             // Assert
             action.Should().Throw<ArgumentException>()
@@ -84,8 +84,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddDays(7)
+                DateTime.UtcNow.AddDays(7),
+                Guid.NewGuid()
             );
 
             // Act & Assert
@@ -98,8 +98,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddDays(7)
+                DateTime.UtcNow.AddDays(7),
+                Guid.NewGuid()
             );
             refreshToken.Revoke();
 
@@ -113,8 +113,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddSeconds(1)
+                DateTime.UtcNow.AddSeconds(1),
+                Guid.NewGuid()
             );
             System.Threading.Thread.Sleep(1500); // Wait for expiration
 
@@ -128,8 +128,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddSeconds(1)
+                DateTime.UtcNow.AddSeconds(1),
+                Guid.NewGuid()
             );
             System.Threading.Thread.Sleep(1500); // Wait for expiration
 
@@ -143,8 +143,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddDays(7)
+                DateTime.UtcNow.AddDays(7),
+                Guid.NewGuid()
             );
 
             // Act & Assert
@@ -157,8 +157,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddDays(7)
+                DateTime.UtcNow.AddDays(7),
+                Guid.NewGuid()
             );
 
             // Act
@@ -176,8 +176,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var refreshToken = new RefreshToken(
                 "token123",
-                Guid.NewGuid(),
-                DateTime.UtcNow.AddDays(7)
+                DateTime.UtcNow.AddDays(7),
+                Guid.NewGuid()
             );
             refreshToken.Revoke();
             var firstRevokedAt = refreshToken.RevokedAt;
@@ -196,8 +196,8 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var token = "token123";
             var userId = Guid.NewGuid();
-            var refreshToken1 = new RefreshToken(token, userId, DateTime.UtcNow.AddDays(7));
-            var refreshToken2 = new RefreshToken(token, userId, DateTime.UtcNow.AddDays(7));
+            var refreshToken1 = new RefreshToken(token, DateTime.UtcNow.AddDays(7), userId);
+            var refreshToken2 = new RefreshToken(token, DateTime.UtcNow.AddDays(7), userId);
 
             // Act & Assert
             refreshToken1.Token.Should().Be(refreshToken2.Token);
@@ -208,8 +208,8 @@ namespace Tests.Unit.Backend.Domain
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var refreshToken1 = new RefreshToken("token123", userId, DateTime.UtcNow.AddDays(7));
-            var refreshToken2 = new RefreshToken("token456", userId, DateTime.UtcNow.AddDays(7));
+            var refreshToken1 = new RefreshToken("token123", DateTime.UtcNow.AddDays(7), userId);
+            var refreshToken2 = new RefreshToken("token456", DateTime.UtcNow.AddDays(7), userId);
 
             // Act & Assert
             refreshToken1.Token.Should().NotBe(refreshToken2.Token);

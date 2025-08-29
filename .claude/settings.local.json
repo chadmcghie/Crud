@@ -53,7 +53,12 @@
       "Bash(export PATH=\"$PATH:/Users/chadmcghie/.dotnet/tools\")",
       "Bash(dotnet ef database:*)",
       "Bash(export ASPNETCORE_ENVIRONMENT=Development)",
-      "Bash(export DatabaseProvider=SQLite)"
+      "Bash(export DatabaseProvider=SQLite)",
+      "Bash(__NEW_LINE__ sed -i '' 's/.Returns((refreshTokenValue, refreshTokenExpiry));/.Returns(refreshTokenValue);/g' *.cs)",
+      "Bash(__NEW_LINE__ sed -i '' 's/.Returns((newRefreshTokenValue, newRefreshTokenExpiry));/.Returns(newRefreshTokenValue);/g' *.cs)",
+      "Bash(__NEW_LINE__ echo \"Fixed GenerateRefreshToken return type in test files\")",
+      "Bash(sed:*)",
+      "Bash(__NEW_LINE__ sed -i '' 's/.Returns((newRefreshTokenValue, newRefreshTokenExpiry));/.Returns(newRefreshTokenValue);/g' test/Tests.Unit.Backend/Application/Features/Authentication/*.cs)"
     ],
     "deny": [],
     "ask": [],

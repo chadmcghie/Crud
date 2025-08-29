@@ -20,15 +20,15 @@
   - [x] 2.7 Implement UserRepository with EF Core
   - [x] 2.8 Verify all infrastructure tests pass
 
-- [ ] 3. Implement Application Layer Commands and Queries
-  - [ ] 3.1 Write tests for RegisterUserCommand handler
-  - [ ] 3.2 Implement RegisterUserCommand with validation
-  - [ ] 3.3 Write tests for LoginCommand handler
-  - [ ] 3.4 Implement LoginCommand with authentication logic
-  - [ ] 3.5 Write tests for RefreshTokenCommand handler
-  - [ ] 3.6 Implement RefreshTokenCommand for token refresh
-  - [ ] 3.7 Create DTOs and validators with FluentValidation
-  - [ ] 3.8 Verify all application layer tests pass
+- [x] 3. Implement Application Layer Commands and Queries
+  - [x] 3.1 Write tests for RegisterUserCommand handler
+  - [x] 3.2 Implement RegisterUserCommand with validation
+  - [x] 3.3 Write tests for LoginCommand handler
+  - [x] 3.4 Implement LoginCommand with authentication logic
+  - [x] 3.5 Write tests for RefreshTokenCommand handler
+  - [x] 3.6 Implement RefreshTokenCommand for token refresh
+  - [x] 3.7 Create DTOs and validators with FluentValidation
+  - [x] 3.8 Verify all application layer tests pass
 
 - [ ] 4. Implement API Endpoints and Authentication Middleware
   - [ ] 4.1 Write integration tests for authentication endpoints

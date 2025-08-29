@@ -12,8 +12,9 @@ namespace Domain.Entities.Authentication
 
         public bool IsActive => RevokedAt == null && !IsExpired;
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
+        public bool IsRevoked => RevokedAt != null;
 
-        public RefreshToken(string token, Guid userId, DateTime expiresAt)
+        public RefreshToken(string token, DateTime expiresAt, Guid userId)
         {
             if (string.IsNullOrWhiteSpace(token))
                 throw new ArgumentException("Token cannot be empty", nameof(token));
@@ -46,8 +47,8 @@ namespace Domain.Entities.Authentication
             }
         }
 
-        // Internal factory method for testing with expired tokens
-        internal static RefreshToken CreateForTesting(string token, Guid userId, DateTime expiresAt)
+        // Public factory method for testing with expired tokens
+        public static RefreshToken CreateForTesting(string token, Guid userId, DateTime expiresAt)
         {
             var refreshToken = new RefreshToken
             {
