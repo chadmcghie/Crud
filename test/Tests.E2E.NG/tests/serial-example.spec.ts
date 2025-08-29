@@ -138,15 +138,19 @@ test.describe('People Management - Serial Tests', () => {
   test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
     await page.goto(`${baseURL}`);
     
-    // Click add button
-    await page.click('button:has-text("Add"), a:has-text("Add")');
+    // Click add button - be more specific with the selector
+    await page.click('button:has-text("Add New Person")');
+    
+    // Wait for form to appear
+    await page.waitForSelector('.people-form-container', { timeout: 5000 });
     
     // Try to submit empty form
-    await page.click('button[type="submit"], button:has-text("Save")');
+    await page.click('button[type="submit"]:has-text("Create Person")');
     
     // Check for validation errors
-    const errorMessage = page.locator('.error, .invalid-feedback, [role="alert"]').first();
+    const errorMessage = page.locator('.error-message').first();
     await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toContainText('required');
   });
   
   test(tagTest('should filter people list by search term', 'extended'), async ({ page, baseURL, apiUrl }) => {
