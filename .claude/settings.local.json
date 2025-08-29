@@ -54,12 +54,19 @@
       "Bash(gh pr checks:*)",
       "Bash(gh run view:*)",
       "Bash(gh run list:*)",
-      "Bash(CI=true npx playwright test serial-example.spec.ts --project=chromium --grep \"should create a new person\" --reporter=list)"
+      "Bash(CI=true npx playwright test serial-example.spec.ts --project=chromium --grep \"should create a new person\" --reporter=list)",
+      "Bash(git branch:*)",
+      "Bash(npm run test:*)",
+      "Bash(sed:*)",
+      "Bash(npm run build:*)",
+      "Bash(start /B dotnet run)",
+      "Bash(npm start)",
+      "Bash(for:*)",
+      "Bash(do sed -i \"s|smart-global-setup|optimized-global-setup|g; s|global-setup.ts|optimized-global-setup.ts|g; s|robust-global-setup|optimized-global-setup|g\" \"$file\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": [],
-    "additionalDirectories": [
-      "/private/tmp"
-    ]
+    "additionalDirectories": []
   }
 }

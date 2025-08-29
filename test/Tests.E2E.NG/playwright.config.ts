@@ -16,9 +16,9 @@ export default defineConfig({
   /* Reasonable timeout for serial execution */
   timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   
-  /* Global setup and teardown for simple server management */
-  globalSetup: './tests/setup/simple-global-setup.ts',
-  globalTeardown: './tests/setup/simple-global-teardown.ts',
+  /* Global setup and teardown for optimized server management */
+  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [

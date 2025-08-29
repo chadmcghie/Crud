@@ -15,11 +15,11 @@ test.describe('CI/CD Configuration', () => {
     const configPath = path.join(process.cwd(), 'playwright.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
     
-    // Should have simple global setup
+    // Should have robust global setup
     expect(configContent).toContain('globalSetup:');
-    expect(configContent).toContain('simple-global-setup.ts');
+    expect(configContent).toContain('global-setup.ts');
     expect(configContent).toContain('globalTeardown:');
-    expect(configContent).toContain('simple-global-teardown.ts');
+    expect(configContent).toContain('global-teardown.ts');
   });
 
   test('should not have manual server startup in CI', async () => {

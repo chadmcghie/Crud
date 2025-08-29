@@ -18,8 +18,8 @@ export default defineConfig({
   timeout: 120000, // 2 minutes per test
   
   /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/simple-global-setup.ts',
-  globalTeardown: './tests/setup/simple-global-teardown.ts',
+  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [

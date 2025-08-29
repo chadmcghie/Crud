@@ -11,8 +11,8 @@ export default defineConfig({
   workers: 1, // Single worker per ADR-001 // Reduce workers
   timeout: 60000,
   
-  globalSetup: './tests/setup/simple-global-setup.ts',
-  globalTeardown: './tests/setup/simple-global-teardown.ts',
+  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   reporter: [
     ['html'],

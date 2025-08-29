@@ -23,8 +23,8 @@ export default defineConfig({
   timeout: 90000, // 90 seconds per test
   
   /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/simple-global-setup.ts',
-  globalTeardown: './tests/setup/simple-global-teardown.ts',
+  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter configuration for CI */
   reporter: [

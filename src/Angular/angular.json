@@ -61,6 +61,26 @@
               "namedChunks": false,
               "aot": true,
               "outputHashing": "none"
+            },
+            "staging": {
+              "optimization": true,
+              "extractLicenses": true,
+              "sourceMap": false,
+              "namedChunks": false,
+              "aot": true,
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "750kB",
+                  "maximumError": "1.5MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kB",
+                  "maximumError": "10kB"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -76,6 +96,9 @@
             },
             "development": {
               "buildTarget": "Angular:build:development"
+            },
+            "staging": {
+              "buildTarget": "Angular:build:staging"
             }
           },
           "defaultConfiguration": "development"
