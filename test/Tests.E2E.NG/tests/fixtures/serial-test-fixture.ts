@@ -10,7 +10,11 @@ export const test = base.extend({
   page: async ({ page }, use) => {
     // Reset database via API before test
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
-    console.log(`🔄 Resetting database for test: ${test.info().title}`);
+    
+    // Only log database reset on retry or when not in CI
+    if (test.info().retry > 0 || !process.env.CI) {
+      console.log(`🔄 Resetting database for test: ${test.info().title}`);
+    }
     
     try {
       const response = await page.request.post(`${apiUrl}/api/database/reset`, {
@@ -21,24 +25,29 @@ export const test = base.extend({
         console.warn(`Database reset failed: ${response.status()}`);
       }
     } catch (error) {
-      console.warn(`Could not reset database: ${error}`);
+      // Only log errors on retry or when important
+      if (test.info().retry > 0) {
+        console.warn(`Could not reset database: ${error}`);
+      }
     }
     
     // Set up page with default navigation timeout
     page.setDefaultNavigationTimeout(30000);
     page.setDefaultTimeout(10000);
     
-    // Log console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.error(`[Browser Error] ${msg.text()}`);
-      }
-    });
-    
-    // Log page errors
-    page.on('pageerror', error => {
-      console.error(`[Page Error] ${error.message}`);
-    });
+    // Log console errors only on retry
+    if (test.info().retry > 0) {
+      page.on('console', msg => {
+        if (msg.type() === 'error') {
+          console.error(`[Browser Error] ${msg.text()}`);
+        }
+      });
+      
+      // Log page errors
+      page.on('pageerror', error => {
+        console.error(`[Page Error] ${error.message}`);
+      });
+    }
     
     // Use the page
     await use(page);

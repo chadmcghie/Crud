@@ -53,7 +53,8 @@
       "Bash(gh api:*)",
       "Bash(gh pr checks:*)",
       "Bash(gh run view:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(CI=true npx playwright test serial-example.spec.ts --project=chromium --grep \"should create a new person\" --reporter=list)"
     ],
     "deny": [],
     "ask": [],

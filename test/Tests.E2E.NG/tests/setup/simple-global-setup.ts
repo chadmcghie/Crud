@@ -67,19 +67,15 @@ async function simpleGlobalSetup(config: FullConfig) {
       'ASPNETCORE_ENVIRONMENT': 'Testing',
       'ConnectionStrings__DefaultConnection': `Data Source=${databasePath}`,
       'DatabaseProvider': 'SQLite',
-      'Logging__LogLevel__Default': 'Warning',
+      'Logging__LogLevel__Default': 'Error', // Only log errors to reduce noise
+      'Logging__LogLevel__Microsoft': 'Error',
+      'Logging__LogLevel__Microsoft.EntityFrameworkCore': 'Error',
     },
     shell: isWindows, // Only use shell on Windows
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   
-  // Log server output for debugging
-  apiServerProcess.stdout?.on('data', (data) => {
-    if (process.env.CI) {
-      console.log(`[API] ${data.toString()}`);
-    }
-  });
-  
+  // Only log errors, not all output
   apiServerProcess.stderr?.on('data', (data) => {
     console.error(`[API Error] ${data.toString()}`);
   });
@@ -110,13 +106,7 @@ async function simpleGlobalSetup(config: FullConfig) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   
-  // Log server output for debugging
-  angularServerProcess.stdout?.on('data', (data) => {
-    if (process.env.CI) {
-      console.log(`[Angular] ${data.toString()}`);
-    }
-  });
-  
+  // Only log errors, not all output
   angularServerProcess.stderr?.on('data', (data) => {
     console.error(`[Angular Error] ${data.toString()}`);
   });
