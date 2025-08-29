@@ -173,6 +173,7 @@ export class ApiHelpers {
     const hasWorkerPrefix = role.name.match(/^W\d+_/);
     const isExplicitTestName = role.name.includes('ParallelTest_') || role.name.includes('ConcurrentRole_') || 
                                role.name.includes('CleanStateTest_') || role.name.includes('Worker') ||
+                               role.name.includes('SerialTest_') || role.name.includes('Serial_') ||
                                role.name === 'API Role' || role.name === 'UI Role';
     const hasExplicitDescription = role.description && (role.description.includes('Test role for') || role.description.includes('Worker'));
     

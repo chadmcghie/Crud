@@ -35,28 +35,61 @@ export const test = base.extend<TestFixtures>({
     console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
     // Simple database cleanup - delete all entities
+    // Skip cleanup if the API is not responding
     try {
-      // Delete all todos
-      const todosResponse = await apiContext.get('/api/todos');
+      // First check if API is responsive with a longer timeout
+      const healthCheck = await apiContext.get('/health', { timeout: 30000 });
+      if (!healthCheck.ok()) {
+        console.warn('⚠️ API health check failed, skipping cleanup');
+        await use();
+        return;
+      }
+      
+      // Delete all todos with increased timeout
+      const todosResponse = await apiContext.get('/api/todos', { timeout: 30000 });
       if (todosResponse.ok()) {
         const todos = await todosResponse.json();
         for (const todo of todos) {
-          await apiContext.delete(`/api/todos/${todo.id}`);
+          await apiContext.delete(`/api/todos/${todo.id}`, { timeout: 10000 });
         }
       }
       
-      // Delete all users
-      const usersResponse = await apiContext.get('/api/users');
+      // Delete all users with increased timeout
+      const usersResponse = await apiContext.get('/api/users', { timeout: 30000 });
       if (usersResponse.ok()) {
         const users = await usersResponse.json();
         for (const user of users) {
-          await apiContext.delete(`/api/users/${user.id}`);
+          await apiContext.delete(`/api/users/${user.id}`, { timeout: 10000 });
         }
       }
-    } catch (error) {
-      console.warn('⚠️ Database cleanup warning:', error);
+      
+      // Delete all people with increased timeout
+      const peopleResponse = await apiContext.get('/api/people', { timeout: 30000 });
+      if (peopleResponse.ok()) {
+        const people = await peopleResponse.json();
+        for (const person of people) {
+          await apiContext.delete(`/api/people/${person.id}`, { timeout: 10000 });
+        }
+      }
+      
+      // Delete all roles with increased timeout
+      const rolesResponse = await apiContext.get('/api/roles', { timeout: 30000 });
+      if (rolesResponse.ok()) {
+        const roles = await rolesResponse.json();
+        for (const role of roles) {
+          await apiContext.delete(`/api/roles/${role.id}`, { timeout: 10000 });
+        }
+      }
+    } catch (error: any) {
+      // Only log timeout errors briefly, not full stack traces
+      if (error.message?.includes('Timeout')) {
+        console.warn('⚠️ Database cleanup timed out - API may be under load');
+      } else {
+        console.warn('⚠️ Database cleanup warning:', error.message || error);
+      }
     }
     
+    console.log('🧪 Starting test - database automatically cleaned');
     await use();
   }, { auto: true }],
 

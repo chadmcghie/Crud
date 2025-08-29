@@ -62,9 +62,9 @@ test.describe('Serial Execution Configuration Validation', () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify globalSetup and globalTeardown are configured for serial execution
-    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/serial-global-setup/);
-    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/serial-global-teardown/);
+    // Verify globalSetup and globalTeardown are configured for simple execution
+    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/simple-global-setup/);
+    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/simple-global-teardown/);
   });
   
   test('should execute tests sequentially', async ({ page }) => {

@@ -186,8 +186,9 @@ test.describe('Full Workflow Integration Tests', () => {
         .slice(0, Math.floor(Math.random() * 3) + 1)
         .map(r => r.id);
       
+      const suffixes = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'];
       const person = generateTestPerson({
-        fullName: `Rapid Person ${i}`,
+        fullName: `Rapid Person ${suffixes[i]}`,
         roleIds: randomRoles
       });
       peoplePromises.push(apiHelpers.createPerson(person));

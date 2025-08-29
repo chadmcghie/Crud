@@ -16,37 +16,56 @@ test.describe('People Management - Serial Tests', () => {
   
   // Smoke tests - quick validation of core functionality (2 min total)
   test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
-    await expect(page).toHaveTitle(/People/i);
-    await expect(page.locator('h1, h2').first()).toContainText(/People/i);
+    await page.goto(baseURL);
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click People tab
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    await peopleTab.click();
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    
+    await expect(page.locator('h3')).toContainText(/People Directory/i);
   });
   
   test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
-    const addButton = page.locator('button:has-text("Add"), a:has-text("Add")').first();
+    await page.goto(baseURL);
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click People tab
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    await peopleTab.click();
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    
+    const addButton = page.locator('button:has-text("Add New Person")');
     await expect(addButton).toBeVisible();
   });
   
   // Critical tests - essential user workflows (5 min total)
   test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
+    await page.goto(baseURL);
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click People tab
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    await peopleTab.click();
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button
-    await page.click('button:has-text("Add"), a:has-text("Add")');
+    await page.click('button:has-text("Add New Person")');
+    await page.waitForSelector('app-people form', { timeout: 5000 });
     
-    // Fill in the form
-    const timestamp = Date.now();
-    const testName = `Test Person ${timestamp}`;
+    // Fill in the form with valid name format
+    const testName = `John Test Smith`;
     
-    await page.fill('input[name="fullName"], input[placeholder*="name" i]', testName);
-    await page.fill('input[name="phone"], input[placeholder*="phone" i]', '555-0123');
+    await page.fill('input#fullName', testName);
+    await page.fill('input#phone', '+1-555-0123');
     
     // Submit the form
-    await page.click('button[type="submit"], button:has-text("Save")');
+    await page.click('button[type="submit"]:has-text("Create Person")');
     
-    // Verify success - wait for navigation or success message
-    await page.waitForURL(/people/i, { timeout: 10000 }).catch(() => {
-      // Some apps show success message instead of navigating
+    // Wait for form to close or person to appear in list
+    await page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }).catch(() => {
+      // Form might stay open, check if person was added
     });
     
     // Verify the person appears in the list
@@ -57,7 +76,7 @@ test.describe('People Management - Serial Tests', () => {
   test(tagTest('should edit an existing person', 'critical'), async ({ page, baseURL, apiUrl }) => {
     // Create test data via API for consistent state
     const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
-      fullName: `Edit Test ${Date.now()}`,
+      fullName: `Edit Test Person`,
       phone: '555-0100'
     });
     

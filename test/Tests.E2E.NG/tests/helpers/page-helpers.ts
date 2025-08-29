@@ -95,7 +95,8 @@ export class PageHelpers {
   }
 
   async editRole(roleName: string): Promise<void> {
-    const roleRow = this.page.locator(`tr:has-text("${roleName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const roleRow = this.page.locator(`tr:has-text("${roleName}")`).first();
     await roleRow.locator('button:has-text("Edit")').click();
     await this.page.waitForSelector('app-roles form');
   }
@@ -112,7 +113,8 @@ export class PageHelpers {
   }
 
   async deleteRole(roleName: string): Promise<void> {
-    const roleRow = this.page.locator(`tr:has-text("${roleName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const roleRow = this.page.locator(`tr:has-text("${roleName}")`).first();
     
     // Wait for the row to be visible first
     await roleRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -146,11 +148,13 @@ export class PageHelpers {
   }
 
   async verifyRoleExists(roleName: string): Promise<void> {
-    await expect(this.page.locator(`tr:has-text("${roleName}")`)).toBeVisible({ timeout: 10000 });
+    // Use first() to handle multiple matches in strict mode
+    await expect(this.page.locator(`tr:has-text("${roleName}")`).first()).toBeVisible({ timeout: 10000 });
   }
 
   async verifyRoleNotExists(roleName: string): Promise<void> {
-    await expect(this.page.locator(`tr:has-text("${roleName}")`)).not.toBeVisible();
+    // Check that no rows with this text exist
+    await expect(this.page.locator(`tr:has-text("${roleName}")`)).toHaveCount(0);
   }
 
   // Person management helpers
@@ -222,7 +226,8 @@ export class PageHelpers {
   }
 
   async editPerson(personName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     
     // Wait for the row to be visible first
     await personRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -257,7 +262,8 @@ export class PageHelpers {
   }
 
   async deletePerson(personName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     
     // Wait for the row to be visible first
     await personRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -293,8 +299,8 @@ export class PageHelpers {
   async verifyPersonExists(personName: string): Promise<void> {
     // Use retry logic with proper timeout
     await this.page.waitForSelector(`tr:has-text("${personName}")`, { timeout: 10000 });
-    await expect(this.page.locator(`tr:has-text("${personName}")`)).toBeVisible();
-
+    // Use first() to handle multiple matches in strict mode
+    await expect(this.page.locator(`tr:has-text("${personName}")`).first()).toBeVisible();
   }
 
   async verifyPersonNotExists(personName: string): Promise<void> {
@@ -312,11 +318,13 @@ export class PageHelpers {
     } catch (error) {
       // Element might not exist at all, which is fine
     }
-    await expect(this.page.locator(`tr:has-text("${personName}")`)).not.toBeVisible();
+    // Check that no rows with this text exist
+    await expect(this.page.locator(`tr:has-text("${personName}")`)).toHaveCount(0);
   }
 
   async verifyPersonHasRole(personName: string, roleName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     await expect(personRow.locator(`.roles-cell:has-text("${roleName}")`)).toBeVisible();
   }
 
@@ -353,26 +361,34 @@ export class PageHelpers {
 
   async verifyEmptyState(entityType: 'roles' | 'people'): Promise<void> {
     const emptyStateText = entityType === 'roles' 
-
       ? 'No roles found. Add the first role'
       : 'No people found. Add the first person';
     
     // Wait for the page to load and check for empty state or table
-    await this.page.waitForTimeout(1000);
+    await this.page.waitForTimeout(2000); // Increased wait for API data to load
     
     // Try to find empty state first, if not found, check if table is empty
     const emptyState = this.page.locator('.empty-state');
     const tableRows = this.page.locator(entityType === 'roles' ? '.roles-table tbody tr' : '.people-table tbody tr');
+    
+    // Wait for either empty state or table to be present
+    try {
+      await this.page.waitForSelector('.empty-state, .people-table tbody, .roles-table tbody', { timeout: 5000 });
+    } catch (error) {
+      console.warn('Neither empty state nor table found, waiting longer...');
+      await this.page.waitForTimeout(2000);
+    }
     
     const emptyStateVisible = await emptyState.isVisible().catch(() => false);
     if (emptyStateVisible) {
       await expect(emptyState).toContainText(emptyStateText);
     } else {
       // If no empty state element, verify table is empty
+      // Wait a bit for any rows to appear if they're going to
+      await this.page.waitForTimeout(1000);
       const rowCount = await tableRows.count();
       expect(rowCount).toBe(0);
     }
-
   }
 
   async verifyPageTitle(): Promise<void> {

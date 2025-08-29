@@ -157,10 +157,13 @@ export function generateTestPerson(overrides: Partial<TestPerson> = {}, workerIn
   const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
   const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
   
-  // Create a realistic but unique name using middle initials for uniqueness
-  const middleInitial = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
-  const suffix = workerId > 0 ? ` Jr.` : '';
-  const fullName = `${firstName} ${middleInitial}. ${lastName}${suffix}`;
+  // Create a realistic but unique name without special characters
+  // Use middle name instead of initial to avoid periods
+  const middleNames = ['Anne', 'Lee', 'Marie', 'Lynn', 'Rose', 'Ray', 'Jay', 'Kay', 'Max', 'Sky'];
+  const middleName = middleNames[Math.floor(Math.random() * middleNames.length)];
+  // Add number suffix for uniqueness instead of Jr.
+  const uniqueSuffix = workerId > 0 ? ` ${timestamp}` : '';
+  const fullName = `${firstName} ${middleName} ${lastName}${uniqueSuffix}`;
   
   return {
     fullName: fullName,
