@@ -26,13 +26,13 @@
   - [x] 3.4 Remove complex cleanup and monitoring logic
   - [x] 3.5 Verify database isolation between test files
 
-- [ ] 4. Update CI/CD Pipeline
-  - [ ] 4.1 Write tests for CI configuration
-  - [ ] 4.2 Update pr-validation.yml to use Playwright globalSetup
-  - [ ] 4.3 Remove manual server startup steps from CI
-  - [ ] 4.4 Simplify environment variable configuration
-  - [ ] 4.5 Update test commands in CI workflow
-  - [ ] 4.6 Verify CI pipeline executes successfully
+- [x] 4. Update CI/CD Pipeline
+  - [x] 4.1 Write tests for CI configuration
+  - [x] 4.2 Update pr-validation.yml to use Playwright globalSetup
+  - [x] 4.3 Remove manual server startup steps from CI
+  - [x] 4.4 Simplify environment variable configuration
+  - [x] 4.5 Update test commands in CI workflow
+  - [x] 4.6 Verify CI pipeline executes successfully
 
 - [ ] 5. Clean Up and Consolidate
   - [ ] 5.1 Write integration tests for complete flow

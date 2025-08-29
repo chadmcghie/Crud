@@ -243,112 +243,18 @@ jobs:
     - name: Install Playwright browsers
       working-directory: ./test/Tests.E2E.NG
       run: npx playwright install --with-deps chromium
-      
-    - name: Start API server
-      working-directory: ./src/Api
-      run: |
-        echo "Starting API server with isolated database..."
-        # Generate unique database name for this test run
-        DB_NAME="CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
-        echo "Using database: $DB_NAME"
-        echo "DB_NAME=$DB_NAME" >> $GITHUB_ENV
-        dotnet run --no-launch-profile --configuration Release > api.log 2>&1 &
-        echo "API_PID=$!" >> $GITHUB_ENV
-        echo "API server started with PID $!"
-      env:
-        ASPNETCORE_ENVIRONMENT: E2E
-        ASPNETCORE_URLS: http://localhost:5172
-        CI: true
-        DatabaseProvider: SQLite
-        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
-        WORKER_DATABASE: "CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
-        
-    - name: Wait for API to be ready
-      run: |
-        echo "Waiting for API server to be ready..."
-        COUNTER=0
-        MAX_ATTEMPTS=30
-        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
-          if curl -f http://localhost:5172/health 2>/dev/null; then
-            echo "✅ API is ready!"
-            break
-          fi
-          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: API not ready yet..."
-          if [ $COUNTER -eq 10 ]; then
-            echo "⚠️ API is taking longer than expected. Checking logs..."
-            cd src/Api && tail -n 20 api.log || true
-          fi
-          sleep 2
-          COUNTER=$((COUNTER+1))
-        done
-        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
-          echo "❌ API server failed to start after $MAX_ATTEMPTS attempts"
-          echo "📋 API server logs:"
-          cd src/Api && cat api.log || true
-          exit 1
-        fi
-        
-    - name: Start Angular server
-      working-directory: ./src/Angular
-      run: |
-        echo "Starting Angular server with CI configuration..."
-        npm run start:ci > angular.log 2>&1 &
-        echo "ANGULAR_PID=$!" >> $GITHUB_ENV
-        echo "Angular server started with PID $!"
-        
-    - name: Wait for Angular to be ready
-      run: |
-        echo "Waiting for Angular server to be ready..."
-        COUNTER=0
-        MAX_ATTEMPTS=30
-        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
-          if curl -f http://localhost:4200 2>/dev/null; then
-            echo "✅ Angular is ready!"
-            break
-          fi
-          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: Angular not ready yet..."
-          if [ $COUNTER -eq 10 ]; then
-            echo "⚠️ Angular is taking longer than expected. Checking logs..."
-            cd src/Angular && tail -n 20 angular.log || true
-          fi
-          sleep 2
-          COUNTER=$((COUNTER+1))
-        done
-        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
-          echo "❌ Angular server failed to start after $MAX_ATTEMPTS attempts"
-          echo "📋 Angular server logs:"
-          cd src/Angular && cat angular.log || true
-          exit 1
-        fi
-        
-    - name: Verify servers are running
-      run: |
-        echo "🔍 Final health check before E2E tests..."
-        if ! curl -f http://localhost:5172/health 2>/dev/null; then
-          echo "❌ API is not responding!"
-          exit 1
-        fi
-        echo "✅ API health check passed"
-        
-        if ! curl -f http://localhost:4200 2>/dev/null; then
-          echo "❌ Angular is not responding!"
-          exit 1
-        fi
-        echo "✅ Angular health check passed"
-        echo "🚀 Both servers are ready for E2E tests!"
         
     - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🧪 Running E2E tests..."
-        npm run test:api-only || (echo "❌ API tests failed" && exit 1)
-        echo "✅ API tests passed"
-        npm run test:integration || (echo "❌ Integration tests failed" && exit 1)
-        echo "✅ Integration tests passed"
+        echo "🧪 Running E2E tests with Playwright globalSetup..."
+        npm test
       env:
         CI: true
-        API_BASE_URL: http://localhost:5172
-        ANGULAR_BASE_URL: http://localhost:4200
+        API_PORT: 5172
+        ANGULAR_PORT: 4200
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
         
     - name: Upload E2E test results
       uses: actions/upload-artifact@v4
@@ -368,23 +274,13 @@ jobs:
           src/Api/api.log
           src/Angular/angular.log
           
-    - name: Stop servers and cleanup
+    - name: Cleanup
       if: always()
       run: |
-        echo "🛑 Stopping servers..."
-        if [ ! -z "$API_PID" ]; then 
-          echo "Stopping API server (PID: $API_PID)"
-          kill $API_PID || true
-        fi
-        if [ ! -z "$ANGULAR_PID" ]; then 
-          echo "Stopping Angular server (PID: $ANGULAR_PID)"
-          kill $ANGULAR_PID || true
-        fi
-        echo "🗑️ Cleaning up test database..."
-        if [ ! -z "$DB_NAME" ]; then
-          rm -f ./src/Api/$DB_NAME || true
-          echo "Removed test database: $DB_NAME"
-        fi
+        echo "🧹 Cleaning up test artifacts..."
+        # Playwright globalTeardown handles server shutdown
+        # Just clean up any leftover test databases
+        rm -f /tmp/CrudTest_*.db 2>/dev/null || true
         echo "✅ Cleanup complete"
 
   pr-validation-summary:
