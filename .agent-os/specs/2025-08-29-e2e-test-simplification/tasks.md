@@ -10,14 +10,14 @@
   - [x] 1.5 Update globalSetup and globalTeardown paths
   - [x] 1.6 Verify all tests pass with new configuration
 
-- [ ] 2. Simplify Server Management
-  - [ ] 2.1 Write tests for simplified server startup/shutdown
-  - [ ] 2.2 Create new simple global-setup.ts without persistence logic
-  - [ ] 2.3 Create new simple global-teardown.ts with basic cleanup
-  - [ ] 2.4 Remove PersistentServerManager class and related files
-  - [ ] 2.5 Remove lock file management code
-  - [ ] 2.6 Update test fixtures to use simplified setup
-  - [ ] 2.7 Verify server management works correctly
+- [x] 2. Simplify Server Management
+  - [x] 2.1 Write tests for simplified server startup/shutdown
+  - [x] 2.2 Create new simple global-setup.ts without persistence logic
+  - [x] 2.3 Create new simple global-teardown.ts with basic cleanup
+  - [x] 2.4 Remove PersistentServerManager class and related files
+  - [x] 2.5 Remove lock file management code
+  - [x] 2.6 Update test fixtures to use simplified setup
+  - [x] 2.7 Verify server management works correctly
 
 - [ ] 3. Implement Simple Database Cleanup
   - [ ] 3.1 Write tests for SQLite file-based cleanup
