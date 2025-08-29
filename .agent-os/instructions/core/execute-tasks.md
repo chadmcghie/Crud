@@ -81,7 +81,7 @@ Use the git-workflow subagent to manage git branches to ensure proper isolation 
 <instructions>
   ACTION: Use git-workflow subagent
   REQUEST: "Check and manage branch for spec: [SPEC_FOLDER]
-            - Create branch if needed
+            - Create branch in feature folder if branch is needed
             - Switch to correct branch
             - Handle any uncommitted changes"
   WAIT: For branch setup completion

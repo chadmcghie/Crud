@@ -82,6 +82,8 @@ Evaluate readiness to begin implementation by presenting the first task summary 
   </present_to_user>
 </readiness_summary>
 
+Do not skip this execution prompt!!!  The user must consent to begining work on the task.  If there's no consent then do not start working on the task.
+
 <execution_prompt>
   PROMPT: "The spec planning is complete. The first task is:
 
