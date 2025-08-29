@@ -133,7 +133,7 @@ jobs:
       
     - name: Run Angular Unit Tests with Coverage
       working-directory: ./src/Angular
-      run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+      run: npm run test:ci -- --watch=false --browsers=ChromeHeadless --code-coverage
       
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
