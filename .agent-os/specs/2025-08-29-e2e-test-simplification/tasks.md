@@ -19,12 +19,12 @@
   - [x] 2.6 Update test fixtures to use simplified setup
   - [x] 2.7 Verify server management works correctly
 
-- [ ] 3. Implement Simple Database Cleanup
-  - [ ] 3.1 Write tests for SQLite file-based cleanup
-  - [ ] 3.2 Simplify database-utils.ts to basic delete/recreate
-  - [ ] 3.3 Update test fixtures for per-file database reset
-  - [ ] 3.4 Remove complex cleanup and monitoring logic
-  - [ ] 3.5 Verify database isolation between test files
+- [x] 3. Implement Simple Database Cleanup
+  - [x] 3.1 Write tests for SQLite file-based cleanup
+  - [x] 3.2 Simplify database-utils.ts to basic delete/recreate
+  - [x] 3.3 Update test fixtures for per-file database reset
+  - [x] 3.4 Remove complex cleanup and monitoring logic
+  - [x] 3.5 Verify database isolation between test files
 
 - [ ] 4. Update CI/CD Pipeline
   - [ ] 4.1 Write tests for CI configuration

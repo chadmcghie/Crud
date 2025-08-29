@@ -3,19 +3,17 @@ import * as path from 'path';
 
 /**
  * Simple database utilities for SQLite test databases
- * Basic delete/recreate pattern for test isolation
+ * Basic delete/recreate pattern with no complex logic
  */
 
 /**
- * Creates a unique test database path
+ * Creates a unique database path for testing
  */
-export function createTestDatabase(name: string = 'Test'): { path: string } {
+export function createTestDatabasePath(): string {
   const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(7);
-  const dbPath = path.join(tempDir, `CrudTest_${name}_${timestamp}_${random}.db`);
-  
-  return { path: dbPath };
+  return path.join(tempDir, `CrudTest_${timestamp}_${random}.db`);
 }
 
 /**
@@ -25,7 +23,7 @@ export async function deleteDatabase(dbPath: string): Promise<void> {
   try {
     await fs.unlink(dbPath);
   } catch (error: any) {
-    // Ignore if file doesn't exist
+    // Ignore ENOENT (file doesn't exist)
     if (error.code !== 'ENOENT') {
       console.warn(`Could not delete database: ${error.message}`);
     }
@@ -33,8 +31,8 @@ export async function deleteDatabase(dbPath: string): Promise<void> {
 }
 
 /**
- * Resets database by deleting it
- * The API will create a new one on next access
+ * Resets database by simply deleting it
+ * The API will create a new one on startup
  */
 export async function resetDatabase(dbPath: string): Promise<void> {
   await deleteDatabase(dbPath);
@@ -43,7 +41,7 @@ export async function resetDatabase(dbPath: string): Promise<void> {
 /**
  * Cleans up old test databases
  */
-export async function cleanupTestDatabases(): Promise<void> {
+export async function cleanupOldTestDatabases(): Promise<void> {
   const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   
   try {
@@ -57,7 +55,9 @@ export async function cleanupTestDatabases(): Promise<void> {
         
         // Delete databases older than 1 hour
         const ageInMs = Date.now() - stats.mtime.getTime();
-        if (ageInMs > 60 * 60 * 1000) {
+        const oneHourInMs = 60 * 60 * 1000;
+        
+        if (ageInMs > oneHourInMs) {
           await deleteDatabase(filePath);
         }
       } catch {
@@ -70,13 +70,9 @@ export async function cleanupTestDatabases(): Promise<void> {
 }
 
 /**
- * Gets database file size (for debugging only)
+ * Ensures directory exists for database
  */
-export async function getDatabaseSize(dbPath: string): Promise<number> {
-  try {
-    const stats = await fs.stat(dbPath);
-    return stats.size;
-  } catch {
-    return 0;
-  }
+export async function ensureDatabaseDirectory(dbPath: string): Promise<void> {
+  const dir = path.dirname(dbPath);
+  await fs.mkdir(dir, { recursive: true });
 }

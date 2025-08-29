@@ -47,7 +47,8 @@
       "Bash(npx playwright show-report:*)",
       "Bash(gh pr list:*)",
       "Bash(gh pr view:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": [],
