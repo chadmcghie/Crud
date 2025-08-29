@@ -205,6 +205,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Kill any existing processes on test ports
+      run: |
+        sudo lsof -ti:5172,4200 | xargs -r kill -9 || true
+        sleep 2
+      
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -239,15 +244,14 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: npx playwright install --with-deps chromium
       
-    - name: Kill any existing processes on test ports
-      run: |
-        sudo lsof -ti:5172,4200 | xargs -r kill -9 || true
-        sleep 2
-      
     - name: Start API server
       working-directory: ./src/Api
       run: |
-        echo "Starting API server..."
+        echo "Starting API server with isolated database..."
+        # Generate unique database name for this test run
+        DB_NAME="CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
+        echo "Using database: $DB_NAME"
+        echo "DB_NAME=$DB_NAME" >> $GITHUB_ENV
         dotnet run --no-launch-profile --configuration Release > api.log 2>&1 &
         echo "API_PID=$!" >> $GITHUB_ENV
         echo "API server started with PID $!"
@@ -256,7 +260,8 @@ jobs:
         ASPNETCORE_URLS: http://localhost:5172
         CI: true
         DatabaseProvider: SQLite
-        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
+        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
+        WORKER_DATABASE: "CrudAppE2E_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}.db"
         
     - name: Wait for API to be ready
       run: |
@@ -363,7 +368,7 @@ jobs:
           src/Api/api.log
           src/Angular/angular.log
           
-    - name: Stop servers
+    - name: Stop servers and cleanup
       if: always()
       run: |
         echo "🛑 Stopping servers..."
@@ -375,7 +380,12 @@ jobs:
           echo "Stopping Angular server (PID: $ANGULAR_PID)"
           kill $ANGULAR_PID || true
         fi
-        echo "✅ Servers stopped"
+        echo "🗑️ Cleaning up test database..."
+        if [ ! -z "$DB_NAME" ]; then
+          rm -f ./src/Api/$DB_NAME || true
+          echo "Removed test database: $DB_NAME"
+        fi
+        echo "✅ Cleanup complete"
 
   pr-validation-summary:
     name: PR Validation Summary
