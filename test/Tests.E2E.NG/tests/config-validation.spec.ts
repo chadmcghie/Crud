@@ -63,7 +63,8 @@ test.describe('Serial Execution Configuration Validation', () => {
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
     // Verify globalSetup and globalTeardown are configured for robust execution
-    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/global-setup/);
+    // Accept both global-setup and optimized-global-setup
+    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/(global-setup|optimized-global-setup|smart-global-setup|robust-global-setup)/);
     expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/global-teardown/);
   });
   

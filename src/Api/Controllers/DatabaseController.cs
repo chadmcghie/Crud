@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Data;
 using Infrastructure.Services;
+using System.Net;
 
 namespace Api.Controllers;
 
@@ -29,6 +30,7 @@ public class DatabaseController : ControllerBase
     /// <summary>
     /// Resets the database to a clean state using Respawn.
     /// Only available in Development and Testing environments.
+    /// Requires authentication token for security.
     /// </summary>
     [HttpPost("reset")]
     public async Task<IActionResult> ResetDatabase([FromBody] DatabaseResetRequest request)
@@ -37,6 +39,28 @@ public class DatabaseController : ControllerBase
         if (!_environment.IsDevelopment() && _environment.EnvironmentName != "Testing")
         {
             return NotFound(); // Return 404 to hide the endpoint in production
+        }
+
+        // Additional security: Check for authorization token
+        var testToken = Request.Headers["X-Test-Reset-Token"].FirstOrDefault();
+        var expectedToken = Environment.GetEnvironmentVariable("TEST_RESET_TOKEN") ?? "test-only-token";
+        
+        if (string.IsNullOrEmpty(testToken) || testToken != expectedToken)
+        {
+            _logger.LogWarning("Unauthorized database reset attempt from {RemoteIp}", 
+                Request.HttpContext.Connection.RemoteIpAddress);
+            return Unauthorized(new { Error = "Invalid or missing test reset token" });
+        }
+
+        // Additional security: Only allow from localhost in Testing environment
+        if (_environment.EnvironmentName == "Testing")
+        {
+            var remoteIp = Request.HttpContext.Connection.RemoteIpAddress;
+            if (remoteIp != null && !IPAddress.IsLoopback(remoteIp))
+            {
+                _logger.LogWarning("Database reset attempt from non-localhost address: {RemoteIp}", remoteIp);
+                return Forbid("Database reset is only allowed from localhost in Testing environment");
+            }
         }
 
         try

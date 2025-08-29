@@ -63,7 +63,8 @@
       "Bash(npm start)",
       "Bash(for:*)",
       "Bash(do sed -i \"s|smart-global-setup|optimized-global-setup|g; s|global-setup.ts|optimized-global-setup.ts|g; s|robust-global-setup|optimized-global-setup|g\" \"$file\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": [],
