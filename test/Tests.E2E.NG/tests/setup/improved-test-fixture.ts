@@ -1,5 +1,4 @@
 import { test as base, APIRequestContext, Page } from '@playwright/test';
-import { ensureTestServer } from './improved-server-manager';
 import { ApiHelpers } from '../helpers/api-helpers';
 
 export interface ImprovedTestFixtures {
@@ -16,16 +15,18 @@ export interface ImprovedTestFixtures {
 
 // Improved test fixture that reuses servers efficiently
 export const test = base.extend<ImprovedTestFixtures>({
-  // Get or create server for this parallel worker
+  // Get server info from environment variables
   serverInfo: async ({ }, use, testInfo) => {
     const parallelIndex = testInfo.parallelIndex;
-    console.log(`🔧 Getting improved server for parallel ${parallelIndex} (worker ${testInfo.workerIndex})...`);
+    console.log(`🔧 Getting server info for parallel ${parallelIndex} (worker ${testInfo.workerIndex})...`);
     
-    const info = await ensureTestServer(parallelIndex);
+    const info = {
+      apiUrl: process.env.API_URL || 'http://localhost:5172',
+      angularUrl: process.env.ANGULAR_URL || 'http://localhost:4200',
+      database: process.env.DATABASE_PATH || ''
+    };
     
     await use(info);
-    
-    // Note: We don't stop the server here - it will be reused by other tests
   },
   
   parallelIndex: async ({ }, use, testInfo) => {

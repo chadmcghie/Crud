@@ -1,32 +1,22 @@
-import { test as base, TestInfo, APIRequestContext, Page } from '@playwright/test';
-import { PersistentServerManager } from './persistent-server-manager';
+import { test as base, APIRequestContext } from '@playwright/test';
 
 export interface TestFixtures {
   apiContext: APIRequestContext;
   cleanDatabase: void;
   apiUrl: string;
   angularUrl: string;
-  serverInfo: { apiUrl: string; angularUrl: string; database: string };
 }
 
-// Test-scoped fixtures only - no worker fixtures needed since servers persist
+// Simple test fixtures that use environment variables from global setup
 export const test = base.extend<TestFixtures>({
-  // Get server info (single instance for serial execution)
-  serverInfo: async ({ }, use) => {
-    console.log(`🔧 Getting server info...`);
-    
-    const manager = PersistentServerManager.getInstance();
-    const info = await manager.ensureServers();
-    
-    await use(info);
+  apiUrl: async ({ }, use) => {
+    const apiUrl = process.env.API_URL || 'http://localhost:5172';
+    await use(apiUrl);
   },
 
-  apiUrl: async ({ serverInfo }, use) => {
-    await use(serverInfo.apiUrl);
-  },
-
-  angularUrl: async ({ serverInfo }, use) => {
-    await use(serverInfo.angularUrl);
+  angularUrl: async ({ }, use) => {
+    const angularUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
+    await use(angularUrl);
   },
 
   apiContext: async ({ playwright, apiUrl }, use) => {
@@ -44,23 +34,42 @@ export const test = base.extend<TestFixtures>({
   cleanDatabase: [async ({ apiContext }, use, testInfo) => {
     console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // For serial execution, we can clean the database more aggressively
-    const manager = PersistentServerManager.getInstance();
-    await manager.cleanDatabase();
+    // Simple database cleanup - delete all entities
+    try {
+      // Delete all todos
+      const todosResponse = await apiContext.get('/api/todos');
+      if (todosResponse.ok()) {
+        const todos = await todosResponse.json();
+        for (const todo of todos) {
+          await apiContext.delete(`/api/todos/${todo.id}`);
+        }
+      }
+      
+      // Delete all users
+      const usersResponse = await apiContext.get('/api/users');
+      if (usersResponse.ok()) {
+        const users = await usersResponse.json();
+        for (const user of users) {
+          await apiContext.delete(`/api/users/${user.id}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Database cleanup warning:', error);
+    }
     
     await use();
   }, { auto: true }],
 
-  // Override page to use worker-specific Angular URL
+  // Override page to use Angular URL
   page: async ({ browser, angularUrl }, use) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     
-    // Update base URL for this worker
+    // Set timeouts
     page.setDefaultNavigationTimeout(45000);
     page.setDefaultTimeout(15000);
     
-    // Navigate to worker-specific Angular URL
+    // Navigate to Angular URL
     await page.goto(angularUrl);
     
     await use(page);
