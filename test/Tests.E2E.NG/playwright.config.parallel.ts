@@ -20,9 +20,11 @@ export default defineConfig({
   globalTeardown: undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/results.json' }]
+    ['html', { outputFolder: './test-results/html' }],
+    ['json', { outputFile: './test-results/results.json' }]
   ],
+  /* Output directory for test artifacts */
+  outputDir: './test-results/',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL for shared API server */

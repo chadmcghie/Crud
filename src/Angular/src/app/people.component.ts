@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -47,8 +47,8 @@ import { CustomValidators } from './validators/custom-validators';
         </div>
 
         <div class="form-group">
-          <label>Roles</label>
-          <div class="roles-grid" *ngIf="roles.length > 0">
+          <label for="roles">Roles</label>
+          <div class="roles-grid" id="roles" *ngIf="roles.length > 0">
             <div *ngFor="let role of roles" class="role-checkbox">
               <input 
                 type="checkbox" 
@@ -258,8 +258,11 @@ export class PeopleComponent implements OnInit, OnChanges {
   isSubmitting = false;
   error: string | null = null;
   rolesError: string | null = null;
+  
+  private api = inject(ApiService);
+  private fb = inject(FormBuilder);
 
-  constructor(private api: ApiService, private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
       fullName: ['', [Validators.required, CustomValidators.fullName()]],
       phone: ['', [CustomValidators.phoneNumber()]]
@@ -345,7 +348,7 @@ export class PeopleComponent implements OnInit, OnChanges {
             this.error = null;
             this.personSaved.emit(this.editingPerson!);
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error updating person:', error);
             this.handleApiError(error, 'update');
             this.isSubmitting = false;
@@ -360,7 +363,7 @@ export class PeopleComponent implements OnInit, OnChanges {
             this.personSaved.emit(person);
             this.resetForm();
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error creating person:', error);
             this.handleApiError(error, 'create');
             this.isSubmitting = false;
@@ -384,17 +387,18 @@ export class PeopleComponent implements OnInit, OnChanges {
     this.error = null;
   }
 
-  private handleApiError(error: any, operation?: 'create' | 'update') {
-    if (error.error?.errors) {
-      const errors = error.error.errors;
+  private handleApiError(error: unknown, operation?: 'create' | 'update') {
+    const httpError = error as { error?: { errors?: Record<string, string[]>; detail?: string; title?: string } };
+    if (httpError.error?.errors) {
+      const errors = httpError.error.errors;
       const errorMessages = Object.keys(errors).map(key => 
         `${key}: ${errors[key].join(', ')}`
       ).join('; ');
       this.error = errorMessages;
-    } else if (error.error?.detail) {
-      this.error = error.error.detail;
-    } else if (error.error?.title) {
-      this.error = error.error.title;
+    } else if (httpError.error?.detail) {
+      this.error = httpError.error.detail;
+    } else if (httpError.error?.title) {
+      this.error = httpError.error.title;
     } else {
       // Provide specific error messages based on operation
       if (operation === 'create') {

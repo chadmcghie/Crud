@@ -1,60 +1,32 @@
 import { test as base, TestInfo, APIRequestContext, Page } from '@playwright/test';
-import { WorkerServerManager } from './worker-setup';
+import { PersistentServerManager } from './persistent-server-manager';
 
 export interface TestFixtures {
-  workerSetup: WorkerServerManager;
   apiContext: APIRequestContext;
   cleanDatabase: void;
-  workerIndex: number;
   apiUrl: string;
   angularUrl: string;
+  serverInfo: { apiUrl: string; angularUrl: string; database: string };
 }
 
-export interface WorkerFixtures {
-  workerServerManager: WorkerServerManager;
-}
-
-// Worker-scoped fixture for server management
-export const test = base.extend<TestFixtures, WorkerFixtures>({
-  // Worker-scoped fixture - one per worker
-  workerServerManager: [async ({ }, use, workerInfo) => {
-    console.log(`🔧 Setting up worker ${workerInfo.workerIndex}...`);
+// Test-scoped fixtures only - no worker fixtures needed since servers persist
+export const test = base.extend<TestFixtures>({
+  // Get server info (single instance for serial execution)
+  serverInfo: async ({ }, use) => {
+    console.log(`🔧 Getting server info...`);
     
-    const serverManager = new WorkerServerManager(workerInfo);
+    const manager = PersistentServerManager.getInstance();
+    const info = await manager.ensureServers();
     
-    // Start servers for this worker
-    await serverManager.startServers();
-    
-    // Set environment variables for this worker
-    process.env.CURRENT_WORKER_INDEX = workerInfo.workerIndex.toString();
-    process.env.CURRENT_WORKER_DATABASE = serverManager.getWorkerDatabase();
-    process.env.CURRENT_WORKER_API_URL = serverManager.getApiUrl();
-    process.env.CURRENT_WORKER_ANGULAR_URL = serverManager.getAngularUrl();
-    
-    await use(serverManager);
-    
-    // Cleanup servers for this worker
-    await serverManager.stopServers();
-    
-    console.log(`✅ Worker ${workerInfo.workerIndex} cleanup completed`);
-  }, { scope: 'worker' }],
-
-  // Test-scoped fixtures
-  workerSetup: async ({ workerServerManager }, use) => {
-    await use(workerServerManager);
+    await use(info);
   },
 
-  workerIndex: async ({ workerSetup }, use) => {
-    const workerIndex = parseInt(process.env.CURRENT_WORKER_INDEX || '0', 10);
-    await use(workerIndex);
+  apiUrl: async ({ serverInfo }, use) => {
+    await use(serverInfo.apiUrl);
   },
 
-  apiUrl: async ({ workerSetup }, use) => {
-    await use(process.env.CURRENT_WORKER_API_URL || 'http://localhost:5172');
-  },
-
-  angularUrl: async ({ workerSetup }, use) => {
-    await use(process.env.CURRENT_WORKER_ANGULAR_URL || 'http://localhost:4200');
+  angularUrl: async ({ serverInfo }, use) => {
+    await use(serverInfo.angularUrl);
   },
 
   apiContext: async ({ playwright, apiUrl }, use) => {
@@ -69,53 +41,14 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     await context.dispose();
   },
 
-  cleanDatabase: [async ({ apiContext, workerIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for worker ${workerIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Pre-test database cleanup and validation
-    try {
-      const response = await apiContext.post('/api/database/reset', {
-        data: { workerIndex }
-      });
-      
-      if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for worker ${workerIndex}: ${response.status()}`);
-      } else {
-        console.log(`✅ Database reset completed for worker ${workerIndex}`);
-      }
-
-      // Validate database state
-      const validationResponse = await apiContext.get('/api/database/validate-pre-test', {
-        params: { workerIndex: workerIndex.toString() }
-      });
-      
-      if (validationResponse.ok()) {
-        const validation = await validationResponse.json();
-        if (!validation.isValid) {
-          console.warn(`⚠️ Pre-test validation failed for worker ${workerIndex}:`, validation.issues);
-        }
-      }
-    } catch (error) {
-      console.error(`❌ Database cleanup failed for worker ${workerIndex}:`, error);
-    }
+    // For serial execution, we can clean the database more aggressively
+    const manager = PersistentServerManager.getInstance();
+    await manager.cleanDatabase();
     
     await use();
-    
-    // Post-test validation (but don't fail the test if validation fails)
-    try {
-      const validationResponse = await apiContext.get('/api/database/validate-post-test', {
-        params: { workerIndex: workerIndex.toString() }
-      });
-      
-      if (validationResponse.ok()) {
-        const validation = await validationResponse.json();
-        if (!validation.isValid) {
-          console.warn(`⚠️ Post-test validation failed for worker ${workerIndex}:`, validation.issues);
-        }
-      }
-    } catch (error) {
-      console.error(`❌ Post-test validation failed for worker ${workerIndex}:`, error);
-    }
   }, { auto: true }],
 
   // Override page to use worker-specific Angular URL

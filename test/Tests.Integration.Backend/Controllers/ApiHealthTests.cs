@@ -133,7 +133,7 @@ public class ApiHealthTests : IntegrationTestBase
         roles.Should().HaveCount(10);
     }
 
-    [Fact(Skip = "Temporarily skipped - concurrent test failing with validation errors")]
+    [Fact]
     public async Task API_Should_Maintain_Data_Consistency_Under_Load()
     {
         // Arrange
@@ -152,11 +152,12 @@ public class ApiHealthTests : IntegrationTestBase
         var tasks = new List<Task<HttpResponseMessage>>();
 
         // Act - Create multiple people with the same role concurrently
+        var names = new[] { "John Smith", "Jane Doe", "Bob Johnson", "Alice Brown", "Charlie Davis" };
         for (int i = 0; i < 5; i++)
         {
             var createRequest = new
             {
-                FullName = $"Person {i}",
+                FullName = names[i],
                 Phone = $"555-{100 + i:D3}-{1000 + i:D4}",
                 RoleIds = new[] { roleId.ToString() }
             };

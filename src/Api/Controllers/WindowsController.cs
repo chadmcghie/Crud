@@ -1,5 +1,6 @@
 using Api.Dtos;
 using App.Features.Windows;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,38 +9,13 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-public class WindowsController(IMediator mediator) : ControllerBase
+public class WindowsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWindowsQuery(), ct);
-        return Ok(items.Select(w => new WindowResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Width,
-            w.Height,
-            w.Area,
-            w.FrameType,
-            w.FrameDetails,
-            w.GlazingType,
-            w.GlazingDetails,
-            w.UValue,
-            w.SolarHeatGainCoefficient,
-            w.VisibleTransmittance,
-            w.AirLeakage,
-            w.EnergyStarRating,
-            w.NFRCRating,
-            w.Orientation,
-            w.Location,
-            w.InstallationType,
-            w.OperationType,
-            w.HasScreens,
-            w.HasStormWindows,
-            w.CreatedAt,
-            w.UpdatedAt
-        )));
+        return Ok(mapper.Map<IEnumerable<WindowResponse>>(items));
     }
 
     [HttpGet("{id:guid}")]
@@ -47,32 +23,7 @@ public class WindowsController(IMediator mediator) : ControllerBase
     {
         var w = await mediator.Send(new GetWindowQuery(id), ct);
         if (w is null) return NotFound();
-        return Ok(new WindowResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Width,
-            w.Height,
-            w.Area,
-            w.FrameType,
-            w.FrameDetails,
-            w.GlazingType,
-            w.GlazingDetails,
-            w.UValue,
-            w.SolarHeatGainCoefficient,
-            w.VisibleTransmittance,
-            w.AirLeakage,
-            w.EnergyStarRating,
-            w.NFRCRating,
-            w.Orientation,
-            w.Location,
-            w.InstallationType,
-            w.OperationType,
-            w.HasScreens,
-            w.HasStormWindows,
-            w.CreatedAt,
-            w.UpdatedAt
-        ));
+        return Ok(mapper.Map<WindowResponse>(w));
     }
 
     [HttpPost]
@@ -101,32 +52,7 @@ public class WindowsController(IMediator mediator) : ControllerBase
             request.HasScreens,
             request.HasStormWindows
         ), ct);
-        return CreatedAtAction(nameof(Get), new { id = w.Id }, new WindowResponse(
-            w.Id,
-            w.Name,
-            w.Description,
-            w.Width,
-            w.Height,
-            w.Area,
-            w.FrameType,
-            w.FrameDetails,
-            w.GlazingType,
-            w.GlazingDetails,
-            w.UValue,
-            w.SolarHeatGainCoefficient,
-            w.VisibleTransmittance,
-            w.AirLeakage,
-            w.EnergyStarRating,
-            w.NFRCRating,
-            w.Orientation,
-            w.Location,
-            w.InstallationType,
-            w.OperationType,
-            w.HasScreens,
-            w.HasStormWindows,
-            w.CreatedAt,
-            w.UpdatedAt
-        ));
+        return CreatedAtAction(nameof(Get), new { id = w.Id }, mapper.Map<WindowResponse>(w));
     }
 
     [HttpPut("{id:guid}")]

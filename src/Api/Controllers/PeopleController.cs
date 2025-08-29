@@ -1,5 +1,6 @@
 using Api.Dtos;
 using App.Features.People;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,18 +9,13 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class PeopleController(IMediator mediator) : ControllerBase
+public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListPeopleQuery(), ct);
-        return Ok(items.Select(p => new PersonResponse(
-            p.Id,
-            p.FullName,
-            p.Phone,
-            p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))
-        )));
+        return Ok(mapper.Map<IEnumerable<PersonResponse>>(items));
     }
 
     [HttpGet("{id:guid}")]
@@ -27,7 +23,7 @@ public class PeopleController(IMediator mediator) : ControllerBase
     {
         var p = await mediator.Send(new GetPersonQuery(id), ct);
         if (p is null) return NotFound();
-        return Ok(new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
+        return Ok(mapper.Map<PersonResponse>(p));
     }
 
     [HttpPost]
@@ -36,7 +32,7 @@ public class PeopleController(IMediator mediator) : ControllerBase
         try
         {
             var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
-            return CreatedAtAction(nameof(Get), new { id = p.Id }, new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
+            return CreatedAtAction(nameof(Get), new { id = p.Id }, mapper.Map<PersonResponse>(p));
         }
         catch (KeyNotFoundException ex)
         {

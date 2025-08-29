@@ -1,4 +1,5 @@
 using App.Abstractions;
+using Domain.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Repositories.EntityFramework;
 using Infrastructure.Services;
@@ -25,6 +26,11 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
+        
+        // Add authentication services
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();
@@ -45,6 +51,11 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
+        
+        // Add authentication services
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();

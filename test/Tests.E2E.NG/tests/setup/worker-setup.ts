@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkerStartupQueue } from './worker-queue';
+import { checkPortsAvailable, killProcessOnPort, findAvailablePort } from './port-utils';
 
 export class WorkerServerManager {
   private apiProcess: ChildProcess | null = null;
@@ -19,7 +20,8 @@ export class WorkerServerManager {
     this.angularPort = 4200 + (this.workerIndex * 10);
     
     const timestamp = Date.now();
-    this.workerDatabase = `/tmp/CrudTest_Worker${this.workerIndex}_${timestamp}.db`;
+    const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+    this.workerDatabase = path.join(tempDir, `CrudTest_Worker${this.workerIndex}_${timestamp}.db`);
     
     console.log(`🔧 Worker ${this.workerIndex}: API=${this.apiPort}, Angular=${this.angularPort}, DB=${this.workerDatabase}`);
   }
@@ -32,6 +34,43 @@ export class WorkerServerManager {
     try {
       console.log(`🚀 Starting servers for worker ${this.workerIndex}...`);
       
+      // Check if ports are available before starting
+      const portsToCheck = [this.apiPort, this.angularPort];
+      const portCheck = await checkPortsAvailable(portsToCheck);
+      
+      if (!portCheck.available) {
+        console.error(`❌ Ports already in use for worker ${this.workerIndex}: ${portCheck.conflicts.join(', ')}`);
+        
+        // Try to kill existing processes or find alternative ports
+        const killExisting = process.env.KILL_EXISTING_SERVERS === 'true';
+        
+        if (killExisting) {
+          console.log(`🔪 Attempting to kill processes on conflicting ports...`);
+          for (const port of portCheck.conflicts) {
+            await killProcessOnPort(port);
+          }
+          
+          // Re-check ports after killing
+          const recheckPorts = await checkPortsAvailable(portsToCheck);
+          if (!recheckPorts.available) {
+            throw new Error(`Failed to free up ports ${recheckPorts.conflicts.join(', ')} for worker ${this.workerIndex}`);
+          }
+        } else {
+          // Find alternative ports
+          console.log(`🔍 Finding alternative ports for worker ${this.workerIndex}...`);
+          
+          if (portCheck.conflicts.includes(this.apiPort)) {
+            this.apiPort = await findAvailablePort(this.apiPort);
+            console.log(`📍 Using alternative API port: ${this.apiPort}`);
+          }
+          
+          if (portCheck.conflicts.includes(this.angularPort)) {
+            this.angularPort = await findAvailablePort(this.angularPort);
+            console.log(`📍 Using alternative Angular port: ${this.angularPort}`);
+          }
+        }
+      }
+      
       // Create worker-specific proxy config for Angular
       this.createProxyConfig();
       
@@ -41,7 +80,7 @@ export class WorkerServerManager {
       // Start Angular dev server
       await this.startAngularServer();
       
-      console.log(`✅ Worker ${this.workerIndex} servers ready`);
+      console.log(`✅ Worker ${this.workerIndex} servers ready on ports API:${this.apiPort}, Angular:${this.angularPort}`);
     } finally {
       // Mark worker as complete in queue
       queue.complete(this.workerIndex);
@@ -58,7 +97,7 @@ export class WorkerServerManager {
       }
     };
     
-    const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
+    const proxyPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
     fs.writeFileSync(proxyPath, JSON.stringify(proxyConfig, null, 2));
     console.log(`📝 Created proxy config for worker ${this.workerIndex} at ${proxyPath}`);
   }
@@ -75,10 +114,15 @@ export class WorkerServerManager {
         ConnectionStrings__DefaultConnection: `Data Source=${this.workerDatabase}`
       };
 
+      const apiPath = path.resolve(process.cwd(), '..', '..', 'src', 'Api');
+      console.log(`🔧 Starting API from: ${apiPath}`);
+      
       this.apiProcess = spawn('dotnet', ['run', '--no-launch-profile'], {
-        cwd: '../../src/Api',
+        cwd: apiPath,
         env: apiEnv,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: true,
+        windowsHide: true  // Hide console window on Windows
       });
 
       let apiStarted = false;
@@ -125,10 +169,21 @@ export class WorkerServerManager {
       // Add optimization flags for faster startup in test environment
       const optimizationFlags = '--poll=2000 --live-reload=false --hmr=false';
       
-      this.angularProcess = spawn('npm', ['start', '--', portConfig, proxyConfig, optimizationFlags], {
-        cwd: '../../src/Angular',
+      const angularPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular');
+      console.log(`🔧 Starting Angular from: ${angularPath}`);
+      
+      const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+      // Split optimization flags into array
+      const args = ['start', '--', portConfig, proxyConfig];
+      const optimizationFlagsArray = optimizationFlags.split(' ').filter(arg => arg);
+      args.push(...optimizationFlagsArray);
+      
+      this.angularProcess = spawn(npmCommand, args, {
+        cwd: angularPath,
         env: angularEnv,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: false,
+        windowsHide: true  // Hide console window on Windows
       });
 
       let angularStarted = false;
@@ -244,19 +299,52 @@ export class WorkerServerManager {
   async stopServers(): Promise<void> {
     console.log(`🛑 Stopping servers for worker ${this.workerIndex}...`);
 
+    // Kill processes more forcefully on Windows
+    const killSignal = process.platform === 'win32' ? 'SIGKILL' : 'SIGTERM';
+
     if (this.apiProcess) {
-      this.apiProcess.kill('SIGTERM');
+      try {
+        this.apiProcess.kill(killSignal);
+        // Give it a moment to terminate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force kill if still running
+        if (this.apiProcess && !this.apiProcess.killed) {
+          this.apiProcess.kill('SIGKILL');
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error killing API process for worker ${this.workerIndex}:`, error);
+      }
       this.apiProcess = null;
     }
 
     if (this.angularProcess) {
-      this.angularProcess.kill('SIGTERM');
+      try {
+        this.angularProcess.kill(killSignal);
+        // Give it a moment to terminate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force kill if still running
+        if (this.angularProcess && !this.angularProcess.killed) {
+          this.angularProcess.kill('SIGKILL');
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error killing Angular process for worker ${this.workerIndex}:`, error);
+      }
       this.angularProcess = null;
+    }
+    
+    // Also try to kill by port as a backup
+    try {
+      await killProcessOnPort(this.apiPort);
+      await killProcessOnPort(this.angularPort);
+    } catch (error) {
+      // Ignore port cleanup errors
     }
     
     // Clean up proxy config file
     try {
-      const proxyPath = path.join(__dirname, '..', '..', '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
+      const proxyPath = path.resolve(process.cwd(), '..', '..', 'src', 'Angular', `proxy.worker${this.workerIndex}.conf.json`);
       if (fs.existsSync(proxyPath)) {
         fs.unlinkSync(proxyPath);
         console.log(`🧹 Removed proxy config for worker ${this.workerIndex}`);

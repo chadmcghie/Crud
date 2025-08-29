@@ -10,10 +10,60 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
+  # Check if tests already passed for this commit
+  check-previous-tests:
+    name: Check Previous Test Results
+    runs-on: ubuntu-latest
+    outputs:
+      skip-backend-unit: ${{ steps.check.outputs.skip-backend-unit }}
+      skip-frontend-unit: ${{ steps.check.outputs.skip-frontend-unit }}
+      backend-run-url: ${{ steps.check.outputs.backend-run-url }}
+      frontend-run-url: ${{ steps.check.outputs.frontend-run-url }}
+    
+    steps:
+    - name: Check if tests already passed for this commit
+      id: check
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Check for successful feature branch test runs on this commit
+          const { data: workflows } = await github.rest.actions.listWorkflowRunsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'feature-branch-tests.yml',
+            head_sha: context.payload.pull_request.head.sha,
+            status: 'success',
+            per_page: 1
+          });
+          
+          const hasPassedTests = workflows.total_count > 0;
+          
+          if (hasPassedTests) {
+            const run = workflows.workflow_runs[0];
+            console.log(`Found successful test run #${run.run_number} from ${run.created_at}`);
+            core.setOutput('skip-backend-unit', 'true');
+            core.setOutput('skip-frontend-unit', 'true');
+            core.setOutput('backend-run-url', run.html_url);
+            core.setOutput('frontend-run-url', run.html_url);
+            
+            // Add summary
+            core.summary.addHeading('✅ Tests Already Passed', 2);
+            core.summary.addRaw(`Unit tests already passed for commit ${context.payload.pull_request.head.sha.substring(0, 7)} in `);
+            core.summary.addLink(`run #${run.run_number}`, run.html_url);
+            core.summary.addRaw('\n\nSkipping redundant unit test execution.');
+            await core.summary.write();
+          } else {
+            console.log('No successful test runs found for this commit. Tests will run.');
+            core.setOutput('skip-backend-unit', 'false');
+            core.setOutput('skip-frontend-unit', 'false');
+          }
+
   # Full test suite for PRs targeting dev branch
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
+    needs: check-previous-tests
+    if: needs.check-previous-tests.outputs.skip-backend-unit != 'true'
     
     steps:
     - name: Checkout code
@@ -40,9 +90,27 @@ jobs:
         name: backend-unit-test-results-${{ github.run_number }}
         path: TestResults/
 
+  # Placeholder job for when backend unit tests are skipped
+  backend-unit-tests-skipped:
+    name: Backend Unit Tests (Skipped - Already Passed)
+    runs-on: ubuntu-latest
+    needs: check-previous-tests
+    if: needs.check-previous-tests.outputs.skip-backend-unit == 'true'
+    
+    steps:
+    - name: Report skipped tests
+      run: |
+        echo "✅ Backend unit tests were skipped because they already passed for this commit"
+        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.backend-run-url }}"
+        echo "## ✅ Backend Unit Tests" >> $GITHUB_STEP_SUMMARY
+        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "See [previous run](${{ needs.check-previous-tests.outputs.backend-run-url }})" >> $GITHUB_STEP_SUMMARY
+
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
+    needs: check-previous-tests
+    if: needs.check-previous-tests.outputs.skip-frontend-unit != 'true'
     
     steps:
     - name: Checkout code
@@ -74,10 +142,27 @@ jobs:
         name: frontend-coverage-${{ github.run_number }}
         path: src/Angular/coverage/
 
+  # Placeholder job for when frontend unit tests are skipped
+  frontend-unit-tests-skipped:
+    name: Frontend Unit Tests (Skipped - Already Passed)
+    runs-on: ubuntu-latest
+    needs: check-previous-tests
+    if: needs.check-previous-tests.outputs.skip-frontend-unit == 'true'
+    
+    steps:
+    - name: Report skipped tests
+      run: |
+        echo "✅ Frontend unit tests were skipped because they already passed for this commit"
+        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.frontend-run-url }}"
+        echo "## ✅ Frontend Unit Tests" >> $GITHUB_STEP_SUMMARY
+        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "See [previous run](${{ needs.check-previous-tests.outputs.frontend-run-url }})" >> $GITHUB_STEP_SUMMARY
+
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: backend-unit-tests
+    needs: [backend-unit-tests, backend-unit-tests-skipped]
+    if: always() && (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success')
     
     steps:
     - name: Checkout code
@@ -110,7 +195,11 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests]
+    needs: [backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped]
+    if: |
+      always() && 
+      (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success') &&
+      (needs.frontend-unit-tests.result == 'success' || needs.frontend-unit-tests-skipped.result == 'success')
     
     steps:
     - name: Checkout code
@@ -158,8 +247,10 @@ jobs:
     - name: Start API server
       working-directory: ./src/Api
       run: |
-        dotnet run --no-launch-profile --configuration Release &
+        echo "Starting API server..."
+        dotnet run --no-launch-profile --configuration Release > api.log 2>&1 &
         echo "API_PID=$!" >> $GITHUB_ENV
+        echo "API server started with PID $!"
       env:
         ASPNETCORE_ENVIRONMENT: E2E
         ASPNETCORE_URLS: http://localhost:5172
@@ -169,25 +260,86 @@ jobs:
         
     - name: Wait for API to be ready
       run: |
-        timeout 60 bash -c 'until curl -f http://localhost:5172/health 2>/dev/null; do echo "Waiting for API..."; sleep 2; done'
-        echo "API is ready!"
+        echo "Waiting for API server to be ready..."
+        COUNTER=0
+        MAX_ATTEMPTS=30
+        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
+          if curl -f http://localhost:5172/health 2>/dev/null; then
+            echo "✅ API is ready!"
+            break
+          fi
+          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: API not ready yet..."
+          if [ $COUNTER -eq 10 ]; then
+            echo "⚠️ API is taking longer than expected. Checking logs..."
+            cd src/Api && tail -n 20 api.log || true
+          fi
+          sleep 2
+          COUNTER=$((COUNTER+1))
+        done
+        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
+          echo "❌ API server failed to start after $MAX_ATTEMPTS attempts"
+          echo "📋 API server logs:"
+          cd src/Api && cat api.log || true
+          exit 1
+        fi
         
     - name: Start Angular server
       working-directory: ./src/Angular
       run: |
-        npm start &
+        echo "Starting Angular server with CI configuration..."
+        npm run start:ci > angular.log 2>&1 &
         echo "ANGULAR_PID=$!" >> $GITHUB_ENV
+        echo "Angular server started with PID $!"
         
     - name: Wait for Angular to be ready
       run: |
-        timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do echo "Waiting for Angular..."; sleep 2; done'
-        echo "Angular is ready!"
+        echo "Waiting for Angular server to be ready..."
+        COUNTER=0
+        MAX_ATTEMPTS=30
+        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
+          if curl -f http://localhost:4200 2>/dev/null; then
+            echo "✅ Angular is ready!"
+            break
+          fi
+          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: Angular not ready yet..."
+          if [ $COUNTER -eq 10 ]; then
+            echo "⚠️ Angular is taking longer than expected. Checking logs..."
+            cd src/Angular && tail -n 20 angular.log || true
+          fi
+          sleep 2
+          COUNTER=$((COUNTER+1))
+        done
+        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
+          echo "❌ Angular server failed to start after $MAX_ATTEMPTS attempts"
+          echo "📋 Angular server logs:"
+          cd src/Angular && cat angular.log || true
+          exit 1
+        fi
+        
+    - name: Verify servers are running
+      run: |
+        echo "🔍 Final health check before E2E tests..."
+        if ! curl -f http://localhost:5172/health 2>/dev/null; then
+          echo "❌ API is not responding!"
+          exit 1
+        fi
+        echo "✅ API health check passed"
+        
+        if ! curl -f http://localhost:4200 2>/dev/null; then
+          echo "❌ Angular is not responding!"
+          exit 1
+        fi
+        echo "✅ Angular health check passed"
+        echo "🚀 Both servers are ready for E2E tests!"
         
     - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        npm run test:api-only
-        npm run test:integration
+        echo "🧪 Running E2E tests..."
+        npm run test:api-only || (echo "❌ API tests failed" && exit 1)
+        echo "✅ API tests passed"
+        npm run test:integration || (echo "❌ Integration tests failed" && exit 1)
+        echo "✅ Integration tests passed"
       env:
         CI: true
         API_BASE_URL: http://localhost:5172
@@ -202,16 +354,33 @@ jobs:
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
           
+    - name: Upload server logs
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: server-logs-${{ github.run_number }}
+        path: |
+          src/Api/api.log
+          src/Angular/angular.log
+          
     - name: Stop servers
       if: always()
       run: |
-        if [ ! -z "$API_PID" ]; then kill $API_PID || true; fi
-        if [ ! -z "$ANGULAR_PID" ]; then kill $ANGULAR_PID || true; fi
+        echo "🛑 Stopping servers..."
+        if [ ! -z "$API_PID" ]; then 
+          echo "Stopping API server (PID: $API_PID)"
+          kill $API_PID || true
+        fi
+        if [ ! -z "$ANGULAR_PID" ]; then 
+          echo "Stopping Angular server (PID: $ANGULAR_PID)"
+          kill $ANGULAR_PID || true
+        fi
+        echo "✅ Servers stopped"
 
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    needs: [check-previous-tests, backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped, backend-integration-tests, e2e-tests]
     if: always()
     
     steps:
@@ -222,14 +391,31 @@ jobs:
         echo "### Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        
+        # Backend Unit Tests status
+        if [ "${{ needs.check-previous-tests.outputs.skip-backend-unit }}" == "true" ]; then
+          echo "| Backend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Frontend Unit Tests status
+        if [ "${{ needs.check-previous-tests.outputs.skip-frontend-unit }}" == "true" ]; then
+          echo "| Frontend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && 
-           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && 
+        # Check overall status
+        backend_unit_ok="${{ needs.check-previous-tests.outputs.skip-backend-unit == 'true' || needs.backend-unit-tests.result == 'success' }}"
+        frontend_unit_ok="${{ needs.check-previous-tests.outputs.skip-frontend-unit == 'true' || needs.frontend-unit-tests.result == 'success' }}"
+        
+        if [ "$backend_unit_ok" == "true" ] && 
+           [ "$frontend_unit_ok" == "true" ] && 
            [ "${{ needs.backend-integration-tests.result }}" == "success" ] && 
            [ "${{ needs.e2e-tests.result }}" == "success" ]; then
           echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY

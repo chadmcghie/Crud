@@ -1,22 +1,29 @@
 import { test as base, APIRequestContext } from '@playwright/test';
 import { ApiHelpers } from '../helpers/api-helpers';
+import { PersistentServerManager } from './persistent-server-manager';
 
 export interface ApiOnlyFixtures {
   apiContext: APIRequestContext;
   apiHelpers: ApiHelpers;
   cleanDatabase: void;
-  workerIndex: number;
+  serverInfo: { apiUrl: string; angularUrl: string; database: string };
 }
 
-// Simple API-only fixture that assumes a single server is running
+// Simple API-only fixture that reuses servers
 export const test = base.extend<ApiOnlyFixtures>({
-  workerIndex: async ({}, use, testInfo) => {
-    await use(testInfo.workerIndex);
+  // Get server info (single instance for serial execution)
+  serverInfo: async ({ }, use) => {
+    console.log(`🔧 Getting server info...`);
+    
+    const manager = PersistentServerManager.getInstance();
+    const info = await manager.ensureServers();
+    
+    await use(info);
   },
 
-  apiContext: async ({ playwright }, use) => {
+  apiContext: async ({ playwright, serverInfo }, use) => {
     const context = await playwright.request.newContext({
-      baseURL: 'http://localhost:5172',
+      baseURL: serverInfo.apiUrl,
       extraHTTPHeaders: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -26,28 +33,17 @@ export const test = base.extend<ApiOnlyFixtures>({
     await context.dispose();
   },
 
-  apiHelpers: async ({ apiContext, workerIndex }, use) => {
-    const helpers = new ApiHelpers(apiContext, workerIndex);
+  apiHelpers: async ({ apiContext }, use) => {
+    const helpers = new ApiHelpers(apiContext, 0); // Single worker, always index 0
     await use(helpers);
   },
 
-  cleanDatabase: [async ({ apiContext, workerIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for worker ${workerIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Pre-test database cleanup using the shared database service
-    try {
-      const response = await apiContext.post('/api/database/reset', {
-        data: { workerIndex }
-      });
-      
-      if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for worker ${workerIndex}: ${response.status()}`);
-      } else {
-        console.log(`✅ Database reset completed for worker ${workerIndex}`);
-      }
-    } catch (error) {
-      console.error(`❌ Database cleanup failed for worker ${workerIndex}:`, error);
-    }
+    // For serial execution, we can clean the database more aggressively
+    const manager = PersistentServerManager.getInstance();
+    await manager.cleanDatabase();
     
     await use();
   }, { auto: true }],

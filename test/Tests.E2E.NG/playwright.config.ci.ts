@@ -16,8 +16,8 @@ export default defineConfig({
   /* Retry failed tests for stability */
   retries: 2,
   
-  /* Use 4 workers on CI for optimal parallelism */
-  workers: 4,
+  /* Use single worker for serial execution per ADR-001 */
+  workers: 1,
   
   /* Timeout configuration */
   timeout: 90000, // 90 seconds per test
@@ -28,9 +28,9 @@ export default defineConfig({
 
   /* Reporter configuration for CI */
   reporter: [
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['html', { open: 'never', outputFolder: 'test-results/html' }],
+    ['junit', { outputFile: './test-results/junit.xml' }],
+    ['json', { outputFile: './test-results/results.json' }],
+    ['html', { open: 'never', outputFolder: './test-results/html' }],
     ['github'], // GitHub Actions annotations
     ['list'] // Console output
   ],
@@ -91,7 +91,7 @@ export default defineConfig({
   ],
 
   /* Output test results to a specific folder */
-  outputDir: 'test-results',
+  outputDir: './test-results/',
 
   /* Preserve test outputs */
   preserveOutput: 'failures-only',

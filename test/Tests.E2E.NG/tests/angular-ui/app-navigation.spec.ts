@@ -6,12 +6,12 @@ test.describe('Application Navigation and Layout', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, apiContext, workerIndex, cleanDatabase }) => {
+  test.beforeEach(async ({ page, apiContext, cleanDatabase }) => {
     // cleanDatabase fixture handles database cleanup automatically
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, workerIndex);
+    apiHelpers = new ApiHelpers(apiContext, 0); // Serial execution - single worker
     
-    console.log(`🧪 Starting test with worker ${workerIndex} - database automatically cleaned`);
+    console.log(`🧪 Starting test - database automatically cleaned`);
   });
 
   test('should load the application successfully', async ({ page }) => {

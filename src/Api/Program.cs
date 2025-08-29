@@ -2,13 +2,21 @@ using Api.Middleware;
 using App;
 using FluentValidation;
 using Infrastructure;
+using Infrastructure.Resilience;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Polly;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 
 namespace Api
 {
@@ -96,7 +104,10 @@ namespace Api
                         .AddConsoleExporter());
 
                 // 3) App & Infra
-                builder.Services.AddApplication();
+                builder.Services.AddApplication();                
+
+                builder.Services.AddHttpClient("default")
+                    .AddPolicyHandler((sp, request) => PollyPolicies.GetCombinedHttpPolicy(sp));
 
                 var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -171,6 +182,69 @@ namespace Api
                 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
                 builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
 
+                // Configure JWT Authentication
+                var jwtSecret = builder.Configuration["Jwt:Secret"];
+                var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+                var jwtAudience = builder.Configuration["Jwt:Audience"];
+                
+                if (string.IsNullOrEmpty(jwtSecret))
+                {
+                    Log.Warning("JWT Secret not configured. Using default for development.");
+                    jwtSecret = "ThisIsADevelopmentSecretKeyThatShouldBeReplacedInProduction123!";
+                }
+                
+                if (string.IsNullOrEmpty(jwtIssuer))
+                {
+                    jwtIssuer = "CrudApi";
+                }
+                
+                if (string.IsNullOrEmpty(jwtAudience))
+                {
+                    jwtAudience = "CrudApiUsers";
+                }
+
+                builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtIssuer,
+                        ValidAudience = jwtAudience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                    
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            // Allow the token to be read from cookies as well
+                            var token = context.Request.Cookies["accessToken"];
+                            if (!string.IsNullOrEmpty(token))
+                            {
+                                context.Token = token;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
+
+                // Add authorization policies
+                builder.Services.AddAuthorization(options =>
+                {
+                    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                });
+
                 builder.Services.AddControllers()
                     .AddJsonOptions(options =>
                     {
@@ -184,11 +258,48 @@ namespace Api
                     });
 
                 builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen();
+                
+                // Configure Swagger with JWT support
+                builder.Services.AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo 
+                    { 
+                        Title = "Crud API", 
+                        Version = "v1",
+                        Description = "A CRUD API with JWT authentication"
+                    });
+
+                    // Add JWT Authentication
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                    {
+                        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.ApiKey,
+                        Scheme = "Bearer"
+                    });
+
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            Array.Empty<string>()
+                        }
+                    });
+                });
+                
                 builder.Services.AddHealthChecks();
 
                 builder.Services.AddAutoMapper(
                     cfg => { },
+                    typeof(Program).Assembly,
                     typeof(App.DependencyInjection).Assembly,
                     typeof(Infrastructure.DependencyInjection).Assembly
                 );
@@ -212,6 +323,7 @@ namespace Api
                 app.UseHttpsRedirection();
                 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
+                app.UseAuthentication();
                 app.UseAuthorization();
                 app.MapControllers();
                 app.MapHealthChecks("/health");
