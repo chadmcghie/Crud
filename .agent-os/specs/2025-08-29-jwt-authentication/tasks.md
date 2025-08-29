@@ -30,15 +30,15 @@
   - [x] 3.7 Create DTOs and validators with FluentValidation
   - [x] 3.8 Verify all application layer tests pass
 
-- [ ] 4. Implement API Endpoints and Authentication Middleware
-  - [ ] 4.1 Write integration tests for authentication endpoints
-  - [ ] 4.2 Create AuthController with Register and Login endpoints
-  - [ ] 4.3 Implement Refresh and Logout endpoints
-  - [ ] 4.4 Configure JWT authentication in Program.cs
-  - [ ] 4.5 Set up authorization policies and middleware pipeline
-  - [ ] 4.6 Configure HTTP-only cookie settings for refresh tokens
-  - [ ] 4.7 Update Swagger configuration for JWT bearer tokens
-  - [ ] 4.8 Verify all integration tests pass
+- [x] 4. Implement API Endpoints and Authentication Middleware
+  - [x] 4.1 Write integration tests for authentication endpoints
+  - [x] 4.2 Create AuthController with Register and Login endpoints
+  - [x] 4.3 Implement Refresh and Logout endpoints
+  - [x] 4.4 Configure JWT authentication in Program.cs
+  - [x] 4.5 Set up authorization policies and middleware pipeline
+  - [x] 4.6 Configure HTTP-only cookie settings for refresh tokens
+  - [x] 4.7 Update Swagger configuration for JWT bearer tokens
+  - [x] 4.8 Verify all integration tests pass
 
 - [ ] 5. End-to-End Testing and Validation
   - [ ] 5.1 Write E2E tests for complete authentication flow

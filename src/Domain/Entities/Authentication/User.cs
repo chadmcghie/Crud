@@ -76,6 +76,15 @@ namespace Domain.Entities.Authentication
             return true;
         }
 
+        public void RevokeAllRefreshTokens()
+        {
+            foreach (var refreshToken in _refreshTokens.Where(rt => rt.IsActive))
+            {
+                refreshToken.Revoke();
+            }
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public RefreshToken? GetActiveRefreshToken(string token)
         {
             var refreshToken = _refreshTokens.FirstOrDefault(rt => rt.Token == token);

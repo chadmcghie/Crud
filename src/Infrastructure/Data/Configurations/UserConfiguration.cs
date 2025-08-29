@@ -42,7 +42,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Roles)
             .HasConversion(
                 v => string.Join(',', v),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet())
             .HasMaxLength(500);
 
         // Configure timestamps
