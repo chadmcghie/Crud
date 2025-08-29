@@ -2,10 +2,42 @@ import { FullConfig } from '@playwright/test';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { checkPortsAvailable, killProcessOnPort, waitForServer } from './port-utils';
+import { checkPortsAvailable, killProcessOnPort } from './port-utils';
+import fetch from 'node-fetch';
 
 let apiServerProcess: ChildProcess | null = null;
 let angularServerProcess: ChildProcess | null = null;
+
+/**
+ * Wait for a server to be ready
+ */
+async function waitForServer(url: string, timeout: number = 30000): Promise<boolean> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          return true;
+        }
+      } catch {
+        clearTimeout(timeoutId);
+      }
+    } catch {
+      // Server not ready yet
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  
+  return false;
+}
 
 /**
  * Serial Global Setup
@@ -111,7 +143,7 @@ async function serialGlobalSetup(config: FullConfig) {
   };
   
   const angularProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Angular');
-  angularServerProcess = spawn('npm', ['run', 'serve:test', '--', '--port', angularPort], {
+  angularServerProcess = spawn('npm', ['run', 'start', '--', '--port', angularPort], {
     cwd: angularProjectPath,
     env: angularEnv,
     shell: true,

@@ -5,20 +5,20 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel with proper worker isolation */
-  fullyParallel: true, // Enable full parallelism with worker database isolation
+  /* SERIAL EXECUTION - Based on ADR-001 Decision */
+  fullyParallel: false, // Disable parallel execution for SQLite compatibility
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry configuration */
-  retries: process.env.CI ? 3 : 0, // Disable retries locally to avoid server restart overhead
-  /* Enable parallel workers with database isolation */
-  workers: process.env.CI ? 4 : 2, // Use multiple workers with isolated databases
-  /* Increase timeout for slow startup */
-  timeout: 60000, // 60 seconds per test
+  /* No retries - tests should be reliable */
+  retries: 0, // No retries as per ADR-001 for reliable tests
+  /* Single worker for serial execution */
+  workers: 1, // Single worker to prevent database conflicts (ADR-001)
+  /* Reasonable timeout for serial execution */
+  timeout: 30000, // 30 seconds per test
   
-  /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/global-setup.ts',
-  globalTeardown: './tests/setup/global-teardown.ts',
+  /* Global setup and teardown for shared server management */
+  globalSetup: './tests/setup/serial-global-setup.ts',
+  globalTeardown: './tests/setup/serial-global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
@@ -47,22 +47,38 @@ export default defineConfig({
     // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
   },
 
-  /* Configure projects for major browsers */
+  /* Single browser configuration for speed (ADR-001) */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        /* Optimize for speed */
+        launchOptions: {
+          args: [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+          ],
+        },
+      },
     },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    
+    /* Cross-browser testing only when explicitly requested */
+    ...(process.env.CROSS_BROWSER === 'true' ? [
+      {
+        name: 'firefox',
+        use: { ...devices['Desktop Firefox'] },
+      },
+      {
+        name: 'webkit',
+        use: { ...devices['Desktop Safari'] },
+      },
+    ] : []),
 
     /* Test against mobile viewports. */
     // {
@@ -84,6 +100,16 @@ export default defineConfig({
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
   ],
-
-  /* Per-worker servers are started dynamically in test setup - removed static webServer configuration */
+  
+  /* Test categorization using grep patterns (ADR-001) */
+  grep: (() => {
+    const testCategory = process.env.TEST_CATEGORY || 'all';
+    switch (testCategory) {
+      case 'smoke': return /@smoke/; // 2 minute tests
+      case 'critical': return /@critical/; // 5 minute tests  
+      case 'extended': return /@extended/; // 10 minute tests
+      case 'all':
+      default: return undefined; // Run all tests
+    }
+  })(),
 });
