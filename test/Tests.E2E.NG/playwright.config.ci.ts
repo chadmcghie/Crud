@@ -8,7 +8,7 @@ export default defineConfig({
   testDir: './tests',
   
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false, // Serial execution per ADR-001
   
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: true,
@@ -17,14 +17,14 @@ export default defineConfig({
   retries: 2,
   
   /* Use single worker for serial execution per ADR-001 */
-  workers: 1,
+  workers: 1, // Single worker per ADR-001
   
   /* Timeout configuration */
   timeout: 90000, // 90 seconds per test
   
   /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/global-setup.ts',
-  globalTeardown: './tests/setup/global-teardown.ts',
+  globalSetup: './tests/setup/simple-global-setup.ts',
+  globalTeardown: './tests/setup/simple-global-teardown.ts',
 
   /* Reporter configuration for CI */
   reporter: [

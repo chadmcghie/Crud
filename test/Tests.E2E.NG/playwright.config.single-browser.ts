@@ -5,14 +5,14 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false, // Serial execution per ADR-001
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 2 : 1, // Reduce workers
+  workers: 1, // Single worker per ADR-001 // Reduce workers
   timeout: 60000,
   
-  globalSetup: './tests/setup/global-setup.ts',
-  globalTeardown: './tests/setup/global-teardown.ts',
+  globalSetup: './tests/setup/simple-global-setup.ts',
+  globalTeardown: './tests/setup/simple-global-teardown.ts',
 
   reporter: [
     ['html'],
