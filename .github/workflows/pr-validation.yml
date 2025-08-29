@@ -248,7 +248,7 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: |
         echo "🧪 Running E2E tests with Playwright globalSetup..."
-        npm test:ci
+        npm run test:fast
       env:
         CI: true
         API_PORT: 5172
