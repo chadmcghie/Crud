@@ -10,20 +10,61 @@ let apiServerProcess: ChildProcess | null = null;
 let angularServerProcess: ChildProcess | null = null;
 let serverStatus: ServerStatus | null = null;
 
+// Cancellation support
+let isSetupCancelled = false;
+let setupAbortController: AbortController | null = null;
+
 // Check if running on Windows
 const isWindows = process.platform === 'win32';
 
+// Handle process termination signals
+process.on('SIGINT', () => {
+  console.log('\n⚠️  SIGINT received, cancelling setup...');
+  isSetupCancelled = true;
+  if (setupAbortController) {
+    setupAbortController.abort();
+  }
+  cleanupServers();
+  process.exit(130); // Standard exit code for SIGINT
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n⚠️  SIGTERM received, cancelling setup...');
+  isSetupCancelled = true;
+  if (setupAbortController) {
+    setupAbortController.abort();
+  }
+  cleanupServers();
+  process.exit(143); // Standard exit code for SIGTERM
+});
+
 /**
- * Wait for server to be ready with retries
+ * Wait for server to be ready with retries and cancellation support
  */
 async function waitForServer(url: string, timeout: number = 30000): Promise<boolean> {
   const startTime = Date.now();
   
   while (Date.now() - startTime < timeout) {
+    // Check for cancellation
+    if (isSetupCancelled) {
+      console.log('⛔ Wait cancelled by user');
+      return false;
+    }
+    
     if (await isServerRunning(url)) {
       return true;
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Wait with cancellation support
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 1000);
+      if (setupAbortController) {
+        setupAbortController.signal.addEventListener('abort', () => {
+          clearTimeout(timer);
+          resolve();
+        }, { once: true });
+      }
+    });
   }
   
   return false;
@@ -63,13 +104,52 @@ async function resetDatabase(apiUrl: string): Promise<boolean> {
 }
 
 /**
+ * Cleanup function to stop servers gracefully
+ */
+function cleanupServers() {
+  console.log('\n🧹 Cleaning up servers...');
+  
+  if (apiServerProcess) {
+    try {
+      if (isWindows) {
+        execSync(`taskkill /pid ${apiServerProcess.pid} /f /t`, { stdio: 'ignore' });
+      } else {
+        apiServerProcess.kill('SIGTERM');
+      }
+      console.log('✅ API server stopped');
+    } catch (error) {
+      console.warn('⚠️  Could not stop API server:', error);
+    }
+    apiServerProcess = null;
+  }
+  
+  if (angularServerProcess) {
+    try {
+      if (isWindows) {
+        execSync(`taskkill /pid ${angularServerProcess.pid} /f /t`, { stdio: 'ignore' });
+      } else {
+        angularServerProcess.kill('SIGTERM');
+      }
+      console.log('✅ Angular server stopped');
+    } catch (error) {
+      console.warn('⚠️  Could not stop Angular server:', error);
+    }
+    angularServerProcess = null;
+  }
+}
+
+/**
  * Optimized Global Setup with Smart Server Detection
  * - Detects and reuses existing servers
  * - Only starts servers if not already running
  * - Provides clear status feedback
+ * - Supports cancellation via SIGINT/SIGTERM
  */
 async function optimizedGlobalSetup(config: FullConfig) {
   console.log('🚀 Starting optimized test setup with server detection...');
+  
+  // Initialize abort controller for this setup
+  setupAbortController = new AbortController();
   
   const apiPort = process.env.API_PORT || '5172';
   const angularPort = process.env.ANGULAR_PORT || '4200';
@@ -96,6 +176,12 @@ async function optimizedGlobalSetup(config: FullConfig) {
   
   // Handle API server
   if (!apiInfo.running) {
+    // Check for cancellation before starting
+    if (isSetupCancelled) {
+      console.log('⛔ Setup cancelled before starting API server');
+      return;
+    }
+    
     console.log('\n🚀 Starting API server (not currently running)...');
     const apiProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Api');
     
@@ -138,6 +224,11 @@ async function optimizedGlobalSetup(config: FullConfig) {
     // Wait for API to be ready
     const apiReady = await waitForServer(`${apiUrl}/health`, 30000);
     if (!apiReady) {
+      if (isSetupCancelled) {
+        console.log('⛔ Setup cancelled while waiting for API server');
+        cleanupServers();
+        return;
+      }
       throw new Error('API server failed to start within 30 seconds');
     }
     console.log('✅ API server started successfully');

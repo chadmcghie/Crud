@@ -116,7 +116,7 @@ public class AuthControllerTests : IntegrationTestBase
             FirstName = "Login",
             LastName = "Test"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+        await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
         var loginCommand = new LoginCommand
         {
@@ -125,13 +125,13 @@ public class AuthControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         
         var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
+        var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
         
         result.Should().NotBeNull();
         result!.AccessToken.Should().NotBeNullOrEmpty();
@@ -149,7 +149,7 @@ public class AuthControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -166,7 +166,7 @@ public class AuthControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -187,16 +187,16 @@ public class AuthControllerTests : IntegrationTestBase
             FirstName = "Refresh",
             LastName = "Test"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+        await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
         var loginCommand = new LoginCommand
         {
             Email = email,
             Password = password
         };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
         var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
         var refreshCommand = new RefreshTokenCommand
         {
@@ -204,13 +204,13 @@ public class AuthControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+        var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         
         var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
+        var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
         
         result.Should().NotBeNull();
         result!.AccessToken.Should().NotBeNullOrEmpty();
@@ -228,7 +228,7 @@ public class AuthControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+        var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -249,23 +249,23 @@ public class AuthControllerTests : IntegrationTestBase
             FirstName = "Logout",
             LastName = "Test"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+        await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
         var loginCommand = new LoginCommand
         {
             Email = email,
             Password = password
         };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
         var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
         // Add the access token to the request header
-        _client.DefaultRequestHeaders.Authorization = 
+        Client.DefaultRequestHeaders.Authorization = 
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
         // Act - Logout
-        var logoutResponse = await _client.PostAsync("/api/auth/logout", null);
+        var logoutResponse = await Client.PostAsync("/api/auth/logout", null);
 
         // Assert
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -275,7 +275,7 @@ public class AuthControllerTests : IntegrationTestBase
         {
             RefreshToken = loginResult.RefreshToken
         };
-        var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+        var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -283,7 +283,7 @@ public class AuthControllerTests : IntegrationTestBase
     public async Task Protected_Endpoint_Should_Return_Unauthorized_Without_Token()
     {
         // Act
-        var response = await _client.GetAsync("/api/auth/me");
+        var response = await Client.GetAsync("/api/auth/me");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -303,23 +303,23 @@ public class AuthControllerTests : IntegrationTestBase
             FirstName = "Protected",
             LastName = "Test"
         };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+        await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
         var loginCommand = new LoginCommand
         {
             Email = email,
             Password = password
         };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
         var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
         // Add the access token to the request header
-        _client.DefaultRequestHeaders.Authorization = 
+        Client.DefaultRequestHeaders.Authorization = 
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
         // Act
-        var response = await _client.GetAsync("/api/auth/me");
+        var response = await Client.GetAsync("/api/auth/me");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
