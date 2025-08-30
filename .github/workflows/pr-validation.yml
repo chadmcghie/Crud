@@ -23,6 +23,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Restore .NET dependencies
       run: dotnet restore Crud.All.sln
@@ -53,6 +54,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -125,6 +127,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -173,6 +176,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
