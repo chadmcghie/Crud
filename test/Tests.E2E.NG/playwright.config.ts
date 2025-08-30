@@ -13,6 +13,8 @@ export default defineConfig({
   retries: 0, // No retries as per ADR-001 for reliable tests
   /* Single worker for serial execution */
   workers: 1, // Single worker to prevent database conflicts (ADR-001)
+  /* Circuit breaker: stop after X failures to prevent runaway test execution */
+  maxFailures: process.env.CI ? 10 : 0, // Stop after 10 failures in CI
   /* Reasonable timeout for serial execution */
   timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   

@@ -24,6 +24,9 @@ export default defineConfig({
   /* No retries - tests should be reliable */
   retries: 0,
   
+  /* Circuit breaker: stop after X failures to prevent runaway test execution */
+  maxFailures: process.env.CI ? 10 : 0, // Stop after 10 failures in CI
+  
   /* Reasonable timeout for serial execution */
   timeout: 30000, // 30 seconds per test
   

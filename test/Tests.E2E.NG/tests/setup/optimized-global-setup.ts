@@ -190,11 +190,12 @@ async function optimizedGlobalSetup(config: FullConfig) {
       serverStatus.markAsStartedByUs('angular', angularServerProcess.pid);
     }
     
-    // Wait for Angular (longer timeout for compilation)
+    // Wait for Angular (longer timeout for compilation in CI)
     console.log('⏳ Waiting for Angular to compile...');
-    const angularReady = await waitForServer(angularUrl, 90000);
+    const angularTimeout = process.env.CI ? 180000 : 90000; // 3 minutes in CI, 90 seconds locally
+    const angularReady = await waitForServer(angularUrl, angularTimeout);
     if (!angularReady) {
-      throw new Error('Angular server failed to start within 90 seconds');
+      throw new Error(`Angular server failed to start within ${angularTimeout / 1000} seconds`);
     }
     console.log('✅ Angular server started successfully');
   } else {

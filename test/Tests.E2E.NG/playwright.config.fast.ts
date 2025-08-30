@@ -11,11 +11,13 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Reduced retries for faster feedback */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0, // Reduced from 2 to 1 for faster failure
   /* Use fewer workers to reduce startup overhead */
   workers: 1, // Single worker per ADR-001
+  /* Circuit breaker: stop after X failures to prevent runaway test execution */
+  maxFailures: process.env.CI ? 5 : 0, // Stop after 5 failures in CI, no limit locally
   /* Increase timeout for slow startup */
-  timeout: 120000, // 2 minutes per test
+  timeout: 30000, // Reduced to 30 seconds per test for faster feedback
   
   /* Global setup and teardown for database management */
   globalSetup: './tests/setup/optimized-global-setup.ts',

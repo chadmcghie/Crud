@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Infrastructure.Data;
 using Infrastructure.Services;
+using System.IO;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -43,6 +44,15 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Set content root to the Api project output directory where appsettings files are located
+        var contentRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../../src/Api/bin/Release/net8.0"));
+        if (!Directory.Exists(contentRoot))
+        {
+            // Fallback to default if the Release path doesn't exist
+            contentRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../../src/Api"));
+        }
+        
+        builder.UseContentRoot(contentRoot);
         builder.ConfigureServices(services =>
         {
             // Initialize worker-specific database if not already done
