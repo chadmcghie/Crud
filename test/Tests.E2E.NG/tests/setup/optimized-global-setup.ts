@@ -191,7 +191,7 @@ async function optimizedGlobalSetup(config: FullConfig) {
       cwd: apiProjectPath,
       env: {
         ...process.env,
-        'ASPNETCORE_URLS': `http://+:${apiPort}`,
+        'ASPNETCORE_URLS': process.env.CI ? `http://0.0.0.0:${apiPort}` : `http://localhost:${apiPort}`,
         'ASPNETCORE_ENVIRONMENT': 'Testing',
         'ConnectionStrings__DefaultConnection': `Data Source=${databasePath}`,
         'DatabaseProvider': 'SQLite',
