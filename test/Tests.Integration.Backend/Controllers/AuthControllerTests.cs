@@ -5,6 +5,7 @@ using Api;
 using App.Features.Authentication;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
 namespace Tests.Integration.Backend.Controllers;
@@ -17,95 +18,87 @@ public class TokenResponse
     public int ExpiresIn { get; set; }
 }
 
-[Collection("Database")]
-public class AuthControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthControllerTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-    private readonly JsonSerializerOptions _jsonOptions;
-
-    public AuthControllerTests(WebApplicationFactory<Program> factory)
+    public AuthControllerTests(TestWebApplicationFactoryFixture fixture) : base(fixture)
     {
-        _factory = factory;
-        _client = _factory.CreateClient();
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
     }
 
     [Fact]
     public async Task POST_Register_Should_Create_User_And_Return_Tokens()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "test@example.com",
-            Password = "Test123!@#",
-            FirstName = "John",
-            LastName = "Doe"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "test@example.com",
+                Password = "Test123!@#",
+                FirstName = "John",
+                LastName = "Doe"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert - Debug output for troubleshooting
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error Response: {errorContent}");
-        }
-        
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
-        
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBeNullOrEmpty();
-        result.ExpiresIn.Should().BeGreaterThan(0);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            
+            var result = await ReadJsonAsync<TokenResponse>(response);
+            
+            result.Should().NotBeNull();
+            result!.AccessToken.Should().NotBeNullOrEmpty();
+            result.RefreshToken.Should().NotBeNullOrEmpty();
+            result.ExpiresIn.Should().BeGreaterThan(0);
+        });
     }
 
     [Fact]
     public async Task POST_Register_Should_Return_BadRequest_For_Existing_Email()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "existing@example.com",
-            Password = "Test123!@#",
-            FirstName = "Jane",
-            LastName = "Smith"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "existing@example.com",
+                Password = "Test123!@#",
+                FirstName = "Jane",
+                LastName = "Smith"
+            };
 
-        // Register first time
-        await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Register first time
+            var firstResponse = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
+            firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, "First registration should succeed");
 
-        // Act - Try to register with same email
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act - Try to register with same email
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]
     public async Task POST_Register_Should_Return_BadRequest_For_Invalid_Email()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "invalid-email",
-            Password = "Test123!@#",
-            FirstName = "John",
-            LastName = "Doe"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "invalid-email",
+                Password = "Test123!@#",
+                FirstName = "John",
+                LastName = "Doe"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]

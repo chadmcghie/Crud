@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Infrastructure.Data;
 using Infrastructure.Services;
-using System.IO;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -21,6 +20,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     private readonly TestDatabaseFactory _databaseFactory;
     private string? _databasePath;
     private string? _connectionString;
+    private TestLogCapture? _logCapture;
 
     public SqliteTestWebApplicationFactory()
     {
@@ -44,15 +44,6 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Set content root to the Api project output directory where appsettings files are located
-        var contentRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../../src/Api/bin/Release/net8.0"));
-        if (!Directory.Exists(contentRoot))
-        {
-            // Fallback to default if the Release path doesn't exist
-            contentRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../../src/Api"));
-        }
-        
-        builder.UseContentRoot(contentRoot);
         builder.ConfigureServices(services =>
         {
             // Initialize worker-specific database if not already done
@@ -82,12 +73,35 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             // Register DatabaseTestService for improved database cleanup
             services.AddScoped<DatabaseTestService>();
 
-            // Reduce logging noise in tests
-            services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Warning));
+            // Configure logging for better error debugging in tests
+            _logCapture = new TestLogCapture("IntegrationTest");
+            services.AddLogging(builder => 
+            {
+                builder.ClearProviders();
+                builder.AddConsole();
+                builder.AddDebug();
+                builder.AddProvider(new TestLogCaptureProvider(_logCapture));
+                // Enable detailed logging for errors and critical issues
+                builder.SetMinimumLevel(LogLevel.Information);
+                builder.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+                builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+                builder.AddFilter("System", LogLevel.Warning);
+                // Enable error-level logging for application components
+                builder.AddFilter("Api", LogLevel.Error);
+                builder.AddFilter("App", LogLevel.Error);
+                builder.AddFilter("Infrastructure", LogLevel.Error);
+                // Always show exceptions and global exception handling
+                builder.AddFilter("Api.Middleware.GlobalExceptionHandlingMiddleware", LogLevel.Debug);
+            });
         });
 
         builder.UseEnvironment("Testing");
     }
+
+    /// <summary>
+    /// Gets the test log capture instance for debugging server-side errors
+    /// </summary>
+    public TestLogCapture? LogCapture => _logCapture;
 
     public void EnsureDatabaseCreated()
     {

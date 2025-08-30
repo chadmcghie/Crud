@@ -88,7 +88,7 @@ jobs:
         ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     - name: Run Backend Unit Tests
-      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal" --results-directory TestResults/
       
     - name: Upload backend unit test results
       uses: actions/upload-artifact@v4
@@ -181,7 +181,7 @@ jobs:
         ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     - name: Run Backend Integration Tests with SQLite
-      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --results-directory TestResults/
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
@@ -207,12 +207,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.54.0-noble
-    needs: [build, backend-unit-tests, frontend-unit-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
     if: |
-      always() && 
       needs.build.result == 'success' &&
       needs.backend-unit-tests.result == 'success' &&
-      needs.frontend-unit-tests.result == 'success'
+      needs.frontend-unit-tests.result == 'success' &&
+      needs.backend-integration-tests.result == 'success'
     
     steps:
     - name: Checkout code

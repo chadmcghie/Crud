@@ -27,4 +27,9 @@ public interface ITestWebApplicationFactory : IDisposable
     /// Clears all data from the test database
     /// </summary>
     Task ClearDatabaseAsync();
+    
+    /// <summary>
+    /// Gets the test log capture instance for debugging server-side errors (if available)
+    /// </summary>
+    TestLogCapture? LogCapture { get; }
 }

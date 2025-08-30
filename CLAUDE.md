@@ -99,3 +99,4 @@ cd src/Angular && npm run lint
 5. Use MediatR for all business operations
 6. Repository pattern for data access
 7. DTOs for API contracts, separate from domain models
+- STOP COMMITTING AND PUSHING WITHOUT ASKING ME FIRST!!!!!!!!!
