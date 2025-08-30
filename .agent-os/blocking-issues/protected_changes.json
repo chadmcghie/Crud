@@ -1,6 +1,27 @@
 {
-  "protected_changes": [],
-  "last_updated": "2025-08-30T00:00:00Z",
+  "protected_changes": [
+    {
+      "issue_id": "BI-2025-08-30-001",
+      "file": "src/Infrastructure/Repositories/EntityFramework/EfUserRepository.cs",
+      "lines": [45, 62],
+      "hash": "pending-commit",
+      "change_description": "Smart entity tracking in UpdateAsync that handles both tracked and untracked entities",
+      "reason": "Integration tests use different DbContext scopes, requiring proper handling of both tracked and detached entities",
+      "created": "2025-08-30 23:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-30-001",
+      "file": "src/App/Features/Authentication/CommandHandlers.cs",
+      "lines": [91, 94],
+      "hash": "pending-commit",
+      "change_description": "Return error response instead of throwing ArgumentException in RegisterUserCommandHandler",
+      "reason": "Consistent error handling pattern - handlers should return error responses, not throw exceptions",
+      "created": "2025-08-30 23:45",
+      "do_not_modify": true
+    }
+  ],
+  "last_updated": "2025-08-30T14:45:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

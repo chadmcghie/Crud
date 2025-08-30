@@ -91,7 +91,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid input during registration");
-            throw;
+            return new AuthenticationResponse { Success = false, Error = ex.Message };
         }
         catch (Exception ex)
         {

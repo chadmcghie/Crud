@@ -66,6 +66,14 @@ public class AuthController : ControllerBase
                 });
             }
             
+            // Return BadRequest for validation errors (format issues)
+            if (result.Error?.Contains("format is invalid", StringComparison.OrdinalIgnoreCase) == true ||
+                result.Error?.Contains("is required", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return BadRequest(new { error = result.Error });
+            }
+            
+            // Return Unauthorized for authentication failures
             return Unauthorized(new { error = result.Error });
         }
         catch (Exception ex)
