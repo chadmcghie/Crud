@@ -10,60 +10,9 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Check if tests already passed for this commit
-  check-previous-tests:
-    name: Check Previous Test Results
+  build:
+    name: Build Solution
     runs-on: ubuntu-latest
-    outputs:
-      skip-backend-unit: ${{ steps.check.outputs.skip-backend-unit }}
-      skip-frontend-unit: ${{ steps.check.outputs.skip-frontend-unit }}
-      backend-run-url: ${{ steps.check.outputs.backend-run-url }}
-      frontend-run-url: ${{ steps.check.outputs.frontend-run-url }}
-    
-    steps:
-    - name: Check if tests already passed for this commit
-      id: check
-      uses: actions/github-script@v7
-      with:
-        script: |
-          // Check for successful feature branch test runs on this commit
-          const { data: workflows } = await github.rest.actions.listWorkflowRunsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            workflow_id: 'feature-branch-tests.yml',
-            head_sha: context.payload.pull_request.head.sha,
-            status: 'success',
-            per_page: 1
-          });
-          
-          const hasPassedTests = workflows.total_count > 0;
-          
-          if (hasPassedTests) {
-            const run = workflows.workflow_runs[0];
-            console.log(`Found successful test run #${run.run_number} from ${run.created_at}`);
-            core.setOutput('skip-backend-unit', 'true');
-            core.setOutput('skip-frontend-unit', 'true');
-            core.setOutput('backend-run-url', run.html_url);
-            core.setOutput('frontend-run-url', run.html_url);
-            
-            // Add summary
-            core.summary.addHeading('✅ Tests Already Passed', 2);
-            core.summary.addRaw(`Unit tests already passed for commit ${context.payload.pull_request.head.sha.substring(0, 7)} in `);
-            core.summary.addLink(`run #${run.run_number}`, run.html_url);
-            core.summary.addRaw('\n\nSkipping redundant unit test execution.');
-            await core.summary.write();
-          } else {
-            console.log('No successful test runs found for this commit. Tests will run.');
-            core.setOutput('skip-backend-unit', 'false');
-            core.setOutput('skip-frontend-unit', 'false');
-          }
-
-  # Full test suite for PRs targeting dev branch
-  backend-unit-tests:
-    name: Backend Unit Tests
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-backend-unit != 'true'
     
     steps:
     - name: Checkout code
@@ -73,13 +22,43 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
         
     - name: Restore .NET dependencies
       run: dotnet restore Crud.All.sln
       
-    - name: Build backend
+    - name: Build solution
       run: dotnet build Crud.All.sln --no-restore --configuration Release
       
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+        retention-days: 1
+
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        
     - name: Run Backend Unit Tests
       run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
       
@@ -87,30 +66,20 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-unit-test-results-${{ github.run_number }}
+        name: backend-unit-tests-${{ github.run_number }}
         path: TestResults/
-
-  # Placeholder job for when backend unit tests are skipped
-  backend-unit-tests-skipped:
-    name: Backend Unit Tests (Skipped - Already Passed)
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-backend-unit == 'true'
-    
-    steps:
-    - name: Report skipped tests
-      run: |
-        echo "✅ Backend unit tests were skipped because they already passed for this commit"
-        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.backend-run-url }}"
-        echo "## ✅ Backend Unit Tests" >> $GITHUB_STEP_SUMMARY
-        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "See [previous run](${{ needs.check-previous-tests.outputs.backend-run-url }})" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Publish backend unit test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Unit Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
 
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-frontend-unit != 'true'
     
     steps:
     - name: Checkout code
@@ -139,30 +108,13 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: frontend-coverage-${{ github.run_number }}
+        name: frontend-unit-tests-${{ github.run_number }}
         path: src/Angular/coverage/
-
-  # Placeholder job for when frontend unit tests are skipped
-  frontend-unit-tests-skipped:
-    name: Frontend Unit Tests (Skipped - Already Passed)
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-frontend-unit == 'true'
-    
-    steps:
-    - name: Report skipped tests
-      run: |
-        echo "✅ Frontend unit tests were skipped because they already passed for this commit"
-        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.frontend-run-url }}"
-        echo "## ✅ Frontend Unit Tests" >> $GITHUB_STEP_SUMMARY
-        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "See [previous run](${{ needs.check-previous-tests.outputs.frontend-run-url }})" >> $GITHUB_STEP_SUMMARY
 
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, backend-unit-tests-skipped]
-    if: always() && (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success')
+    needs: [build]
     
     steps:
     - name: Checkout code
@@ -172,13 +124,13 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
         
-    - name: Restore dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
-      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        
     - name: Run Backend Integration Tests with SQLite
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
       env:
@@ -189,26 +141,38 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-integration-test-results-${{ github.run_number }}
+        name: backend-integration-tests-${{ github.run_number }}
         path: TestResults/
+        
+    - name: Publish backend integration test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Integration Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
 
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.54.0-noble
-    needs: [backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped]
+    needs: [build, backend-unit-tests, frontend-unit-tests]
     if: |
       always() && 
-      (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success') &&
-      (needs.frontend-unit-tests.result == 'success' || needs.frontend-unit-tests-skipped.result == 'success')
+      needs.build.result == 'success' &&
+      needs.backend-unit-tests.result == 'success' &&
+      needs.frontend-unit-tests.result == 'success'
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    # .NET SDK 8.0 is pre-installed in the Playwright Docker image
-    # No need to setup .NET separately
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -217,11 +181,10 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -253,7 +216,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-test-results-${{ github.run_number }}
+        name: e2e-tests-${{ github.run_number }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -262,7 +225,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: server-logs-${{ github.run_number }}
+        name: e2e-server-logs-${{ github.run_number }}
         path: |
           src/Api/api.log
           src/Angular/angular.log
@@ -279,7 +242,7 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [check-previous-tests, backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped, backend-integration-tests, e2e-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
     if: always()
     
     steps:
@@ -291,30 +254,17 @@ jobs:
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
         
-        # Backend Unit Tests status
-        if [ "${{ needs.check-previous-tests.outputs.skip-backend-unit }}" == "true" ]; then
-          echo "| Backend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        # Frontend Unit Tests status
-        if [ "${{ needs.check-previous-tests.outputs.skip-frontend-unit }}" == "true" ]; then
-          echo "| Frontend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || (needs.build.result == 'failure' && '❌ Failed') || (needs.build.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || (needs.e2e-tests.result == 'failure' && '❌ Failed') || (needs.e2e-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Check overall status
-        backend_unit_ok="${{ needs.check-previous-tests.outputs.skip-backend-unit == 'true' || needs.backend-unit-tests.result == 'success' }}"
-        frontend_unit_ok="${{ needs.check-previous-tests.outputs.skip-frontend-unit == 'true' || needs.frontend-unit-tests.result == 'success' }}"
-        
-        if [ "$backend_unit_ok" == "true" ] && 
-           [ "$frontend_unit_ok" == "true" ] && 
+        if [ "${{ needs.build.result }}" == "success" ] && 
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] && 
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && 
            [ "${{ needs.backend-integration-tests.result }}" == "success" ] && 
            [ "${{ needs.e2e-tests.result }}" == "success" ]; then
           echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
