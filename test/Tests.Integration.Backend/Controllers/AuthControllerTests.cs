@@ -5,6 +5,7 @@ using Api;
 using App.Features.Authentication;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
 namespace Tests.Integration.Backend.Controllers;
@@ -17,318 +18,334 @@ public class TokenResponse
     public int ExpiresIn { get; set; }
 }
 
-[Collection("Database")]
-public class AuthControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthControllerTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-    private readonly JsonSerializerOptions _jsonOptions;
-
-    public AuthControllerTests(WebApplicationFactory<Program> factory)
+    public AuthControllerTests(TestWebApplicationFactoryFixture fixture) : base(fixture)
     {
-        _factory = factory;
-        _client = _factory.CreateClient();
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
     }
 
     [Fact]
     public async Task POST_Register_Should_Create_User_And_Return_Tokens()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "test@example.com",
-            Password = "Test123!@#",
-            FirstName = "John",
-            LastName = "Doe"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "test@example.com",
+                Password = "Test123!@#",
+                FirstName = "John",
+                LastName = "Doe"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert - Debug output for troubleshooting
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error Response: {errorContent}");
-        }
-        
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
-        
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBeNullOrEmpty();
-        result.ExpiresIn.Should().BeGreaterThan(0);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            
+            var result = await ReadJsonAsync<TokenResponse>(response);
+            
+            result.Should().NotBeNull();
+            result!.AccessToken.Should().NotBeNullOrEmpty();
+            result.RefreshToken.Should().NotBeNullOrEmpty();
+            result.ExpiresIn.Should().BeGreaterThan(0);
+        });
     }
 
     [Fact]
     public async Task POST_Register_Should_Return_BadRequest_For_Existing_Email()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "existing@example.com",
-            Password = "Test123!@#",
-            FirstName = "Jane",
-            LastName = "Smith"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "existing@example.com",
+                Password = "Test123!@#",
+                FirstName = "Jane",
+                LastName = "Smith"
+            };
 
-        // Register first time
-        await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Register first time
+            var firstResponse = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
+            firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, "First registration should succeed");
 
-        // Act - Try to register with same email
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act - Try to register with same email
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]
     public async Task POST_Register_Should_Return_BadRequest_For_Invalid_Email()
     {
-        // Arrange
-        var command = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "invalid-email",
-            Password = "Test123!@#",
-            FirstName = "John",
-            LastName = "Doe"
-        };
+            // Arrange
+            var command = new RegisterUserCommand
+            {
+                Email = "invalid-email",
+                Password = "Test123!@#",
+                FirstName = "John",
+                LastName = "Doe"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/register", command);
+            // Act
+            var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]
     public async Task POST_Login_Should_Return_Tokens_For_Valid_Credentials()
     {
-        // Arrange
-        var email = "login@example.com";
-        var password = "Test123!@#";
-        
-        // First register a user
-        var registerCommand = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = email,
-            Password = password,
-            FirstName = "Login",
-            LastName = "Test"
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+            // Arrange
+            var email = "login@example.com";
+            var password = "Test123!@#";
+            
+            // First register a user
+            var registerCommand = new RegisterUserCommand
+            {
+                Email = email,
+                Password = password,
+                FirstName = "Login",
+                LastName = "Test"
+            };
+            await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
-        var loginCommand = new LoginCommand
-        {
-            Email = email,
-            Password = password
-        };
+            var loginCommand = new LoginCommand
+            {
+                Email = email,
+                Password = password
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
-        
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBeNullOrEmpty();
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
+            
+            result.Should().NotBeNull();
+            result!.AccessToken.Should().NotBeNullOrEmpty();
+            result.RefreshToken.Should().NotBeNullOrEmpty();
+        });
     }
 
     [Fact]
     public async Task POST_Login_Should_Return_Unauthorized_For_Invalid_Credentials()
     {
-        // Arrange
-        var loginCommand = new LoginCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "nonexistent@example.com",
-            Password = "WrongPassword123!"
-        };
+            // Arrange
+            var loginCommand = new LoginCommand
+            {
+                Email = "nonexistent@example.com",
+                Password = "WrongPassword123!"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        });
     }
 
     [Fact]
     public async Task POST_Login_Should_Return_BadRequest_For_Invalid_Email_Format()
     {
-        // Arrange
-        var loginCommand = new LoginCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = "invalid-email",
-            Password = "Test123!@#"
-        };
+            // Arrange
+            var loginCommand = new LoginCommand
+            {
+                Email = "invalid-email",
+                Password = "Test123!@#"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]
     public async Task POST_Refresh_Should_Return_New_Tokens_For_Valid_RefreshToken()
     {
-        // Arrange
-        // First register and login
-        var email = "refresh@example.com";
-        var password = "Test123!@#";
-        
-        var registerCommand = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = email,
-            Password = password,
-            FirstName = "Refresh",
-            LastName = "Test"
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+            // Arrange
+            // First register and login
+            var email = "refresh@example.com";
+            var password = "Test123!@#";
+            
+            var registerCommand = new RegisterUserCommand
+            {
+                Email = email,
+                Password = password,
+                FirstName = "Refresh",
+                LastName = "Test"
+            };
+            await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
-        var loginCommand = new LoginCommand
-        {
-            Email = email,
-            Password = password
-        };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
-        var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+            var loginCommand = new LoginCommand
+            {
+                Email = email,
+                Password = password
+            };
+            var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            var loginContent = await loginResponse.Content.ReadAsStringAsync();
+            var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
-        var refreshCommand = new RefreshTokenCommand
-        {
-            RefreshToken = loginResult!.RefreshToken
-        };
+            var refreshCommand = new RefreshTokenCommand
+            {
+                RefreshToken = loginResult!.RefreshToken
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
-        
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBe(loginResult.RefreshToken); // Should be a new refresh token
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
+            
+            result.Should().NotBeNull();
+            result!.AccessToken.Should().NotBeNullOrEmpty();
+            result.RefreshToken.Should().NotBeNullOrEmpty();
+            result.RefreshToken.Should().NotBe(loginResult.RefreshToken); // Should be a new refresh token
+        });
     }
 
     [Fact]
     public async Task POST_Refresh_Should_Return_Unauthorized_For_Invalid_RefreshToken()
     {
-        // Arrange
-        var refreshCommand = new RefreshTokenCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            RefreshToken = "invalid-refresh-token"
-        };
+            // Arrange
+            var refreshCommand = new RefreshTokenCommand
+            {
+                RefreshToken = "invalid-refresh-token"
+            };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+            // Act
+            var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        });
     }
 
     [Fact]
     public async Task POST_Logout_Should_Revoke_RefreshToken()
     {
-        // Arrange
-        // First register and login
-        var email = "logout@example.com";
-        var password = "Test123!@#";
-        
-        var registerCommand = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = email,
-            Password = password,
-            FirstName = "Logout",
-            LastName = "Test"
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+            // Arrange
+            // First register and login
+            var email = "logout@example.com";
+            var password = "Test123!@#";
+            
+            var registerCommand = new RegisterUserCommand
+            {
+                Email = email,
+                Password = password,
+                FirstName = "Logout",
+                LastName = "Test"
+            };
+            await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
-        var loginCommand = new LoginCommand
-        {
-            Email = email,
-            Password = password
-        };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
-        var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+            var loginCommand = new LoginCommand
+            {
+                Email = email,
+                Password = password
+            };
+            var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            var loginContent = await loginResponse.Content.ReadAsStringAsync();
+            var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
-        // Add the access token to the request header
-        _client.DefaultRequestHeaders.Authorization = 
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
+            // Add the access token to the request header
+            Client.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
-        // Act - Logout
-        var logoutResponse = await _client.PostAsync("/api/auth/logout", null);
+            // Act - Logout
+            var logoutResponse = await Client.PostAsync("/api/auth/logout", null);
 
-        // Assert
-        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            // Assert
+            logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Try to use the refresh token after logout - should fail
-        var refreshCommand = new RefreshTokenCommand
-        {
-            RefreshToken = loginResult.RefreshToken
-        };
-        var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
-        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            // Try to use the refresh token after logout - should fail
+            var refreshCommand = new RefreshTokenCommand
+            {
+                RefreshToken = loginResult.RefreshToken
+            };
+            var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
+            refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        });
     }
 
     [Fact]
     public async Task Protected_Endpoint_Should_Return_Unauthorized_Without_Token()
     {
-        // Act
-        var response = await _client.GetAsync("/api/auth/me");
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Act
+            var response = await Client.GetAsync("/api/auth/me");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        });
     }
 
     [Fact]
     public async Task Protected_Endpoint_Should_Return_OK_With_Valid_Token()
     {
-        // Arrange
-        var email = "protected@example.com";
-        var password = "Test123!@#";
-        
-        var registerCommand = new RegisterUserCommand
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            Email = email,
-            Password = password,
-            FirstName = "Protected",
-            LastName = "Test"
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
+            // Arrange
+            var email = "protected@example.com";
+            var password = "Test123!@#";
+            
+            var registerCommand = new RegisterUserCommand
+            {
+                Email = email,
+                Password = password,
+                FirstName = "Protected",
+                LastName = "Test"
+            };
+            await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
 
-        var loginCommand = new LoginCommand
-        {
-            Email = email,
-            Password = password
-        };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
-        var loginContent = await loginResponse.Content.ReadAsStringAsync();
-        var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, _jsonOptions);
+            var loginCommand = new LoginCommand
+            {
+                Email = email,
+                Password = password
+            };
+            var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
+            var loginContent = await loginResponse.Content.ReadAsStringAsync();
+            var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
-        // Add the access token to the request header
-        _client.DefaultRequestHeaders.Authorization = 
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
+            // Add the access token to the request header
+            Client.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
-        // Act
-        var response = await _client.GetAsync("/api/auth/me");
+            // Act
+            var response = await Client.GetAsync("/api/auth/me");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        });
     }
 }

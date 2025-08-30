@@ -69,7 +69,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Database retry policy with exponential backoff
         /// </summary>
-        public static IAsyncPolicy GetDatabaseRetryPolicy(ILogger logger = null)
+        public static IAsyncPolicy GetDatabaseRetryPolicy(ILogger? logger = null)
         {
             return Policy
                 .Handle<Exception>(ex =>
@@ -97,7 +97,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Database circuit breaker policy
         /// </summary>
-        public static IAsyncPolicy GetDatabaseCircuitBreakerPolicy(ILogger logger = null)
+        public static IAsyncPolicy GetDatabaseCircuitBreakerPolicy(ILogger? logger = null)
         {
             return Policy
                 .Handle<Exception>()
@@ -123,7 +123,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Combines retry and circuit breaker policies for database operations
         /// </summary>
-        public static IAsyncPolicy GetCombinedDatabasePolicy(ILogger logger = null)
+        public static IAsyncPolicy GetCombinedDatabasePolicy(ILogger? logger = null)
         {
             var retryPolicy = GetDatabaseRetryPolicy(logger);
             var circuitBreakerPolicy = GetDatabaseCircuitBreakerPolicy(logger);
@@ -135,7 +135,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Test-specific retry policy with faster retries
         /// </summary>
-        public static IAsyncPolicy GetTestRetryPolicy(ILogger logger = null)
+        public static IAsyncPolicy GetTestRetryPolicy(ILogger? logger = null)
         {
             return Policy
                 .Handle<Exception>()

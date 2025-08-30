@@ -160,7 +160,7 @@ jobs:
         name: production-artifacts-${{ github.sha }}
         
     # ====================================
-    # TODO: Add your production deployment steps here
+    # Production Deployment
     # ====================================
     # IMPORTANT: Production deployments should include:
     # 1. Blue-green or canary deployment strategy
@@ -168,7 +168,7 @@ jobs:
     # 3. Rollback capabilities
     # 4. Health checks before switching traffic
     
-    # Example: Blue-Green deployment pattern
+    # --- Option 1: Blue-Green Deployment Pattern ---
     # - name: Deploy to production (blue-green)
     #   run: |
     #     # Deploy to green environment
@@ -183,12 +183,30 @@ jobs:
     #     # Keep blue as rollback option
     #     mark_blue_as_previous_version
     
-    - name: Deploy to production (placeholder)
+    # --- Option 2: Canary Deployment ---
+    # - name: Deploy canary version
+    #   run: |
+    #     # Deploy to canary instances (10% traffic)
+    #     kubectl set image deployment/app-canary app=your-registry/app:${{ github.sha }}
+    #     sleep 300  # Monitor for 5 minutes
+    #     # Check canary metrics
+    #     if [ "$(check_canary_health)" == "healthy" ]; then
+    #       # Roll out to all instances
+    #       kubectl set image deployment/app app=your-registry/app:${{ github.sha }}
+    #     else
+    #       # Rollback canary
+    #       kubectl rollout undo deployment/app-canary
+    #       exit 1
+    #     fi
+    
+    # --- Default: Configure your deployment here ---
+    - name: Deploy to production
       id: deploy
       run: |
         echo "🎯 Starting production deployment..."
         echo "Version: ${{ github.sha }}"
-        echo "TODO: Add actual production deployment commands"
+        # Replace with actual deployment commands for your platform
+        # Examples: kubectl apply, aws deploy, azure deploy, etc.
         echo "url=https://your-app.com" >> $GITHUB_OUTPUT
         
     - name: Production health verification
@@ -256,13 +274,58 @@ jobs:
         echo "- [ ] Verify critical user flows" >> $GITHUB_STEP_SUMMARY
         echo "- [ ] Review performance metrics" >> $GITHUB_STEP_SUMMARY
         
-    # TODO: Add production notifications
-    # - name: Send deployment notification
+    # --- Production Notification Options ---
+    # Configure notifications for successful production deployments:
+    
+    # Option 1: Slack notification
+    # - name: Send Slack notification
     #   uses: 8398a7/action-slack@v3
     #   with:
     #     status: success
-    #     text: '🎉 Production deployment successful! Version: ${{ github.sha }}'
+    #     text: |
+    #       🎉 Production Deployment Successful!
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    #       URL: ${{ needs.deploy-production.outputs.url }}
     #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     fields: repo,message,commit,author,action,eventName,workflow
+    
+    # Option 2: Microsoft Teams notification
+    # - name: Send Teams notification
+    #   uses: jdcargile/ms-teams-notification@v1.3
+    #   with:
+    #     github-token: ${{ github.token }}
+    #     ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK }}
+    #     notification-summary: 🎉 Production Deployment Successful
+    #     notification-color: 00FF00
+    #     notification-text: |
+    #       Production deployment completed successfully.
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    
+    # Option 3: Email notification to stakeholders
+    # - name: Send email notification
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 465
+    #     username: ${{ secrets.EMAIL_USERNAME }}
+    #     password: ${{ secrets.EMAIL_PASSWORD }}
+    #     subject: ✅ Production Deployment Successful - ${{ github.sha }}
+    #     to: stakeholders@your-company.com
+    #     from: GitHub Actions
+    #     body: |
+    #       Production deployment has been completed successfully.
+    #       
+    #       Deployment Details:
+    #       - Version: ${{ github.sha }}
+    #       - Deployed by: ${{ github.actor }}
+    #       - Timestamp: ${{ github.event.head_commit.timestamp }}
+    #       - URL: ${{ needs.deploy-production.outputs.url }}
+    #       
+    #       Please verify critical user flows are working as expected.
+    #       
+    #       View deployment: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   rollback-on-failure:
     name: Rollback on Failure
@@ -276,11 +339,30 @@ jobs:
     - name: Initiate rollback
       run: |
         echo "🔄 Initiating production rollback..."
-        echo "TODO: Add rollback logic here"
-        # Example:
-        # - Revert load balancer to previous version
-        # - Restore database if migrations were applied
-        # - Switch DNS back to previous deployment
+        
+        # --- Rollback Strategy Options ---
+        # Choose the appropriate rollback method for your deployment:
+        
+        # Option 1: Kubernetes rollback
+        # kubectl rollout undo deployment/app -n production
+        # kubectl rollout status deployment/app -n production
+        
+        # Option 2: Blue-Green swap back
+        # swap_to_blue_environment
+        # verify_blue_health
+        
+        # Option 3: Git revert and redeploy
+        # git revert --no-edit ${{ github.sha }}
+        # git push origin main
+        # trigger_deployment_pipeline
+        
+        # Option 4: Database rollback (if migrations were applied)
+        # dotnet ef database update <previous-migration> --connection ${{ secrets.PROD_CONNECTION }}
+        
+        # Option 5: AWS CodeDeploy rollback
+        # aws deploy stop-deployment --deployment-id $DEPLOYMENT_ID --auto-rollback-enabled
+        
+        echo "Rollback initiated for version: ${{ github.sha }}"
         
     - name: Notify of rollback
       run: |

@@ -8,12 +8,12 @@ Global tech stack defaults for Agent OS projects, overridable in project-specifi
 - App Framework: ASP.NET Core 8.0+
 - Language: C# 12+ (.NET 8)
 - Architecture: Clean Architecture + DDD
-- Primary Database: In-Memory (development), SQL Server/PostgreSQL (production)
+- Primary Database: Sqlite (development), SQL Server/PostgreSQL (production)
 - ORM: Entity Framework Core
-- API Style: RESTful Web API + Minimal APIs
-- Validation: FluentValidation + Data Annotations
-- Mapping: AutoMapper/Mapster
-- Dependency Injection: Built-in ASP.NET Core DI
+- API Style: RESTful Web API
+- Validation: FluentValidation
+- Mapping: AutoMapper
+- Dependency Injection: Built-in ASP.NET Core DI, Services
 - Testing: xUnit + FluentAssertions + Moq + Testcontainers
 
 ## Frontend (Angular)

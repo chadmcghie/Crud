@@ -137,7 +137,7 @@ public class RegisterUserCommandHandlerTests
         }
 
         [Fact]
-        public async Task WithInvalidEmail_ShouldThrowValidationException()
+        public async Task WithInvalidEmail_ShouldReturnFailure()
         {
             // Arrange
             var command = new RegisterUserCommand
@@ -148,9 +148,12 @@ public class RegisterUserCommandHandlerTests
                 LastName = "Doe"
             };
 
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(
-                () => _handler.Handle(command, CancellationToken.None));
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Error.Should().Contain("format is invalid");
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(), 

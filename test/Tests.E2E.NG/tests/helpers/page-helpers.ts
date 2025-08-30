@@ -38,8 +38,11 @@ export class PageHelpers {
     await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
     // Wait for Angular to initialize and render the main content
     await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
-    // Small buffer to ensure everything is ready
-    await this.page.waitForTimeout(1000);
+    // Wait for the app to be interactive (buttons clickable)
+    await this.page.waitForFunction(() => {
+      const button = document.querySelector('button');
+      return button && !button.disabled;
+    });
   }
 
   async switchToPeopleTab(): Promise<void> {
@@ -47,7 +50,6 @@ export class PageHelpers {
     await this.page.waitForSelector('app-people-list', { timeout: 10000 });
     // Wait for the people content to be fully rendered
     await this.page.waitForSelector('h3:has-text("People Directory")', { timeout: 5000 });
-    await this.page.waitForTimeout(300);
   }
 
   async switchToRolesTab(): Promise<void> {
@@ -55,7 +57,6 @@ export class PageHelpers {
     await this.page.waitForSelector('app-roles-list', { timeout: 10000 });
     // Wait for the roles content to be fully rendered
     await this.page.waitForSelector('h3:has-text("Roles Management")', { timeout: 5000 });
-    await this.page.waitForTimeout(300);
   }
 
   // Role management helpers
@@ -65,7 +66,6 @@ export class PageHelpers {
       await this.page.waitForSelector('app-roles form', { timeout: 10000 });
       // Wait for form fields to be ready
       await this.page.waitForSelector('input#name', { timeout: 5000 });
-      await this.page.waitForTimeout(200);
     }, 3, 500, 'clickAddRole');
   }
 
@@ -80,22 +80,29 @@ export class PageHelpers {
     await this.retryOperation(async () => {
       // Wait for submit button to be enabled
       await this.page.waitForSelector('button[type="submit"]:has-text("Create Role"):not([disabled])', { timeout: 5000 });
+      
+      // Add small delay to ensure form is ready
+      await this.page.waitForTimeout(100);
+      
       await this.page.click('button[type="submit"]:has-text("Create Role")');
 
-      // Wait for form to be hidden or for a success indicator
-      try {
-        await this.page.waitForSelector('app-roles form', { state: 'hidden', timeout: 10000 });
-      } catch (error) {
-        // If form doesn't hide, check if submission was successful by looking for the new role
-        await this.page.waitForTimeout(2000);
-        // Verify submission worked by checking if we can see roles table
-        await this.page.waitForSelector('.roles-table', { timeout: 5000 });
-      }
+      // Wait for API response
+      await this.page.waitForResponse(response => 
+        response.url().includes('/api/roles') && response.status() === 201,
+        { timeout: 10000 }
+      ).catch(() => {
+        // If no API call, wait for form to hide
+        return this.page.waitForSelector('app-roles form', { state: 'hidden', timeout: 10000 });
+      });
+      
+      // Give UI time to update
+      await this.page.waitForTimeout(200);
     }, 3, 1000, 'submitRoleForm');
   }
 
   async editRole(roleName: string): Promise<void> {
-    const roleRow = this.page.locator(`tr:has-text("${roleName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const roleRow = this.page.locator(`tr:has-text("${roleName}")`).first();
     await roleRow.locator('button:has-text("Edit")').click();
     await this.page.waitForSelector('app-roles form');
   }
@@ -107,12 +114,12 @@ export class PageHelpers {
       await this.page.waitForSelector('app-roles form', { state: 'hidden', timeout: 10000 });
     } catch (error) {
       // If form doesn't hide, check if update was successful
-      await this.page.waitForTimeout(2000);
     }
   }
 
   async deleteRole(roleName: string): Promise<void> {
-    const roleRow = this.page.locator(`tr:has-text("${roleName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const roleRow = this.page.locator(`tr:has-text("${roleName}")`).first();
     
     // Wait for the row to be visible first
     await roleRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -137,7 +144,6 @@ export class PageHelpers {
     );
     
     // Additional wait for UI to stabilize
-    await this.page.waitForTimeout(500);
   }
 
   async getRoleRowCount(): Promise<number> {
@@ -146,20 +152,25 @@ export class PageHelpers {
   }
 
   async verifyRoleExists(roleName: string): Promise<void> {
-    await expect(this.page.locator(`tr:has-text("${roleName}")`)).toBeVisible({ timeout: 10000 });
+    // Use first() to handle multiple matches in strict mode
+    await expect(this.page.locator(`tr:has-text("${roleName}")`).first()).toBeVisible({ timeout: 10000 });
   }
 
   async verifyRoleNotExists(roleName: string): Promise<void> {
-    await expect(this.page.locator(`tr:has-text("${roleName}")`)).not.toBeVisible();
+    // Check that no rows with this text exist
+    await expect(this.page.locator(`tr:has-text("${roleName}")`)).toHaveCount(0);
   }
 
   // Person management helpers
   async clickAddPerson(): Promise<void> {
     await this.page.click('button:has-text("Add New Person")');
     await this.page.waitForSelector('app-people form', { timeout: 10000 });
-    // Wait for form fields to be ready
+    // Wait for form fields to be ready and interactable
     await this.page.waitForSelector('input#fullName', { timeout: 5000 });
-    await this.page.waitForTimeout(200);
+    await this.page.waitForFunction(() => {
+      const input = document.querySelector('input#fullName') as HTMLInputElement;
+      return input && !input.disabled;
+    }, { timeout: 5000 });
   }
 
   async fillPersonForm(fullName: string, phone?: string, roleNames?: string[]): Promise<void> {
@@ -171,9 +182,12 @@ export class PageHelpers {
     }
     
     if (roleNames && roleNames.length > 0) {
-      // Wait for roles to load in the form
-      await this.page.waitForTimeout(2000); // Give time for roles to load
-      
+      // Wait for roles checkboxes to be loaded in the form
+      await this.page.waitForSelector('input[type="checkbox"]', { timeout: 5000 });
+      await this.page.waitForFunction(() => {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        return checkboxes.length > 0;
+      }, { timeout: 5000 });
       // First, uncheck all roles
       const checkboxes = await this.page.locator('input[type="checkbox"]').all();
       for (const checkbox of checkboxes) {
@@ -205,24 +219,28 @@ export class PageHelpers {
   async submitPersonForm(): Promise<void> {
     // Wait for submit button to be enabled
     await this.page.waitForSelector('button[type="submit"]:has-text("Create Person"):not([disabled])', { timeout: 5000 });
+    
+    // Add small delay to ensure form is ready
+    await this.page.waitForTimeout(100);
+    
     await this.page.click('button[type="submit"]:has-text("Create Person")');
     
-
-    // Wait for either form to hide OR success state (new person appears in table)
-    try {
-      await Promise.race([
-        this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }),
-        this.page.waitForSelector('.person-row', { timeout: 10000 }) // Wait for new person to appear
-      ]);
-    } catch (error) {
-      // Fallback: wait for network to be idle
-      await this.page.waitForLoadState('networkidle', { timeout: 5000 });
-    }
-
+    // Wait for API response
+    await this.page.waitForResponse(response => 
+      response.url().includes('/api/people') && response.status() === 201,
+      { timeout: 10000 }
+    ).catch(() => {
+      // If no API call, wait for form to hide
+      return this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
+    });
+    
+    // Give UI time to update
+    await this.page.waitForTimeout(200);
   }
 
   async editPerson(personName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     
     // Wait for the row to be visible first
     await personRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -235,29 +253,31 @@ export class PageHelpers {
     await this.page.waitForSelector('input#fullName', { timeout: 5000 });
     
     // Additional wait for form to be fully loaded
-    await this.page.waitForTimeout(500);
   }
 
   async updatePersonForm(): Promise<void> {
+    // Add small delay to ensure form is ready
+    await this.page.waitForTimeout(100);
+    
     await this.page.click('button[type="submit"]:has-text("Update Person")');
     
-    // Wait for either form to hide OR success state
-    try {
-      await Promise.race([
-        this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }),
-        this.page.waitForLoadState('networkidle', { timeout: 8000 })
-      ]);
-    } catch (error) {
-      // If form doesn't hide, check if update was successful by waiting longer
-      await this.page.waitForTimeout(2000);
-    }
+    // Wait for API response
+    await this.page.waitForResponse(response => 
+      response.url().includes('/api/people') && 
+      (response.status() === 200 || response.status() === 204),
+      { timeout: 10000 }
+    ).catch(() => {
+      // If no API call, wait for form to hide
+      return this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
+    });
     
-    // Additional wait to ensure the API call completes
-    await this.page.waitForTimeout(1000);
+    // Give UI time to update
+    await this.page.waitForTimeout(200);
   }
 
   async deletePerson(personName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     
     // Wait for the row to be visible first
     await personRow.waitFor({ state: 'visible', timeout: 10000 });
@@ -282,7 +302,6 @@ export class PageHelpers {
     );
     
     // Additional wait for UI to stabilize
-    await this.page.waitForTimeout(500);
   }
 
   async getPersonRowCount(): Promise<number> {
@@ -293,8 +312,8 @@ export class PageHelpers {
   async verifyPersonExists(personName: string): Promise<void> {
     // Use retry logic with proper timeout
     await this.page.waitForSelector(`tr:has-text("${personName}")`, { timeout: 10000 });
-    await expect(this.page.locator(`tr:has-text("${personName}")`)).toBeVisible();
-
+    // Use first() to handle multiple matches in strict mode
+    await expect(this.page.locator(`tr:has-text("${personName}")`).first()).toBeVisible();
   }
 
   async verifyPersonNotExists(personName: string): Promise<void> {
@@ -312,11 +331,13 @@ export class PageHelpers {
     } catch (error) {
       // Element might not exist at all, which is fine
     }
-    await expect(this.page.locator(`tr:has-text("${personName}")`)).not.toBeVisible();
+    // Check that no rows with this text exist
+    await expect(this.page.locator(`tr:has-text("${personName}")`)).toHaveCount(0);
   }
 
   async verifyPersonHasRole(personName: string, roleName: string): Promise<void> {
-    const personRow = this.page.locator(`tr:has-text("${personName}")`);
+    // Use first() to handle multiple matches in strict mode
+    const personRow = this.page.locator(`tr:has-text("${personName}")`).first();
     await expect(personRow.locator(`.roles-cell:has-text("${roleName}")`)).toBeVisible();
   }
 
@@ -342,37 +363,53 @@ export class PageHelpers {
       await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
       await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
       // Small buffer for Angular to stabilize
-      await this.page.waitForTimeout(1000);
-    }, 3, 2000, 'refreshPage');
+      }, 3, 2000, 'refreshPage');
   }
 
   async clickRefreshButton(): Promise<void> {
     await this.page.click('button:has-text("Refresh")');
-    await this.page.waitForTimeout(500);
+    // Wait for refresh to complete
+    await this.page.waitForResponse(response => 
+      response.url().includes('/api/') && response.ok(),
+      { timeout: 5000 }
+    ).catch(() => {
+      // If no API call, wait for UI to update
+      return this.page.waitForTimeout(500);
+    });
   }
 
   async verifyEmptyState(entityType: 'roles' | 'people'): Promise<void> {
     const emptyStateText = entityType === 'roles' 
-
       ? 'No roles found. Add the first role'
       : 'No people found. Add the first person';
     
     // Wait for the page to load and check for empty state or table
-    await this.page.waitForTimeout(1000);
+    // Wait for table data to load
+    await this.page.waitForFunction(() => {
+      const rows = document.querySelectorAll('tbody tr');
+      return rows.length > 0 || document.querySelector('.empty-state');
+    });
     
     // Try to find empty state first, if not found, check if table is empty
     const emptyState = this.page.locator('.empty-state');
     const tableRows = this.page.locator(entityType === 'roles' ? '.roles-table tbody tr' : '.people-table tbody tr');
+    
+    // Wait for either empty state or table to be present
+    try {
+      await this.page.waitForSelector('.empty-state, .people-table tbody, .roles-table tbody', { timeout: 5000 });
+    } catch (error) {
+      console.warn('Neither empty state nor table found, waiting longer...');
+    }
     
     const emptyStateVisible = await emptyState.isVisible().catch(() => false);
     if (emptyStateVisible) {
       await expect(emptyState).toContainText(emptyStateText);
     } else {
       // If no empty state element, verify table is empty
-      const rowCount = await tableRows.count();
+      // Wait a bit for any rows to appear if they're going to
+        const rowCount = await tableRows.count();
       expect(rowCount).toBe(0);
     }
-
   }
 
   async verifyPageTitle(): Promise<void> {
