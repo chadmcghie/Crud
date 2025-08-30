@@ -208,6 +208,11 @@ jobs:
       run: npm ci
       
     # Playwright browsers are pre-installed in the Docker image
+    
+    - name: Set execute permissions for API binary
+      run: |
+        chmod +x ./src/Api/bin/Release/net8.0/Api
+        echo "✅ Execute permissions set for API binary"
         
     - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
