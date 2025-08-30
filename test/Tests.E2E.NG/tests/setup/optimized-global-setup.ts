@@ -160,7 +160,9 @@ async function optimizedGlobalSetup(config: FullConfig) {
     console.log('\n🚀 Starting Angular server (this may take 60-90 seconds)...');
     const angularProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Angular');
     
-    angularServerProcess = spawn('npm', ['start'], {
+    // Use start:ci for CI environments, regular start for local development
+    const startCommand = process.env.CI ? 'start:ci' : 'start';
+    angularServerProcess = spawn('npm', ['run', startCommand], {
       cwd: angularProjectPath,
       env: {
         ...process.env,

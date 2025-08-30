@@ -43,6 +43,7 @@ jobs:
         path: |
           src/*/bin/Release/
           test/*/bin/Release/
+          src/Api/appsettings*.json
         retention-days: 1
 
   backend-unit-tests:
@@ -65,6 +66,11 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/ || true
+        echo "✅ Appsettings files copied to output directory"
         
     - name: Run Backend Unit Tests
       run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
@@ -138,6 +144,11 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/ || true
+        echo "✅ Appsettings files copied to output directory"
         
     - name: Run Backend Integration Tests with SQLite
       run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
