@@ -5,6 +5,7 @@ using Domain.Interfaces;
 using Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace App.Features.Authentication;
 
@@ -38,6 +39,22 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
         
         if (string.IsNullOrWhiteSpace(request.Password))
             return new AuthenticationResponse { Success = false, Error = "Password is required" };
+        
+        // Password complexity validation
+        if (request.Password.Length < 8)
+            return new AuthenticationResponse { Success = false, Error = "Password must be at least 8 characters long" };
+        
+        if (!request.Password.Any(char.IsUpper))
+            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one uppercase letter" };
+            
+        if (!request.Password.Any(char.IsLower))
+            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one lowercase letter" };
+            
+        if (!request.Password.Any(char.IsDigit))
+            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one digit" };
+            
+        if (!request.Password.Any(c => !char.IsLetterOrDigit(c)))
+            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one special character" };
         
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return new AuthenticationResponse { Success = false, Error = "First name is required" };
