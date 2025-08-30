@@ -87,10 +87,9 @@ async function optimizedGlobalSetup(config: FullConfig) {
   const apiInfo = serverStatus.getServerInfo('api')!;
   const angularInfo = serverStatus.getServerInfo('angular')!;
   
-  // Create unique database for this test run
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+  // Create unique database for this test run in the current directory to avoid path issues
   const timestamp = Date.now();
-  const databasePath = path.join(tempDir, `CrudTest_${timestamp}.db`);
+  const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);
   
   console.log(`\n📊 Test Configuration:`);
   console.log(`   Database: ${path.basename(databasePath)}`);

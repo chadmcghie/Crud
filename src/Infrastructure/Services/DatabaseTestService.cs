@@ -15,7 +15,6 @@ public class DatabaseTestService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
-    private Respawner? _respawner;
     private readonly object _respawnerLock = new();
 
     public DatabaseTestService(ApplicationDbContext context, ILogger<DatabaseTestService> logger)
@@ -106,20 +105,9 @@ public class DatabaseTestService
             // For SQLite, we can use more efficient bulk operations without explicit transactions
             // since SQLite handles this automatically and transactions can cause locking issues
             
-            // Check if database has any data first (optimization)
-            var hasData = await _context.People.AnyAsync() || 
-                         await _context.Roles.AnyAsync() || 
-                         await _context.Windows.AnyAsync() || 
-                         await _context.Walls.AnyAsync();
-            
-            if (!hasData)
-            {
-                _logger.LogDebug("Database already clean for worker {WorkerIndex}", workerIndex);
-                return;
-            }
-            
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
+            // Note: Removed AnyAsync() checks as they were causing performance issues in test scenarios
             await _context.People.ExecuteDeleteAsync();
             await _context.Roles.ExecuteDeleteAsync();
             await _context.Windows.ExecuteDeleteAsync();

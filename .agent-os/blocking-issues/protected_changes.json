@@ -1,0 +1,16 @@
+{
+  "protected_changes": [],
+  "last_updated": "2025-08-30T00:00:00Z",
+  "version": "1.0.0",
+  "description": "Registry of code changes that must not be rolled back during troubleshooting",
+  "schema": {
+    "issue_id": "Blocking issue identifier",
+    "file": "Path to protected file",
+    "lines": "[startLine, endLine] - lines that are protected",
+    "hash": "Git commit hash when protection was added",
+    "change_description": "What was changed",
+    "reason": "Why this change must be preserved",
+    "created": "When protection was added",
+    "do_not_modify": "Boolean flag for protection status"
+  }
+}
