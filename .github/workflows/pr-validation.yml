@@ -202,17 +202,100 @@ jobs:
         path: TestResults/*.trx
         reporter: dotnet-trx
 
-  e2e-tests:
-    name: End-to-End Tests
+  smoke-tests:
+    name: Smoke Tests (Quick Validation)
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.54.0-noble
     needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
     if: |
       needs.build.result == 'success' &&
       needs.backend-unit-tests.result == 'success' &&
       needs.frontend-unit-tests.result == 'success' &&
       needs.backend-integration-tests.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Setting up smoke test environment..."
+        cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/ 2>/dev/null || true
+        echo "✅ Configuration files ready"
+        
+    - name: Run API Health Check Test
+      run: |
+        echo "🔥 Running smoke test: API Health Check"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~ApiHealthTests.API_Should_Be_Responsive" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Basic CRUD Smoke Test
+      run: |
+        echo "🔥 Running smoke test: Basic CRUD Operations"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~PeopleControllerTests.GET_People_Should_Return_Empty_List_Initially" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Simple Authentication Test
+      run: |
+        echo "🔥 Running smoke test: Basic Authentication"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~AuthControllerTests.POST_Register_Should_Create_User_And_Return_Tokens" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      
+    - name: Smoke Test Summary
+      if: always()
+      run: |
+        echo "## 🔥 Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f TestResults/*.trx ]; then
+          echo "✅ At least some smoke tests completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Smoke tests failed to produce results" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.54.0-noble
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, smoke-tests]
+    if: |
+      needs.build.result == 'success' &&
+      needs.backend-unit-tests.result == 'success' &&
+      needs.frontend-unit-tests.result == 'success' &&
+      needs.backend-integration-tests.result == 'success' &&
+      needs.smoke-tests.result == 'success'
     
     steps:
     - name: Checkout code
