@@ -36,6 +36,12 @@ jobs:
     - name: Build solution
       run: dotnet build Crud.All.sln --no-restore --configuration Release
       
+    - name: Verify appsettings files exist
+      run: |
+        echo "📁 Verifying appsettings files before artifact upload:"
+        ls -la src/Api/appsettings*.json
+        echo "✅ All appsettings files found"
+      
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -231,8 +237,23 @@ jobs:
     - name: Copy appsettings to test output
       run: |
         echo "📁 Setting up smoke test environment..."
-        cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/ 2>/dev/null || true
-        echo "✅ Configuration files ready"
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files - they should be in src/Api from the artifact
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        else
+          echo "❌ No appsettings files found in src/Api/"
+          echo "📁 Checking current directory:"
+          ls -la *.json 2>/dev/null || echo "No JSON files in root"
+          exit 1
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     - name: Run API Health Check Test
       run: |
