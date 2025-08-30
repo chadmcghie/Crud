@@ -18,7 +18,10 @@ export const test = base.extend({
     
     try {
       const response = await page.request.post(`${apiUrl}/api/database/reset`, {
-        data: { workerIndex: 0, preserveSchema: true }
+        data: { workerIndex: 0, preserveSchema: true },
+        headers: {
+          'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
+        }
       });
       
       if (!response.ok()) {
