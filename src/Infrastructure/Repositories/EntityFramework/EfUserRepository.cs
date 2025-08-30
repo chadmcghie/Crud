@@ -59,7 +59,7 @@ public class EfUserRepository : IUserRepository
         var token = await _context.RefreshTokens
             .Include(rt => rt.User)
             .ThenInclude(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.RevokedAt == null && DateTime.UtcNow < rt.ExpiresAt, cancellationToken);
 
         return token?.User;
     }
