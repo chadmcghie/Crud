@@ -316,7 +316,7 @@ jobs:
     name: End-to-End Tests
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.54.0-noble
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
     needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, smoke-tests]
     if: |
       needs.build.result == 'success' &&
