@@ -6,7 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Status |
 |---|---|---|---|---|---|
-| | | | | | |
+| BI-2025-08-30-002 | 2025-08-30 | test-server-optimization | test | Smoke test auth failure in CI - inconsistent error handling | active |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -17,7 +17,7 @@ Master registry of all blocking issues encountered in the project. This registry
 Document recurring issue patterns here as they emerge.
 
 ## Statistics
-- Total Issues: 1
-- Active: 0
+- Total Issues: 2
+- Active: 1
 - Resolved: 1
 - Average Resolution Time: ~10 hours

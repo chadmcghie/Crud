@@ -19,9 +19,29 @@
       "reason": "Consistent error handling pattern - handlers should return error responses, not throw exceptions",
       "created": "2025-08-30 23:45",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-30-002",
+      "file": ".github/workflows/pr-validation.yml",
+      "lines": [39, 43],
+      "hash": "b11c759",
+      "change_description": "Added appsettings verification step before artifact upload",
+      "reason": "Ensures configuration files exist and provides diagnostics for CI issues",
+      "created": "2025-08-30 01:02",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-30-002", 
+      "file": ".github/workflows/pr-validation.yml",
+      "lines": [234, 250],
+      "hash": "b11c759",
+      "change_description": "Enhanced smoke test setup with detailed logging and error checking",
+      "reason": "Provides better diagnostics and fails fast when configuration is missing",
+      "created": "2025-08-30 01:02",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-08-30T14:45:00Z",
+  "last_updated": "2025-08-30T01:02:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {
