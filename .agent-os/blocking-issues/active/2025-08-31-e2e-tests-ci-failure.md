@@ -120,12 +120,25 @@ container:
 - Check if database file exists after API starts
 - Verify file permissions and size
 - Debug container filesystem structure
-**Result**: Pending - will reveal database accessibility issues
+**Result**: Container failed to start with volume mount - syntax issue
 **Files Modified**:
 - test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts: Added database debugging
 - .github/workflows/pr-validation.yml: Added container environment debugging
-**Key Learning**: Need to verify database is actually created and accessible
-**Next Direction**: Based on findings, may need to change database location or approach
+**Key Learning**: Volume mount syntax was incorrect, causing container creation failure
+**Next Direction**: Remove volume mount, use --network=host only
+
+### Attempt 8: [2025-08-31 11:45]
+**Hypothesis**: Everything runs inside container, no need for volume mount
+**Approach**: Use --network=host only, let database be created in container filesystem
+**Implementation**:
+- Removed volume mount (was causing container creation failure)
+- Keep --network=host for simplified networking
+- Database will be created inside container at /home/runner/work/Crud/Crud/CrudTest_*.db
+**Result**: Pending
+**Files Modified**:
+- .github/workflows/pr-validation.yml: Removed volumes, kept --network=host
+**Key Learning**: Container and tests share same filesystem when both run inside container
+**Next Direction**: If this works, the database should be accessible
 
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
