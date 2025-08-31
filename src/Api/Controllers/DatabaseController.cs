@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Data;
 using Infrastructure.Services;
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -13,18 +14,21 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class DatabaseController : ControllerBase
 {
-    private readonly DatabaseTestService _databaseTestService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DatabaseController> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
     public DatabaseController(
-        DatabaseTestService databaseTestService,
+        IServiceProvider serviceProvider,
         ILogger<DatabaseController> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IConfiguration configuration)
     {
-        _databaseTestService = databaseTestService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _environment = environment;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -77,7 +81,19 @@ public class DatabaseController : ControllerBase
         try
         {
             _logger.LogInformation("Starting database reset for worker {WorkerIndex}...", request.WorkerIndex);
-            await _databaseTestService.ResetDatabaseAsync(request.WorkerIndex);
+            
+            // Create a fresh scope and DbContext for each reset to avoid connection issues
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                
+                // Create a fresh DatabaseTestService with the new DbContext
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                _logger.LogInformation("Created fresh DbContext for reset operation");
+                await databaseTestService.ResetDatabaseAsync(request.WorkerIndex);
+            }
             
             var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
             _logger.LogInformation("Database reset completed for worker {WorkerIndex} in {Duration}ms", 
@@ -119,7 +135,14 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            await _databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                await databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
+            }
             
             return Ok(new { 
                 Message = "Database seeded successfully", 
@@ -153,21 +176,28 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            var stats = await _databaseTestService.GetDatabaseStatsAsync();
-            
-            var status = new
+            using (var scope = _serviceProvider.CreateScope())
             {
-                Environment = _environment.EnvironmentName,
-                ConnectionString = stats.ConnectionString,
-                CanConnect = stats.CanConnect,
-                PeopleCount = stats.PeopleCount,
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                var stats = await databaseTestService.GetDatabaseStatsAsync();
+                
+                var status = new
+                {
+                    Environment = _environment.EnvironmentName,
+                    ConnectionString = stats.ConnectionString,
+                    CanConnect = stats.CanConnect,
+                    PeopleCount = stats.PeopleCount,
                 RolesCount = stats.RolesCount,
                 WallsCount = stats.WallsCount,
                 WindowsCount = stats.WindowsCount,
                 Timestamp = stats.Timestamp
-            };
+                };
 
-            return Ok(status);
+                return Ok(status);
+            }
         }
         catch (Exception ex)
         {
@@ -191,8 +221,15 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            var validation = await _databaseTestService.ValidatePreTestStateAsync(workerIndex);
-            return Ok(validation);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                var validation = await databaseTestService.ValidatePreTestStateAsync(workerIndex);
+                return Ok(validation);
+            }
         }
         catch (Exception ex)
         {
@@ -216,8 +253,15 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            var validation = await _databaseTestService.ValidatePostTestStateAsync(workerIndex);
-            return Ok(validation);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                var validation = await databaseTestService.ValidatePostTestStateAsync(workerIndex);
+                return Ok(validation);
+            }
         }
         catch (Exception ex)
         {
@@ -241,12 +285,19 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            var isValid = await _databaseTestService.VerifyDatabaseIntegrityAsync(workerIndex);
-            return Ok(new { 
-                IsValid = isValid,
-                WorkerIndex = workerIndex,
-                Timestamp = DateTime.UtcNow
-            });
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
+                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                
+                var isValid = await databaseTestService.VerifyDatabaseIntegrityAsync(workerIndex);
+                return Ok(new { 
+                    IsValid = isValid,
+                    WorkerIndex = workerIndex,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
         }
         catch (Exception ex)
         {

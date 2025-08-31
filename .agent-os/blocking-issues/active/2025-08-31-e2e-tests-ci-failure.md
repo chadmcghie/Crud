@@ -212,6 +212,20 @@ container:
 **Key Learning**: Docker was NOT the root cause - timeout happens on bare Ubuntu too
 **Next Direction**: Investigate why EnsureDeletedAsync takes so long in CI
 
+### Attempt 15: [2025-08-31 17:00]
+**Hypothesis**: SQLite shared cache and connection pooling causing locking issues
+**Approach**: Disable shared cache and connection pooling
+**Implementation**:
+```csharp
+// Changed Cache=Shared to Cache=Private
+// Added Pooling=False to disable connection pooling
+```
+**Result**: FAILED - Same issue persists, first reset works (490ms), rest timeout
+**Files Modified**:
+- src/Infrastructure/DependencyInjection.cs: Disabled pooling and shared cache
+**Key Learning**: Connection pooling/caching not the root cause
+**Next Direction**: Investigate if API process is holding file locks
+
 ### Attempt 14: [2025-08-31 16:30]
 **Hypothesis**: Need detailed timing to identify which database operation is slow
 **Approach**: Add granular logging to each phase of database reset
