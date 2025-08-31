@@ -35,13 +35,6 @@ export const test = base.extend<ApiOnlyFixtures>({
   cleanDatabase: [async ({ apiContext }, use, testInfo) => {
     console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // TEMPORARY: Skip database reset in CI due to localhost security check issues
-    if (process.env.CI) {
-      console.log('⚠️ Skipping database reset in CI environment (temporary workaround)');
-      await use();
-      return;
-    }
-    
     // Use the database reset endpoint for fast cleanup
     try {
       const response = await apiContext.post('/api/database/reset', {
@@ -53,6 +46,10 @@ export const test = base.extend<ApiOnlyFixtures>({
       
       if (!response.ok()) {
         console.warn(`Database reset failed: ${response.status()}`);
+        const body = await response.text();
+        console.warn(`Response body: ${body}`);
+      } else {
+        console.log('✅ Database reset successful');
       }
     } catch (error) {
       console.warn('⚠️ Database cleanup warning:', error);
