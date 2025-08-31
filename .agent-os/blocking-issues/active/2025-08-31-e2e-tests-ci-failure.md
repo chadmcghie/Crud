@@ -82,11 +82,24 @@ Tests pass locally but not in CI. Can validate changes locally before pushing.
 **Key Learning**: Will reveal if issue is with URL resolution, server startup, or API calls
 **Next Direction**: Based on logs, will know exact failure point
 
+### Attempt 5: [2025-08-31 10:30]
+**Hypothesis**: API binds to 0.0.0.0 in CI but tests connect to localhost, which may not resolve correctly in Docker
+**Approach**: Use 127.0.0.1 instead of localhost for API URL in CI environments
+**Implementation**:
+```typescript
+// In CI (Docker), bind to 0.0.0.0 and connect via 127.0.0.1 for consistency
+const apiUrl = process.env.CI ? `http://127.0.0.1:${apiPort}` : `http://localhost:${apiPort}`;
+```
+**Result**: Pending - will test in CI
+**Files Modified**:
+- test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts (lines 156-157): Use 127.0.0.1 in CI
+**Key Learning**: Docker containers may have issues resolving localhost vs 127.0.0.1
+**Next Direction**: If this doesn't work, may need to use host.docker.internal or container networking
+
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
+- [x] Fix localhost vs 127.0.0.1 resolution in CI
 - [ ] Verify API is actually accessible at expected URL in CI
-- [ ] Check if baseURL is correctly set in CI environment
-- [ ] Consider using host.docker.internal for Docker networking
 - [ ] Test with explicit wait for server startup
 
 ## Related Issues
