@@ -47,15 +47,30 @@ Read the current dialogue context, summarize the exchange in a concise formatted
 
 </step>
 
-<step number="3" name="file_saving">
+<step number="3" subagent="date-checker" name="date_determination">
 
-### Step 3: Save to File
+### Step 3: Date Determination
+
+Use the date-checker subagent to determine the current date in YYYYMMDD format for file naming. The subagent will output today's date which will be used in the filename.
+
+<subagent_output>
+  The date-checker subagent will provide the current date in YYYYMMDD format at the end of its response. Store this date for use in file naming in step 4.
+</subagent_output>
+
+</step>
+
+<step number="4" name="file_saving">
+
+### Step 4: Save to File
 
 <instructions>
   ACTION: Save the Markdown summary in the following path:
     `C:\Users\chadm\source\repos\Crud\docs\Misc\AI Discussions`
-  NAMING CONVENTION: `claude-task-{BRIEF-TASK-DESCRIPTION}-YYYYMMDD.md`
-  EXAMPLE: `claude-task-conversation-summary-20250828.md`
+  NAMING CONVENTION: `claude-task-{BRIEF-TASK-DESCRIPTION}-{DATE}.md`
+    - {BRIEF-TASK-DESCRIPTION}: kebab-case description of the conversation topic
+    - {DATE}: The YYYYMMDD date provided by the date-checker subagent in step 3
+  EXAMPLE: `claude-task-conversation-summary-20241231.md`
+  IMPORTANT: Use the exact date provided by the date-checker subagent, do not guess or calculate
   VERIFY: Ensure UTF-8 encoding.
 </instructions>
 
