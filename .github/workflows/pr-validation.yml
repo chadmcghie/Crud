@@ -328,8 +328,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        cache: true
-        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -365,8 +363,8 @@ jobs:
     - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🧪 Running SINGLE E2E test to debug CI issues..."
-        npx playwright test tests/smoke.spec.ts --grep "@smoke API server is running" --reporter=list --config=playwright.config.fast.ts
+        echo "🧪 Running 3 E2E tests (API health, get person, get role)..."
+        npx playwright test tests/minimal-e2e.spec.ts --reporter=list --config=playwright.config.fast.ts
       env:
         CI: true
         API_PORT: 5172
