@@ -53,7 +53,9 @@ public class DatabaseController : ControllerBase
         }
 
         // Additional security: Only allow from localhost in Testing environment
-        if (_environment.EnvironmentName == "Testing")
+        // Exception: In CI environments, allow any IP due to container networking
+        if (_environment.EnvironmentName == "Testing" && 
+            Environment.GetEnvironmentVariable("CI") != "true")
         {
             var remoteIp = Request.HttpContext.Connection.RemoteIpAddress;
             if (remoteIp != null && !IPAddress.IsLoopback(remoteIp))
@@ -61,6 +63,10 @@ public class DatabaseController : ControllerBase
                 _logger.LogWarning("Database reset attempt from non-localhost address: {RemoteIp}", remoteIp);
                 return Forbid("Database reset is only allowed from localhost in Testing environment");
             }
+        }
+        else if (Environment.GetEnvironmentVariable("CI") == "true")
+        {
+            _logger.LogInformation("CI environment detected - allowing database reset from any IP");
         }
 
         try
