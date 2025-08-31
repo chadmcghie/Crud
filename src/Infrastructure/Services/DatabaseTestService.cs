@@ -88,27 +88,51 @@ public class DatabaseTestService
     private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
+        _logger.LogInformation("Connection string: {ConnectionString}", connectionString?.Replace("Password=", "Password=***"));
         var startTime = DateTime.UtcNow;
 
         try
         {
+            // Log current database state
+            _logger.LogInformation("Current database state - CanConnect: {CanConnect}", await _context.Database.CanConnectAsync());
+            
+            // Try to close the connection first
+            _logger.LogInformation("[Phase 0] Closing database connection for worker {WorkerIndex}...", workerIndex);
+            var closeStart = DateTime.UtcNow;
+            await _context.Database.CloseConnectionAsync();
+            var closeTime = (DateTime.UtcNow - closeStart).TotalMilliseconds;
+            _logger.LogInformation("[Phase 0] Connection closed in {Ms}ms", closeTime);
+            
             // Use EF Core's built-in methods which handle all the complexity
             // This properly closes connections, deletes files, and handles locks
-            _logger.LogDebug("Deleting database for worker {WorkerIndex}...", workerIndex);
+            _logger.LogInformation("[Phase 1] Starting EnsureDeletedAsync for worker {WorkerIndex}...", workerIndex);
+            var deleteStart = DateTime.UtcNow;
             await _context.Database.EnsureDeletedAsync();
+            var deleteTime = (DateTime.UtcNow - deleteStart).TotalMilliseconds;
+            _logger.LogInformation("[Phase 1] EnsureDeletedAsync completed in {Ms}ms", deleteTime);
+            
+            // Small delay to ensure file system has released the file
+            await Task.Delay(100);
             
             // Recreate the database with schema
-            _logger.LogDebug("Recreating database for worker {WorkerIndex}...", workerIndex);
+            _logger.LogInformation("[Phase 2] Starting EnsureCreatedAsync for worker {WorkerIndex}...", workerIndex);
+            var createStart = DateTime.UtcNow;
             await _context.Database.EnsureCreatedAsync();
+            var createTime = (DateTime.UtcNow - createStart).TotalMilliseconds;
+            _logger.LogInformation("[Phase 2] EnsureCreatedAsync completed in {Ms}ms", createTime);
             
             // Re-seed the database with initial data
+            _logger.LogInformation("[Phase 3] Starting database seeding for worker {WorkerIndex}...", workerIndex);
+            var seedStart = DateTime.UtcNow;
             await SeedRolesAsync();
             await SeedPeopleAsync();
             await _context.SaveChangesAsync();
+            var seedTime = (DateTime.UtcNow - seedStart).TotalMilliseconds;
+            _logger.LogInformation("[Phase 3] Database seeding completed in {Ms}ms", seedTime);
 
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms", 
-                workerIndex, totalTime);
+            _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)", 
+                workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime);
         }
         catch (Exception ex)
         {

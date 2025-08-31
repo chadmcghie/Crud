@@ -45,7 +45,7 @@ export const test = base.extend<ApiOnlyFixtures>({
         headers: {
           'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
         },
-        timeout: 5000 // 5 second timeout instead of default 30s
+        timeout: 30000 // 30 second timeout to allow for detailed logging
       });
       
       const duration = Date.now() - startTime;

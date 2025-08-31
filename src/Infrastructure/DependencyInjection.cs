@@ -44,6 +44,25 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddInfrastructureEntityFrameworkSqlite(this IServiceCollection services, string connectionString)
     {
+        // In CI/Testing environments, optimize SQLite connection for single-use scenarios
+        if (Environment.GetEnvironmentVariable("CI") == "true" || 
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Testing")
+        {
+            // Add parameters to reduce locking issues in CI
+            if (!connectionString.Contains(";"))
+            {
+                connectionString += ";";
+            }
+            if (!connectionString.Contains("Cache=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Cache=Shared;";
+            }
+            if (!connectionString.Contains("Mode=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Mode=ReadWriteCreate;";
+            }
+        }
+        
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(connectionString));
 
