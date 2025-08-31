@@ -101,9 +101,8 @@ public class DatabaseTestService
 
             _logger.LogDebug("Database path: {Path}", dbPath);
 
-            // Close all connections to the database
+            // Close the connection but DON'T dispose the context (it's managed by DI)
             await _context.Database.CloseConnectionAsync();
-            _context.Dispose();
             
             // Small delay to ensure connections are fully closed
             await Task.Delay(100);
@@ -128,7 +127,7 @@ public class DatabaseTestService
                 }
             }
 
-            // Recreate the database with schema
+            // Recreate the database with schema using the same context
             _logger.LogDebug("Recreating database for worker {WorkerIndex}...", workerIndex);
             await _context.Database.EnsureCreatedAsync();
             
