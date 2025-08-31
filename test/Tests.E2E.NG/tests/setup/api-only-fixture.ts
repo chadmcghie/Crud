@@ -35,34 +35,37 @@ export const test = base.extend<ApiOnlyFixtures>({
   cleanDatabase: [async ({ apiContext }, use, testInfo) => {
     console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // PROTECTED: Skip database reset in CI - causes 30s timeouts
-    // See BI-2025-08-31-001 - 11 attempts to fix this failed
-    // Root cause: Database operations timeout in container environment
-    // Tests pass with this workaround, maintaining unique test data
-    if (process.env.CI) {
-      console.log('⚠️ Database reset skipped in CI (protected workaround)');
-      await use();
-      return;
-    }
-    
-    // Use the database reset endpoint for fast cleanup (local only)
+    // Use the database reset endpoint for fast cleanup
     try {
+      console.log('📡 Sending database reset request...');
+      const startTime = Date.now();
+      
       const response = await apiContext.post('/api/database/reset', {
         data: { workerIndex: 0, preserveSchema: true },
         headers: {
           'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
-        }
+        },
+        timeout: 5000 // 5 second timeout instead of default 30s
       });
+      
+      const duration = Date.now() - startTime;
+      console.log(`📡 Database reset response received in ${duration}ms`);
       
       if (!response.ok()) {
         console.warn(`Database reset failed: ${response.status()}`);
         const body = await response.text();
         console.warn(`Response body: ${body}`);
       } else {
-        console.log('✅ Database reset successful');
+        const body = await response.json();
+        console.log(`✅ Database reset successful in ${body.Duration || duration}ms`);
       }
-    } catch (error) {
-      console.warn('⚠️ Database cleanup warning:', error);
+    } catch (error: any) {
+      if (error.message?.includes('timeout')) {
+        console.error('❌ Database reset TIMEOUT after 5 seconds!');
+        console.error('This indicates the API is not responding to database reset requests');
+      } else {
+        console.warn('⚠️ Database cleanup error:', error.message || error);
+      }
     }
     
     await use();

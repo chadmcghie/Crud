@@ -35,9 +35,14 @@ public class DatabaseController : ControllerBase
     [HttpPost("reset")]
     public async Task<IActionResult> ResetDatabase([FromBody] DatabaseResetRequest request)
     {
+        var requestStart = DateTime.UtcNow;
+        _logger.LogInformation("Database reset request received for worker {WorkerIndex} at {Time}", 
+            request.WorkerIndex, requestStart);
+
         // Security check - only allow in non-production environments
         if (!_environment.IsDevelopment() && _environment.EnvironmentName != "Testing")
         {
+            _logger.LogWarning("Database reset denied - wrong environment: {Environment}", _environment.EnvironmentName);
             return NotFound(); // Return 404 to hide the endpoint in production
         }
 
@@ -71,21 +76,30 @@ public class DatabaseController : ControllerBase
 
         try
         {
+            _logger.LogInformation("Starting database reset for worker {WorkerIndex}...", request.WorkerIndex);
             await _databaseTestService.ResetDatabaseAsync(request.WorkerIndex);
+            
+            var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
+            _logger.LogInformation("Database reset completed for worker {WorkerIndex} in {Duration}ms", 
+                request.WorkerIndex, duration);
             
             return Ok(new { 
                 Message = "Database reset successfully", 
                 WorkerIndex = request.WorkerIndex,
+                Duration = duration,
                 Timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to reset database for worker {WorkerIndex}", request.WorkerIndex);
+            var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
+            _logger.LogError(ex, "Failed to reset database for worker {WorkerIndex} after {Duration}ms", 
+                request.WorkerIndex, duration);
             return StatusCode(500, new { 
                 Error = "Failed to reset database", 
                 Details = ex.Message,
-                WorkerIndex = request.WorkerIndex
+                WorkerIndex = request.WorkerIndex,
+                Duration = duration
             });
         }
     }

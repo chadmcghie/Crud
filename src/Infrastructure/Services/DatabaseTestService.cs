@@ -99,6 +99,7 @@ public class DatabaseTestService
     private async Task ResetWithEfCoreAsync(int workerIndex)
     {
         _logger.LogDebug("Resetting database for worker {WorkerIndex} using EF Core", workerIndex);
+        var startTime = DateTime.UtcNow;
 
         try
         {
@@ -108,16 +109,34 @@ public class DatabaseTestService
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
             // Note: Removed AnyAsync() checks as they were causing performance issues in test scenarios
-            await _context.People.ExecuteDeleteAsync();
-            await _context.Roles.ExecuteDeleteAsync();
-            await _context.Windows.ExecuteDeleteAsync();
-            await _context.Walls.ExecuteDeleteAsync();
             
-            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex}", workerIndex);
+            _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
+            var peopleStart = DateTime.UtcNow;
+            await _context.People.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted People in {Ms}ms", (DateTime.UtcNow - peopleStart).TotalMilliseconds);
+            
+            _logger.LogDebug("Deleting Roles for worker {WorkerIndex}...", workerIndex);
+            var rolesStart = DateTime.UtcNow;
+            await _context.Roles.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted Roles in {Ms}ms", (DateTime.UtcNow - rolesStart).TotalMilliseconds);
+            
+            _logger.LogDebug("Deleting Windows for worker {WorkerIndex}...", workerIndex);
+            var windowsStart = DateTime.UtcNow;
+            await _context.Windows.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted Windows in {Ms}ms", (DateTime.UtcNow - windowsStart).TotalMilliseconds);
+            
+            _logger.LogDebug("Deleting Walls for worker {WorkerIndex}...", workerIndex);
+            var wallsStart = DateTime.UtcNow;
+            await _context.Walls.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted Walls in {Ms}ms", (DateTime.UtcNow - wallsStart).TotalMilliseconds);
+            
+            var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms", workerIndex, totalTime);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "EF Core database reset failed for worker {WorkerIndex}", workerIndex);
+            _logger.LogError(ex, "EF Core database reset failed for worker {WorkerIndex} after {Ms}ms", 
+                workerIndex, (DateTime.UtcNow - startTime).TotalMilliseconds);
             throw;
         }
     }
