@@ -46,6 +46,7 @@ public class DatabaseTestService
 
     /// <summary>
     /// Resets the database to a clean state, removing all data while preserving schema.
+    /// In CI/Docker environments, uses file deletion for better performance.
     /// Uses Respawn when possible, falls back to EF Core for SQLite compatibility.
     /// </summary>
     public async Task ResetDatabaseAsync(int workerIndex)
@@ -55,6 +56,14 @@ public class DatabaseTestService
         try
         {
             var connectionString = _context.Database.GetConnectionString();
+            
+            // In CI/Docker environments, use file deletion for much better performance
+            if (Environment.GetEnvironmentVariable("CI") == "true" && 
+                !string.IsNullOrEmpty(connectionString))
+            {
+                await ResetByFileDeletionAsync(connectionString, workerIndex);
+                return;
+            }
             
             // Try to use Respawn for more reliable database cleanup
             if (!string.IsNullOrEmpty(connectionString) && 
@@ -71,6 +80,92 @@ public class DatabaseTestService
             _logger.LogError(ex, "Failed to reset database for worker {WorkerIndex}", workerIndex);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Resets database by deleting the file and recreating it (fastest for CI/Docker)
+    /// </summary>
+    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex)
+    {
+        _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
+        var startTime = DateTime.UtcNow;
+
+        try
+        {
+            // Extract database file path from connection string
+            var dbPath = ExtractDatabasePath(connectionString);
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                throw new InvalidOperationException($"Could not extract database path from connection string: {connectionString}");
+            }
+
+            _logger.LogDebug("Database path: {Path}", dbPath);
+
+            // Close all connections to the database
+            await _context.Database.CloseConnectionAsync();
+            _context.Dispose();
+            
+            // Small delay to ensure connections are fully closed
+            await Task.Delay(100);
+
+            // Delete all SQLite files (main db, WAL, and shared memory)
+            var filesToDelete = new[] { dbPath, $"{dbPath}-wal", $"{dbPath}-shm" };
+            foreach (var file in filesToDelete)
+            {
+                if (File.Exists(file))
+                {
+                    _logger.LogDebug("Deleting file: {File}", file);
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (IOException ex)
+                    {
+                        _logger.LogWarning("Failed to delete {File}: {Error}. Retrying...", file, ex.Message);
+                        await Task.Delay(500);
+                        File.Delete(file);
+                    }
+                }
+            }
+
+            // Recreate the database with schema
+            _logger.LogDebug("Recreating database for worker {WorkerIndex}...", workerIndex);
+            await _context.Database.EnsureCreatedAsync();
+            
+            // Re-seed the database with initial data
+            await SeedRolesAsync();
+            await SeedPeopleAsync();
+            await _context.SaveChangesAsync();
+
+            var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms", 
+                workerIndex, totalTime);
+        }
+        catch (Exception ex)
+        {
+            var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
+            _logger.LogError(ex, "File deletion reset failed for worker {WorkerIndex} after {Ms}ms", 
+                workerIndex, totalTime);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Extracts the database file path from a SQLite connection string
+    /// </summary>
+    private string? ExtractDatabasePath(string connectionString)
+    {
+        // Parse "Data Source=path" from connection string
+        var parts = connectionString.Split(';');
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+            if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+            {
+                return trimmed.Substring("Data Source=".Length).Trim();
+            }
+        }
+        return null;
     }
 
     /// <summary>

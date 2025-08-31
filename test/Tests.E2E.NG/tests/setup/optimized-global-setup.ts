@@ -168,9 +168,12 @@ async function optimizedGlobalSetup(config: FullConfig) {
   const apiInfo = serverStatus.getServerInfo('api')!;
   const angularInfo = serverStatus.getServerInfo('angular')!;
   
-  // Create unique database for this test run in the current directory to avoid path issues
+  // Create unique database for this test run
+  // In CI/Docker, use /tmp for much better performance (avoids slow overlay filesystem)
   const timestamp = Date.now();
-  const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);
+  const databasePath = process.env.CI 
+    ? path.join('/tmp', `CrudTest_${timestamp}.db`)  // Fast location in Docker
+    : path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);  // Local development
   
   console.log(`\n📊 Test Configuration:`);
   console.log(`   Database Basename: ${path.basename(databasePath)}`);
@@ -367,12 +370,25 @@ async function optimizedGlobalSetup(config: FullConfig) {
     }
     
     // Always clean up test database
-    try {
-      await fs.unlink(databasePath);
-      console.log('🗑️  Cleaned up test database');
-    } catch {
-      // Ignore if already deleted
+    // Clean up all SQLite files (main db, WAL, and shared memory)
+    const filesToDelete = [
+      databasePath,
+      `${databasePath}-wal`,
+      `${databasePath}-shm`
+    ];
+    
+    for (const file of filesToDelete) {
+      try {
+        await fs.unlink(file);
+        console.log(`🗑️  Deleted: ${path.basename(file)}`);
+      } catch (error: any) {
+        // Ignore if file doesn't exist
+        if (error?.code !== 'ENOENT') {
+          console.warn(`⚠️  Could not delete ${path.basename(file)}:`, error?.message);
+        }
+      }
     }
+    console.log('🗑️  Cleaned up test database files');
     
     console.log('✅ Cleanup completed\n');
   };
