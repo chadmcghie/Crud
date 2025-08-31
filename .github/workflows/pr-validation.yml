@@ -314,8 +314,6 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.55.0-noble
     needs: [build]
     if: needs.build.result == 'success'
     
@@ -352,22 +350,10 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: npm ci
       
-    # Playwright browsers are pre-installed in the Docker image
-    
-    - name: Debug container environment
-      run: |
-        echo "🔍 Debugging container environment..."
-        echo "Current directory: $(pwd)"
-        echo "User: $(whoami)"
-        echo "Directory structure:"
-        ls -la
-        echo "Parent directory:"
-        ls -la ..
-        echo "SQLite3 check:"
-        which sqlite3 || echo "sqlite3 not found in PATH"
-        echo "Dotnet info:"
-        dotnet --info || echo "dotnet not found"
-        
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: npx playwright install --with-deps chromium
+      
     - name: Set execute permissions for API binary
       run: |
         chmod +x ./src/Api/bin/Release/net8.0/Api

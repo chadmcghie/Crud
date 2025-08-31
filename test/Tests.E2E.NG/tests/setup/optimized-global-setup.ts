@@ -168,12 +168,9 @@ async function optimizedGlobalSetup(config: FullConfig) {
   const apiInfo = serverStatus.getServerInfo('api')!;
   const angularInfo = serverStatus.getServerInfo('angular')!;
   
-  // Create unique database for this test run
-  // In CI/Docker, use /tmp for much better performance (avoids slow overlay filesystem)
+  // Create unique database for this test run  
   const timestamp = Date.now();
-  const databasePath = process.env.CI 
-    ? path.join('/tmp', `CrudTest_${timestamp}.db`)  // Fast location in Docker
-    : path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);  // Local development
+  const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);
   
   console.log(`\n📊 Test Configuration:`);
   console.log(`   Database Basename: ${path.basename(databasePath)}`);
