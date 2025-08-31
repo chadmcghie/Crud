@@ -92,42 +92,12 @@ public class DatabaseTestService
 
         try
         {
-            // Extract database file path from connection string
-            var dbPath = ExtractDatabasePath(connectionString);
-            if (string.IsNullOrEmpty(dbPath))
-            {
-                throw new InvalidOperationException($"Could not extract database path from connection string: {connectionString}");
-            }
-
-            _logger.LogDebug("Database path: {Path}", dbPath);
-
-            // Close the connection but DON'T dispose the context (it's managed by DI)
-            await _context.Database.CloseConnectionAsync();
+            // Use EF Core's built-in methods which handle all the complexity
+            // This properly closes connections, deletes files, and handles locks
+            _logger.LogDebug("Deleting database for worker {WorkerIndex}...", workerIndex);
+            await _context.Database.EnsureDeletedAsync();
             
-            // Small delay to ensure connections are fully closed
-            await Task.Delay(100);
-
-            // Delete all SQLite files (main db, WAL, and shared memory)
-            var filesToDelete = new[] { dbPath, $"{dbPath}-wal", $"{dbPath}-shm" };
-            foreach (var file in filesToDelete)
-            {
-                if (File.Exists(file))
-                {
-                    _logger.LogDebug("Deleting file: {File}", file);
-                    try
-                    {
-                        File.Delete(file);
-                    }
-                    catch (IOException ex)
-                    {
-                        _logger.LogWarning("Failed to delete {File}: {Error}. Retrying...", file, ex.Message);
-                        await Task.Delay(500);
-                        File.Delete(file);
-                    }
-                }
-            }
-
-            // Recreate the database with schema using the same context
+            // Recreate the database with schema
             _logger.LogDebug("Recreating database for worker {WorkerIndex}...", workerIndex);
             await _context.Database.EnsureCreatedAsync();
             
@@ -147,24 +117,6 @@ public class DatabaseTestService
                 workerIndex, totalTime);
             throw;
         }
-    }
-
-    /// <summary>
-    /// Extracts the database file path from a SQLite connection string
-    /// </summary>
-    private string? ExtractDatabasePath(string connectionString)
-    {
-        // Parse "Data Source=path" from connection string
-        var parts = connectionString.Split(';');
-        foreach (var part in parts)
-        {
-            var trimmed = part.Trim();
-            if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
-            {
-                return trimmed.Substring("Data Source=".Length).Trim();
-            }
-        }
-        return null;
     }
 
     /// <summary>
