@@ -316,7 +316,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.55.0-noble
-      options: --network=host
     needs: [build]
     if: needs.build.result == 'success'
     

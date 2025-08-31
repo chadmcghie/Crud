@@ -134,11 +134,25 @@ container:
 - Removed volume mount (was causing container creation failure)
 - Keep --network=host for simplified networking
 - Database will be created inside container at /home/runner/work/Crud/Crud/CrudTest_*.db
-**Result**: Pending
+**Result**: Failed - --network option is NOT SUPPORTED in GitHub Actions
 **Files Modified**:
 - .github/workflows/pr-validation.yml: Removed volumes, kept --network=host
-**Key Learning**: Container and tests share same filesystem when both run inside container
-**Next Direction**: If this works, the database should be accessible
+**Key Learning**: --network and --entrypoint are explicitly not supported in GitHub Actions containers
+**Next Direction**: Remove all unsupported options
+
+### Attempt 9: [2025-08-31 12:00]
+**Hypothesis**: Use default container networking without unsupported options
+**Approach**: Remove all unsupported options, use default bridge networking
+**Implementation**:
+- Removed --network=host (not supported per GitHub Actions docs)
+- API binds to 0.0.0.0:5172 in CI
+- Tests connect to localhost:5172 (same container)
+- Database created in container filesystem
+**Result**: Pending
+**Files Modified**:
+- .github/workflows/pr-validation.yml: Removed all container options
+**Key Learning**: Following documentation instead of guessing
+**Next Direction**: Should work with default container configuration
 
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
