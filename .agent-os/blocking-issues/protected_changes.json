@@ -39,9 +39,49 @@
       "reason": "Provides better diagnostics and fails fast when configuration is missing",
       "created": "2025-08-30 01:02",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-31-001",
+      "file": "test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts",
+      "lines": [186, 188],
+      "hash": "7c0fc39",
+      "change_description": "Bind API to 0.0.0.0 in CI environments for Docker container access",
+      "reason": "Required for Docker container networking - services must bind to all interfaces",
+      "created": "2025-08-31 09:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-31-001",
+      "file": "test/Tests.E2E.NG/tests/helpers/api-helpers.ts",
+      "lines": [187, 334],
+      "hash": "28f1297",
+      "change_description": "Use relative URLs instead of hardcoded localhost:5172",
+      "reason": "Allows tests to work with any baseURL configuration in different environments",
+      "created": "2025-08-31 09:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-31-001",
+      "file": "test/Tests.E2E.NG/tests/setup/api-only-fixture.ts",
+      "lines": [35, 51],
+      "hash": "7c0fc39",
+      "change_description": "Use database reset endpoint instead of manual cleanup",
+      "reason": "Prevents timeouts from slow entity-by-entity deletion",
+      "created": "2025-08-31 09:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-08-31-001",
+      "file": ".github/workflows/pr-validation.yml",
+      "lines": [327, 330],
+      "hash": "c8cca12",
+      "change_description": "Removed cache configuration from Docker container .NET setup",
+      "reason": "Fixes Post Setup .NET errors in containerized environment",
+      "created": "2025-08-31 09:45",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-08-30T01:02:00Z",
+  "last_updated": "2025-08-31T09:45:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

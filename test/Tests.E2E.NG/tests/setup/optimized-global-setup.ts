@@ -223,6 +223,7 @@ async function optimizedGlobalSetup(config: FullConfig) {
     }
     
     // Wait for API to be ready
+    console.log(`⏳ Waiting for API server at ${apiUrl}/health...`);
     const apiReady = await waitForServer(`${apiUrl}/health`, 30000);
     if (!apiReady) {
       if (isSetupCancelled) {
@@ -230,9 +231,10 @@ async function optimizedGlobalSetup(config: FullConfig) {
         cleanupServers();
         return;
       }
+      console.error(`❌ API server failed to respond at ${apiUrl}/health`);
       throw new Error('API server failed to start within 30 seconds');
     }
-    console.log('✅ API server started successfully');
+    console.log(`✅ API server started successfully and responding at ${apiUrl}`);
   } else {
     console.log('\n♻️  Reusing existing API server - no startup delay!');
     serverStatus.markAsPreExisting('api');

@@ -6,7 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Status |
 |---|---|---|---|---|---|
-| (none) | - | - | - | - | - |
+| BI-2025-08-31-001 | 2025-08-31 | test-server-optimization | test | E2E tests failing in CI - Docker networking issues | active |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -18,7 +18,7 @@ Master registry of all blocking issues encountered in the project. This registry
 Document recurring issue patterns here as they emerge.
 
 ## Statistics
-- Total Issues: 2
-- Active: 0
+- Total Issues: 3
+- Active: 1
 - Resolved: 2
 - Average Resolution Time: ~10 hours
