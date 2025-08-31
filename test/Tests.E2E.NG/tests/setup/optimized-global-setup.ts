@@ -173,7 +173,11 @@ async function optimizedGlobalSetup(config: FullConfig) {
   const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);
   
   console.log(`\n📊 Test Configuration:`);
-  console.log(`   Database: ${path.basename(databasePath)}`);
+  console.log(`   Database Basename: ${path.basename(databasePath)}`);
+  console.log(`   Database Full Path: ${databasePath}`);
+  console.log(`   Current Working Directory: ${process.cwd()}`);
+  console.log(`   Process User: ${process.env.USER || process.env.USERNAME || 'unknown'}`);
+  console.log(`   Is CI: ${process.env.CI ? 'Yes' : 'No'}`);
   
   // Handle API server
   if (!apiInfo.running) {
@@ -235,6 +239,22 @@ async function optimizedGlobalSetup(config: FullConfig) {
       throw new Error('API server failed to start within 30 seconds');
     }
     console.log(`✅ API server started successfully and responding at ${apiUrl}`);
+    
+    // Check if database file was created
+    const fs = require('fs');
+    if (fs.existsSync(databasePath)) {
+      const stats = fs.statSync(databasePath);
+      console.log(`✅ Database file created: ${databasePath}`);
+      console.log(`   Size: ${stats.size} bytes`);
+      console.log(`   Permissions: ${stats.mode.toString(8)}`);
+    } else {
+      console.log(`⚠️ Database file NOT found at: ${databasePath}`);
+      console.log(`   Checking parent directory: ${path.dirname(databasePath)}`);
+      if (fs.existsSync(path.dirname(databasePath))) {
+        const files = fs.readdirSync(path.dirname(databasePath));
+        console.log(`   Files in parent: ${files.filter((f: string) => f.endsWith('.db')).join(', ') || 'No .db files'}`);
+      }
+    }
   } else {
     console.log('\n♻️  Reusing existing API server - no startup delay!');
     serverStatus.markAsPreExisting('api');

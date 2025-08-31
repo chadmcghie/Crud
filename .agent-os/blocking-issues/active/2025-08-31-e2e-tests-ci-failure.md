@@ -112,9 +112,26 @@ container:
 **Key Learning**: Container needs access to host's filesystem for SQLite database
 **Next Direction**: If this works, document as permanent solution
 
+### Attempt 7: [2025-08-31 11:30]
+**Hypothesis**: Database file may not be created or accessible in container
+**Approach**: Add comprehensive debugging to verify database creation and permissions
+**Implementation**:
+- Log full database path and working directory
+- Check if database file exists after API starts
+- Verify file permissions and size
+- Debug container filesystem structure
+**Result**: Pending - will reveal database accessibility issues
+**Files Modified**:
+- test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts: Added database debugging
+- .github/workflows/pr-validation.yml: Added container environment debugging
+**Key Learning**: Need to verify database is actually created and accessible
+**Next Direction**: Based on findings, may need to change database location or approach
+
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
 - [x] Fix localhost vs 127.0.0.1 resolution in CI
+- [x] Add volume mounting for database access
+- [x] Add comprehensive database debugging
 - [ ] Verify API is actually accessible at expected URL in CI
 - [ ] Test with explicit wait for server startup
 
