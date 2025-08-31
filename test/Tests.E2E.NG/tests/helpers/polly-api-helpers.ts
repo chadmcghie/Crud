@@ -152,7 +152,7 @@ export class ResilientApiHelpers {
   // Enhanced API methods with resilience
   async createRole(role: TestRole): Promise<any> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.post('http://localhost:5172/api/roles', {
+      const response = await this.request.post('/api/roles', {
         data: role
       });
       if (!response.ok()) {
@@ -165,7 +165,7 @@ export class ResilientApiHelpers {
 
   async getRoles(): Promise<any[]> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.get('http://localhost:5172/api/roles');
+      const response = await this.request.get('/api/roles');
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get roles: ${response.status()} ${errorText}`);
@@ -176,7 +176,7 @@ export class ResilientApiHelpers {
 
   async deleteRole(id: string): Promise<void> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.delete(`http://localhost:5172/api/roles/${id}`);
+      const response = await this.request.delete(`/api/roles/${id}`);
       if (!response.ok() && response.status() !== 404) {
         throw new Error(`Failed to delete role: ${response.status()}`);
       }
@@ -190,7 +190,7 @@ export class ResilientApiHelpers {
 
   async createPerson(person: TestPerson): Promise<any> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.post('http://localhost:5172/api/people', {
+      const response = await this.request.post('/api/people', {
         data: person
       });
       if (!response.ok()) {
@@ -203,7 +203,7 @@ export class ResilientApiHelpers {
 
   async getPeople(): Promise<any[]> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.get('http://localhost:5172/api/people');
+      const response = await this.request.get('/api/people');
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get people: ${response.status()} ${errorText}`);
@@ -214,7 +214,7 @@ export class ResilientApiHelpers {
 
   async deletePerson(id: string): Promise<void> {
     return this.executeWithResilience(async () => {
-      const response = await this.request.delete(`http://localhost:5172/api/people/${id}`);
+      const response = await this.request.delete(`/api/people/${id}`);
       if (!response.ok() && response.status() !== 404) {
         throw new Error(`Failed to delete person: ${response.status()}`);
       }

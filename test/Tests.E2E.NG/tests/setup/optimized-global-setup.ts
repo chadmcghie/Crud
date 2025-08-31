@@ -153,6 +153,7 @@ async function optimizedGlobalSetup(config: FullConfig) {
   
   const apiPort = process.env.API_PORT || '5172';
   const angularPort = process.env.ANGULAR_PORT || '4200';
+  // In CI, we bind to 0.0.0.0 but connect via localhost
   const apiUrl = `http://localhost:${apiPort}`;
   const angularUrl = `http://localhost:${angularPort}`;
   
