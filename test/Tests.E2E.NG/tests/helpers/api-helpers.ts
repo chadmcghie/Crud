@@ -184,7 +184,7 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
-      const response = await this.request.post('http://localhost:5172/api/roles', {
+      const response = await this.request.post('/api/roles', {
         data: roleData
       });
       if (!response.ok()) {
@@ -197,7 +197,7 @@ export class ApiHelpers {
 
   async getRoles(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('http://localhost:5172/api/roles');
+      const response = await this.request.get('/api/roles');
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get roles: ${response.status()} ${errorText}`);
@@ -251,7 +251,7 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
-      const response = await this.request.post('http://localhost:5172/api/people', {
+      const response = await this.request.post('/api/people', {
         data: personData
       });
       if (!response.ok()) {
@@ -264,7 +264,7 @@ export class ApiHelpers {
 
   async getPeople(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('http://localhost:5172/api/people');
+      const response = await this.request.get('/api/people');
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get people: ${response.status()} ${errorText}`);
@@ -318,7 +318,7 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
-      const response = await this.request.post('http://localhost:5172/api/walls', {
+      const response = await this.request.post('/api/walls', {
         data: uniqueWall
       });
       if (!response.ok()) {
@@ -331,7 +331,7 @@ export class ApiHelpers {
 
   async getWalls(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('http://localhost:5172/api/walls');
+      const response = await this.request.get('/api/walls');
       if (!response.ok()) {
         throw new Error(`Failed to get walls: ${response.status()}`);
       }
