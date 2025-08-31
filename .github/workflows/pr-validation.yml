@@ -316,7 +316,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.55.0-noble
-      options: --network host -v /home/runner/work/Crud/Crud:/home/runner/work/Crud/Crud
+      volumes:
+        - /home/runner/work/Crud/Crud:/home/runner/work/Crud/Crud
+      options: --network=host
     needs: [build]
     if: needs.build.result == 'success'
     
