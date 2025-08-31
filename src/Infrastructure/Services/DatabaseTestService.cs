@@ -16,6 +16,7 @@ public class DatabaseTestService
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
     private readonly object _respawnerLock = new();
+    private static readonly SemaphoreSlim _databaseMutex = new SemaphoreSlim(1, 1);
 
     public DatabaseTestService(ApplicationDbContext context, ILogger<DatabaseTestService> logger)
     {
@@ -91,8 +92,13 @@ public class DatabaseTestService
         _logger.LogInformation("Connection string: {ConnectionString}", connectionString?.Replace("Password=", "Password=***"));
         var startTime = DateTime.UtcNow;
 
+        // Use mutex to ensure only one reset operation at a time
+        _logger.LogInformation("Acquiring database mutex for worker {WorkerIndex}...", workerIndex);
+        await _databaseMutex.WaitAsync();
+        
         try
         {
+            _logger.LogInformation("Database mutex acquired for worker {WorkerIndex}", workerIndex);
             // Log current database state
             _logger.LogInformation("Current database state - CanConnect: {CanConnect}", await _context.Database.CanConnectAsync());
             
@@ -140,6 +146,11 @@ public class DatabaseTestService
             _logger.LogError(ex, "File deletion reset failed for worker {WorkerIndex} after {Ms}ms", 
                 workerIndex, totalTime);
             throw;
+        }
+        finally
+        {
+            _logger.LogInformation("Releasing database mutex for worker {WorkerIndex}", workerIndex);
+            _databaseMutex.Release();
         }
     }
 
