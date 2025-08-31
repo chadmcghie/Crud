@@ -212,6 +212,24 @@ container:
 **Key Learning**: Docker was NOT the root cause - timeout happens on bare Ubuntu too
 **Next Direction**: Investigate why EnsureDeletedAsync takes so long in CI
 
+### Attempt 16: [2025-08-31 18:00]
+**Hypothesis**: DbContext reuse causing locking - create fresh DbContext for each reset
+**Approach**: Modified DatabaseController to create new scope and DbContext for each operation
+**Implementation**:
+```csharp
+using (var scope = _serviceProvider.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+    await databaseTestService.ResetDatabaseAsync(request.WorkerIndex);
+}
+```
+**Result**: FAILED - Same issue, first reset works (499ms), rest timeout
+**Files Modified**:
+- src/Api/Controllers/DatabaseController.cs: Create fresh DbContext for each operation
+**Key Learning**: DbContext lifecycle not the issue - problem persists with fresh contexts
+**Next Direction**: Check if it's a file system locking issue at OS level
+
 ### Attempt 15: [2025-08-31 17:00]
 **Hypothesis**: SQLite shared cache and connection pooling causing locking issues
 **Approach**: Disable shared cache and connection pooling

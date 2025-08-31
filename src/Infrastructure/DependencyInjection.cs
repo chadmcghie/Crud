@@ -67,6 +67,11 @@ public static class DependencyInjection
             {
                 connectionString += "Mode=ReadWriteCreate;";
             }
+            // Enable WAL mode for better concurrency and to avoid locking issues
+            if (!connectionString.Contains("Journal Mode=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Journal Mode=WAL;";
+            }
         }
         
         services.AddDbContext<ApplicationDbContext>(options =>
