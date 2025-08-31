@@ -53,9 +53,15 @@ public static class DependencyInjection
             {
                 connectionString += ";";
             }
+            // Use Private cache to avoid shared cache locking issues
             if (!connectionString.Contains("Cache=", StringComparison.OrdinalIgnoreCase))
             {
-                connectionString += "Cache=Shared;";
+                connectionString += "Cache=Private;";
+            }
+            // Disable connection pooling to ensure clean connections
+            if (!connectionString.Contains("Pooling=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Pooling=False;";
             }
             if (!connectionString.Contains("Mode=", StringComparison.OrdinalIgnoreCase))
             {

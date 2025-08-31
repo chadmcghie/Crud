@@ -16,7 +16,11 @@ The 3 minimal E2E tests (API health check, get person, get role) are failing in 
 
 ## Symptoms
 - Tests pass locally with servers running
-- Tests fail in CI environment (Docker container)
+- Tests fail in CI environment (both with and without Docker container)
+- Database reset operation times out after 30 seconds consistently
+- First test (health check) passes, second test (requiring database reset) fails
+- Timeout occurs specifically during EnsureDeletedAsync or EnsureCreatedAsync
+- Same behavior on bare Ubuntu runner and in Docker container
 - Affects PR validation workflow
 - Error occurs in End-to-End Tests job
 - GitHub Actions run: https://github.com/chadmcghie/Crud/actions/runs/17351644226/job/49258762742
@@ -27,12 +31,12 @@ The 3 minimal E2E tests (API health check, get person, get role) are failing in 
 - Development velocity impacted
 - CI/CD pipeline reliability affected
 
-## Root Cause Analysis (Five Whys)
-1. Why are E2E tests failing in CI? Tests cannot connect to API server properly
-2. Why can't tests connect to API? Network binding or URL resolution issues in Docker container
-3. Why are there network issues? Docker container networking differs from local environment
-4. Why does this difference matter? API binds to 0.0.0.0 but tests may not resolve correctly
-5. Why isn't this resolved? Incomplete understanding of Docker container networking in GitHub Actions (ROOT CAUSE)
+## Root Cause Analysis (Five Whys) - UPDATED
+1. Why are E2E tests failing in CI? Database reset operation times out after 30 seconds
+2. Why does database reset timeout? EnsureDeletedAsync or EnsureCreatedAsync takes too long
+3. Why do these operations take so long? SQLite file operations are slow in CI environment
+4. Why are SQLite operations slow in CI? Unknown - occurs both with and without Docker
+5. Why is this different from local? CI environment has different filesystem or I/O characteristics (ROOT CAUSE: UNDER INVESTIGATION)
 
 ## Attempted Solutions
 
@@ -195,21 +199,45 @@ container:
 **Key Learning**: Some container issues require workarounds, not all problems have clean fixes
 **Next Direction**: N/A - Resolved with protected workaround
 
+### Attempt 13: [2025-08-31 16:00]
+**Hypothesis**: Database timeout might be caused by Docker container filesystem issues
+**Approach**: Remove Docker container entirely from CI pipeline
+**Implementation**:
+- Removed container configuration from pr-validation.yml
+- Added direct Playwright browser installation
+- Tests run directly on Ubuntu runner, not in container
+**Result**: FAILED - Same timeout issue occurs without Docker
+**Files Modified**:
+- .github/workflows/pr-validation.yml: Removed container, added playwright install
+**Key Learning**: Docker was NOT the root cause - timeout happens on bare Ubuntu too
+**Next Direction**: Investigate why EnsureDeletedAsync takes so long in CI
+
+### Attempt 14: [2025-08-31 16:30]
+**Hypothesis**: Need detailed timing to identify which database operation is slow
+**Approach**: Add granular logging to each phase of database reset
+**Implementation**:
+```csharp
+// Added timing for each phase:
+// Phase 0: Close connection
+// Phase 1: EnsureDeletedAsync
+// Phase 2: EnsureCreatedAsync  
+// Phase 3: Seed data
+```
+**Result**: CRITICAL FINDING - First reset works (477ms), all subsequent resets timeout
+**Files Modified**:
+- src/Infrastructure/Services/DatabaseTestService.cs: Added phase timing
+- src/Infrastructure/DependencyInjection.cs: Added SQLite optimizations for CI
+- test/Tests.E2E.NG/tests/setup/api-only-fixture.ts: Increased timeout to 30s
+**Key Learning**: Database gets locked after first reset - not a performance issue
+**Next Direction**: Fix database locking/connection pooling issue
+
+## Current Status
+**Status**: ACTIVE - Database locking issue identified
+**Latest Finding**: First database reset succeeds (477ms), but all subsequent resets timeout. This indicates the database gets locked after the first reset operation, preventing further operations. Not a performance issue - it's a connection/locking issue.
+
 ## Permanent Solution
-
-**Resolved**: 2025-08-31 13:30
-**Solution Summary**: Skip database reset in CI environment (protected workaround)
-
-**Why This Works**:
-- Avoids 30-second database operation timeouts in container
-- Tests use unique data generation (timestamps/random IDs) 
-- Minimal isolation risk for 3 simple tests
-- 11 attempts to fix root cause all failed
-
-**Trade-offs Accepted**:
-- Loss of perfect test isolation in CI
-- Potential for test interference (mitigated by unique data)
-- Database accumulates test data (acceptable for CI runs)
+**Resolved**: NOT YET RESOLVED
+**Current Workaround**: Skip database reset in CI (protected but investigating root cause)
 
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
