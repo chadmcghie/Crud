@@ -35,51 +35,17 @@ export const test = base.extend<ApiOnlyFixtures>({
   cleanDatabase: [async ({ apiContext }, use, testInfo) => {
     console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Simple database cleanup - delete all entities
+    // Use the database reset endpoint for fast cleanup
     try {
-      // Delete all todos
-      const todosResponse = await apiContext.get('/api/todos');
-      if (todosResponse.ok()) {
-        const todos = await todosResponse.json();
-        for (const todo of todos) {
-          await apiContext.delete(`/api/todos/${todo.id}`);
+      const response = await apiContext.post('/api/database/reset', {
+        data: { workerIndex: 0, preserveSchema: true },
+        headers: {
+          'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
         }
-      }
+      });
       
-      // Delete all users
-      const usersResponse = await apiContext.get('/api/users');
-      if (usersResponse.ok()) {
-        const users = await usersResponse.json();
-        for (const user of users) {
-          await apiContext.delete(`/api/users/${user.id}`);
-        }
-      }
-      
-      // Delete all people
-      const peopleResponse = await apiContext.get('/api/people');
-      if (peopleResponse.ok()) {
-        const people = await peopleResponse.json();
-        for (const person of people) {
-          await apiContext.delete(`/api/people/${person.id}`);
-        }
-      }
-      
-      // Delete all roles
-      const rolesResponse = await apiContext.get('/api/roles');
-      if (rolesResponse.ok()) {
-        const roles = await rolesResponse.json();
-        for (const role of roles) {
-          await apiContext.delete(`/api/roles/${role.id}`);
-        }
-      }
-      
-      // Delete all walls
-      const wallsResponse = await apiContext.get('/api/walls');
-      if (wallsResponse.ok()) {
-        const walls = await wallsResponse.json();
-        for (const wall of walls) {
-          await apiContext.delete(`/api/walls/${wall.id}`);
-        }
+      if (!response.ok()) {
+        console.warn(`Database reset failed: ${response.status()}`);
       }
     } catch (error) {
       console.warn('⚠️ Database cleanup warning:', error);
