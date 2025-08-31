@@ -153,8 +153,8 @@ async function optimizedGlobalSetup(config: FullConfig) {
   
   const apiPort = process.env.API_PORT || '5172';
   const angularPort = process.env.ANGULAR_PORT || '4200';
-  // In CI (Docker), bind to 0.0.0.0 and connect via 127.0.0.1 for consistency
-  const apiUrl = process.env.CI ? `http://127.0.0.1:${apiPort}` : `http://localhost:${apiPort}`;
+  // With --network host in Docker, container shares host's network namespace
+  const apiUrl = `http://localhost:${apiPort}`;
   const angularUrl = `http://localhost:${angularPort}`;
   
   // Initialize server status tracker

@@ -90,11 +90,27 @@ Tests pass locally but not in CI. Can validate changes locally before pushing.
 // In CI (Docker), bind to 0.0.0.0 and connect via 127.0.0.1 for consistency
 const apiUrl = process.env.CI ? `http://127.0.0.1:${apiPort}` : `http://localhost:${apiPort}`;
 ```
-**Result**: Pending - will test in CI
+**Result**: Failed - health check passed but database operations failed
 **Files Modified**:
 - test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts (lines 156-157): Use 127.0.0.1 in CI
-**Key Learning**: Docker containers may have issues resolving localhost vs 127.0.0.1
-**Next Direction**: If this doesn't work, may need to use host.docker.internal or container networking
+**Key Learning**: Network connectivity works but database file not accessible from container
+**Next Direction**: Database file on host not accessible from container - need volume mounting
+
+### Attempt 6: [2025-08-31 11:00]
+**Hypothesis**: Database file created on host is not accessible from Docker container
+**Approach**: Add volume mounting and host network mode to share filesystem and network
+**Implementation**:
+```yaml
+container:
+  image: mcr.microsoft.com/playwright:v1.55.0-noble
+  options: --network host -v /home/runner/work/Crud/Crud:/home/runner/work/Crud/Crud
+```
+**Result**: Pending - will test in CI
+**Files Modified**:
+- .github/workflows/pr-validation.yml (line 319): Added volume mount and host network
+- test/Tests.E2E.NG/tests/setup/optimized-global-setup.ts (lines 156-158): Reverted to localhost
+**Key Learning**: Container needs access to host's filesystem for SQLite database
+**Next Direction**: If this works, document as permanent solution
 
 ## Next Steps
 - [x] Add debug logging to understand exact connection failures
