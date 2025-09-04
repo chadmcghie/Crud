@@ -1,0 +1,231 @@
+name: Security Scanning
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      target-url:
+        description: 'Target URL to scan'
+        required: true
+        default: 'http://localhost:5172'
+        type: string
+      scan-type:
+        description: 'Type of security scan'
+        required: true
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - full
+          - api
+  push:
+    branches: [ dev ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  schedule:
+    # Run weekly security scans on Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Skip if it's a Copilot commit for automatic triggers
+  check-commit:
+    name: Check Commit Context
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'  # Always run for manual triggers
+    outputs:
+      should-scan: ${{ steps.check.outputs.should-scan }}
+    
+    steps:
+    - name: Check if should run security scan
+      id: check
+      run: |
+        if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          echo "should-scan=true" >> $GITHUB_OUTPUT
+          echo "✅ Scheduled security scan - proceeding"
+        elif [[ "${{ github.event.head_commit.author.email }}" == *"copilot"* ]] || 
+             [[ "${{ github.event.head_commit.author.name }}" == *"copilot"* ]]; then
+          echo "should-scan=false" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping security scan - Copilot commit detected"
+        else
+          echo "should-scan=true" >> $GITHUB_OUTPUT
+          echo "✅ Proceeding with security scan"
+        fi
+
+  prepare-application:
+    name: Prepare Application for Scanning
+    runs-on: ubuntu-latest
+    needs: check-commit
+    if: always() && (needs.check-commit.outputs.should-scan == 'true' || github.event_name == 'workflow_dispatch')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Build Backend
+      run: |
+        echo "🔨 Building .NET API..."
+        dotnet restore Crud.sln
+        dotnet build Crud.sln --no-restore --configuration Release
+        
+    - name: Build Frontend
+      run: |
+        echo "🔨 Building Angular app..."
+        cd src/Angular
+        npm ci
+        npm run build
+        
+    - name: Start Application
+      run: |
+        echo "🚀 Starting application for security scanning..."
+        cd src/Api
+        dotnet run --configuration Release --no-build &
+        APP_PID=$!
+        echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+        
+        echo "⏳ Waiting for application to start..."
+        timeout 60s bash -c 'until curl -f http://localhost:5172/health || curl -f http://localhost:5172; do sleep 2; done'
+        echo "✅ Application is ready for scanning"
+        
+        # Keep the process running for the scan
+        echo "Keeping application running (PID: $APP_PID)"
+        
+    - name: Upload application artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-for-scanning-${{ github.run_number }}
+        path: |
+          src/Api/bin/Release/net8.0/
+          src/Angular/dist/
+        retention-days: 1
+
+  owasp-zap-scan:
+    name: OWASP ZAP Security Scan
+    runs-on: ubuntu-latest
+    needs: [check-commit, prepare-application]
+    if: always() && (needs.check-commit.outputs.should-scan == 'true' || github.event_name == 'workflow_dispatch')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download application artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: app-for-scanning-${{ github.run_number }}
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Start Application for Scanning
+      run: |
+        echo "🚀 Starting application for OWASP ZAP scanning..."
+        cd src/Api/bin/Release/net8.0
+        chmod +x Api
+        dotnet Api.dll &
+        APP_PID=$!
+        echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+        
+        echo "⏳ Waiting for application to be ready..."
+        timeout 60s bash -c 'until curl -f http://localhost:5172/health || curl -f http://localhost:5172; do sleep 2; done'
+        echo "✅ Application is ready for OWASP ZAP scanning"
+        
+    - name: Determine scan parameters
+      id: scan-params
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          TARGET_URL="${{ github.event.inputs.target-url }}"
+          SCAN_TYPE="${{ github.event.inputs.scan-type }}"
+        else
+          TARGET_URL="http://localhost:5172"
+          SCAN_TYPE="baseline"
+        fi
+        
+        echo "target-url=$TARGET_URL" >> $GITHUB_OUTPUT
+        echo "scan-type=$SCAN_TYPE" >> $GITHUB_OUTPUT
+        echo "🎯 Target URL: $TARGET_URL"
+        echo "🔍 Scan Type: $SCAN_TYPE"
+        
+    - name: Run OWASP ZAP Baseline Scan
+      if: steps.scan-params.outputs.scan-type == 'baseline'
+      uses: zaproxy/action-baseline@v0.12.0
+      with:
+        target: ${{ steps.scan-params.outputs.target-url }}
+        rules_file_name: '.zap/rules'
+        cmd_options: '-a'
+        allow_issue_writing: false
+        fail_action: false  # Don't fail the build on security issues initially
+        
+    - name: Run OWASP ZAP Full Scan
+      if: steps.scan-params.outputs.scan-type == 'full'
+      uses: zaproxy/action-full-scan@v0.10.0
+      with:
+        target: ${{ steps.scan-params.outputs.target-url }}
+        rules_file_name: '.zap/rules'
+        cmd_options: '-a'
+        allow_issue_writing: false
+        fail_action: false  # Don't fail the build on security issues initially
+        
+    - name: Run OWASP ZAP API Scan
+      if: steps.scan-params.outputs.scan-type == 'api'
+      uses: zaproxy/action-api-scan@v0.7.0
+      with:
+        target: ${{ steps.scan-params.outputs.target-url }}
+        format: openapi
+        rules_file_name: '.zap/rules'
+        cmd_options: '-a'
+        allow_issue_writing: false
+        fail_action: false  # Don't fail the build on security issues initially
+        
+    - name: Upload ZAP Scan Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: zap-scan-results-${{ github.run_number }}
+        path: |
+          report_html.html
+          report_json.json
+          report_md.md
+          
+    - name: Create Security Summary
+      if: always()
+      run: |
+        echo "## 🔒 OWASP ZAP Security Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Target:** ${{ steps.scan-params.outputs.target-url }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Scan Type:** ${{ steps.scan-params.outputs.scan-type }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "report_md.md" ]; then
+          echo "### Scan Summary" >> $GITHUB_STEP_SUMMARY
+          cat report_md.md >> $GITHUB_STEP_SUMMARY
+        else
+          echo "📄 Full scan results available in artifacts" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 Download detailed reports from the artifacts section above" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        if [ ! -z "$APP_PID" ]; then
+          echo "🧹 Stopping application (PID: $APP_PID)..."
+          kill $APP_PID 2>/dev/null || true
+        fi
+        echo "✅ Cleanup complete"

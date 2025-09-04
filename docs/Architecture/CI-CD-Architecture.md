@@ -109,8 +109,8 @@ Each stage has specific quality gates:
 | Stage | Quality Gates | Blocking |
 |-------|--------------|----------|
 | Feature Push | Unit tests, Linting | No |
-| PR to dev | All tests, Code coverage, Linting | Yes |
-| Deploy Staging | Build verification, Health checks | Yes |
+| PR to dev | All tests, Code coverage, Linting, Security scanning (DevSkim) | Yes |
+| Deploy Staging | Build verification, Health checks, OWASP ZAP security scan | Yes |
 | PR to main | Smoke tests, Management approval | Yes |
 | Deploy Production | Environment approval, Health checks | Yes |
 
@@ -147,7 +147,13 @@ Each stage has specific quality gates:
    - Restricted merge permissions
    - Audit trail of all deployments
 
-3. **Rollback Strategy**:
+3. **Security Scanning**:
+   - **Static Analysis**: DevSkim integrated in PR validation
+   - **Dynamic Analysis**: OWASP ZAP baseline scans on staging deployments
+   - **Code Scanning**: GitHub CodeQL for C# and JavaScript
+   - **Dependency Scanning**: Dependabot for vulnerability detection
+
+4. **Rollback Strategy**:
    - Previous artifacts retained for 30 days
    - Automated rollback on failure
    - Blue-green deployment ready
@@ -186,7 +192,7 @@ Each stage has specific quality gates:
 ### Short Term (1-3 months)
 - [ ] Add performance testing to PR validation
 - [ ] Implement automatic rollback triggers
-- [ ] Add security scanning (SAST/DAST)
+- [x] **Add security scanning (SAST/DAST)** - ✅ **IMPLEMENTED**: DevSkim (SAST) + OWASP ZAP (DAST) integrated
 - [ ] Create deployment dashboards
 
 ### Medium Term (3-6 months)

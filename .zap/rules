@@ -1,0 +1,38 @@
+# OWASP ZAP Rules Configuration for Crud Application
+# This file configures which security rules to apply during scanning
+
+# Ignore false positives and expected security choices
+# Format: RULE_ID	IGNORE	URL_PATTERN	PARAMETER	DESCRIPTION
+
+# Development and testing endpoints that are expected to be accessible
+10021	IGNORE	http://localhost:5172/health.*	.*	Health check endpoint (expected to be public)
+10021	IGNORE	http://localhost:5172/swagger.*	.*	Swagger documentation (development only)
+
+# Allow Cross-Origin Resource Sharing (CORS) for development
+10020	IGNORE	.*	.*	CORS enabled for Angular development
+
+# Ignore SSL/TLS warnings for local development
+10003	IGNORE	http://localhost.*	.*	Local development over HTTP (not HTTPS)
+
+# Content Security Policy (CSP) - May be implemented later
+10038	IGNORE	.*	.*	CSP header not implemented yet (future enhancement)
+
+# X-Frame-Options - May be implemented later  
+10020	IGNORE	.*	.*	X-Frame-Options header not implemented yet (future enhancement)
+
+# Authentication bypass - Expected for public endpoints
+10106	IGNORE	http://localhost:5172/api/people.*	.*	Public API endpoints (no auth required initially)
+10106	IGNORE	http://localhost:5172/api/auth/register.*	.*	Registration endpoint (must be public)
+
+# SQL Injection - Protected by Entity Framework
+40018	IGNORE	.*	.*	Using Entity Framework ORM (parameterized queries)
+
+# Directory browsing - Expected for SPA routes
+10033	IGNORE	.*	.*	Angular SPA routing (expected directory structure)
+
+# Information disclosure - Development endpoints
+10094	IGNORE	http://localhost:5172/swagger.*	.*	Development documentation endpoint
+10094	IGNORE	http://localhost:5172/health.*	.*	Health check endpoint for monitoring
+
+# Cross-Site Request Forgery (CSRF) - Planned for future implementation
+10202	IGNORE	.*	.*	CSRF protection planned for future authentication implementation
