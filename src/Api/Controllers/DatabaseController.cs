@@ -92,7 +92,8 @@ public class DatabaseController : ControllerBase
                 var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
                 
                 _logger.LogInformation("Created fresh DbContext for reset operation");
-                await databaseTestService.ResetDatabaseAsync(request.WorkerIndex);
+                // Pass seedData from request (default to false for E2E tests)
+                await databaseTestService.ResetDatabaseAsync(request.WorkerIndex, request.SeedData);
             }
             
             var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
@@ -316,6 +317,10 @@ public class DatabaseResetRequest
 {
     public int WorkerIndex { get; set; }
     public bool PreserveSchema { get; set; } = true;
+    /// <summary>
+    /// Whether to seed initial test data after reset (default: false for E2E tests)
+    /// </summary>
+    public bool SeedData { get; set; } = false;
 }
 
 /// <summary>

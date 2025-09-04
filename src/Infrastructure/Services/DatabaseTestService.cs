@@ -50,7 +50,9 @@ public class DatabaseTestService
     /// In CI/Docker environments, uses file deletion for better performance.
     /// Uses Respawn when possible, falls back to EF Core for SQLite compatibility.
     /// </summary>
-    public async Task ResetDatabaseAsync(int workerIndex)
+    /// <param name="workerIndex">The worker index for parallel test execution</param>
+    /// <param name="seedData">Whether to seed initial test data after reset (default: false)</param>
+    public async Task ResetDatabaseAsync(int workerIndex, bool seedData = false)
     {
         _logger.LogInformation("Resetting database for worker {WorkerIndex}", workerIndex);
 
@@ -62,19 +64,19 @@ public class DatabaseTestService
             if (Environment.GetEnvironmentVariable("CI") == "true" && 
                 !string.IsNullOrEmpty(connectionString))
             {
-                await ResetByFileDeletionAsync(connectionString, workerIndex);
+                await ResetByFileDeletionAsync(connectionString, workerIndex, seedData);
                 return;
             }
             
             // Try to use Respawn for more reliable database cleanup
             if (!string.IsNullOrEmpty(connectionString) && 
-                await TryResetWithRespawnAsync(connectionString, workerIndex))
+                await TryResetWithRespawnAsync(connectionString, workerIndex, seedData))
             {
                 return;
             }
             
             // Fallback to EF Core cleanup with improved transaction handling
-            await ResetWithEfCoreAsync(workerIndex);
+            await ResetWithEfCoreAsync(workerIndex, seedData);
         }
         catch (Exception ex)
         {
@@ -86,7 +88,7 @@ public class DatabaseTestService
     /// <summary>
     /// Resets database by deleting the file and recreating it (fastest for CI/Docker)
     /// </summary>
-    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex)
+    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
         _logger.LogInformation("Connection string: {ConnectionString}", connectionString?.Replace("Password=", "Password=***"));
@@ -127,18 +129,34 @@ public class DatabaseTestService
             var createTime = (DateTime.UtcNow - createStart).TotalMilliseconds;
             _logger.LogInformation("[Phase 2] EnsureCreatedAsync completed in {Ms}ms", createTime);
             
-            // Re-seed the database with initial data
-            _logger.LogInformation("[Phase 3] Starting database seeding for worker {WorkerIndex}...", workerIndex);
-            var seedStart = DateTime.UtcNow;
-            await SeedRolesAsync();
-            await SeedPeopleAsync();
-            await _context.SaveChangesAsync();
-            var seedTime = (DateTime.UtcNow - seedStart).TotalMilliseconds;
-            _logger.LogInformation("[Phase 3] Database seeding completed in {Ms}ms", seedTime);
+            // Optionally seed the database with initial data
+            double seedTime = 0;
+            if (seedData)
+            {
+                _logger.LogInformation("[Phase 3] Starting database seeding for worker {WorkerIndex}...", workerIndex);
+                var seedStart = DateTime.UtcNow;
+                await SeedRolesAsync();
+                await SeedPeopleAsync();
+                await _context.SaveChangesAsync();
+                seedTime = (DateTime.UtcNow - seedStart).TotalMilliseconds;
+                _logger.LogInformation("[Phase 3] Database seeding completed in {Ms}ms", seedTime);
+            }
+            else
+            {
+                _logger.LogInformation("[Phase 3] Skipping database seeding as requested for worker {WorkerIndex}", workerIndex);
+            }
 
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)", 
-                workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime);
+            if (seedData)
+            {
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)", 
+                    workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime);
+            }
+            else
+            {
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms)", 
+                    workerIndex, totalTime, closeTime, deleteTime, createTime);
+            }
         }
         catch (Exception ex)
         {
@@ -157,7 +175,7 @@ public class DatabaseTestService
     /// <summary>
     /// Attempts to reset database using Respawn (more reliable but limited SQLite support)
     /// </summary>
-    private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex)
+    private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex, bool seedData)
     {
         try
         {
@@ -177,7 +195,7 @@ public class DatabaseTestService
     /// <summary>
     /// Resets database using EF Core with optimized bulk operations
     /// </summary>
-    private async Task ResetWithEfCoreAsync(int workerIndex)
+    private async Task ResetWithEfCoreAsync(int workerIndex, bool seedData)
     {
         _logger.LogDebug("Resetting database for worker {WorkerIndex} using EF Core", workerIndex);
         var startTime = DateTime.UtcNow;
@@ -211,8 +229,17 @@ public class DatabaseTestService
             await _context.Walls.ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Walls in {Ms}ms", (DateTime.UtcNow - wallsStart).TotalMilliseconds);
             
+            // Optionally seed data after cleanup
+            if (seedData)
+            {
+                _logger.LogDebug("Seeding database for worker {WorkerIndex}...", workerIndex);
+                await SeedRolesAsync();
+                await SeedPeopleAsync();
+                await _context.SaveChangesAsync();
+            }
+            
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms", workerIndex, totalTime);
+            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms (seedData: {SeedData})", workerIndex, totalTime, seedData);
         }
         catch (Exception ex)
         {
