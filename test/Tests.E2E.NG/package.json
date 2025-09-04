@@ -12,6 +12,7 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:serial": "playwright test --config=playwright.config.serial.ts",
+    "test:webserver": "npx cross-env API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
     "servers:start": "powershell -ExecutionPolicy Bypass -File ./scripts/start-test-servers.ps1",
     "servers:stop": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-test-servers.ps1",
     "servers:restart": "npm run servers:stop && npm run servers:start",

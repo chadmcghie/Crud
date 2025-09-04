@@ -30,7 +30,7 @@ cd src/Angular && npm start
 ### Build
 ```bash
 # Build entire solution
-dotnet build Crud.All.sln
+dotnet build Crud.sln
 
 # Build backend only
 dotnet build Crud.Backend.sln
@@ -47,12 +47,16 @@ dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj
 # Backend integration tests
 dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj
 
-# E2E tests (serial execution - see ADR-001)
+# E2E tests (using Playwright webServer - see ADR-002)
 cd test/Tests.E2E.NG
-npm run test:serial      # Full suite with server management
-npm run test:fast        # Quick tests, assumes servers running
+npm run test:webserver   # Recommended: Playwright manages servers
 npm run test:smoke       # 2-minute smoke tests only
-npm run test:single      # Run single test file
+npm run test:critical    # 5-minute critical tests
+npm run test:headed      # Run with visible browser
+
+# Legacy E2E test commands (being phased out)
+npm run test:serial      # Old approach with custom server management
+npm run test:fast        # Quick tests, assumes servers running
 
 # Angular tests
 cd src/Angular && npm test
@@ -66,12 +70,12 @@ cd src/Angular && npm run lint
 
 ## E2E Testing Strategy
 
-**IMPORTANT**: E2E tests run serially (single worker) due to SQLite limitations. See `docs/Decisions/0001-Serial-E2E-Testing.md`.
+**UPDATE**: E2E tests now use Playwright's built-in webServer configuration. See `docs/Decisions/0002-E2E-Testing-Database-Strategy.md`.
 
+- **Playwright webServer**: Automatic server management, unique database per test run
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
-- Server management is automatic in `test:serial` configuration
-- Database cleanup via file deletion between tests
-- Use `test:fast` for development with manually started servers
+- Database isolation via unique filenames prevents locking issues
+- CI/CD uses same configuration as local development
 
 ## Project Structure
 
