@@ -22,8 +22,10 @@ namespace Domain.ValueObjects
 
         public bool Equals(PasswordHash? other)
         {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
             return Value == other.Value;
         }
 
@@ -31,7 +33,8 @@ namespace Domain.ValueObjects
 
         public static bool operator ==(PasswordHash? left, PasswordHash? right)
         {
-            if (left is null) return right is null;
+            if (left is null)
+                return right is null;
             return left.Equals(right);
         }
 

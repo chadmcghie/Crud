@@ -86,7 +86,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Handle_Large_Payloads()
     {
         // Arrange
-        
+
         var largeDescription = new string('A', 10000); // Very long description
         var createRequest = new
         {
@@ -107,7 +107,7 @@ public class ApiHealthTests : IntegrationTestBase
     {
         // Arrange
         await ClearDatabaseAsync(); // Start with clean database for health tests
-        
+
         var tasks = new List<Task<HttpResponseMessage>>();
 
         // Act - Send multiple concurrent requests
@@ -138,14 +138,14 @@ public class ApiHealthTests : IntegrationTestBase
     {
         // Arrange
         await ClearDatabaseAsync(); // Start with clean database for health tests
-        
-        
+
+
         // Create a role first
         var roleResponse = await PostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });
         roleResponse.EnsureSuccessStatusCode();
         var role = await ReadJsonAsync<RoleDto>(roleResponse);
         var roleId = role?.Id ?? Guid.Empty;
-        
+
         // Ensure role was created successfully
         roleId.Should().NotBe(Guid.Empty, "Role must be created before testing");
 

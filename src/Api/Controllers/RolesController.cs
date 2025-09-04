@@ -23,7 +23,8 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);
-        if (r is null) return NotFound();
+        if (r is null)
+            return NotFound();
         return Ok(mapper.Map<RoleDto>(r));
     }
 

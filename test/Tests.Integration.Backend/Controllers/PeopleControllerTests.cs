@@ -44,7 +44,7 @@ public class PeopleControllerTests : IntegrationTestBase
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.Created);
             var createdPerson = await ReadJsonAsync<PersonResponse>(response);
-            
+
             createdPerson.Should().NotBeNull();
             createdPerson!.Id.Should().NotBeEmpty();
             createdPerson.FullName.Should().Be("John Doe");
@@ -78,16 +78,16 @@ public class PeopleControllerTests : IntegrationTestBase
         // Create test roles first
         var role1Request = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
         var role2Request = TestDataBuilders.CreateRoleRequest("User", "Regular user");
-        
+
         var role1Response = await PostJsonAsync("/api/roles", role1Request);
         var role2Response = await PostJsonAsync("/api/roles", role2Request);
-        
+
         var role1 = await ReadJsonAsync<RoleDto>(role1Response);
         var role2 = await ReadJsonAsync<RoleDto>(role2Response);
 
         var createRequest = TestDataBuilders.CreatePersonRequest(
-            "Jane Smith", 
-            "987-654-3210", 
+            "Jane Smith",
+            "987-654-3210",
             new[] { role1!.Id, role2!.Id });
 
         // Act
@@ -96,7 +96,7 @@ public class PeopleControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdPerson = await ReadJsonAsync<PersonResponse>(response);
-        
+
         createdPerson.Should().NotBeNull();
         createdPerson!.FullName.Should().Be("Jane Smith");
         createdPerson.Roles.Should().HaveCount(2);
@@ -111,8 +111,8 @@ public class PeopleControllerTests : IntegrationTestBase
 
         var nonExistentRoleId = Guid.NewGuid();
         var createRequest = TestDataBuilders.CreatePersonRequest(
-            "John Doe", 
-            "123-456-7890", 
+            "John Doe",
+            "123-456-7890",
             new[] { nonExistentRoleId });
 
         // Act
@@ -131,11 +131,11 @@ public class PeopleControllerTests : IntegrationTestBase
         {
             // Arrange
 
-            
+
             // Create test people
             var person1 = TestDataBuilders.CreatePersonRequest("Alice Johnson", "111-222-3333");
             var person2 = TestDataBuilders.CreatePersonRequest("Bob Wilson", "444-555-6666");
-            
+
             await PostJsonAsync("/api/people", person1);
             await PostJsonAsync("/api/people", person2);
 
@@ -145,7 +145,7 @@ public class PeopleControllerTests : IntegrationTestBase
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var people = await ReadJsonAsync<List<PersonResponse>>(response);
-            
+
             people.Should().NotBeNull();
             people.Should().HaveCount(2);
             people.Should().Contain(p => p.FullName == "Alice Johnson");
@@ -168,7 +168,7 @@ public class PeopleControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var person = await ReadJsonAsync<PersonResponse>(response);
-        
+
         person.Should().NotBeNull();
         person!.Id.Should().Be(createdPerson.Id);
         person.FullName.Should().Be("Charlie Brown");
@@ -209,7 +209,7 @@ public class PeopleControllerTests : IntegrationTestBase
         // Verify the update
         var getResponse = await Client.GetAsync($"/api/people/{createdPerson.Id}");
         var updatedPerson = await ReadJsonAsync<PersonResponse>(getResponse);
-        
+
         updatedPerson.Should().NotBeNull();
         updatedPerson!.FullName.Should().Be("Updated Name");
         updatedPerson.Phone.Should().Be("222-222-2222");
@@ -220,12 +220,12 @@ public class PeopleControllerTests : IntegrationTestBase
     {
         // Arrange
 
-        
+
         // Create roles
         var role1Response = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("Admin", "Administrator"));
         var role2Response = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("User", "Regular user"));
         var role3Response = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("Manager", "Manager"));
-        
+
         var role1 = await ReadJsonAsync<RoleDto>(role1Response);
         var role2 = await ReadJsonAsync<RoleDto>(role2Response);
         var role3 = await ReadJsonAsync<RoleDto>(role3Response);
@@ -247,7 +247,7 @@ public class PeopleControllerTests : IntegrationTestBase
         // Verify the role update
         var getResponse = await Client.GetAsync($"/api/people/{createdPerson.Id}");
         var updatedPerson = await ReadJsonAsync<PersonResponse>(getResponse);
-        
+
         updatedPerson.Should().NotBeNull();
         updatedPerson!.Roles.Should().HaveCount(1);
         updatedPerson.Roles.Should().Contain(r => r.Name == "Manager");
@@ -316,7 +316,7 @@ public class PeopleControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdPerson = await ReadJsonAsync<PersonResponse>(response);
-        
+
         createdPerson.Should().NotBeNull();
         createdPerson!.FullName.Should().Be("No Phone Person");
         createdPerson.Phone.Should().BeNull();
@@ -327,7 +327,7 @@ public class PeopleControllerTests : IntegrationTestBase
     {
         // Arrange
 
-        
+
         // Create a role
         var roleResponse = await PostJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestRole", "Test role"));
         var role = await ReadJsonAsync<RoleDto>(roleResponse);

@@ -29,7 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
-        
+
         // Add authentication services
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
@@ -48,7 +48,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructureEntityFrameworkSqlite(this IServiceCollection services, string connectionString)
     {
         // In CI/Testing environments, optimize SQLite connection for single-use scenarios
-        if (Environment.GetEnvironmentVariable("CI") == "true" || 
+        if (Environment.GetEnvironmentVariable("CI") == "true" ||
             Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Testing")
         {
             // Add parameters to reduce locking issues in CI
@@ -71,7 +71,7 @@ public static class DependencyInjection
                 connectionString += "Mode=ReadWriteCreate;";
             }
         }
-        
+
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(connectionString));
 
@@ -82,7 +82,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
-        
+
         // Add authentication services
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();

@@ -22,7 +22,8 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
         var p = await mediator.Send(new GetPersonQuery(id), ct);
-        if (p is null) return NotFound();
+        if (p is null)
+            return NotFound();
         return Ok(mapper.Map<PersonResponse>(p));
     }
 

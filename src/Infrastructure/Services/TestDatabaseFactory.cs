@@ -32,22 +32,22 @@ public class TestDatabaseFactory
 
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var processId = Environment.ProcessId;
-            
+
             // Use current directory for CI environments or when temp path might have permission issues
-            var basePath = Environment.GetEnvironmentVariable("CI") == "true" 
+            var basePath = Environment.GetEnvironmentVariable("CI") == "true"
                 ? Directory.GetCurrentDirectory()
                 : Path.GetTempPath();
-                
+
             var databasePath = Path.Combine(
                 basePath,
                 $"CrudTest_Worker{workerIndex}_{processId}_{timestamp}.db"
             );
 
             _workerDatabases[workerIndex] = databasePath;
-            
-            _logger.LogInformation("Created database path for worker {WorkerIndex}: {DatabasePath}", 
+
+            _logger.LogInformation("Created database path for worker {WorkerIndex}: {DatabasePath}",
                 workerIndex, databasePath);
-            
+
             return databasePath;
         }
     }
@@ -58,7 +58,7 @@ public class TestDatabaseFactory
     public async Task<string> CreateWorkerDatabaseAsync(int workerIndex, bool forceRecreate = false)
     {
         var databasePath = GetWorkerDatabasePath(workerIndex);
-        
+
         // Apply file locking to prevent race conditions
         var lockFilePath = databasePath + ".lock";
         var maxRetries = 5;
@@ -70,7 +70,7 @@ public class TestDatabaseFactory
             {
                 // Use a lock file to prevent concurrent access
                 using var lockFile = File.Open(lockFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-                
+
                 if (forceRecreate && File.Exists(databasePath))
                 {
                     await RetryDeleteFileAsync(databasePath, maxRetries: 3);
@@ -85,7 +85,7 @@ public class TestDatabaseFactory
             }
             catch (IOException ex) when (attempt < maxRetries - 1)
             {
-                _logger.LogWarning("Database creation attempt {Attempt} failed for worker {WorkerIndex}: {Error}. Retrying...", 
+                _logger.LogWarning("Database creation attempt {Attempt} failed for worker {WorkerIndex}: {Error}. Retrying...",
                     attempt + 1, workerIndex, ex.Message);
                 await Task.Delay(retryDelay);
             }
@@ -123,7 +123,7 @@ public class TestDatabaseFactory
                 Directory.CreateDirectory(directory);
                 _logger.LogInformation("Created directory for database: {Directory}", directory);
             }
-            
+
             var connectionString = $"Data Source={databasePath}";
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseSqlite(connectionString)
@@ -131,13 +131,13 @@ public class TestDatabaseFactory
 
             using var context = new ApplicationDbContext(options);
             await context.Database.EnsureCreatedAsync();
-            
-            _logger.LogInformation("Database schema created for worker {WorkerIndex} at {DatabasePath}", 
+
+            _logger.LogInformation("Database schema created for worker {WorkerIndex} at {DatabasePath}",
                 workerIndex, databasePath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create database file for worker {WorkerIndex} at {DatabasePath}", 
+            _logger.LogError(ex, "Failed to create database file for worker {WorkerIndex} at {DatabasePath}",
                 workerIndex, databasePath);
             throw;
         }
@@ -149,30 +149,30 @@ public class TestDatabaseFactory
     public async Task CleanupWorkerDatabasesAsync()
     {
         Dictionary<int, string> databasesToCleanup;
-        
+
         lock (_lockObject)
         {
             databasesToCleanup = new Dictionary<int, string>(_workerDatabases);
             _workerDatabases.Clear();
         }
-        
+
         foreach (var kvp in databasesToCleanup)
         {
             var workerIndex = kvp.Key;
             var databasePath = kvp.Value;
-            
+
             try
             {
                 if (File.Exists(databasePath))
                 {
                     await RetryDeleteFileAsync(databasePath);
-                    _logger.LogInformation("Cleaned up database for worker {WorkerIndex}: {DatabasePath}", 
+                    _logger.LogInformation("Cleaned up database for worker {WorkerIndex}: {DatabasePath}",
                         workerIndex, databasePath);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to cleanup database for worker {WorkerIndex}: {Error}", 
+                _logger.LogWarning("Failed to cleanup database for worker {WorkerIndex}: {Error}",
                     workerIndex, ex.Message);
             }
         }
@@ -184,7 +184,7 @@ public class TestDatabaseFactory
     public async Task CleanupWorkerDatabaseAsync(int workerIndex)
     {
         string? databasePath = null;
-        
+
         lock (_lockObject)
         {
             if (_workerDatabases.TryGetValue(workerIndex, out databasePath))
@@ -192,7 +192,7 @@ public class TestDatabaseFactory
                 _workerDatabases.Remove(workerIndex);
             }
         }
-        
+
         if (databasePath != null)
         {
             try
@@ -200,13 +200,13 @@ public class TestDatabaseFactory
                 if (File.Exists(databasePath))
                 {
                     await RetryDeleteFileAsync(databasePath);
-                    _logger.LogInformation("Cleaned up database for worker {WorkerIndex}: {DatabasePath}", 
+                    _logger.LogInformation("Cleaned up database for worker {WorkerIndex}: {DatabasePath}",
                         workerIndex, databasePath);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to cleanup database for worker {WorkerIndex}: {Error}", 
+                _logger.LogWarning("Failed to cleanup database for worker {WorkerIndex}: {Error}",
                     workerIndex, ex.Message);
             }
         }

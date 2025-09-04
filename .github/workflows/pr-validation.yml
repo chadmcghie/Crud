@@ -53,10 +53,57 @@ jobs:
           src/Api/appsettings*.json
         retention-days: 1
 
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    - name: Backend Code Format Check
+      run: |
+        echo "🔍 Checking C# code formatting..."
+        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Run 'dotnet format' locally to fix." && exit 1)
+        
+    - name: Frontend Linting
+      working-directory: ./src/Angular
+      run: |
+        echo "🔍 Running Angular linting..."
+        npm ci
+        npm run lint
+        
+    - name: Check for common code issues
+      run: |
+        echo "🔍 Checking for common issues..."
+        # Check for console.log in TypeScript files (except test files)
+        if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=test --exclude-dir=tests src/Angular; then
+          echo "⚠️ Warning: console.log statements found in production code"
+        fi
+        
+        # Check for TODO comments that should be addressed
+        if grep -r "TODO" --include="*.cs" --include="*.ts" --exclude-dir=node_modules src/; then
+          echo "ℹ️ Info: TODO comments found - consider addressing them"
+        fi
+
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, code-quality]
     
     steps:
     - name: Checkout code
@@ -115,6 +162,7 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
+    needs: [code-quality]
     
     steps:
     - name: Checkout code
@@ -131,10 +179,6 @@ jobs:
       working-directory: ./src/Angular
       run: npm ci
       
-    - name: Lint check
-      working-directory: ./src/Angular
-      run: npm run lint
-      
     - name: Run Angular Unit Tests with Coverage
       working-directory: ./src/Angular
       run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
@@ -149,7 +193,7 @@ jobs:
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, code-quality]
     
     steps:
     - name: Checkout code
@@ -209,109 +253,10 @@ jobs:
         path: TestResults/*.trx
         reporter: dotnet-trx
 
-  smoke-tests:
-    name: Smoke Tests (Quick Validation)
+  e2e-smoke-tests:
+    name: E2E Smoke Tests (Quick Validation)
     runs-on: ubuntu-latest
     needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        cache: true
-        cache-dependency-path: 'src/**/*.csproj'
-        
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts-${{ github.run_number }}
-    
-    - name: Copy appsettings to test output
-      run: |
-        echo "📁 Setting up smoke test environment..."
-        echo "📁 Listing artifact structure:"
-        ls -la src/Api/ || echo "src/Api/ not found"
-        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
-        
-        # Copy appsettings files - they should be in src/Api from the artifact
-        if [ -f "src/Api/appsettings.json" ]; then
-          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
-          echo "✅ Appsettings files copied from src/Api/"
-        else
-          echo "❌ No appsettings files found in src/Api/"
-          echo "📁 Checking current directory:"
-          ls -la *.json 2>/dev/null || echo "No JSON files in root"
-          exit 1
-        fi
-        
-        echo "📁 Final output directory contents:"
-        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
-        
-    - name: Run API Health Check Test
-      run: |
-        echo "🔥 Running smoke test: API Health Check"
-        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
-          --no-build --configuration Release \
-          --filter "FullyQualifiedName~ApiHealthTests.API_Should_Be_Responsive" \
-          --logger "console;verbosity=normal" \
-          --results-directory TestResults/
-      env:
-        CI: true
-        ASPNETCORE_ENVIRONMENT: Testing
-      continue-on-error: true
-      
-    - name: Run Basic CRUD Smoke Test
-      run: |
-        echo "🔥 Running smoke test: Basic CRUD Operations"
-        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
-          --no-build --configuration Release \
-          --filter "FullyQualifiedName~PeopleControllerTests.GET_People_Should_Return_Empty_List_Initially" \
-          --logger "console;verbosity=normal" \
-          --results-directory TestResults/
-      env:
-        CI: true
-        ASPNETCORE_ENVIRONMENT: Testing
-      continue-on-error: true
-      
-    - name: Run Simple Authentication Test
-      run: |
-        echo "🔥 Running smoke test: Basic Authentication"
-        echo "Current directory: $(pwd)"
-        echo "Directory contents:"
-        ls -la
-        echo "Running test with detailed logging..."
-        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
-          --no-build --configuration Release \
-          --filter "FullyQualifiedName~AuthControllerTests.POST_Register_Should_Create_User_And_Return_Tokens" \
-          --logger "console;verbosity=detailed" \
-          --results-directory TestResults/ || (echo "Test failed with exit code: $?" && exit 1)
-      env:
-        CI: true
-        ASPNETCORE_ENVIRONMENT: Testing
-      continue-on-error: true
-      
-    - name: Smoke Test Summary
-      if: always()
-      run: |
-        echo "## 🔥 Smoke Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Smoke tests are configured with continue-on-error to gather maximum diagnostic information." >> $GITHUB_STEP_SUMMARY
-        echo "Check individual test steps above for specific failures." >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        if ls TestResults/*.trx 2>/dev/null; then
-          echo "✅ Smoke tests executed and produced results" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "⚠️ No test result files found - smoke tests may not have executed properly" >> $GITHUB_STEP_SUMMARY
-        fi
-
-  e2e-tests:
-    name: End-to-End Tests
-    runs-on: ubuntu-latest
-    needs: [build]
     if: needs.build.result == 'success'
     
     steps:
@@ -356,12 +301,12 @@ jobs:
         chmod +x ./src/Api/bin/Release/net8.0/Api
         echo "✅ Execute permissions set for API binary"
         
-    - name: Run E2E Tests with WebServer Config
+    - name: Run E2E Smoke Tests Only
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🚀 Running E2E tests with Playwright WebServer configuration..."
-        echo "This uses Playwright's built-in server management - no custom setup needed!"
-        npm run test:webserver
+        echo "🚀 Running E2E smoke tests only for quick PR validation..."
+        echo "Tagged with @smoke - should complete in 2-5 minutes"
+        npm run test:smoke
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
@@ -374,7 +319,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-tests-${{ github.run_number }}
+        name: e2e-smoke-tests-${{ github.run_number }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -400,7 +345,7 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-smoke-tests]
     if: always()
     
     steps:
@@ -416,7 +361,7 @@ jobs:
         echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || (needs.e2e-tests.result == 'failure' && '❌ Failed') || (needs.e2e-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Smoke Tests | ${{ needs.e2e-smoke-tests.result == 'success' && '✅ Passed' || (needs.e2e-smoke-tests.result == 'failure' && '❌ Failed') || (needs.e2e-smoke-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Check overall status
@@ -424,10 +369,10 @@ jobs:
            [ "${{ needs.backend-unit-tests.result }}" == "success" ] &&
            [ "${{ needs.frontend-unit-tests.result }}" == "success" ] &&
            [ "${{ needs.backend-integration-tests.result }}" == "success" ] &&
-           [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+           [ "${{ needs.e2e-smoke-tests.result }}" == "success" ]; then
           echo "### ✅ All validation checks passed!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**E2E Tests:** Now using Playwright WebServer configuration for improved reliability" >> $GITHUB_STEP_SUMMARY
+          echo "**E2E Tests:** Running smoke tests only (~22 tests) for quick PR feedback" >> $GITHUB_STEP_SUMMARY
         else
           echo "### ❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
           echo "Please review the test results above for details." >> $GITHUB_STEP_SUMMARY

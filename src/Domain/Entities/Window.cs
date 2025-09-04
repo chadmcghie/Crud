@@ -7,10 +7,10 @@ namespace Domain.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
 
         private string _name = string.Empty;
-        public string Name 
-        { 
+        public string Name
+        {
             get => _name;
-            set 
+            set
             {
                 _name = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 200, nameof(value));
@@ -18,10 +18,10 @@ namespace Domain.Entities
         }
 
         private string? _description;
-        public string? Description 
-        { 
+        public string? Description
+        {
             get => _description;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -38,10 +38,10 @@ namespace Domain.Entities
 
         // Frame properties
         private string _frameType = string.Empty;
-        public string FrameType 
-        { 
+        public string FrameType
+        {
             get => _frameType;
-            set 
+            set
             {
                 _frameType = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -49,10 +49,10 @@ namespace Domain.Entities
         }
 
         private string? _frameDetails;
-        public string? FrameDetails 
-        { 
+        public string? FrameDetails
+        {
             get => _frameDetails;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -64,10 +64,10 @@ namespace Domain.Entities
 
         // Glazing properties
         private string _glazingType = string.Empty;
-        public string GlazingType 
-        { 
+        public string GlazingType
+        {
             get => _glazingType;
-            set 
+            set
             {
                 _glazingType = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -75,10 +75,10 @@ namespace Domain.Entities
         }
 
         private string? _glazingDetails;
-        public string? GlazingDetails 
-        { 
+        public string? GlazingDetails
+        {
             get => _glazingDetails;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -96,10 +96,10 @@ namespace Domain.Entities
 
         // Performance ratings
         private string? _energyStarRating;
-        public string? EnergyStarRating 
-        { 
+        public string? EnergyStarRating
+        {
             get => _energyStarRating;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -110,10 +110,10 @@ namespace Domain.Entities
         }
 
         private string? _nfrcRating;
-        public string? NFRCRating 
-        { 
+        public string? NFRCRating
+        {
             get => _nfrcRating;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -125,10 +125,10 @@ namespace Domain.Entities
 
         // Orientation and location
         private string? _orientation;
-        public string? Orientation 
-        { 
+        public string? Orientation
+        {
             get => _orientation;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -139,10 +139,10 @@ namespace Domain.Entities
         }
 
         private string? _location;
-        public string? Location 
-        { 
+        public string? Location
+        {
             get => _location;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -153,10 +153,10 @@ namespace Domain.Entities
         }
 
         private string? _installationType;
-        public string? InstallationType 
-        { 
+        public string? InstallationType
+        {
             get => _installationType;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -168,10 +168,10 @@ namespace Domain.Entities
 
         // Operational properties
         private string? _operationType;
-        public string? OperationType 
-        { 
+        public string? OperationType
+        {
             get => _operationType;
-            set 
+            set
             {
                 if (value != null)
                 {

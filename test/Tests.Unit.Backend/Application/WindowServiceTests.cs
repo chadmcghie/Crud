@@ -133,8 +133,8 @@ public class WindowServiceTests
 
             // Assert
             result.Should().NotBeNull();
-            _mockWindowRepository.Verify(x => x.AddAsync(It.Is<Window>(w => 
-                w.Name == name && 
+            _mockWindowRepository.Verify(x => x.AddAsync(It.Is<Window>(w =>
+                w.Name == name &&
                 w.Description == description &&
                 w.Width == width &&
                 w.Height == height &&
@@ -177,8 +177,8 @@ public class WindowServiceTests
 
             // Assert
             result.Should().NotBeNull();
-            _mockWindowRepository.Verify(x => x.AddAsync(It.Is<Window>(w => 
-                w.Name == name && 
+            _mockWindowRepository.Verify(x => x.AddAsync(It.Is<Window>(w =>
+                w.Name == name &&
                 w.Description == null &&
                 w.Width == width &&
                 w.Height == height &&
@@ -211,7 +211,7 @@ public class WindowServiceTests
                 .ReturnsAsync(existingWindow);
 
             // Act
-            await _windowService.UpdateAsync(windowId, newName, newDescription, newWidth, newHeight, 
+            await _windowService.UpdateAsync(windowId, newName, newDescription, newWidth, newHeight,
                 newArea, newFrameType, null, newGlazingType, null);
 
             // Assert

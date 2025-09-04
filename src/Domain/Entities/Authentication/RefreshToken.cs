@@ -18,10 +18,10 @@ namespace Domain.Entities.Authentication
         {
             if (string.IsNullOrWhiteSpace(token))
                 throw new ArgumentException("Token cannot be empty", nameof(token));
-            
+
             if (userId == Guid.Empty)
                 throw new ArgumentException("UserId cannot be empty", nameof(userId));
-            
+
             if (expiresAt <= DateTime.UtcNow)
                 throw new ArgumentException("Expiration date must be in the future", nameof(expiresAt));
 

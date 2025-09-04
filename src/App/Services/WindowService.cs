@@ -43,7 +43,7 @@ public class WindowService(IWindowRepository windows) : IWindowService
     public async Task UpdateAsync(Guid id, string name, string? description, double width, double height, double area, string frameType, string? frameDetails, string glazingType, string? glazingDetails, double? uValue = null, double? solarHeatGainCoefficient = null, double? visibleTransmittance = null, double? airLeakage = null, string? energyStarRating = null, string? nfrcRating = null, string? orientation = null, string? location = null, string? installationType = null, string? operationType = null, bool? hasScreens = null, bool? hasStormWindows = null, CancellationToken ct = default)
     {
         var window = await windows.GetAsync(id, ct) ?? throw new KeyNotFoundException($"Window {id} not found");
-        
+
         window.Name = name;
         window.Description = description;
         window.Width = width;

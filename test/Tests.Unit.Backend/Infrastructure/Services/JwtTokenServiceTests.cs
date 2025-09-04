@@ -47,7 +47,7 @@ public class JwtTokenServiceTests
 
         // Assert
         token.Should().NotBeNullOrEmpty();
-        
+
         var tokenHandler = new JwtSecurityTokenHandler();
         var canRead = tokenHandler.CanReadToken(token);
         canRead.Should().BeTrue();
@@ -67,7 +67,7 @@ public class JwtTokenServiceTests
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
         var claims = jwtToken.Claims.ToList();
-        
+
         claims.Should().Contain(c => c.Type == "nameid" || c.Type == ClaimTypes.NameIdentifier);
         claims.Should().Contain(c => (c.Type == "email" || c.Type == ClaimTypes.Email) && c.Value == _testUser.Email.Value);
         claims.Should().Contain(c => (c.Type == "role" || c.Type == ClaimTypes.Role) && c.Value == "User");
@@ -119,7 +119,7 @@ public class JwtTokenServiceTests
 
         // Assert
         refreshToken.Should().NotBeNullOrEmpty();
-        
+
         // Verify it's a valid base64 string
         var canConvert = Convert.TryFromBase64String(refreshToken, new byte[64], out _);
         canConvert.Should().BeTrue();
@@ -152,7 +152,7 @@ public class JwtTokenServiceTests
         claimsPrincipal.Should().NotBeNull();
         claimsPrincipal!.Identity.Should().NotBeNull();
         claimsPrincipal.Identity!.IsAuthenticated.Should().BeTrue();
-        
+
         var emailClaim = claimsPrincipal.FindFirst(ClaimTypes.Email);
         emailClaim.Should().NotBeNull();
         emailClaim!.Value.Should().Be(_testUser.Email.Value);
@@ -177,7 +177,7 @@ public class JwtTokenServiceTests
         // Arrange - Create an expired token manually
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = System.Text.Encoding.ASCII.GetBytes("ThisIsAVerySecureSecretKeyThatIsAtLeast256BitsLong!!!");
-        
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]

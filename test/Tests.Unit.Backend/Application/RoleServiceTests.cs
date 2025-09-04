@@ -120,7 +120,7 @@ public class RoleServiceTests
             result.Name.Should().Be(roleName);
             result.Description.Should().Be(description);
             _mockRoleRepository.Verify(x => x.GetByNameAsync(roleName, It.IsAny<CancellationToken>()), Times.Once);
-            _mockRoleRepository.Verify(x => x.AddAsync(It.Is<Role>(r => 
+            _mockRoleRepository.Verify(x => x.AddAsync(It.Is<Role>(r =>
                 r.Name == roleName && r.Description == description), It.IsAny<CancellationToken>()), Times.Once);
         }
 

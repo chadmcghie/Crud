@@ -24,7 +24,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                 .HasColumnName("Email")
                 .HasMaxLength(256)
                 .IsRequired();
-            
+
             email.HasIndex(e => e.Value)
                 .IsUnique();
         });
@@ -51,7 +51,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.UpdatedAt)
             .IsRequired();
-        
+
         // Configure RowVersion for concurrency
         builder.Property(u => u.RowVersion)
             .IsConcurrencyToken();

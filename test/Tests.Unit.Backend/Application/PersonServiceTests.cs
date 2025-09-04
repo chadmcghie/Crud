@@ -135,7 +135,7 @@ public class PersonServiceTests
             result.Should().NotBeNull();
             result.FullName.Should().Be(fullName);
             result.Phone.Should().Be(phone);
-            _mockPersonRepository.Verify(x => x.AddAsync(It.Is<Person>(p => 
+            _mockPersonRepository.Verify(x => x.AddAsync(It.Is<Person>(p =>
                 p.FullName == fullName && p.Phone == phone), It.IsAny<CancellationToken>()), Times.Once);
         }
 
