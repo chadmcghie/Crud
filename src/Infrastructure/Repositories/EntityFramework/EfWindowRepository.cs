@@ -1,6 +1,7 @@
 using App.Abstractions;
 using Domain.Entities;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.EntityFramework;
@@ -28,7 +29,7 @@ public class EfWindowRepository : IWindowRepository
     {
         window.CreatedAt = DateTime.UtcNow;
         _context.Windows.Add(window);
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         return window;
     }
 
@@ -36,7 +37,7 @@ public class EfWindowRepository : IWindowRepository
     {
         window.UpdatedAt = DateTime.UtcNow;
         _context.Windows.Update(window);
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
@@ -45,7 +46,7 @@ public class EfWindowRepository : IWindowRepository
         if (window != null)
         {
             _context.Windows.Remove(window);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
     }
 }

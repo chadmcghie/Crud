@@ -1,6 +1,7 @@
 using App.Abstractions;
 using Domain.Entities;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.EntityFramework;
@@ -35,7 +36,7 @@ public class EfRoleRepository : IRoleRepository
         try
         {
             _context.Roles.Add(role);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             return role;
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UNIQUE constraint failed") == true)
@@ -49,7 +50,7 @@ public class EfRoleRepository : IRoleRepository
         try
         {
             _context.Roles.Update(role);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -65,7 +66,7 @@ public class EfRoleRepository : IRoleRepository
             if (role != null)
             {
                 _context.Roles.Remove(role);
-                await _context.SaveChangesAsync(ct);
+                await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             }
         }
         catch (DbUpdateConcurrencyException ex)
