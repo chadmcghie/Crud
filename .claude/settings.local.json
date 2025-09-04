@@ -98,7 +98,13 @@
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
-      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG/**)"
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG/**)",
+      "Bash(tree:*)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\src/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\docs/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": [],
