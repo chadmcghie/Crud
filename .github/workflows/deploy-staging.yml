@@ -52,6 +52,12 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
+    # Code quality checks
+    - name: Backend Code Format Check
+      run: |
+        echo "🔍 Checking C# code formatting..."
+        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Run 'dotnet format' locally to fix." && exit 1)
+        
     # Build solution
     - name: Build solution
       run: |
