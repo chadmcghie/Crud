@@ -61,8 +61,8 @@ jobs:
     - name: Critical system check
       run: |
         echo "🔍 Running critical system checks..."
-        dotnet restore Crud.All.sln
-        dotnet build Crud.All.sln --configuration Release
+        dotnet restore Crud.sln
+        dotnet build Crud.sln --configuration Release
         
         # Run only critical tests tagged for production
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj \
@@ -105,7 +105,7 @@ jobs:
     # Build with production optimizations
     - name: Build backend for production
       run: |
-        dotnet restore Crud.All.sln
+        dotnet restore Crud.sln
         dotnet publish src/Api/Api.csproj \
           -c Release \
           -o ./publish/api \

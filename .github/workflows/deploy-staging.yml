@@ -55,8 +55,8 @@ jobs:
     # Run quick smoke tests to ensure build is deployable
     - name: Backend smoke test
       run: |
-        dotnet restore Crud.All.sln
-        dotnet build Crud.All.sln --configuration Release
+        dotnet restore Crud.sln
+        dotnet build Crud.sln --configuration Release
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical"
         
     - name: Frontend smoke test

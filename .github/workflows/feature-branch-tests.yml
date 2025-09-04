@@ -35,10 +35,10 @@ jobs:
         
     # Backend checks
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.sln
       
     - name: Build backend
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.sln --no-restore --configuration Release
       
     - name: Run backend unit tests only
       run: |
