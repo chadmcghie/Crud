@@ -12,7 +12,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        
+
         // Use SQLite for migrations - this connection string is only used for design-time operations
         optionsBuilder.UseSqlite("Data Source=CrudAppDesignTime.db");
 

@@ -33,8 +33,8 @@ public static class TestDataBuilders
     #region Person Builders
 
     public static CreatePersonRequest CreatePersonRequest(
-        string? fullName = null, 
-        string? phone = null, 
+        string? fullName = null,
+        string? phone = null,
         IEnumerable<Guid>? roleIds = null)
     {
         return new CreatePersonRequest(
@@ -45,8 +45,8 @@ public static class TestDataBuilders
     }
 
     public static UpdatePersonRequest UpdatePersonRequest(
-        string? fullName = null, 
-        string? phone = null, 
+        string? fullName = null,
+        string? phone = null,
         IEnumerable<Guid>? roleIds = null)
     {
         return new UpdatePersonRequest(

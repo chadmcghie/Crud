@@ -7,10 +7,10 @@ namespace Domain.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
 
         private string _name = string.Empty;
-        public string Name 
-        { 
+        public string Name
+        {
             get => _name;
-            set 
+            set
             {
                 _name = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 200, nameof(value));
@@ -18,10 +18,10 @@ namespace Domain.Entities
         }
 
         private string? _description;
-        public string? Description 
-        { 
+        public string? Description
+        {
             get => _description;
-            set 
+            set
             {
                 if (value != null)
                 {
@@ -38,10 +38,10 @@ namespace Domain.Entities
 
         // Assembly type properties
         private string _assemblyType = string.Empty;
-        public string AssemblyType 
-        { 
+        public string AssemblyType
+        {
             get => _assemblyType;
-            set 
+            set
             {
                 _assemblyType = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 500, nameof(value));
@@ -49,10 +49,10 @@ namespace Domain.Entities
         }
 
         private string? _assemblyDetails;
-        public string? AssemblyDetails 
-        { 
+        public string? AssemblyDetails
+        {
             get => _assemblyDetails;
-            set 
+            set
             {
                 if (value != null)
                 {

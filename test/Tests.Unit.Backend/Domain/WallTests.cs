@@ -80,7 +80,7 @@ public class WallTests
         {
             // Note: Entity creation doesn't enforce business rule validation
             // This test documents current behavior
-            
+
             // Arrange & Act
             var wall = WallTestDataBuilder.Default()
                 .WithDimensions(invalidValue, 9.0, 6.0)

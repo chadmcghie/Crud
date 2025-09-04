@@ -22,7 +22,8 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);
-        if (w is null) return NotFound();
+        if (w is null)
+            return NotFound();
         return Ok(mapper.Map<WallResponse>(w));
     }
 

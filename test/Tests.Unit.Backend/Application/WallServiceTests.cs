@@ -125,7 +125,7 @@ public class WallServiceTests
                 .ReturnsAsync(expectedWall);
 
             // Act
-            var result = await _wallService.CreateAsync(name, description, length, height, thickness, 
+            var result = await _wallService.CreateAsync(name, description, length, height, thickness,
                 assemblyType, assemblyDetails, rValue, uValue, materialLayers, orientation, location);
 
             // Assert
@@ -137,8 +137,8 @@ public class WallServiceTests
             result.Thickness.Should().Be(thickness);
             result.AssemblyType.Should().Be(assemblyType);
 
-            _mockWallRepository.Verify(x => x.AddAsync(It.Is<Wall>(w => 
-                w.Name == name && 
+            _mockWallRepository.Verify(x => x.AddAsync(It.Is<Wall>(w =>
+                w.Name == name &&
                 w.Description == description &&
                 w.Length == length &&
                 w.Height == height &&
@@ -171,8 +171,8 @@ public class WallServiceTests
 
             // Assert
             result.Should().NotBeNull();
-            _mockWallRepository.Verify(x => x.AddAsync(It.Is<Wall>(w => 
-                w.Name == name && 
+            _mockWallRepository.Verify(x => x.AddAsync(It.Is<Wall>(w =>
+                w.Name == name &&
                 w.Description == null &&
                 w.Length == length &&
                 w.Height == height &&
@@ -203,7 +203,7 @@ public class WallServiceTests
                 .ReturnsAsync(existingWall);
 
             // Act
-            await _wallService.UpdateAsync(wallId, newName, newDescription, newLength, newHeight, 
+            await _wallService.UpdateAsync(wallId, newName, newDescription, newLength, newHeight,
                 newThickness, newAssemblyType);
 
             // Assert

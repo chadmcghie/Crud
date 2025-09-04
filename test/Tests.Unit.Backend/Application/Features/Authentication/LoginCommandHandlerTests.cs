@@ -22,7 +22,7 @@ public class LoginCommandHandlerTests
         _mockPasswordHasher = new Mock<IPasswordHasher>();
         _mockJwtTokenService = new Mock<IJwtTokenService>();
         _mockLogger = new Mock<ILogger<LoginCommandHandler>>();
-        
+
         _handler = new LoginCommandHandler(
             _mockUserRepository.Object,
             _mockPasswordHasher.Object,
@@ -48,17 +48,17 @@ public class LoginCommandHandlerTests
                 new PasswordHash(passwordHash),
                 "John",
                 "Doe");
-            
+
             var accessToken = "access_token_value";
             var refreshTokenValue = "refresh_token_value";
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
             _mockPasswordHasher.Setup(x => x.VerifyPassword(
-                command.Password, 
+                command.Password,
                 passwordHash))
                 .Returns(true);
 
@@ -69,7 +69,7 @@ public class LoginCommandHandlerTests
                 .Returns(refreshTokenValue);
 
             _mockUserRepository.Setup(x => x.UpdateAsync(
-                It.IsAny<User>(), 
+                It.IsAny<User>(),
                 It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -87,7 +87,7 @@ public class LoginCommandHandlerTests
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u => u.RefreshTokens.Any(rt => rt.Token == refreshTokenValue)),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
 
             _mockPasswordHasher.Verify(x => x.VerifyPassword(command.Password, passwordHash), Times.Once);
@@ -106,7 +106,7 @@ public class LoginCommandHandlerTests
             };
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync((User?)null);
 
@@ -142,12 +142,12 @@ public class LoginCommandHandlerTests
                 "Doe");
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
             _mockPasswordHasher.Setup(x => x.VerifyPassword(
-                command.Password, 
+                command.Password,
                 passwordHash))
                 .Returns(false);
 
@@ -181,11 +181,11 @@ public class LoginCommandHandlerTests
                 new PasswordHash(passwordHash),
                 "John",
                 "Doe");
-            
+
             user.LockAccount();
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
@@ -210,8 +210,8 @@ public class LoginCommandHandlerTests
                 () => _handler.Handle(null!, CancellationToken.None));
 
             _mockUserRepository.Verify(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<Email>(),
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -237,8 +237,8 @@ public class LoginCommandHandlerTests
             result.Error.Should().Contain("Email");
 
             _mockUserRepository.Verify(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<Email>(),
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -264,8 +264,8 @@ public class LoginCommandHandlerTests
             result.Error.Should().Contain("Password");
 
             _mockUserRepository.Verify(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<Email>(),
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -280,7 +280,7 @@ public class LoginCommandHandlerTests
             };
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Database error"));
 
@@ -305,7 +305,7 @@ public class LoginCommandHandlerTests
             cts.Cancel();
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
@@ -330,7 +330,7 @@ public class LoginCommandHandlerTests
                 new PasswordHash(passwordHash),
                 "John",
                 "Doe");
-            
+
             // Add expired refresh token
             var expiredToken = RefreshToken.CreateForTesting(
                 "expired_token",
@@ -342,12 +342,12 @@ public class LoginCommandHandlerTests
             var refreshTokenValue = "refresh_token_value";
 
             _mockUserRepository.Setup(x => x.GetByEmailAsync(
-                It.IsAny<Email>(), 
+                It.IsAny<Email>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
             _mockPasswordHasher.Setup(x => x.VerifyPassword(
-                command.Password, 
+                command.Password,
                 passwordHash))
                 .Returns(true);
 
@@ -358,7 +358,7 @@ public class LoginCommandHandlerTests
                 .Returns(refreshTokenValue);
 
             _mockUserRepository.Setup(x => x.UpdateAsync(
-                It.IsAny<User>(), 
+                It.IsAny<User>(),
                 It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -370,10 +370,10 @@ public class LoginCommandHandlerTests
             result.Success.Should().BeTrue();
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
-                It.Is<User>(u => 
+                It.Is<User>(u =>
                     !u.RefreshTokens.Any(rt => rt.Token == "expired_token") &&
                     u.RefreshTokens.Any(rt => rt.Token == refreshTokenValue)),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
     }

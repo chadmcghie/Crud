@@ -1,7 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
-using Infrastructure.Data;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Infrastructure.Data;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -24,10 +24,10 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     protected IntegrationTestBase(TestWebApplicationFactoryFixture fixture)
     {
         Factory = fixture.Factory;
-        
+
         // Ensure database is created before creating client
         Factory.EnsureDatabaseCreated();
-        
+
         Client = Factory.CreateClient();
         Scope = Factory.Services.CreateScope();
         DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -41,7 +41,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     {
         // Clear database before test
         await Factory.ClearDatabaseAsync();
-        
+
         try
         {
             await testAction();
@@ -61,7 +61,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     {
         // Clear database before test
         await Factory.ClearDatabaseAsync();
-        
+
         try
         {
             return await testAction();
@@ -115,20 +115,20 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             var errorMessage = $"{requestDescription} failed with status {response.StatusCode}";
-            
+
             if (!string.IsNullOrEmpty(errorContent))
             {
                 errorMessage += $"\nError Response: {errorContent}";
             }
-            
+
             if (response.Headers.Any())
             {
                 errorMessage += $"\nResponse Headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))}";
             }
-            
+
             throw new InvalidOperationException(errorMessage);
         }
-        
+
         return response;
     }
 
@@ -138,26 +138,26 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     protected async Task LogErrorResponseAsync(HttpResponseMessage response, string context = "HTTP request")
     {
         var errorContent = await response.Content.ReadAsStringAsync();
-        
+
         Console.WriteLine($"❌ {context} failed:");
         Console.WriteLine($"   Status: {response.StatusCode} ({(int)response.StatusCode})");
         Console.WriteLine($"   Reason: {response.ReasonPhrase}");
-        
+
         if (!string.IsNullOrEmpty(errorContent))
         {
             Console.WriteLine($"   Response Body: {errorContent}");
         }
-        
+
         if (response.Headers.Any())
         {
             Console.WriteLine($"   Headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
         }
-        
+
         if (response.Content.Headers.Any())
         {
             Console.WriteLine($"   Content Headers: {string.Join(", ", response.Content.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
         }
-        
+
         // Also dump server-side logs if available
         if (Factory.LogCapture?.HasErrors == true)
         {
@@ -172,17 +172,17 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     protected async Task<HttpResponseMessage> PostJsonWithErrorLoggingAsync<T>(string requestUri, T data, bool throwOnError = false)
     {
         var response = await PostJsonAsync(requestUri, data);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             await LogErrorResponseAsync(response, $"POST {requestUri}");
-            
+
             if (throwOnError)
             {
                 await AssertSuccessfulResponseAsync(response, $"POST {requestUri}");
             }
         }
-        
+
         return response;
     }
 
@@ -192,17 +192,17 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     protected async Task<HttpResponseMessage> GetWithErrorLoggingAsync(string requestUri, bool throwOnError = false)
     {
         var response = await Client.GetAsync(requestUri);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             await LogErrorResponseAsync(response, $"GET {requestUri}");
-            
+
             if (throwOnError)
             {
                 await AssertSuccessfulResponseAsync(response, $"GET {requestUri}");
             }
         }
-        
+
         return response;
     }
 

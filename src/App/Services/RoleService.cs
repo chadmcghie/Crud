@@ -15,7 +15,8 @@ public class RoleService(IRoleRepository roles) : IRoleService
     {
         // ensure unique by name
         var existing = await roles.GetByNameAsync(name, ct);
-        if (existing is not null) return existing;
+        if (existing is not null)
+            return existing;
 
         return await roles.AddAsync(new Role { Name = name, Description = description }, ct);
     }

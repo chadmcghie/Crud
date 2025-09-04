@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -65,13 +65,13 @@ public class TestLogCapture : ILogger
     /// <summary>
     /// Gets logs filtered by minimum log level
     /// </summary>
-    public IReadOnlyList<LogEntry> GetLogs(LogLevel minimumLevel) => 
+    public IReadOnlyList<LogEntry> GetLogs(LogLevel minimumLevel) =>
         _logs.Where(l => l.LogLevel >= minimumLevel).ToList();
 
     /// <summary>
     /// Gets error and critical logs
     /// </summary>
-    public IReadOnlyList<LogEntry> GetErrorLogs() => 
+    public IReadOnlyList<LogEntry> GetErrorLogs() =>
         _logs.Where(l => l.LogLevel >= LogLevel.Error).ToList();
 
     /// <summary>
@@ -117,7 +117,8 @@ public class TestLogCapture : ILogger
     /// </summary>
     public void Clear()
     {
-        while (_logs.TryDequeue(out _)) { }
+        while (_logs.TryDequeue(out _))
+        { }
     }
 
     /// <summary>
@@ -128,7 +129,7 @@ public class TestLogCapture : ILogger
     /// <summary>
     /// Gets the most recent error log entry, if any
     /// </summary>
-    public LogEntry? GetLatestError() => 
+    public LogEntry? GetLatestError() =>
         _logs.Where(l => l.LogLevel >= LogLevel.Error).OrderByDescending(l => l.Timestamp).FirstOrDefault();
 }
 

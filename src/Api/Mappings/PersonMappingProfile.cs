@@ -10,7 +10,7 @@ public class PersonMappingProfile : Profile
     {
         CreateMap<Person, PersonResponse>()
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Roles));
-        
+
         CreateMap<Role, RoleResponse>();
     }
 }

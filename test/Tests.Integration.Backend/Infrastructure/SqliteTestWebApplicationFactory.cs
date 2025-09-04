@@ -1,10 +1,10 @@
+using Infrastructure.Data;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Infrastructure.Data;
-using Infrastructure.Services;
 
 namespace Tests.Integration.Backend.Infrastructure;
 
@@ -25,10 +25,10 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     public SqliteTestWebApplicationFactory()
     {
         // Get worker index from environment or generate a unique one per factory instance
-        _workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX") != null 
-            ? int.Parse(Environment.GetEnvironmentVariable("WORKER_INDEX")!) 
+        _workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX") != null
+            ? int.Parse(Environment.GetEnvironmentVariable("WORKER_INDEX")!)
             : GenerateUniqueWorkerIndex(); // Generate unique index per factory instance
-            
+
         _databaseFactory = new TestDatabaseFactory(
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<TestDatabaseFactory>());
     }
@@ -69,13 +69,13 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
             // Register the TestDatabaseFactory as a service
             services.AddSingleton(_databaseFactory);
-            
+
             // Register DatabaseTestService for improved database cleanup
             services.AddScoped<DatabaseTestService>();
 
             // Configure logging for better error debugging in tests
             _logCapture = new TestLogCapture("IntegrationTest");
-            services.AddLogging(builder => 
+            services.AddLogging(builder =>
             {
                 builder.ClearProviders();
                 builder.AddConsole();
@@ -113,10 +113,10 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 {
                     using var scope = Services.CreateScope();
                     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                    
+
                     // Ensure the database schema is created (should already be done by TestDatabaseFactory)
                     context.Database.EnsureCreated();
-                    
+
                     _databaseInitialized = true;
                 }
                 catch (Exception ex)
@@ -133,7 +133,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     {
         using var scope = Services.CreateScope();
         var databaseService = scope.ServiceProvider.GetRequiredService<DatabaseTestService>();
-        
+
         // Use the improved database reset logic with proper transaction handling
         await databaseService.ResetDatabaseAsync(_workerIndex);
     }

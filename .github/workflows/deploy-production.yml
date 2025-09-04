@@ -34,8 +34,8 @@ jobs:
         echo "## 🔒 Production Deployment Approved" >> $GITHUB_STEP_SUMMARY
         echo "Deployment to production environment has been approved." >> $GITHUB_STEP_SUMMARY
 
-  smoke-tests:
-    name: Pre-deployment Smoke Tests
+  full-test-suite:
+    name: Full Test Suite Before Production
     runs-on: ubuntu-latest
     needs: production-gate
     if: |
@@ -58,33 +58,102 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Critical system check
+    # Build solution
+    - name: Build solution
       run: |
-        echo "🔍 Running critical system checks..."
+        echo "🏗️ Building solution for production..."
         dotnet restore Crud.sln
         dotnet build Crud.sln --configuration Release
         
-        # Run only critical tests tagged for production
+    # Run ALL backend unit tests
+    - name: Backend unit tests (full suite)
+      run: |
+        echo "🧪 Running all backend unit tests..."
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj \
           --configuration Release \
-          --filter "Category=Critical|Category=Smoke" \
-          --logger "console;verbosity=minimal"
+          --logger "trx;LogFileName=unit-tests.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
         
-    - name: Frontend build verification
+    # Run ALL backend integration tests
+    - name: Backend integration tests (full suite)
+      run: |
+        echo "🧪 Running all backend integration tests..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --configuration Release \
+          --logger "trx;LogFileName=integration-tests.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        
+    # Frontend tests
+    - name: Frontend unit tests (full suite)
       working-directory: ./src/Angular
       run: |
+        echo "🧪 Running all frontend unit tests..."
         npm ci
+        npm run lint
+        npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+        
+    # Build frontend for production
+    - name: Frontend production build
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building frontend for production..."
         npm run build -- --configuration=production
-        echo "✅ Production build successful"
+        
+    # Install E2E dependencies
+    - name: Install E2E dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+        
+    # Run FULL E2E test suite
+    - name: Run full E2E test suite
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🧪 Running full E2E test suite (174 tests) before production..."
+        npm run test:webserver
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
+        
+    # Final smoke/critical tests as last gate
+    - name: Final critical tests gate
+      run: |
+        echo "🔍 Running final critical tests as production gate..."
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj \
+          --configuration Release \
+          --filter "Category=Critical|Priority=Critical" \
+          --logger "console;verbosity=minimal"
+        echo "✅ All tests passed - ready for production"
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: production-test-results-${{ github.sha }}
+        path: |
+          TestResults/
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+          src/Angular/coverage/
+        retention-days: 30
 
   build-production:
     name: Build Production Artifacts
     runs-on: ubuntu-latest
-    needs: [production-gate, smoke-tests]
+    needs: [production-gate, full-test-suite]
     if: |
       always() && 
       needs.production-gate.outputs.approved == 'true' &&
-      (needs.smoke-tests.result == 'success' || needs.smoke-tests.result == 'skipped')
+      (needs.full-test-suite.result == 'success' || needs.full-test-suite.result == 'skipped')
     
     steps:
     - name: Checkout code

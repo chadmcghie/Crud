@@ -1,9 +1,9 @@
+using System.Data.Common;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Respawn;
 using Respawn.Graph;
-using System.Data.Common;
 
 namespace Infrastructure.Services;
 
@@ -30,13 +30,13 @@ public class DatabaseTestService
     public async Task InitializeAsync()
     {
         var connectionString = _context.Database.GetConnectionString();
-        
+
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new InvalidOperationException("Database connection string is not available");
         }
 
-        _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}", 
+        _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}",
             connectionString.Replace("Password=", "Password=***"));
 
         // Ensure database exists
@@ -59,22 +59,22 @@ public class DatabaseTestService
         try
         {
             var connectionString = _context.Database.GetConnectionString();
-            
+
             // In CI/Docker environments, use file deletion for much better performance
-            if (Environment.GetEnvironmentVariable("CI") == "true" && 
+            if (Environment.GetEnvironmentVariable("CI") == "true" &&
                 !string.IsNullOrEmpty(connectionString))
             {
                 await ResetByFileDeletionAsync(connectionString, workerIndex, seedData);
                 return;
             }
-            
+
             // Try to use Respawn for more reliable database cleanup
-            if (!string.IsNullOrEmpty(connectionString) && 
+            if (!string.IsNullOrEmpty(connectionString) &&
                 await TryResetWithRespawnAsync(connectionString, workerIndex, seedData))
             {
                 return;
             }
-            
+
             // Fallback to EF Core cleanup with improved transaction handling
             await ResetWithEfCoreAsync(workerIndex, seedData);
         }
@@ -97,20 +97,20 @@ public class DatabaseTestService
         // Use mutex to ensure only one reset operation at a time
         _logger.LogInformation("Acquiring database mutex for worker {WorkerIndex}...", workerIndex);
         await _databaseMutex.WaitAsync();
-        
+
         try
         {
             _logger.LogInformation("Database mutex acquired for worker {WorkerIndex}", workerIndex);
             // Log current database state
             _logger.LogInformation("Current database state - CanConnect: {CanConnect}", await _context.Database.CanConnectAsync());
-            
+
             // Try to close the connection first
             _logger.LogInformation("[Phase 0] Closing database connection for worker {WorkerIndex}...", workerIndex);
             var closeStart = DateTime.UtcNow;
             await _context.Database.CloseConnectionAsync();
             var closeTime = (DateTime.UtcNow - closeStart).TotalMilliseconds;
             _logger.LogInformation("[Phase 0] Connection closed in {Ms}ms", closeTime);
-            
+
             // Use EF Core's built-in methods which handle all the complexity
             // This properly closes connections, deletes files, and handles locks
             _logger.LogInformation("[Phase 1] Starting EnsureDeletedAsync for worker {WorkerIndex}...", workerIndex);
@@ -118,17 +118,17 @@ public class DatabaseTestService
             await _context.Database.EnsureDeletedAsync();
             var deleteTime = (DateTime.UtcNow - deleteStart).TotalMilliseconds;
             _logger.LogInformation("[Phase 1] EnsureDeletedAsync completed in {Ms}ms", deleteTime);
-            
+
             // Small delay to ensure file system has released the file
             await Task.Delay(100);
-            
+
             // Recreate the database with schema
             _logger.LogInformation("[Phase 2] Starting EnsureCreatedAsync for worker {WorkerIndex}...", workerIndex);
             var createStart = DateTime.UtcNow;
             await _context.Database.EnsureCreatedAsync();
             var createTime = (DateTime.UtcNow - createStart).TotalMilliseconds;
             _logger.LogInformation("[Phase 2] EnsureCreatedAsync completed in {Ms}ms", createTime);
-            
+
             // Optionally seed the database with initial data
             double seedTime = 0;
             if (seedData)
@@ -149,19 +149,19 @@ public class DatabaseTestService
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
             if (seedData)
             {
-                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)", 
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)",
                     workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime);
             }
             else
             {
-                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms)", 
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms)",
                     workerIndex, totalTime, closeTime, deleteTime, createTime);
             }
         }
         catch (Exception ex)
         {
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            _logger.LogError(ex, "File deletion reset failed for worker {WorkerIndex} after {Ms}ms", 
+            _logger.LogError(ex, "File deletion reset failed for worker {WorkerIndex} after {Ms}ms",
                 workerIndex, totalTime);
             throw;
         }
@@ -186,7 +186,7 @@ public class DatabaseTestService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning("Respawn reset failed for worker {WorkerIndex}, falling back to EF Core: {Error}", 
+            _logger.LogWarning("Respawn reset failed for worker {WorkerIndex}, falling back to EF Core: {Error}",
                 workerIndex, ex.Message);
             return Task.FromResult(false);
         }
@@ -204,31 +204,31 @@ public class DatabaseTestService
         {
             // For SQLite, we can use more efficient bulk operations without explicit transactions
             // since SQLite handles this automatically and transactions can cause locking issues
-            
+
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
             // Note: Removed AnyAsync() checks as they were causing performance issues in test scenarios
-            
+
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
             var peopleStart = DateTime.UtcNow;
             await _context.People.ExecuteDeleteAsync();
             _logger.LogDebug("Deleted People in {Ms}ms", (DateTime.UtcNow - peopleStart).TotalMilliseconds);
-            
+
             _logger.LogDebug("Deleting Roles for worker {WorkerIndex}...", workerIndex);
             var rolesStart = DateTime.UtcNow;
             await _context.Roles.ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Roles in {Ms}ms", (DateTime.UtcNow - rolesStart).TotalMilliseconds);
-            
+
             _logger.LogDebug("Deleting Windows for worker {WorkerIndex}...", workerIndex);
             var windowsStart = DateTime.UtcNow;
             await _context.Windows.ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Windows in {Ms}ms", (DateTime.UtcNow - windowsStart).TotalMilliseconds);
-            
+
             _logger.LogDebug("Deleting Walls for worker {WorkerIndex}...", workerIndex);
             var wallsStart = DateTime.UtcNow;
             await _context.Walls.ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Walls in {Ms}ms", (DateTime.UtcNow - wallsStart).TotalMilliseconds);
-            
+
             // Optionally seed data after cleanup
             if (seedData)
             {
@@ -237,13 +237,13 @@ public class DatabaseTestService
                 await SeedPeopleAsync();
                 await _context.SaveChangesAsync();
             }
-            
+
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
             _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms (seedData: {SeedData})", workerIndex, totalTime, seedData);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "EF Core database reset failed for worker {WorkerIndex} after {Ms}ms", 
+            _logger.LogError(ex, "EF Core database reset failed for worker {WorkerIndex} after {Ms}ms",
                 workerIndex, (DateTime.UtcNow - startTime).TotalMilliseconds);
             throw;
         }
@@ -287,19 +287,24 @@ public class DatabaseTestService
     public async Task<DatabaseValidationResult> ValidatePreTestStateAsync(int workerIndex)
     {
         _logger.LogDebug("Validating pre-test database state for worker {WorkerIndex}", workerIndex);
-        
+
         var stats = await GetDatabaseStatsAsync();
         var issues = new List<string>();
-        
+
         // Check if database is empty
-        if (stats.PeopleCount > 0) issues.Add($"People table contains {stats.PeopleCount} records");
-        if (stats.RolesCount > 0) issues.Add($"Roles table contains {stats.RolesCount} records");
-        if (stats.WallsCount > 0) issues.Add($"Walls table contains {stats.WallsCount} records");
-        if (stats.WindowsCount > 0) issues.Add($"Windows table contains {stats.WindowsCount} records");
-        
+        if (stats.PeopleCount > 0)
+            issues.Add($"People table contains {stats.PeopleCount} records");
+        if (stats.RolesCount > 0)
+            issues.Add($"Roles table contains {stats.RolesCount} records");
+        if (stats.WallsCount > 0)
+            issues.Add($"Walls table contains {stats.WallsCount} records");
+        if (stats.WindowsCount > 0)
+            issues.Add($"Windows table contains {stats.WindowsCount} records");
+
         // Check database connectivity
-        if (!stats.CanConnect) issues.Add("Cannot connect to database");
-        
+        if (!stats.CanConnect)
+            issues.Add("Cannot connect to database");
+
         var result = new DatabaseValidationResult
         {
             WorkerIndex = workerIndex,
@@ -308,17 +313,17 @@ public class DatabaseTestService
             Stats = stats,
             ValidationType = "PreTest"
         };
-        
+
         if (!result.IsValid)
         {
-            _logger.LogWarning("Pre-test validation failed for worker {WorkerIndex}: {Issues}", 
+            _logger.LogWarning("Pre-test validation failed for worker {WorkerIndex}: {Issues}",
                 workerIndex, string.Join(", ", issues));
         }
         else
         {
             _logger.LogDebug("Pre-test validation passed for worker {WorkerIndex}", workerIndex);
         }
-        
+
         return result;
     }
 
@@ -328,19 +333,24 @@ public class DatabaseTestService
     public async Task<DatabaseValidationResult> ValidatePostTestStateAsync(int workerIndex)
     {
         _logger.LogDebug("Validating post-test database state for worker {WorkerIndex}", workerIndex);
-        
+
         var stats = await GetDatabaseStatsAsync();
         var issues = new List<string>();
-        
+
         // Check if database was properly cleaned up
-        if (stats.PeopleCount > 0) issues.Add($"People table not cleaned up: {stats.PeopleCount} records remain");
-        if (stats.RolesCount > 0) issues.Add($"Roles table not cleaned up: {stats.RolesCount} records remain");
-        if (stats.WallsCount > 0) issues.Add($"Walls table not cleaned up: {stats.WallsCount} records remain");
-        if (stats.WindowsCount > 0) issues.Add($"Windows table not cleaned up: {stats.WindowsCount} records remain");
-        
+        if (stats.PeopleCount > 0)
+            issues.Add($"People table not cleaned up: {stats.PeopleCount} records remain");
+        if (stats.RolesCount > 0)
+            issues.Add($"Roles table not cleaned up: {stats.RolesCount} records remain");
+        if (stats.WallsCount > 0)
+            issues.Add($"Walls table not cleaned up: {stats.WallsCount} records remain");
+        if (stats.WindowsCount > 0)
+            issues.Add($"Windows table not cleaned up: {stats.WindowsCount} records remain");
+
         // Check database connectivity
-        if (!stats.CanConnect) issues.Add("Database connection lost during test");
-        
+        if (!stats.CanConnect)
+            issues.Add("Database connection lost during test");
+
         var result = new DatabaseValidationResult
         {
             WorkerIndex = workerIndex,
@@ -349,17 +359,17 @@ public class DatabaseTestService
             Stats = stats,
             ValidationType = "PostTest"
         };
-        
+
         if (!result.IsValid)
         {
-            _logger.LogError("Post-test validation failed for worker {WorkerIndex}: {Issues}", 
+            _logger.LogError("Post-test validation failed for worker {WorkerIndex}: {Issues}",
                 workerIndex, string.Join(", ", issues));
         }
         else
         {
             _logger.LogDebug("Post-test validation passed for worker {WorkerIndex}", workerIndex);
         }
-        
+
         return result;
     }
 
@@ -371,14 +381,14 @@ public class DatabaseTestService
         try
         {
             _logger.LogDebug("Verifying database integrity for worker {WorkerIndex}", workerIndex);
-            
+
             // Test basic database operations
             await _context.Database.CanConnectAsync();
             await _context.People.CountAsync();
             await _context.Roles.CountAsync();
             await _context.Walls.CountAsync();
             await _context.Windows.CountAsync();
-            
+
             _logger.LogDebug("Database integrity verification passed for worker {WorkerIndex}", workerIndex);
             return true;
         }

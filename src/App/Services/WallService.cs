@@ -34,7 +34,7 @@ public class WallService(IWallRepository walls) : IWallService
     public async Task UpdateAsync(Guid id, string name, string? description, double length, double height, double thickness, string assemblyType, string? assemblyDetails = null, double? rValue = null, double? uValue = null, string? materialLayers = null, string? orientation = null, string? location = null, CancellationToken ct = default)
     {
         var wall = await walls.GetAsync(id, ct) ?? throw new KeyNotFoundException($"Wall {id} not found");
-        
+
         wall.Name = name;
         wall.Description = description;
         wall.Length = length;

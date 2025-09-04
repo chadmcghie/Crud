@@ -30,8 +30,8 @@ jobs:
           echo "✅ Proceeding with staging deployment"
         fi
 
-  build-and-test:
-    name: Build and Test
+  full-test-suite:
+    name: Full Test Suite
     runs-on: ubuntu-latest
     needs: check-commit
     if: needs.check-commit.outputs.should-deploy == 'true'
@@ -52,18 +52,94 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Run quick smoke tests to ensure build is deployable
-    - name: Backend smoke test
+    # Build solution
+    - name: Build solution
       run: |
         dotnet restore Crud.sln
         dotnet build Crud.sln --configuration Release
-        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical"
         
-    - name: Frontend smoke test
+    # Run all backend unit tests
+    - name: Backend unit tests (full)
+      run: |
+        echo "🧪 Running all backend unit tests..."
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --logger "trx;LogFileName=unit-tests.trx"
+        
+    # Run all backend integration tests
+    - name: Backend integration tests (full)
+      run: |
+        echo "🧪 Running all backend integration tests..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --configuration Release --logger "trx;LogFileName=integration-tests.trx"
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        
+    # Build and test frontend
+    - name: Frontend build and tests
       working-directory: ./src/Angular
       run: |
         npm ci
         npm run lint
+        npm run test -- --watch=false --browsers=ChromeHeadless
+        npm run build -- --configuration=staging
+        
+    # Install E2E dependencies
+    - name: Install E2E dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+        
+    # Run full E2E test suite
+    - name: Run full E2E test suite
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🧪 Running full E2E test suite (174 tests)..."
+        npm run test:webserver
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: staging-test-results-${{ github.sha }}
+        path: |
+          TestResults/
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+        retention-days: 7
+
+  build-artifacts:
+    name: Build Deployment Artifacts  
+    runs-on: ubuntu-latest
+    needs: full-test-suite
+    if: needs.full-test-suite.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Build Angular for staging
+    - name: Build frontend for staging
+      working-directory: ./src/Angular
+      run: |
+        npm ci
         npm run build -- --configuration=staging
         
     # Build deployment artifacts
@@ -94,7 +170,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging Environment
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: build-artifacts
     environment:
       name: staging
       url: ${{ steps.deploy.outputs.url }}

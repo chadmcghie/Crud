@@ -22,7 +22,8 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWindowQuery(id), ct);
-        if (w is null) return NotFound();
+        if (w is null)
+            return NotFound();
         return Ok(mapper.Map<WindowResponse>(w));
     }
 
