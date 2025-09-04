@@ -70,12 +70,13 @@ cd src/Angular && npm run lint
 
 ## E2E Testing Strategy
 
-**UPDATE**: E2E tests now use Playwright's built-in webServer configuration. See `docs/Decisions/0002-E2E-Testing-Database-Strategy.md`.
+**UPDATE**: E2E tests now use Playwright's built-in webServer configuration. See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for the current approach and `docs/Decisions/0001-Serial-E2E-Testing.md` for background on serial execution.
 
-- **Playwright webServer**: Automatic server management, unique database per test run
+- **Playwright webServer**: Automatic server management, unique database per test run (recommended approach)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
 - Database isolation via unique filenames prevents locking issues
-- CI/CD uses same configuration as local development
+- Serial execution strategy (`workers: 1`) for SQLite/EF Core compatibility
+- CI/CD uses same webServer configuration as local development
 
 ## Project Structure
 
@@ -85,6 +86,8 @@ cd src/Angular && npm run lint
 - `src/Api/` - ASP.NET Core Web API controllers
 - `src/Angular/` - Angular frontend application
 - `test/Tests.Unit.Backend/` - xUnit, Moq, FluentAssertions
+- `test/Tests.Integration.Backend/` - API integration tests with WebApplicationFactory
+- `test/Tests.Integration.NG/` - Angular integration tests with Karma
 - `test/Tests.E2E.NG/` - Playwright E2E tests
 - `.claude/` - Claude Code configuration and custom tools
 

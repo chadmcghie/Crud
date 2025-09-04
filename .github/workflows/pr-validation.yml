@@ -1,10 +1,9 @@
 name: Pull Request Validation
 
 on:
-  # TEMPORARILY DISABLED - Only running E2E tests
-  # pull_request:
-  #   branches: [ dev ]
-  #   types: [opened, synchronize, reopened]
+  pull_request:
+    branches: [ main, dev ]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -58,7 +57,6 @@ jobs:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -117,7 +115,6 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -153,7 +150,6 @@ jobs:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -217,7 +213,6 @@ jobs:
     name: Smoke Tests (Quick Validation)
     runs-on: ubuntu-latest
     needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
-    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -361,17 +356,19 @@ jobs:
         chmod +x ./src/Api/bin/Release/net8.0/Api
         echo "✅ Execute permissions set for API binary"
         
-    - name: Run E2E Tests
+    - name: Run E2E Tests with WebServer Config
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🧪 Running 3 E2E tests (API health, get person, get role)..."
-        npx playwright test tests/minimal-e2e.spec.ts --reporter=list --config=playwright.config.fast.ts
+        echo "🚀 Running E2E tests with Playwright WebServer configuration..."
+        echo "This uses Playwright's built-in server management - no custom setup needed!"
+        npm run test:webserver
       env:
         CI: true
-        API_PORT: 5172
-        ANGULAR_PORT: 4200
         ASPNETCORE_ENVIRONMENT: Testing
         DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        # Unique database per test run to avoid locking
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
         
     - name: Upload E2E test results
       uses: actions/upload-artifact@v4
@@ -382,22 +379,22 @@ jobs:
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
           
-    - name: Upload server logs
+    - name: Upload database files (for debugging)
       uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: e2e-server-logs-${{ github.run_number }}
+        name: database-files-${{ github.run_number }}
         path: |
-          src/Api/api.log
-          src/Angular/angular.log
+          CrudTest_*.db
+          CrudTest_*.db-wal
+          CrudTest_*.db-shm
           
     - name: Cleanup
       if: always()
       run: |
-        echo "🧹 Cleaning up test artifacts..."
-        # Playwright globalTeardown handles server shutdown
-        # Just clean up any leftover test databases
-        rm -f /tmp/CrudTest_*.db 2>/dev/null || true
+        echo "🧹 Cleaning up test databases..."
+        # Remove test database files created during this run
+        rm -f CrudTest_*.db CrudTest_*.db-wal CrudTest_*.db-shm 2>/dev/null || true
         echo "✅ Cleanup complete"
 
   pr-validation-summary:
@@ -422,14 +419,17 @@ jobs:
         echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || (needs.e2e-tests.result == 'failure' && '❌ Failed') || (needs.e2e-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Check overall status - TEMPORARILY only checking build and E2E
+        # Check overall status
         if [ "${{ needs.build.result }}" == "success" ] && 
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] &&
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] &&
+           [ "${{ needs.backend-integration-tests.result }}" == "success" ] &&
            [ "${{ needs.e2e-tests.result }}" == "success" ]; then
-          echo "### ✅ Build and E2E tests passed!" >> $GITHUB_STEP_SUMMARY
-          echo "TEMPORARY: Only running 3 E2E tests for debugging." >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ All validation checks passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**E2E Tests:** Now using Playwright WebServer configuration for improved reliability" >> $GITHUB_STEP_SUMMARY
         else
-          echo "### ❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
-          echo "Build result: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "E2E result: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "### ❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the test results above for details." >> $GITHUB_STEP_SUMMARY
           exit 1
         fi

@@ -78,10 +78,10 @@
 - Playwright webServer configuration for automatic server management.
 
 **Execution Strategy (Updated 2025-09-04)**  
-- **Serial execution only** - No parallel workers due to SQLite/EF Core limitations.  
+- **Serial execution only** - No parallel workers due to SQLite/EF Core limitations (see ADR-0001).  
 - **Categorized tests**: @smoke (2 min), @critical (5 min), @extended (10 min).  
 - **Single browser default** - Cross-browser only for critical paths.  
-- **Playwright webServer** - Automatic server lifecycle management.
+- **Playwright webServer** - Automatic server lifecycle management (see ADR-0003).
 
 **Test Suite Size (As of 2025-09-04)**  
 - **Total**: 174 E2E tests across 13 spec files
@@ -90,9 +90,11 @@
   - Setup/Config Tests: ~40 tests (database, server management)
   - Integration Tests: ~10 tests (full workflows)
   - Performance Tests: ~10 tests (benchmarks)
-  - Smoke Tests: ~14 tests (health checks)
-- **Tagged Tests**: 29 tests (@smoke, @critical, @extended)
-- **CI Strategy**: Run only smoke tests in CI (~20-30 tests), full suite nightly
+- **Tagged Tests**: 29 tests total
+  - @smoke: 22 tests (for quick CI validation)
+  - @critical: 3 tests (core functionality)
+  - @extended: 4 tests (comprehensive scenarios)
+- **CI Strategy**: Run smoke tests in PR validation (~22 tests), full suite nightly
 - **Note**: 174 tests is excessive for E2E. Most suites run 10-50 tests. Consider reducing.  
 
 **Examples**  
