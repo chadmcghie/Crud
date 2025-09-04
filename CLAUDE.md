@@ -86,6 +86,51 @@ cd src/Angular && npm run lint
 - `src/Angular/` - Angular frontend application
 - `test/Tests.Unit.Backend/` - xUnit, Moq, FluentAssertions
 - `test/Tests.E2E.NG/` - Playwright E2E tests
+- `.claude/` - Claude Code configuration and custom tools
+
+## Claude Configuration (.claude folder)
+
+The `.claude` folder contains project-specific Claude Code configurations and tools:
+
+### Structure
+- `.claude/settings.local.json` - Pre-approved actions and permissions
+- `.claude/commands/` - Custom slash commands for common workflows
+- `.claude/agents/` - Specialized agent configurations
+- `.claude/.agent-os/` - Agent OS standards and instructions
+
+### Available Commands
+Located in `.claude/commands/`:
+- `analyze-product` - Analyze codebase and install Agent OS
+- `create-spec` - Create specifications for features
+- `create-tasks` - Break down work into manageable tasks
+- `document-blocker` - Document blocking issues
+- `execute-tasks` - Execute planned tasks
+- `plan-product` - Plan product features and architecture
+- `summarize-thread` - Summarize conversation threads
+- `troubleshoot-issues` - Debug and resolve problems
+
+### Specialized Agents
+Located in `.claude/agents/`:
+- `test-runner` - Run tests and analyze failures
+- `file-creator` - Create files with proper structure
+- `git-workflow` - Handle git operations and PRs
+- `project-manager` - Track tasks and roadmaps
+- `context-fetcher` - Retrieve relevant documentation
+- `date-checker` - Determine current date
+- `document-blocking-issue` - Document critical blockers
+- `troubleshoot-with-history` - Debug with context history
+
+### Agent OS Standards
+Located in `.claude/.agent-os/`:
+- `standards/` - Code style guides (C#, JS, CSS, HTML), best practices
+- `instructions/` - Core workflows for analysis, specs, tasks, execution
+
+### Recommended Additional Folders
+Consider adding these to `.claude/` for better context:
+- `templates/` - File templates for common patterns
+- `snippets/` - Reusable code snippets
+- `workflows/` - Multi-step process definitions
+- `context/` - Project-specific context and decisions
 
 ## Database
 
@@ -103,4 +148,15 @@ cd src/Angular && npm run lint
 5. Use MediatR for all business operations
 6. Repository pattern for data access
 7. DTOs for API contracts, separate from domain models
-- STOP COMMITTING AND PUSHING WITHOUT ASKING ME FIRST!!!!!!!!!
+## Important Rules
+
+- **NEVER commit or push without explicit permission**
+- **NEVER create documentation files unless explicitly requested**
+- **ALWAYS prefer editing existing files over creating new ones**
+
+## Key References
+
+- API ports: 5172 (HTTP), 7268 (HTTPS)
+- Angular port: 4200
+- E2E test fix discussion: @"docs\Misc\AI Discussions\claude-task-e2e-test-serial-execution-fix-20250828.md"
+- Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md

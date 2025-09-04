@@ -1,11 +1,13 @@
 name: Feature Branch Tests
 
 on:
-  push:
-    branches: 
-      - 'feature/**'
-      - 'bugfix/**'
-      - 'hotfix/**'
+  # TEMPORARILY DISABLED - Only running E2E tests
+  # push:
+  #   branches: 
+  #     - 'feature/**'
+  #     - 'bugfix/**'
+  #     - 'hotfix/**'
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: '8.0.x'

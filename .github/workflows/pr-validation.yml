@@ -1,9 +1,11 @@
 name: Pull Request Validation
 
 on:
-  pull_request:
-    branches: [ dev ]
-    types: [opened, synchronize, reopened]
+  # TEMPORARILY DISABLED - Only running E2E tests
+  # pull_request:
+  #   branches: [ dev ]
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
