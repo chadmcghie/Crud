@@ -149,5 +149,56 @@ namespace Infrastructure.Resilience
                             retryCount, timespan.TotalMilliseconds);
                     });
         }
+
+        /// <summary>
+        /// Timeout policy for database operations (prevents hanging)
+        /// </summary>
+        public static IAsyncPolicy GetDatabaseTimeoutPolicy(ILogger? logger = null)
+        {
+            return Policy.TimeoutAsync(TimeSpan.FromSeconds(30)); // 30 second timeout for database operations
+        }
+
+        /// <summary>
+        /// Timeout policy for HTTP operations
+        /// </summary>
+        public static IAsyncPolicy<HttpResponseMessage> GetHttpTimeoutPolicy(IServiceProvider serviceProvider)
+        {
+            return Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(15)); // 15 second timeout for HTTP requests
+        }
+
+        /// <summary>
+        /// Combined database policy with timeout, retry, and circuit breaker
+        /// </summary>
+        public static IAsyncPolicy GetComprehensiveDatabasePolicy(ILogger? logger = null)
+        {
+            var timeoutPolicy = GetDatabaseTimeoutPolicy(logger);
+            var retryPolicy = GetDatabaseRetryPolicy(logger);
+            var circuitBreakerPolicy = GetDatabaseCircuitBreakerPolicy(logger);
+
+            // Wrap in order: Timeout -> Retry -> Circuit Breaker
+            return Policy.WrapAsync(timeoutPolicy, retryPolicy, circuitBreakerPolicy);
+        }
+
+        /// <summary>
+        /// Combined HTTP policy with timeout, retry, and circuit breaker
+        /// </summary>
+        public static IAsyncPolicy<HttpResponseMessage> GetComprehensiveHttpPolicy(IServiceProvider serviceProvider)
+        {
+            var timeoutPolicy = GetHttpTimeoutPolicy(serviceProvider);
+            var retryPolicy = GetHttpRetryPolicy(serviceProvider);
+            var circuitBreakerPolicy = GetHttpCircuitBreakerPolicy(serviceProvider);
+
+            // Wrap in order: Timeout -> Retry -> Circuit Breaker
+            return Policy.WrapAsync(timeoutPolicy, retryPolicy, circuitBreakerPolicy);
+        }
+
+        /// <summary>
+        /// Bulkhead isolation policy to limit concurrent database operations
+        /// </summary>
+        public static IAsyncPolicy GetDatabaseBulkheadPolicy(ILogger? logger = null)
+        {
+            return Policy.BulkheadAsync(20, 50); // Max 20 concurrent database operations, 50 in queue
+        }
+
     }
 }

@@ -192,4 +192,68 @@ public class PollyResilienceTests
         // Note: The real test is in integration tests where these methods are actually used
         // with real DbContext instances in the repositories
     }
+
+    [Fact]
+    public void GetDatabaseTimeoutPolicy_ShouldReturnValidPolicy()
+    {
+        // Arrange & Act
+        var policy = PollyPolicies.GetDatabaseTimeoutPolicy(_mockLogger.Object);
+        
+        // Assert
+        policy.Should().NotBeNull();
+    }
+
+    [Fact] 
+    public void GetHttpTimeoutPolicy_ShouldReturnValidPolicy()
+    {
+        // Arrange
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockHttpLogger = new Mock<ILogger<HttpMessageHandler>>();
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(ILogger<HttpMessageHandler>)))
+                          .Returns(mockHttpLogger.Object);
+        
+        // Act
+        var policy = PollyPolicies.GetHttpTimeoutPolicy(mockServiceProvider.Object);
+        
+        // Assert
+        policy.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GetDatabaseBulkheadPolicy_ShouldReturnValidPolicy()
+    {
+        // Arrange & Act
+        var policy = PollyPolicies.GetDatabaseBulkheadPolicy(_mockLogger.Object);
+        
+        // Assert
+        policy.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GetComprehensiveDatabasePolicy_ShouldCombineAllPolicies()
+    {
+        // Arrange & Act
+        var policy = PollyPolicies.GetComprehensiveDatabasePolicy(_mockLogger.Object);
+        
+        // Assert
+        policy.Should().NotBeNull();
+        // This policy combines timeout, retry, and circuit breaker
+    }
+
+    [Fact]
+    public void GetComprehensiveHttpPolicy_ShouldCombineAllHttpPolicies()
+    {
+        // Arrange
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockHttpLogger = new Mock<ILogger<HttpMessageHandler>>();
+        mockServiceProvider.Setup(sp => sp.GetService(typeof(ILogger<HttpMessageHandler>)))
+                          .Returns(mockHttpLogger.Object);
+        
+        // Act
+        var policy = PollyPolicies.GetComprehensiveHttpPolicy(mockServiceProvider.Object);
+        
+        // Assert
+        policy.Should().NotBeNull();
+        // This policy combines timeout, retry, and circuit breaker for HTTP
+    }
 }
