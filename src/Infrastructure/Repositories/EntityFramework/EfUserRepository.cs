@@ -2,6 +2,7 @@ using Domain.Entities.Authentication;
 using Domain.Interfaces;
 using Domain.ValueObjects;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.EntityFramework;
@@ -38,7 +39,7 @@ public class EfUserRepository : IUserRepository
     public async Task<User> AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: cancellationToken);
         return user;
     }
 
@@ -71,13 +72,13 @@ public class EfUserRepository : IUserRepository
         }
         
         // Save just the refresh token changes
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: cancellationToken);
     }
 
     public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
     {
         _context.Users.Remove(user);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: cancellationToken);
     }
 
     public async Task<User?> GetByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
@@ -92,6 +93,6 @@ public class EfUserRepository : IUserRepository
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.SaveChangesAsync(cancellationToken);
+        return await _context.SaveChangesWithRetryAsync(cancellationToken: cancellationToken);
     }
 }
