@@ -97,7 +97,8 @@
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
-      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)"
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG/**)"
     ],
     "deny": [],
     "ask": [],

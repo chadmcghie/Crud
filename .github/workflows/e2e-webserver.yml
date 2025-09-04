@@ -3,8 +3,9 @@ name: E2E Tests with WebServer
 on:
   push:
     branches: [ test-server-optimization ]
-  pull_request:
-    branches: [ main, dev ]
+  # TEMPORARILY DISABLED - Avoiding duplicate runs
+  # pull_request:
+  #   branches: [ main, dev ]
   workflow_dispatch:
 
 permissions:
@@ -66,7 +67,7 @@ jobs:
       run: |
         echo "🚀 Running E2E tests with Playwright WebServer configuration..."
         echo "This uses Playwright's built-in server management - no custom setup needed!"
-        npx playwright test --config=playwright.config.webserver.ts --reporter=list,html
+        npx playwright test --config=playwright.config.webserver.ts --reporter=dot
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
