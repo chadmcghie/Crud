@@ -8,7 +8,7 @@ export default defineConfig({
   testDir: './tests',
   
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false, // Serial execution per ADR-001
   
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: true,
@@ -17,20 +17,20 @@ export default defineConfig({
   retries: 2,
   
   /* Use single worker for serial execution per ADR-001 */
-  workers: 1,
+  workers: 1, // Single worker per ADR-001
   
   /* Timeout configuration */
   timeout: 90000, // 90 seconds per test
   
   /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/global-setup.ts',
+  globalSetup: './tests/setup/optimized-global-setup.ts',
   globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter configuration for CI */
   reporter: [
     ['junit', { outputFile: './test-results/junit.xml' }],
     ['json', { outputFile: './test-results/results.json' }],
-    ['html', { open: 'never', outputFolder: './test-results/html' }],
+    ['html', { open: 'never', outputFolder: './playwright-report-ci' }],
     ['github'], // GitHub Actions annotations
     ['list'] // Console output
   ],
@@ -91,7 +91,7 @@ export default defineConfig({
   ],
 
   /* Output test results to a specific folder */
-  outputDir: './test-results/',
+  outputDir: './test-artifacts/',
 
   /* Preserve test outputs */
   preserveOutput: 'failures-only',

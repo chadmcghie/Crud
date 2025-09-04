@@ -62,9 +62,10 @@ test.describe('Serial Execution Configuration Validation', () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify globalSetup and globalTeardown are configured for serial execution
-    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/serial-global-setup/);
-    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/serial-global-teardown/);
+    // Verify globalSetup and globalTeardown are configured for robust execution
+    // Accept both global-setup and optimized-global-setup
+    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/(global-setup|optimized-global-setup|smart-global-setup|robust-global-setup)/);
+    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/global-teardown/);
   });
   
   test('should execute tests sequentially', async ({ page }) => {
@@ -150,8 +151,8 @@ test.describe('Performance Targets', () => {
     if (timeoutMatch) {
       const timeout = parseInt(timeoutMatch[1]);
       
-      // Should be reasonable for serial execution (30-60 seconds)
-      expect(timeout).toBeGreaterThanOrEqual(30000);
+      // Should be reasonable for serial execution (15-60 seconds)
+      expect(timeout).toBeGreaterThanOrEqual(15000);
       expect(timeout).toBeLessThanOrEqual(60000);
     }
     

@@ -7,18 +7,20 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel with proper worker isolation */
-  fullyParallel: true,
+  fullyParallel: false, // Serial execution per ADR-001
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Reduced retries for faster feedback */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0, // Reduced from 2 to 1 for faster failure
   /* Use fewer workers to reduce startup overhead */
-  workers: process.env.CI ? 2 : 1,
+  workers: 1, // Single worker per ADR-001
+  /* Circuit breaker: stop after X failures to prevent runaway test execution */
+  maxFailures: process.env.CI ? 5 : 0, // Stop after 5 failures in CI, no limit locally
   /* Increase timeout for slow startup */
-  timeout: 120000, // 2 minutes per test
+  timeout: 30000, // Reduced to 30 seconds per test for faster feedback
   
   /* Global setup and teardown for database management */
-  globalSetup: './tests/setup/global-setup.ts',
+  globalSetup: './tests/setup/optimized-global-setup.ts',
   globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */

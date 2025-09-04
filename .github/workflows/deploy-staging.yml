@@ -55,8 +55,8 @@ jobs:
     # Run quick smoke tests to ensure build is deployable
     - name: Backend smoke test
       run: |
-        dotnet restore Crud.All.sln
-        dotnet build Crud.All.sln --configuration Release
+        dotnet restore Crud.sln
+        dotnet build Crud.sln --configuration Release
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --filter "Category=Smoke|Priority=Critical"
         
     - name: Frontend smoke test
@@ -106,11 +106,12 @@ jobs:
         name: staging-artifacts-${{ github.sha }}
         
     # ====================================
-    # TODO: Add your staging deployment steps here
+    # Staging Deployment
     # ====================================
-    # Examples for different platforms:
+    # Configure deployment based on your hosting platform
+    # Uncomment and modify the appropriate section below:
     
-    # Azure App Service:
+    # --- Option 1: Azure App Service ---
     # - name: Deploy to Azure Web App
     #   uses: azure/webapps-deploy@v2
     #   with:
@@ -118,7 +119,7 @@ jobs:
     #     publish-profile: ${{ secrets.AZURE_STAGING_PUBLISH_PROFILE }}
     #     package: staging-api.zip
     
-    # AWS Elastic Beanstalk:
+    # --- Option 2: AWS Elastic Beanstalk ---
     # - name: Deploy to AWS EB
     #   uses: einaregilsson/beanstalk-deploy@v21
     #   with:
@@ -130,7 +131,7 @@ jobs:
     #     region: us-east-1
     #     deployment_package: staging-api.zip
     
-    # Docker/Kubernetes:
+    # --- Option 3: Docker/Kubernetes ---
     # - name: Build and push Docker image
     #   run: |
     #     docker build -t your-registry/your-app:staging-${{ github.sha }} .
@@ -139,7 +140,7 @@ jobs:
     #   run: |
     #     kubectl set image deployment/your-app your-app=your-registry/your-app:staging-${{ github.sha }} -n staging
     
-    # IIS/Windows Server (self-hosted runner):
+    # --- Option 4: IIS/Windows Server (self-hosted runner) ---
     # - name: Deploy to IIS
     #   run: |
     #     Stop-WebSite -Name "YourApp-Staging"
@@ -147,12 +148,14 @@ jobs:
     #     Expand-Archive -Path staging-frontend.zip -DestinationPath C:\inetpub\staging\www -Force
     #     Start-WebSite -Name "YourApp-Staging"
     
-    - name: Deploy to staging (placeholder)
+    # --- Default: Placeholder for manual configuration ---
+    - name: Deploy to staging
       id: deploy
       run: |
         echo "🚀 Deploying to staging environment..."
         echo "Version: ${{ github.sha }}"
-        echo "TODO: Add actual deployment commands here"
+        # Replace this section with actual deployment commands
+        # Example: Copy files to server, restart services, etc.
         echo "url=https://staging.your-app.com" >> $GITHUB_OUTPUT
         
     - name: Verify deployment health
@@ -198,7 +201,49 @@ jobs:
           echo "The staging deployment failed. Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
         fi
         
-    # TODO: Add notifications (Slack, Teams, email, etc.)
+    # --- Notification Options ---
+    # Uncomment and configure the appropriate notification method:
+    
+    # Option 1: Slack notification
+    # - name: Notify Slack
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     text: |
+    #       Staging Deployment ${{ job.status == 'success' && '✅' || '❌' }}
+    #       Version: ${{ github.sha }}
+    #       Environment: Staging
+    #       Deployed by: ${{ github.actor }}
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    # Option 2: Microsoft Teams notification
+    # - name: Notify Teams
+    #   if: always()
+    #   uses: jdcargile/ms-teams-notification@v1.3
+    #   with:
+    #     github-token: ${{ github.token }}
+    #     ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK }}
+    #     notification-summary: Staging Deployment ${{ job.status }}
+    #     notification-color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
+    
+    # Option 3: Email notification
+    # - name: Send email notification
+    #   if: always()
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 465
+    #     username: ${{ secrets.EMAIL_USERNAME }}
+    #     password: ${{ secrets.EMAIL_PASSWORD }}
+    #     subject: Staging Deployment ${{ job.status }} - ${{ github.sha }}
+    #     to: devops@your-company.com
+    #     from: GitHub Actions
+    #     body: |
+    #       Staging deployment has ${{ job.status }}.
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    #       View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     # - name: Send Slack notification
     #   if: always()
     #   uses: 8398a7/action-slack@v3

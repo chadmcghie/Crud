@@ -1,75 +1,98 @@
 import { FullConfig } from '@playwright/test';
-import fs from 'fs/promises';
-import path from 'path';
-import { killAllTestServers } from './port-utils';
-import { PersistentServerManager } from './persistent-server-manager';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
-async function globalTeardown(config: FullConfig) {
-  console.log('🧹 Starting global test teardown...');
+/**
+ * Simple Global Teardown
+ * Basic cleanup with no complex state management
+ * Just clean up database files and ensure ports are free
+ */
+async function simpleGlobalTeardown(config: FullConfig) {
+  console.log('🧹 Starting simple global teardown...');
   
-  // Stop all persistent servers
-  await PersistentServerManager.cleanupAll();
-  
-  // Kill any remaining test servers as a safety measure
-  try {
-    await killAllTestServers();
-  } catch (error) {
-    console.warn('⚠️ Error during server cleanup:', error);
-  }
-  
-  const workers = config.workers || 1;
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
-  
-  // Clean up databases for parallel workers
-  for (let i = 0; i < workers; i++) {
-    // Clean up parallel worker databases
+  // Clean up test database if it exists
+  if (process.env.DATABASE_PATH) {
     try {
-      const files = await fs.readdir(tempDir);
-      const parallelDbFiles = files.filter(f => f.startsWith(`CrudTest_Parallel${i}_`) && f.endsWith('.db'));
-      
-      for (const file of parallelDbFiles) {
-        const dbPath = path.join(tempDir, file);
-        await fs.unlink(dbPath);
-        console.log(`🗑️ Deleted database for parallel worker ${i}: ${file}`);
-      }
-    } catch (error) {
-      console.log(`ℹ️ Database for parallel worker ${i} already cleaned up or doesn't exist`);
-    }
-    
-    // Also clean up old worker databases (for backward compatibility)
-    const workerDatabase = process.env[`WORKER_${i}_DATABASE`];
-    if (workerDatabase) {
-      try {
-        await fs.access(workerDatabase);
-        await fs.unlink(workerDatabase);
-        console.log(`🗑️ Cleaned up old database for worker ${i}: ${path.basename(workerDatabase)}`);
-      } catch (error) {
-        // File doesn't exist or already cleaned up
+      await fs.unlink(process.env.DATABASE_PATH);
+      console.log('🗑️ Cleaned up test database');
+    } catch (err: any) {
+      // Only warn if it's not a "file not found" error
+      // File not found is actually good - means it was already cleaned
+      if (err.code !== 'ENOENT') {
+        console.warn('⚠️ Could not clean up test database:', err.message);
       }
     }
   }
   
-  // Clean up any remaining test database files in temp directory
+  // Clean up any leftover test databases in temp directory
+  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   try {
     const files = await fs.readdir(tempDir);
-    const testDbFiles = files.filter(file => file.startsWith('CrudTest_') && file.endsWith('.db'));
+    const testDbs = files.filter(f => f.startsWith('CrudTest_'));
     
-    if (testDbFiles.length > 0) {
-      console.log(`🧹 Found ${testDbFiles.length} leftover test database(s), cleaning up...`);
-      for (const file of testDbFiles) {
-        try {
-          await fs.unlink(path.join(tempDir, file));
-          console.log(`🗑️ Deleted leftover database: ${file}`);
-        } catch (error) {
-          console.warn(`⚠️ Could not delete ${file}: ${error}`);
+    for (const db of testDbs) {
+      try {
+        const dbPath = path.join(tempDir, db);
+        const stats = await fs.stat(dbPath);
+        
+        // Only delete files older than 1 hour to avoid conflicts
+        const oneHourAgo = Date.now() - (60 * 60 * 1000);
+        if (stats.mtimeMs < oneHourAgo) {
+          await fs.unlink(dbPath);
+          console.log(`🗑️ Cleaned up old test database: ${db}`);
         }
+      } catch {
+        // Ignore errors - file might be in use
       }
     }
-  } catch (error) {
-    console.warn(`⚠️ Could not scan temp directory for cleanup: ${error}`);
+  } catch {
+    // Ignore if temp directory is not accessible
   }
   
-  console.log('✅ Global test teardown completed');
+  // Simple port cleanup as fallback
+  // Note: Actual process killing is handled by the teardown function returned from setup
+  const ports = [
+    parseInt(process.env.API_PORT || '5172'),
+    parseInt(process.env.ANGULAR_PORT || '4200')
+  ];
+  
+  if (process.platform === 'win32') {
+    // Windows: Use netstat to check if ports are still in use
+    const { exec } = require('child_process');
+    for (const port of ports) {
+      try {
+        await new Promise<void>((resolve) => {
+          exec(`netstat -ano | findstr :${port}`, (error: any, stdout: string) => {
+            if (!error && stdout) {
+              console.log(`⚠️ Port ${port} may still be in use`);
+            }
+            resolve();
+          });
+        });
+      } catch {
+        // Ignore errors
+      }
+    }
+  } else {
+    // Unix-like: Use lsof to check if ports are still in use
+    const { exec } = require('child_process');
+    for (const port of ports) {
+      try {
+        await new Promise<void>((resolve) => {
+          exec(`lsof -i :${port}`, (error: any, stdout: string) => {
+            if (!error && stdout) {
+              console.log(`⚠️ Port ${port} may still be in use`);
+            }
+            resolve();
+          });
+        });
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+  
+  console.log('✅ Simple global teardown completed');
 }
 
-export default globalTeardown;
+export default simpleGlobalTeardown;

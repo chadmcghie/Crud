@@ -10,7 +10,21 @@
       "Bash(npm run clean:servers:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run test:clean:*)",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "Bash(grep:*)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Api\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Bash(npx playwright show-report:*)",
+      "Bash(dir:*)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)"
     ],
     "deny": [],
     "ask": []

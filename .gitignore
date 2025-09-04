@@ -11,7 +11,6 @@ obj/
 *.sln.docstates
 *.user
 *.userosscache
-*.sln.docstates
 
 # Build results
 [Dd]ebug/
@@ -248,6 +247,7 @@ CConversionReportFiles/
 *.db
 *.db-shm
 *.db-wal
+CrudTest_*.db*
 
 # Business Intelligence projects
 *.rdl.data

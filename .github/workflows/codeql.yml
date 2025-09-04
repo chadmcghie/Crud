@@ -46,11 +46,11 @@ jobs:
 
     - name: Restore .NET dependencies
       if: matrix.language == 'csharp'
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.sln
 
     - name: Build .NET solution
       if: matrix.language == 'csharp'
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.sln --no-restore --configuration Release
 
     - name: Build Angular app
       if: matrix.language == 'javascript'

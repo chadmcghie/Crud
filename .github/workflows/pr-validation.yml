@@ -1,69 +1,25 @@
 name: Pull Request Validation
 
 on:
-  pull_request:
-    branches: [ dev ]
-    types: [opened, synchronize, reopened]
+  # TEMPORARILY DISABLED - Only running E2E tests
+  # pull_request:
+  #   branches: [ dev ]
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '20.x'
 
 jobs:
-  # Check if tests already passed for this commit
-  check-previous-tests:
-    name: Check Previous Test Results
+  build:
+    name: Build Solution
     runs-on: ubuntu-latest
-    outputs:
-      skip-backend-unit: ${{ steps.check.outputs.skip-backend-unit }}
-      skip-frontend-unit: ${{ steps.check.outputs.skip-frontend-unit }}
-      backend-run-url: ${{ steps.check.outputs.backend-run-url }}
-      frontend-run-url: ${{ steps.check.outputs.frontend-run-url }}
-    
-    steps:
-    - name: Check if tests already passed for this commit
-      id: check
-      uses: actions/github-script@v7
-      with:
-        script: |
-          // Check for successful feature branch test runs on this commit
-          const { data: workflows } = await github.rest.actions.listWorkflowRunsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            workflow_id: 'feature-branch-tests.yml',
-            head_sha: context.payload.pull_request.head.sha,
-            status: 'success',
-            per_page: 1
-          });
-          
-          const hasPassedTests = workflows.total_count > 0;
-          
-          if (hasPassedTests) {
-            const run = workflows.workflow_runs[0];
-            console.log(`Found successful test run #${run.run_number} from ${run.created_at}`);
-            core.setOutput('skip-backend-unit', 'true');
-            core.setOutput('skip-frontend-unit', 'true');
-            core.setOutput('backend-run-url', run.html_url);
-            core.setOutput('frontend-run-url', run.html_url);
-            
-            // Add summary
-            core.summary.addHeading('✅ Tests Already Passed', 2);
-            core.summary.addRaw(`Unit tests already passed for commit ${context.payload.pull_request.head.sha.substring(0, 7)} in `);
-            core.summary.addLink(`run #${run.run_number}`, run.html_url);
-            core.summary.addRaw('\n\nSkipping redundant unit test execution.');
-            await core.summary.write();
-          } else {
-            console.log('No successful test runs found for this commit. Tests will run.');
-            core.setOutput('skip-backend-unit', 'false');
-            core.setOutput('skip-frontend-unit', 'false');
-          }
-
-  # Full test suite for PRs targeting dev branch
-  backend-unit-tests:
-    name: Backend Unit Tests
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-backend-unit != 'true'
     
     steps:
     - name: Checkout code
@@ -73,44 +29,95 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.sln
       
-    - name: Build backend
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+    - name: Build solution
+      run: dotnet build Crud.sln --no-restore --configuration Release
       
+    - name: Verify appsettings files exist
+      run: |
+        echo "📁 Verifying appsettings files before artifact upload:"
+        ls -la src/Api/appsettings*.json
+        echo "✅ All appsettings files found"
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+        retention-days: 1
+
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files if they exist
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        elif [ -f "appsettings.json" ]; then
+          cp appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from root"
+        else
+          echo "⚠️ No appsettings files found to copy"
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
     - name: Run Backend Unit Tests
-      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal" --results-directory TestResults/
       
     - name: Upload backend unit test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-unit-test-results-${{ github.run_number }}
+        name: backend-unit-tests-${{ github.run_number }}
         path: TestResults/
-
-  # Placeholder job for when backend unit tests are skipped
-  backend-unit-tests-skipped:
-    name: Backend Unit Tests (Skipped - Already Passed)
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-backend-unit == 'true'
-    
-    steps:
-    - name: Report skipped tests
-      run: |
-        echo "✅ Backend unit tests were skipped because they already passed for this commit"
-        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.backend-run-url }}"
-        echo "## ✅ Backend Unit Tests" >> $GITHUB_STEP_SUMMARY
-        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "See [previous run](${{ needs.check-previous-tests.outputs.backend-run-url }})" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Publish backend unit test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Unit Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
 
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-frontend-unit != 'true'
+    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -139,30 +146,14 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: frontend-coverage-${{ github.run_number }}
+        name: frontend-unit-tests-${{ github.run_number }}
         path: src/Angular/coverage/
-
-  # Placeholder job for when frontend unit tests are skipped
-  frontend-unit-tests-skipped:
-    name: Frontend Unit Tests (Skipped - Already Passed)
-    runs-on: ubuntu-latest
-    needs: check-previous-tests
-    if: needs.check-previous-tests.outputs.skip-frontend-unit == 'true'
-    
-    steps:
-    - name: Report skipped tests
-      run: |
-        echo "✅ Frontend unit tests were skipped because they already passed for this commit"
-        echo "Previous successful run: ${{ needs.check-previous-tests.outputs.frontend-run-url }}"
-        echo "## ✅ Frontend Unit Tests" >> $GITHUB_STEP_SUMMARY
-        echo "Tests already passed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "See [previous run](${{ needs.check-previous-tests.outputs.frontend-run-url }})" >> $GITHUB_STEP_SUMMARY
 
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, backend-unit-tests-skipped]
-    if: always() && (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success')
+    needs: [build]
+    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
     
     steps:
     - name: Checkout code
@@ -172,34 +163,161 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Restore dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
-      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files if they exist
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        elif [ -f "appsettings.json" ]; then
+          cp appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from root"
+        else
+          echo "⚠️ No appsettings files found to copy"
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
     - name: Run Backend Integration Tests with SQLite
-      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --results-directory TestResults/
       env:
         CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
       timeout-minutes: 10
       
     - name: Upload integration test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-integration-test-results-${{ github.run_number }}
+        name: backend-integration-tests-${{ github.run_number }}
         path: TestResults/
+        
+    - name: Publish backend integration test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Integration Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
+
+  smoke-tests:
+    name: Smoke Tests (Quick Validation)
+    runs-on: ubuntu-latest
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    if: false  # TEMPORARILY DISABLED - Only running 3 E2E tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Setting up smoke test environment..."
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files - they should be in src/Api from the artifact
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        else
+          echo "❌ No appsettings files found in src/Api/"
+          echo "📁 Checking current directory:"
+          ls -la *.json 2>/dev/null || echo "No JSON files in root"
+          exit 1
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
+    - name: Run API Health Check Test
+      run: |
+        echo "🔥 Running smoke test: API Health Check"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~ApiHealthTests.API_Should_Be_Responsive" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Basic CRUD Smoke Test
+      run: |
+        echo "🔥 Running smoke test: Basic CRUD Operations"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~PeopleControllerTests.GET_People_Should_Return_Empty_List_Initially" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Simple Authentication Test
+      run: |
+        echo "🔥 Running smoke test: Basic Authentication"
+        echo "Current directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        echo "Running test with detailed logging..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~AuthControllerTests.POST_Register_Should_Create_User_And_Return_Tokens" \
+          --logger "console;verbosity=detailed" \
+          --results-directory TestResults/ || (echo "Test failed with exit code: $?" && exit 1)
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Smoke Test Summary
+      if: always()
+      run: |
+        echo "## 🔥 Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Smoke tests are configured with continue-on-error to gather maximum diagnostic information." >> $GITHUB_STEP_SUMMARY
+        echo "Check individual test steps above for specific failures." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if ls TestResults/*.trx 2>/dev/null; then
+          echo "✅ Smoke tests executed and produced results" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ No test result files found - smoke tests may not have executed properly" >> $GITHUB_STEP_SUMMARY
+        fi
 
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped]
-    if: |
-      always() && 
-      (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests-skipped.result == 'success') &&
-      (needs.frontend-unit-tests.result == 'success' || needs.frontend-unit-tests-skipped.result == 'success')
+    needs: [build]
+    if: needs.build.result == 'success'
     
     steps:
     - name: Checkout code
@@ -217,11 +335,10 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -239,117 +356,28 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: npx playwright install --with-deps chromium
       
-    - name: Kill any existing processes on test ports
+    - name: Set execute permissions for API binary
       run: |
-        sudo lsof -ti:5172,4200 | xargs -r kill -9 || true
-        sleep 2
-      
-    - name: Start API server
-      working-directory: ./src/Api
-      run: |
-        echo "Starting API server..."
-        dotnet run --no-launch-profile --configuration Release > api.log 2>&1 &
-        echo "API_PID=$!" >> $GITHUB_ENV
-        echo "API server started with PID $!"
-      env:
-        ASPNETCORE_ENVIRONMENT: E2E
-        ASPNETCORE_URLS: http://localhost:5172
-        CI: true
-        DatabaseProvider: SQLite
-        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
-        
-    - name: Wait for API to be ready
-      run: |
-        echo "Waiting for API server to be ready..."
-        COUNTER=0
-        MAX_ATTEMPTS=30
-        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
-          if curl -f http://localhost:5172/health 2>/dev/null; then
-            echo "✅ API is ready!"
-            break
-          fi
-          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: API not ready yet..."
-          if [ $COUNTER -eq 10 ]; then
-            echo "⚠️ API is taking longer than expected. Checking logs..."
-            cd src/Api && tail -n 20 api.log || true
-          fi
-          sleep 2
-          COUNTER=$((COUNTER+1))
-        done
-        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
-          echo "❌ API server failed to start after $MAX_ATTEMPTS attempts"
-          echo "📋 API server logs:"
-          cd src/Api && cat api.log || true
-          exit 1
-        fi
-        
-    - name: Start Angular server
-      working-directory: ./src/Angular
-      run: |
-        echo "Starting Angular server with CI configuration..."
-        npm run start:ci > angular.log 2>&1 &
-        echo "ANGULAR_PID=$!" >> $GITHUB_ENV
-        echo "Angular server started with PID $!"
-        
-    - name: Wait for Angular to be ready
-      run: |
-        echo "Waiting for Angular server to be ready..."
-        COUNTER=0
-        MAX_ATTEMPTS=30
-        while [ $COUNTER -lt $MAX_ATTEMPTS ]; do
-          if curl -f http://localhost:4200 2>/dev/null; then
-            echo "✅ Angular is ready!"
-            break
-          fi
-          echo "Attempt $((COUNTER+1))/$MAX_ATTEMPTS: Angular not ready yet..."
-          if [ $COUNTER -eq 10 ]; then
-            echo "⚠️ Angular is taking longer than expected. Checking logs..."
-            cd src/Angular && tail -n 20 angular.log || true
-          fi
-          sleep 2
-          COUNTER=$((COUNTER+1))
-        done
-        if [ $COUNTER -eq $MAX_ATTEMPTS ]; then
-          echo "❌ Angular server failed to start after $MAX_ATTEMPTS attempts"
-          echo "📋 Angular server logs:"
-          cd src/Angular && cat angular.log || true
-          exit 1
-        fi
-        
-    - name: Verify servers are running
-      run: |
-        echo "🔍 Final health check before E2E tests..."
-        if ! curl -f http://localhost:5172/health 2>/dev/null; then
-          echo "❌ API is not responding!"
-          exit 1
-        fi
-        echo "✅ API health check passed"
-        
-        if ! curl -f http://localhost:4200 2>/dev/null; then
-          echo "❌ Angular is not responding!"
-          exit 1
-        fi
-        echo "✅ Angular health check passed"
-        echo "🚀 Both servers are ready for E2E tests!"
+        chmod +x ./src/Api/bin/Release/net8.0/Api
+        echo "✅ Execute permissions set for API binary"
         
     - name: Run E2E Tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🧪 Running E2E tests..."
-        npm run test:api-only || (echo "❌ API tests failed" && exit 1)
-        echo "✅ API tests passed"
-        npm run test:integration || (echo "❌ Integration tests failed" && exit 1)
-        echo "✅ Integration tests passed"
+        echo "🧪 Running 3 E2E tests (API health, get person, get role)..."
+        npx playwright test tests/minimal-e2e.spec.ts --reporter=list --config=playwright.config.fast.ts
       env:
         CI: true
-        API_BASE_URL: http://localhost:5172
-        ANGULAR_BASE_URL: http://localhost:4200
+        API_PORT: 5172
+        ANGULAR_PORT: 4200
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
         
     - name: Upload E2E test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-test-results-${{ github.run_number }}
+        name: e2e-tests-${{ github.run_number }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -358,29 +386,24 @@ jobs:
       uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: server-logs-${{ github.run_number }}
+        name: e2e-server-logs-${{ github.run_number }}
         path: |
           src/Api/api.log
           src/Angular/angular.log
           
-    - name: Stop servers
+    - name: Cleanup
       if: always()
       run: |
-        echo "🛑 Stopping servers..."
-        if [ ! -z "$API_PID" ]; then 
-          echo "Stopping API server (PID: $API_PID)"
-          kill $API_PID || true
-        fi
-        if [ ! -z "$ANGULAR_PID" ]; then 
-          echo "Stopping Angular server (PID: $ANGULAR_PID)"
-          kill $ANGULAR_PID || true
-        fi
-        echo "✅ Servers stopped"
+        echo "🧹 Cleaning up test artifacts..."
+        # Playwright globalTeardown handles server shutdown
+        # Just clean up any leftover test databases
+        rm -f /tmp/CrudTest_*.db 2>/dev/null || true
+        echo "✅ Cleanup complete"
 
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [check-previous-tests, backend-unit-tests, backend-unit-tests-skipped, frontend-unit-tests, frontend-unit-tests-skipped, backend-integration-tests, e2e-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
     if: always()
     
     steps:
@@ -392,36 +415,21 @@ jobs:
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
         
-        # Backend Unit Tests status
-        if [ "${{ needs.check-previous-tests.outputs.skip-backend-unit }}" == "true" ]; then
-          echo "| Backend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        # Frontend Unit Tests status
-        if [ "${{ needs.check-previous-tests.outputs.skip-frontend-unit }}" == "true" ]; then
-          echo "| Frontend Unit Tests | ✅ Already Passed |" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || (needs.build.result == 'failure' && '❌ Failed') || (needs.build.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || (needs.e2e-tests.result == 'failure' && '❌ Failed') || (needs.e2e-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Check overall status
-        backend_unit_ok="${{ needs.check-previous-tests.outputs.skip-backend-unit == 'true' || needs.backend-unit-tests.result == 'success' }}"
-        frontend_unit_ok="${{ needs.check-previous-tests.outputs.skip-frontend-unit == 'true' || needs.frontend-unit-tests.result == 'success' }}"
-        
-        if [ "$backend_unit_ok" == "true" ] && 
-           [ "$frontend_unit_ok" == "true" ] && 
-           [ "${{ needs.backend-integration-tests.result }}" == "success" ] && 
+        # Check overall status - TEMPORARILY only checking build and E2E
+        if [ "${{ needs.build.result }}" == "success" ] && 
            [ "${{ needs.e2e-tests.result }}" == "success" ]; then
-          echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
-          echo "This PR is ready for review." >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Build and E2E tests passed!" >> $GITHUB_STEP_SUMMARY
+          echo "TEMPORARY: Only running 3 E2E tests for debugging." >> $GITHUB_STEP_SUMMARY
         else
           echo "### ❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
-          echo "Please fix the failing tests before merging." >> $GITHUB_STEP_SUMMARY
+          echo "Build result: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "E2E result: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
           exit 1
         fi

@@ -8,27 +8,49 @@ import * as path from 'path';
 export const test = base.extend({
   // Automatic database cleanup before each test
   page: async ({ page }, use) => {
-    // Reset database before test
-    if (process.env.DATABASE_PATH) {
+    // Reset database via API before test
+    const apiUrl = process.env.API_URL || 'http://localhost:5172';
+    
+    // Only log database reset on retry or when not in CI
+    if (test.info().retry > 0 || !process.env.CI) {
       console.log(`🔄 Resetting database for test: ${test.info().title}`);
-      await resetDatabase(process.env.DATABASE_PATH);
+    }
+    
+    try {
+      const response = await page.request.post(`${apiUrl}/api/database/reset`, {
+        data: { workerIndex: 0, preserveSchema: true },
+        headers: {
+          'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
+        }
+      });
+      
+      if (!response.ok()) {
+        console.warn(`Database reset failed: ${response.status()}`);
+      }
+    } catch (error) {
+      // Only log errors on retry or when important
+      if (test.info().retry > 0) {
+        console.warn(`Could not reset database: ${error}`);
+      }
     }
     
     // Set up page with default navigation timeout
     page.setDefaultNavigationTimeout(30000);
     page.setDefaultTimeout(10000);
     
-    // Log console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.error(`[Browser Error] ${msg.text()}`);
-      }
-    });
-    
-    // Log page errors
-    page.on('pageerror', error => {
-      console.error(`[Page Error] ${error.message}`);
-    });
+    // Log console errors only on retry
+    if (test.info().retry > 0) {
+      page.on('console', msg => {
+        if (msg.type() === 'error') {
+          console.error(`[Browser Error] ${msg.text()}`);
+        }
+      });
+      
+      // Log page errors
+      page.on('pageerror', error => {
+        console.error(`[Page Error] ${error.message}`);
+      });
+    }
     
     // Use the page
     await use(page);

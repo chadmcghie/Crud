@@ -44,7 +44,33 @@ public class EfUserRepository : IUserRepository
 
     public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        _context.Users.Update(user);
+        // For integration tests, we need to handle the case where the user was retrieved
+        // in the same context (tracked) but modified in-memory (refresh tokens added)
+        
+        // First, check if the entity is already tracked
+        var local = _context.Set<User>().Local.FirstOrDefault(u => u.Id == user.Id);
+        
+        if (local != null && local != user)
+        {
+            // Different instance is tracked, detach it
+            _context.Entry(local).State = EntityState.Detached;
+        }
+        
+        // Now handle the refresh tokens explicitly
+        // This is the main operation we need in auth flow
+        foreach (var refreshToken in user.RefreshTokens)
+        {
+            var existingToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken.Token, cancellationToken);
+            
+            if (existingToken == null)
+            {
+                // Add new refresh token (UserId is already set in the RefreshToken constructor)
+                _context.RefreshTokens.Add(refreshToken);
+            }
+        }
+        
+        // Save just the refresh token changes
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -59,7 +85,7 @@ public class EfUserRepository : IUserRepository
         var token = await _context.RefreshTokens
             .Include(rt => rt.User)
             .ThenInclude(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.RevokedAt == null && DateTime.UtcNow < rt.ExpiresAt, cancellationToken);
 
         return token?.User;
     }

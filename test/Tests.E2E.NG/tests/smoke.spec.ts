@@ -32,29 +32,33 @@ test.describe('@smoke Application Health Checks', () => {
   test('@smoke Navigation menu is visible', async ({ page, baseURL }) => {
     await page.goto(baseURL);
     
-    // Check for navigation elements
-    const nav = page.locator('nav, [role="navigation"]').first();
-    await expect(nav).toBeVisible();
+    // Wait for the app to load
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
     
-    // Check for main navigation links
-    const peopleLink = page.locator('a[href*="people"], a:has-text("People")').first();
-    const rolesLink = page.locator('a[href*="roles"], a:has-text("Roles")').first();
+    // Check for tab navigation buttons (the app uses tabs, not nav links)
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    const rolesTab = page.locator('button:has-text("🎭 Roles Management")');
     
-    await expect(peopleLink).toBeVisible();
-    await expect(rolesLink).toBeVisible();
+    await expect(peopleTab).toBeVisible();
+    await expect(rolesTab).toBeVisible();
   });
 });
 
 test.describe('@smoke People Module', () => {
   test('@smoke Can navigate to people list', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
+    await page.goto(baseURL);
     
-    // Page should load without errors
-    await expect(page).toHaveURL(/people/);
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click on People tab (it should be active by default)
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    await peopleTab.click();
     
     // Check for people list container
-    const listContainer = page.locator('table, .list, [role="grid"]').first();
-    await expect(listContainer).toBeVisible({ timeout: 5000 });
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    const listContainer = page.locator('.people-table, app-people-list').first();
+    await expect(listContainer).toBeVisible();
   });
   
   test('@smoke People API endpoint responds', async ({ page, apiUrl }) => {
@@ -66,33 +70,49 @@ test.describe('@smoke People Module', () => {
   });
   
   test('@smoke Can open add person form', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/people`);
+    await page.goto(baseURL);
+    
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click on People tab
+    const peopleTab = page.locator('button:has-text("👥 People Management")');
+    await peopleTab.click();
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button
-    const addButton = page.locator('button:has-text("Add"), a:has-text("Add"), button:has-text("New")').first();
+    const addButton = page.locator('button:has-text("Add New Person")');
     await expect(addButton).toBeVisible();
     await addButton.click();
     
     // Form should be visible
-    const form = page.locator('form').first();
-    await expect(form).toBeVisible({ timeout: 5000 });
+    await page.waitForSelector('app-people form', { timeout: 5000 });
+    const form = page.locator('app-people form').first();
+    await expect(form).toBeVisible();
     
     // Check for essential form fields
-    const nameField = page.locator('input[name="fullName"], input[placeholder*="name" i]').first();
+    const nameField = page.locator('input#fullName');
     await expect(nameField).toBeVisible();
   });
 });
 
 test.describe('@smoke Roles Module', () => {
   test('@smoke Can navigate to roles list', async ({ page, baseURL }) => {
-    await page.goto(`${baseURL}/roles`);
+    await page.goto(baseURL);
     
-    // Page should load without errors
-    await expect(page).toHaveURL(/roles/);
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    
+    // Click on Roles tab
+    const rolesTab = page.locator('button:has-text("🎭 Roles Management")');
+    await rolesTab.click();
+    
+    // Wait for roles component to load
+    await page.waitForSelector('app-roles-list', { timeout: 5000 });
     
     // Check for roles list container
-    const listContainer = page.locator('table, .list, [role="grid"]').first();
-    await expect(listContainer).toBeVisible({ timeout: 5000 });
+    const listContainer = page.locator('.roles-table, app-roles-list').first();
+    await expect(listContainer).toBeVisible();
   });
   
   test('@smoke Roles API endpoint responds', async ({ page, apiUrl }) => {
@@ -108,8 +128,8 @@ test.describe('@smoke Database Operations', () => {
   test('@smoke Can perform CRUD cycle', async ({ page, apiUrl }) => {
     const timestamp = Date.now();
     const testData = {
-      fullName: `Smoke Test ${timestamp}`,
-      phone: '555-SMOKE'
+      fullName: `John Smoke Smith`,  // Use a valid name format without timestamp
+      phone: '+1-555-9999'  // Use valid phone format
     };
     
     // Create

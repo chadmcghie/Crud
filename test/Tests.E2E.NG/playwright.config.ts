@@ -13,16 +13,18 @@ export default defineConfig({
   retries: 0, // No retries as per ADR-001 for reliable tests
   /* Single worker for serial execution */
   workers: 1, // Single worker to prevent database conflicts (ADR-001)
+  /* Circuit breaker: stop after X failures to prevent runaway test execution */
+  maxFailures: process.env.CI ? 10 : 0, // Stop after 10 failures in CI
   /* Reasonable timeout for serial execution */
-  timeout: 30000, // 30 seconds per test
+  timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   
-  /* Global setup and teardown for shared server management */
-  globalSetup: './tests/setup/serial-global-setup.ts',
-  globalTeardown: './tests/setup/serial-global-teardown.ts',
+  /* Global setup and teardown for optimized server management */
+  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html', { outputFolder: './test-results/html' }],
+    ['html', { outputFolder: './playwright-report' }],
     ['json', { outputFile: './test-results/results.json' }],
     ['junit', { outputFile: './test-results/results.xml' }],
     ['list', { printSteps: true }]
@@ -40,9 +42,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
-    /* Increase timeouts for better stability */
-    actionTimeout: 15000,
-    navigationTimeout: 45000,
+    /* Reasonable timeouts without arbitrary waits */
+    actionTimeout: 10000,
+    navigationTimeout: 15000,
     /* Wait for network to be idle before considering navigation complete */
     // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
   },

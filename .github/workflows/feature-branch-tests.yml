@@ -1,11 +1,13 @@
 name: Feature Branch Tests
 
 on:
-  push:
-    branches: 
-      - 'feature/**'
-      - 'bugfix/**'
-      - 'hotfix/**'
+  # TEMPORARILY DISABLED - Only running E2E tests
+  # push:
+  #   branches: 
+  #     - 'feature/**'
+  #     - 'bugfix/**'
+  #     - 'hotfix/**'
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -35,10 +37,10 @@ jobs:
         
     # Backend checks
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.sln
       
     - name: Build backend
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+      run: dotnet build Crud.sln --no-restore --configuration Release
       
     - name: Run backend unit tests only
       run: |

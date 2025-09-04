@@ -63,7 +63,7 @@ namespace Infrastructure.Resilience
     {
         public static async Task<int> SaveChangesWithRetryAsync(
             this DbContext context,
-            ILogger logger = null,
+            ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
             var policy = PollyPolicies.GetDatabaseRetryPolicy(logger);
@@ -76,7 +76,7 @@ namespace Infrastructure.Resilience
         public static async Task<T> ExecuteWithRetryAsync<T>(
             this DbContext context,
             Func<Task<T>> operation,
-            ILogger logger = null,
+            ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
             var policy = PollyPolicies.GetDatabaseRetryPolicy(logger);

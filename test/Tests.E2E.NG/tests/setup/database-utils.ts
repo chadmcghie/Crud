@@ -1,74 +1,49 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
 
 /**
- * Database utilities for managing SQLite test databases
- * Handles proper cleanup and isolation for serial test execution
+ * Simple database utilities for SQLite test databases
+ * Basic delete/recreate pattern for test isolation
  */
-
-export interface DatabaseConfig {
-  path: string;
-  connectionString: string;
-}
 
 /**
- * Creates a new test database configuration
+ * Creates a unique test database path
  */
-export function createTestDatabase(name: string = 'Serial'): DatabaseConfig {
+export function createTestDatabase(name: string = 'Test'): { path: string } {
   const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   const timestamp = Date.now();
-  const dbPath = path.join(tempDir, `CrudTest_${name}_${timestamp}.db`);
+  const random = Math.random().toString(36).substring(7);
+  const dbPath = path.join(tempDir, `CrudTest_${name}_${timestamp}_${random}.db`);
   
-  return {
-    path: dbPath,
-    connectionString: `Data Source=${dbPath}`
-  };
+  return { path: dbPath };
 }
 
 /**
- * Deletes a SQLite database file with retry logic
+ * Deletes a database file if it exists
  */
-export async function deleteDatabase(dbPath: string, maxRetries: number = 5): Promise<boolean> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Check if file exists
-      await fs.access(dbPath);
-      
-      // Try to delete the file
-      await fs.unlink(dbPath);
-      console.log(`✅ Deleted database: ${path.basename(dbPath)}`);
-      return true;
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
-        // File doesn't exist, that's fine
-        return true;
-      }
-      
-      if (error.code === 'EBUSY' || error.code === 'EPERM') {
-        // File is locked, wait and retry
-        if (attempt < maxRetries) {
-          console.log(`⏳ Database locked, retrying (${attempt}/${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          continue;
-        }
-      }
-      
-      console.warn(`⚠️ Failed to delete database after ${maxRetries} attempts:`, error.message);
-      return false;
+export async function deleteDatabase(dbPath: string): Promise<void> {
+  try {
+    await fs.unlink(dbPath);
+  } catch (error: any) {
+    // Ignore if file doesn't exist
+    if (error.code !== 'ENOENT') {
+      console.warn(`Could not delete database: ${error.message}`);
     }
   }
-  
-  return false;
 }
 
 /**
- * Cleans up all test databases in the temp directory
+ * Resets database by deleting it
+ * The API will create a new one on next access
  */
-export async function cleanupTestDatabases(olderThanHours: number = 1): Promise<void> {
+export async function resetDatabase(dbPath: string): Promise<void> {
+  await deleteDatabase(dbPath);
+}
+
+/**
+ * Cleans up old test databases
+ */
+export async function cleanupTestDatabases(): Promise<void> {
   const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   
   try {
@@ -79,61 +54,23 @@ export async function cleanupTestDatabases(olderThanHours: number = 1): Promise<
       try {
         const filePath = path.join(tempDir, db);
         const stats = await fs.stat(filePath);
-        const ageInHours = (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60);
         
-        if (ageInHours > olderThanHours) {
-          const deleted = await deleteDatabase(filePath, 3);
-          if (deleted) {
-            console.log(`🗑️ Cleaned up old database: ${db} (${ageInHours.toFixed(1)} hours old)`);
-          }
+        // Delete databases older than 1 hour
+        const ageInMs = Date.now() - stats.mtime.getTime();
+        if (ageInMs > 60 * 60 * 1000) {
+          await deleteDatabase(filePath);
         }
-      } catch (err) {
+      } catch {
         // Ignore individual file errors
       }
     }
-  } catch (err) {
-    console.warn('⚠️ Could not scan for test databases:', err);
+  } catch {
+    // Ignore directory scan errors
   }
 }
 
 /**
- * Resets database by deleting and creating a fresh one
- */
-export async function resetDatabase(dbPath: string): Promise<void> {
-  // Delete existing database
-  await deleteDatabase(dbPath, 3);
-  
-  // Ensure directory exists
-  const dir = path.dirname(dbPath);
-  await fs.mkdir(dir, { recursive: true });
-  
-  console.log(`🔄 Database reset: ${path.basename(dbPath)}`);
-}
-
-/**
- * Force closes all connections to a SQLite database (Windows)
- */
-export async function forceCloseDatabase(dbPath: string): Promise<void> {
-  if (process.platform === 'win32') {
-    try {
-      // Use Windows handle tool to force close file handles
-      const fileName = path.basename(dbPath);
-      await execAsync(`handle.exe -accepteula -c ${dbPath} -y`, { 
-        timeout: 5000 
-      }).catch(() => {
-        // Handle.exe might not be available, that's okay
-      });
-    } catch (err) {
-      // Ignore errors, this is best-effort
-    }
-  }
-  
-  // Give time for handles to be released
-  await new Promise(resolve => setTimeout(resolve, 500));
-}
-
-/**
- * Gets database file size
+ * Gets database file size (for debugging only)
  */
 export async function getDatabaseSize(dbPath: string): Promise<number> {
   try {
@@ -141,17 +78,5 @@ export async function getDatabaseSize(dbPath: string): Promise<number> {
     return stats.size;
   } catch {
     return 0;
-  }
-}
-
-/**
- * Validates database is accessible
- */
-export async function isDatabaseAccessible(dbPath: string): Promise<boolean> {
-  try {
-    await fs.access(dbPath, fs.constants.R_OK | fs.constants.W_OK);
-    return true;
-  } catch {
-    return false;
   }
 }

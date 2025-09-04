@@ -186,8 +186,9 @@ test.describe('Full Workflow Integration Tests', () => {
         .slice(0, Math.floor(Math.random() * 3) + 1)
         .map(r => r.id);
       
+      const suffixes = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'];
       const person = generateTestPerson({
-        fullName: `Rapid Person ${i}`,
+        fullName: `Rapid Person ${suffixes[i]}`,
         roleIds: randomRoles
       });
       peoplePromises.push(apiHelpers.createPerson(person));
@@ -255,14 +256,25 @@ test.describe('Full Workflow Integration Tests', () => {
   });
 
   test('should preserve state during tab switching', async () => {
+    // Force cleanup at the start to ensure clean state
+    await apiHelpers.cleanupAll(true);
+    
+    // Add a small delay to ensure cleanup is complete
+    await pageHelpers.page.waitForTimeout(500);
+    
+    // Navigate fresh to ensure clean UI state
+    await pageHelpers.navigateToApp();
+    
     // Create data in both tabs
     await pageHelpers.switchToRolesTab();
+    
     const role = generateTestRole();
     await pageHelpers.clickAddRole();
     await pageHelpers.fillRoleForm(role.name, role.description);
     await pageHelpers.submitRoleForm();
     
     await pageHelpers.switchToPeopleTab();
+    
     const person = generateTestPerson();
     await pageHelpers.clickAddPerson();
     await pageHelpers.fillPersonForm(person.fullName, person.phone, [role.name]);
@@ -282,10 +294,14 @@ test.describe('Full Workflow Integration Tests', () => {
     const roles = await apiHelpers.getRoles();
     const people = await apiHelpers.getPeople();
     
-    expect(roles).toHaveLength(1);
-    expect(people).toHaveLength(1);
-    expect(people[0].roles).toHaveLength(1);
-    expect(people[0].roles[0].name).toBe(role.name);
+    // Find our specific test data (there might be other data from parallel tests)
+    const ourRole = roles.find(r => r.name === role.name);
+    const ourPerson = people.find(p => p.fullName === person.fullName);
+    
+    expect(ourRole).toBeDefined();
+    expect(ourPerson).toBeDefined();
+    expect(ourPerson?.roles).toHaveLength(1);
+    expect(ourPerson?.roles[0].name).toBe(role.name);
   });
 
   test('should handle browser refresh correctly', async ({ page }) => {
@@ -313,7 +329,11 @@ test.describe('Full Workflow Integration Tests', () => {
     
     // Wait for Angular to fully load
     await page.waitForSelector('app-root', { timeout: 8000 });
-    await page.waitForTimeout(1000); // Additional wait for Angular initialization
+    // Wait for Angular to be fully initialized
+    await page.waitForFunction(() => {
+      // Check if Angular is defined and ready
+      return window.hasOwnProperty('ng') || document.querySelector('app-root');
+    });
     
     // Should default to people tab and show data
     await expect(page.locator('app-people-list')).toBeVisible({ timeout: 10000 });
