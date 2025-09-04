@@ -106,6 +106,106 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         return JsonSerializer.Deserialize<T>(content, JsonOptions);
     }
 
+    /// <summary>
+    /// Helper method to assert successful response and provide detailed error information on failure
+    /// </summary>
+    protected async Task<HttpResponseMessage> AssertSuccessfulResponseAsync(HttpResponseMessage response, string requestDescription = "request")
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            var errorMessage = $"{requestDescription} failed with status {response.StatusCode}";
+            
+            if (!string.IsNullOrEmpty(errorContent))
+            {
+                errorMessage += $"\nError Response: {errorContent}";
+            }
+            
+            if (response.Headers.Any())
+            {
+                errorMessage += $"\nResponse Headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))}";
+            }
+            
+            throw new InvalidOperationException(errorMessage);
+        }
+        
+        return response;
+    }
+
+    /// <summary>
+    /// Helper method to log detailed error information from HTTP response
+    /// </summary>
+    protected async Task LogErrorResponseAsync(HttpResponseMessage response, string context = "HTTP request")
+    {
+        var errorContent = await response.Content.ReadAsStringAsync();
+        
+        Console.WriteLine($"❌ {context} failed:");
+        Console.WriteLine($"   Status: {response.StatusCode} ({(int)response.StatusCode})");
+        Console.WriteLine($"   Reason: {response.ReasonPhrase}");
+        
+        if (!string.IsNullOrEmpty(errorContent))
+        {
+            Console.WriteLine($"   Response Body: {errorContent}");
+        }
+        
+        if (response.Headers.Any())
+        {
+            Console.WriteLine($"   Headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
+        }
+        
+        if (response.Content.Headers.Any())
+        {
+            Console.WriteLine($"   Content Headers: {string.Join(", ", response.Content.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
+        }
+        
+        // Also dump server-side logs if available
+        if (Factory.LogCapture?.HasErrors == true)
+        {
+            Console.WriteLine($"   🔍 Server-side errors detected:");
+            Factory.LogCapture.DumpLogsToConsole(Microsoft.Extensions.Logging.LogLevel.Error);
+        }
+    }
+
+    /// <summary>
+    /// Enhanced PostJson method with automatic error logging
+    /// </summary>
+    protected async Task<HttpResponseMessage> PostJsonWithErrorLoggingAsync<T>(string requestUri, T data, bool throwOnError = false)
+    {
+        var response = await PostJsonAsync(requestUri, data);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            await LogErrorResponseAsync(response, $"POST {requestUri}");
+            
+            if (throwOnError)
+            {
+                await AssertSuccessfulResponseAsync(response, $"POST {requestUri}");
+            }
+        }
+        
+        return response;
+    }
+
+    /// <summary>
+    /// Enhanced GET method with automatic error logging
+    /// </summary>
+    protected async Task<HttpResponseMessage> GetWithErrorLoggingAsync(string requestUri, bool throwOnError = false)
+    {
+        var response = await Client.GetAsync(requestUri);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            await LogErrorResponseAsync(response, $"GET {requestUri}");
+            
+            if (throwOnError)
+            {
+                await AssertSuccessfulResponseAsync(response, $"GET {requestUri}");
+            }
+        }
+        
+        return response;
+    }
+
     public void Dispose()
     {
         Scope?.Dispose();

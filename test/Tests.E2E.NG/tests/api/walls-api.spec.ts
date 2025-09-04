@@ -112,8 +112,8 @@ test.describe('Walls API', () => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
     const response = await apiContext.get(`/api/walls/${nonExistentId}`);
-    // API may return 404, 500, or 204 for non-existent resources
-    expect([404, 500, 204]).toContain(response.status());
+    // API may return 400 (validation), 404, 500, or 204 for non-existent resources
+    expect([400, 404, 500, 204]).toContain(response.status());
   });
 
   test('PUT /api/walls/{id} - should update existing wall', async ({ apiHelpers }) => {
@@ -137,8 +137,8 @@ test.describe('Walls API', () => {
         if (attempts >= maxAttempts) {
           throw new Error(`Wall ${createdWall.id} not found after update - may have been cleaned up by another worker`);
         }
-        // Small delay before retry
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Exponential backoff before retry
+        await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, attempts - 1), 500)));
       }
     }
     expect(retrievedWall).toMatchObject({

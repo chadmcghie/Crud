@@ -7,16 +7,16 @@ test.describe('People Management UI', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, apiContext, workerIndex }) => {
+  test.beforeEach(async ({ page, apiContext }) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, workerIndex);
+    apiHelpers = new ApiHelpers(apiContext, 0);
     
     // Clean up any existing data and wait for completion
     if (apiHelpers) {
       try {
         await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-        // Add a small delay to ensure cleanup is complete
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Wait for cleanup to complete by checking for network idle or DOM updates
+        await page.waitForLoadState('domcontentloaded', { timeout: 2000 }).catch(() => {});
       } catch (error) {
         console.warn('Failed to cleanup before test:', error);
       }
@@ -36,8 +36,8 @@ test.describe('People Management UI', () => {
     if (apiHelpers) {
       try {
         await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-        // Add a small delay to ensure cleanup is complete
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Wait for cleanup to complete by checking for network idle or DOM updates
+        await page.waitForLoadState('domcontentloaded', { timeout: 2000 }).catch(() => {});
       } catch (error) {
         console.warn('Failed to cleanup after test:', error);
       }

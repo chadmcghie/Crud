@@ -32,8 +32,14 @@ public class TestDatabaseFactory
 
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var processId = Environment.ProcessId;
+            
+            // Use current directory for CI environments or when temp path might have permission issues
+            var basePath = Environment.GetEnvironmentVariable("CI") == "true" 
+                ? Directory.GetCurrentDirectory()
+                : Path.GetTempPath();
+                
             var databasePath = Path.Combine(
-                Path.GetTempPath(),
+                basePath,
                 $"CrudTest_Worker{workerIndex}_{processId}_{timestamp}.db"
             );
 
@@ -108,16 +114,33 @@ public class TestDatabaseFactory
     /// </summary>
     private async Task CreateDatabaseFileAsync(string databasePath, int workerIndex)
     {
-        var connectionString = $"Data Source={databasePath}";
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(connectionString)
-            .Options;
+        try
+        {
+            // Ensure the directory exists
+            var directory = Path.GetDirectoryName(databasePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+                _logger.LogInformation("Created directory for database: {Directory}", directory);
+            }
+            
+            var connectionString = $"Data Source={databasePath}";
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlite(connectionString)
+                .Options;
 
-        using var context = new ApplicationDbContext(options);
-        await context.Database.EnsureCreatedAsync();
-        
-        _logger.LogInformation("Database schema created for worker {WorkerIndex} at {DatabasePath}", 
-            workerIndex, databasePath);
+            using var context = new ApplicationDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            
+            _logger.LogInformation("Database schema created for worker {WorkerIndex} at {DatabasePath}", 
+                workerIndex, databasePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create database file for worker {WorkerIndex} at {DatabasePath}", 
+                workerIndex, databasePath);
+            throw;
+        }
     }
 
     /// <summary>

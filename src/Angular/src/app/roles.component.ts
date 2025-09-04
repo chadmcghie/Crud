@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -212,8 +212,11 @@ export class RolesComponent implements OnInit, OnChanges {
   form: FormGroup;
   isSubmitting = false;
   error: string | null = null;
+  
+  private api = inject(ApiService);
+  private fb = inject(FormBuilder);
 
-  constructor(private api: ApiService, private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
       name: ['', [Validators.required, CustomValidators.roleName()]],
       description: ['', [Validators.maxLength(500)]]
@@ -269,7 +272,7 @@ export class RolesComponent implements OnInit, OnChanges {
             this.isSubmitting = false;
             this.roleSaved.emit(this.editingRole!);
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error updating role:', error);
             this.handleApiError(error);
             this.isSubmitting = false;
@@ -283,7 +286,7 @@ export class RolesComponent implements OnInit, OnChanges {
             this.roleSaved.emit(role);
             this.resetForm();
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error creating role:', error);
             this.handleApiError(error);
             this.isSubmitting = false;
@@ -306,17 +309,18 @@ export class RolesComponent implements OnInit, OnChanges {
     this.error = null;
   }
 
-  private handleApiError(error: any) {
-    if (error.error?.errors) {
-      const errors = error.error.errors;
+  private handleApiError(error: unknown) {
+    const httpError = error as { error?: { errors?: Record<string, string[]>; detail?: string; title?: string } };
+    if (httpError.error?.errors) {
+      const errors = httpError.error.errors;
       const errorMessages = Object.keys(errors).map(key => 
         `${key}: ${errors[key].join(', ')}`
       ).join('; ');
       this.error = errorMessages;
-    } else if (error.error?.detail) {
-      this.error = error.error.detail;
-    } else if (error.error?.title) {
-      this.error = error.error.title;
+    } else if (httpError.error?.detail) {
+      this.error = httpError.error.detail;
+    } else if (httpError.error?.title) {
+      this.error = httpError.error.title;
     } else {
       this.error = 'An error occurred. Please check your input and try again.';
     }

@@ -1,47 +1,98 @@
 import { FullConfig } from '@playwright/test';
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
-async function globalTeardown(config: FullConfig) {
-  console.log('🧹 Starting global test teardown...');
+/**
+ * Simple Global Teardown
+ * Basic cleanup with no complex state management
+ * Just clean up database files and ensure ports are free
+ */
+async function simpleGlobalTeardown(config: FullConfig) {
+  console.log('🧹 Starting simple global teardown...');
   
-  const workers = parseInt(process.env.TOTAL_WORKERS || '1', 10);
-  
-  // Clean up worker-specific database files
-  for (let i = 0; i < workers; i++) {
-    const workerDatabase = process.env[`WORKER_${i}_DATABASE`];
-    
-    if (workerDatabase) {
-      try {
-        await fs.access(workerDatabase);
-        await fs.unlink(workerDatabase);
-        console.log(`🗑️ Cleaned up database for worker ${i}: ${path.basename(workerDatabase)}`);
-      } catch (error) {
-        // File doesn't exist or already cleaned up
-        console.log(`ℹ️ Database for worker ${i} already cleaned up or doesn't exist`);
+  // Clean up test database if it exists
+  if (process.env.DATABASE_PATH) {
+    try {
+      await fs.unlink(process.env.DATABASE_PATH);
+      console.log('🗑️ Cleaned up test database');
+    } catch (err: any) {
+      // Only warn if it's not a "file not found" error
+      // File not found is actually good - means it was already cleaned
+      if (err.code !== 'ENOENT') {
+        console.warn('⚠️ Could not clean up test database:', err.message);
       }
     }
   }
   
-  // Clean up any remaining test database files in temp directory
+  // Clean up any leftover test databases in temp directory
+  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
   try {
-    const tempDir = '/tmp';
     const files = await fs.readdir(tempDir);
-    const testDbFiles = files.filter(file => file.startsWith('CrudTest_Worker') && file.endsWith('.db'));
+    const testDbs = files.filter(f => f.startsWith('CrudTest_'));
     
-    for (const file of testDbFiles) {
+    for (const db of testDbs) {
       try {
-        await fs.unlink(path.join(tempDir, file));
-        console.log(`🗑️ Cleaned up orphaned database file: ${file}`);
-      } catch (error) {
-        console.warn(`⚠️ Could not clean up ${file}: ${error}`);
+        const dbPath = path.join(tempDir, db);
+        const stats = await fs.stat(dbPath);
+        
+        // Only delete files older than 1 hour to avoid conflicts
+        const oneHourAgo = Date.now() - (60 * 60 * 1000);
+        if (stats.mtimeMs < oneHourAgo) {
+          await fs.unlink(dbPath);
+          console.log(`🗑️ Cleaned up old test database: ${db}`);
+        }
+      } catch {
+        // Ignore errors - file might be in use
       }
     }
-  } catch (error) {
-    console.warn(`⚠️ Could not scan temp directory for cleanup: ${error}`);
+  } catch {
+    // Ignore if temp directory is not accessible
   }
   
-  console.log('✅ Global test teardown completed');
+  // Simple port cleanup as fallback
+  // Note: Actual process killing is handled by the teardown function returned from setup
+  const ports = [
+    parseInt(process.env.API_PORT || '5172'),
+    parseInt(process.env.ANGULAR_PORT || '4200')
+  ];
+  
+  if (process.platform === 'win32') {
+    // Windows: Use netstat to check if ports are still in use
+    const { exec } = require('child_process');
+    for (const port of ports) {
+      try {
+        await new Promise<void>((resolve) => {
+          exec(`netstat -ano | findstr :${port}`, (error: any, stdout: string) => {
+            if (!error && stdout) {
+              console.log(`⚠️ Port ${port} may still be in use`);
+            }
+            resolve();
+          });
+        });
+      } catch {
+        // Ignore errors
+      }
+    }
+  } else {
+    // Unix-like: Use lsof to check if ports are still in use
+    const { exec } = require('child_process');
+    for (const port of ports) {
+      try {
+        await new Promise<void>((resolve) => {
+          exec(`lsof -i :${port}`, (error: any, stdout: string) => {
+            if (!error && stdout) {
+              console.log(`⚠️ Port ${port} may still be in use`);
+            }
+            resolve();
+          });
+        });
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+  
+  console.log('✅ Simple global teardown completed');
 }
 
-export default globalTeardown;
+export default simpleGlobalTeardown;

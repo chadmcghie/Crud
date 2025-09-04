@@ -28,7 +28,13 @@ public class GlobalExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred");
+            _logger.LogError(ex, "An unhandled exception occurred during request {Method} {Path}. " +
+                "Request ID: {RequestId}, User: {User}", 
+                context.Request.Method, 
+                context.Request.Path,
+                context.TraceIdentifier,
+                context.User?.Identity?.Name ?? "Anonymous");
+                
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -76,7 +82,7 @@ public class GlobalExceptionHandlingMiddleware
             {
                 Status = HttpStatusCode.InternalServerError,
                 Title = "Internal Server Error",
-                Detail = _environment.IsDevelopment() 
+                Detail = _environment.IsDevelopment() || _environment.EnvironmentName == "Testing"
                     ? exception.ToString() 
                     : "An error occurred while processing your request"
             }

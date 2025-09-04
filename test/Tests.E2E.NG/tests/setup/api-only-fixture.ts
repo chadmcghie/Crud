@@ -4,19 +4,20 @@ import { ApiHelpers } from '../helpers/api-helpers';
 export interface ApiOnlyFixtures {
   apiContext: APIRequestContext;
   apiHelpers: ApiHelpers;
+  apiUrl: string;
   cleanDatabase: void;
-  workerIndex: number;
 }
 
-// Simple API-only fixture that assumes a single server is running
+// API-only test fixtures using environment variables from global setup
 export const test = base.extend<ApiOnlyFixtures>({
-  workerIndex: async ({}, use, testInfo) => {
-    await use(testInfo.workerIndex);
+  apiUrl: async ({ }, use) => {
+    const apiUrl = process.env.API_URL || 'http://localhost:5172';
+    await use(apiUrl);
   },
 
-  apiContext: async ({ playwright }, use) => {
+  apiContext: async ({ playwright, apiUrl }, use) => {
     const context = await playwright.request.newContext({
-      baseURL: 'http://localhost:5172',
+      baseURL: apiUrl,
       extraHTTPHeaders: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -26,27 +27,45 @@ export const test = base.extend<ApiOnlyFixtures>({
     await context.dispose();
   },
 
-  apiHelpers: async ({ apiContext, workerIndex }, use) => {
-    const helpers = new ApiHelpers(apiContext, workerIndex);
+  apiHelpers: async ({ apiContext }, use) => {
+    const helpers = new ApiHelpers(apiContext, 0); // Single worker, always index 0
     await use(helpers);
   },
 
-  cleanDatabase: [async ({ apiContext, workerIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for worker ${workerIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Pre-test database cleanup using the shared database service
+    // Use the database reset endpoint for fast cleanup
     try {
+      console.log('📡 Sending database reset request...');
+      const startTime = Date.now();
+      
       const response = await apiContext.post('/api/database/reset', {
-        data: { workerIndex }
+        data: { workerIndex: 0, preserveSchema: true },
+        headers: {
+          'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
+        },
+        timeout: 30000 // 30 second timeout to allow for detailed logging
       });
       
+      const duration = Date.now() - startTime;
+      console.log(`📡 Database reset response received in ${duration}ms`);
+      
       if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for worker ${workerIndex}: ${response.status()}`);
+        console.warn(`Database reset failed: ${response.status()}`);
+        const body = await response.text();
+        console.warn(`Response body: ${body}`);
       } else {
-        console.log(`✅ Database reset completed for worker ${workerIndex}`);
+        const body = await response.json();
+        console.log(`✅ Database reset successful in ${body.Duration || duration}ms`);
       }
-    } catch (error) {
-      console.error(`❌ Database cleanup failed for worker ${workerIndex}:`, error);
+    } catch (error: any) {
+      if (error.message?.includes('timeout')) {
+        console.error('❌ Database reset TIMEOUT after 5 seconds!');
+        console.error('This indicates the API is not responding to database reset requests');
+      } else {
+        console.warn('⚠️ Database cleanup error:', error.message || error);
+      }
     }
     
     await use();

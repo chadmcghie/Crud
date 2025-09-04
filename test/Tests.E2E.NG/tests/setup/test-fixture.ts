@@ -1,60 +1,47 @@
-import { test as base, TestInfo, APIRequestContext, Page } from '@playwright/test';
-import { WorkerServerManager } from './worker-setup';
+import { test as base, APIRequestContext } from '@playwright/test';
 
 export interface TestFixtures {
-  workerSetup: WorkerServerManager;
   apiContext: APIRequestContext;
   cleanDatabase: void;
-  workerIndex: number;
   apiUrl: string;
   angularUrl: string;
 }
 
-export interface WorkerFixtures {
-  workerServerManager: WorkerServerManager;
+// Manual cleanup function as fallback
+async function manualCleanup(apiContext: APIRequestContext) {
+  try {
+    // Delete all people
+    const peopleResponse = await apiContext.get('/api/people', { timeout: 2000 });
+    if (peopleResponse.ok()) {
+      const people = await peopleResponse.json();
+      for (const person of people) {
+        await apiContext.delete(`/api/people/${person.id}`, { timeout: 1000 }).catch(() => {});
+      }
+    }
+    
+    // Delete all roles
+    const rolesResponse = await apiContext.get('/api/roles', { timeout: 2000 });
+    if (rolesResponse.ok()) {
+      const roles = await rolesResponse.json();
+      for (const role of roles) {
+        await apiContext.delete(`/api/roles/${role.id}`, { timeout: 1000 }).catch(() => {});
+      }
+    }
+  } catch (error) {
+    // Ignore cleanup errors
+  }
 }
 
-// Worker-scoped fixture for server management
-export const test = base.extend<TestFixtures, WorkerFixtures>({
-  // Worker-scoped fixture - one per worker
-  workerServerManager: [async ({ }, use, workerInfo) => {
-    console.log(`🔧 Setting up worker ${workerInfo.workerIndex}...`);
-    
-    const serverManager = new WorkerServerManager(workerInfo);
-    
-    // Start servers for this worker
-    await serverManager.startServers();
-    
-    // Set environment variables for this worker
-    process.env.CURRENT_WORKER_INDEX = workerInfo.workerIndex.toString();
-    process.env.CURRENT_WORKER_DATABASE = serverManager.getWorkerDatabase();
-    process.env.CURRENT_WORKER_API_URL = serverManager.getApiUrl();
-    process.env.CURRENT_WORKER_ANGULAR_URL = serverManager.getAngularUrl();
-    
-    await use(serverManager);
-    
-    // Cleanup servers for this worker
-    await serverManager.stopServers();
-    
-    console.log(`✅ Worker ${workerInfo.workerIndex} cleanup completed`);
-  }, { scope: 'worker' }],
-
-  // Test-scoped fixtures
-  workerSetup: async ({ workerServerManager }, use) => {
-    await use(workerServerManager);
+// Simple test fixtures that use environment variables from global setup
+export const test = base.extend<TestFixtures>({
+  apiUrl: async ({ }, use) => {
+    const apiUrl = process.env.API_URL || 'http://localhost:5172';
+    await use(apiUrl);
   },
 
-  workerIndex: async ({ workerSetup }, use) => {
-    const workerIndex = parseInt(process.env.CURRENT_WORKER_INDEX || '0', 10);
-    await use(workerIndex);
-  },
-
-  apiUrl: async ({ workerSetup }, use) => {
-    await use(process.env.CURRENT_WORKER_API_URL || 'http://localhost:5172');
-  },
-
-  angularUrl: async ({ workerSetup }, use) => {
-    await use(process.env.CURRENT_WORKER_ANGULAR_URL || 'http://localhost:4200');
+  angularUrl: async ({ }, use) => {
+    const angularUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
+    await use(angularUrl);
   },
 
   apiContext: async ({ playwright, apiUrl }, use) => {
@@ -69,65 +56,50 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     await context.dispose();
   },
 
-  cleanDatabase: [async ({ apiContext, workerIndex }, use, testInfo) => {
-    console.log(`🧹 Pre-test cleanup for worker ${workerIndex}, test: ${testInfo.title}`);
+  cleanDatabase: [async ({ apiContext }, use, testInfo) => {
+    console.log(`🧹 Pre-test cleanup for: ${testInfo.title}`);
     
-    // Pre-test database cleanup and validation
+    // Use the database reset endpoint with proper authentication
     try {
-      const response = await apiContext.post('/api/database/reset', {
-        data: { workerIndex }
+      const resetResponse = await apiContext.post('/api/database/reset', {
+        data: { 
+          workerIndex: 0, 
+          preserveSchema: true 
+        },
+        headers: {
+          'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
+        },
+        timeout: 5000
       });
       
-      if (!response.ok()) {
-        console.warn(`⚠️ Database reset failed for worker ${workerIndex}: ${response.status()}`);
+      if (!resetResponse.ok()) {
+        console.warn(`⚠️ Database reset failed with status ${resetResponse.status()}`);
+        // Fall back to manual cleanup if reset endpoint fails
+        await manualCleanup(apiContext);
+      }
+    } catch (error: any) {
+      if (error.message?.includes('Timeout')) {
+        console.warn('⚠️ Database cleanup timed out - API may be under load');
       } else {
-        console.log(`✅ Database reset completed for worker ${workerIndex}`);
+        console.warn('⚠️ Database cleanup warning:', error.message || error);
       }
-
-      // Validate database state
-      const validationResponse = await apiContext.get('/api/database/validate-pre-test', {
-        params: { workerIndex: workerIndex.toString() }
-      });
-      
-      if (validationResponse.ok()) {
-        const validation = await validationResponse.json();
-        if (!validation.isValid) {
-          console.warn(`⚠️ Pre-test validation failed for worker ${workerIndex}:`, validation.issues);
-        }
-      }
-    } catch (error) {
-      console.error(`❌ Database cleanup failed for worker ${workerIndex}:`, error);
+      // Continue with test anyway
     }
     
+    console.log('🧪 Starting test - database automatically cleaned');
     await use();
-    
-    // Post-test validation (but don't fail the test if validation fails)
-    try {
-      const validationResponse = await apiContext.get('/api/database/validate-post-test', {
-        params: { workerIndex: workerIndex.toString() }
-      });
-      
-      if (validationResponse.ok()) {
-        const validation = await validationResponse.json();
-        if (!validation.isValid) {
-          console.warn(`⚠️ Post-test validation failed for worker ${workerIndex}:`, validation.issues);
-        }
-      }
-    } catch (error) {
-      console.error(`❌ Post-test validation failed for worker ${workerIndex}:`, error);
-    }
   }, { auto: true }],
 
-  // Override page to use worker-specific Angular URL
+  // Override page to use Angular URL
   page: async ({ browser, angularUrl }, use) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     
-    // Update base URL for this worker
+    // Set timeouts
     page.setDefaultNavigationTimeout(45000);
     page.setDefaultTimeout(15000);
     
-    // Navigate to worker-specific Angular URL
+    // Navigate to Angular URL
     await page.goto(angularUrl);
     
     await use(page);

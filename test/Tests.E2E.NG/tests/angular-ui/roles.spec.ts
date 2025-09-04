@@ -7,16 +7,21 @@ test.describe('Roles Management UI', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, apiContext, workerIndex }) => {
+  test.beforeEach(async ({ page, apiContext }) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, workerIndex);
+    apiHelpers = new ApiHelpers(apiContext, 0);
     
     // Clean up any existing data
     if (apiHelpers) {
       try {
         await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-        // Wait a bit for cleanup to complete
-        await page.waitForTimeout(500);
+        // Wait for cleanup to complete by checking API response
+        await page.waitForResponse(
+          response => response.url().includes('/api/') && response.ok(),
+          { timeout: 2000 }
+        ).catch(() => {
+          // If no API response, just continue
+        });
       } catch (error) {
         console.warn('Failed to cleanup before test:', error);
       }
@@ -26,8 +31,12 @@ test.describe('Roles Management UI', () => {
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToRolesTab();
     
-    // Wait for the page to fully load
-    await page.waitForTimeout(1000);
+    // Wait for the roles content to be fully loaded and interactive
+    await page.waitForFunction(() => {
+      const rolesContent = document.querySelector('app-roles-list');
+      const buttons = document.querySelectorAll('button');
+      return rolesContent && buttons.length > 0;
+    }, { timeout: 5000 });
   });
 
   test.afterEach(async () => {

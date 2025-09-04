@@ -1,224 +1,130 @@
-# E2E Tests for Angular & API
+# E2E Tests for CRUD Application
 
-Comprehensive end-to-end tests for the Angular frontend and .NET API backend.
+This directory contains end-to-end tests for the CRUD application using Playwright.
 
-## Quick Start
+## Test Configuration Strategies
 
+### 1. WebServer Configuration (Recommended) ✅
+
+Uses Playwright's built-in `webServer` feature for automatic server management.
+
+**Run locally:**
 ```bash
-# Install dependencies
-npm install
-
-# Run all tests (recommended for first run)
-npm run test:stable
-
-# Run tests with UI
-npm run test:ui
+npm run test:webserver
 ```
 
-## Test Commands
+**Benefits:**
+- Automatic server lifecycle management
+- Unique database per test run (prevents locking)
+- No custom server management code
+- Works reliably in CI/CD
+- Simpler configuration
 
-### Basic Commands
-- `npm test` - Run all tests with default configuration
-- `npm run test:headed` - Run tests with browser window visible
-- `npm run test:ui` - Open Playwright UI mode
-- `npm run test:debug` - Run tests in debug mode
+**How it works:**
+- Playwright starts API and Angular servers automatically
+- Each test run gets a unique SQLite database file
+- Database is cleaned up after tests complete
+- Servers are reused locally, fresh in CI
 
-### Optimized Commands
-- `npm run test:stable` - **Recommended**: Pre-builds Angular and runs tests with single worker for maximum stability
-- `npm run test:fast` - Fast configuration with reduced workers
-- `npm run test:single` - Run tests with single worker (most stable)
-- `npm run prebuild:test` - Pre-build Angular then run tests
+### 2. Serial Configuration (Legacy)
 
-### Specific Test Suites
-- `npm run test:api-only` - Run only API tests (no UI)
-- `npm run test:integration` - Run integration tests
-- `npm run test:parallel` - Run tests with maximum parallelization
+Uses custom global setup with manual server management.
 
-### CI/CD
-- `npm run test:ci` - Optimized configuration for CI environments
-- `npm run prebuild` - Pre-build Angular application for faster startup
-
-### Utilities
-- `npm run report` - Show HTML test report
-- `npm run clean` - Clean test results and reports
-- `npm run install-browsers` - Install Playwright browsers
-
-## Performance Optimizations
-
-### 1. Pre-built Angular (Fastest Startup)
-The tests can use a pre-built Angular application for much faster startup:
-
+**Run locally:**
 ```bash
-# Build Angular once
-npm run prebuild
-
-# Run tests using the pre-built version
-npm test
+npm run test:serial
 ```
 
-### 2. Worker Queue System
-Tests use a queue system to prevent port conflicts when running multiple workers in parallel.
+**Note:** This approach is being phased out due to SQLite locking issues in CI.
 
-### 3. Static File Server
-When Angular is pre-built, tests use a lightweight static file server instead of the Angular dev server.
+## Available Scripts
 
-## Configuration Files
+```bash
+# Recommended approach
+npm run test:webserver      # Run with Playwright webServer config
 
-- `playwright.config.ts` - Default configuration
-- `playwright.config.fast.ts` - Optimized for speed with single worker
-- `playwright.config.ci.ts` - CI/CD optimized with sharding support
-- `playwright.config.api-only.ts` - API tests only (no browser)
-- `playwright.config.parallel.ts` - Maximum parallelization
-- `playwright.config.local.ts` - Local development configuration
+# Legacy approaches
+npm run test:serial         # Serial execution with custom setup
+npm run test:fast          # Fast mode (assumes servers running)
 
-## Troubleshooting
+# Other useful commands
+npm run test:smoke         # Run only smoke tests (@smoke tag)
+npm run test:critical      # Run critical tests (@critical tag)
+npm run test:headed        # Run tests with browser visible
+npm run test:ui            # Open Playwright UI mode
+npm run test:debug         # Run tests in debug mode
+```
 
-### Angular Server Timeout
-If you encounter Angular server startup timeouts:
+## Test Categories
 
-1. **Use single worker mode**:
-   ```bash
-   npm run test:single
-   ```
+Tests are tagged for selective execution:
+- `@smoke` - Quick validation tests (< 2 minutes)
+- `@critical` - Important feature tests (< 5 minutes)
+- `@extended` - Comprehensive tests (< 10 minutes)
 
-2. **Pre-build Angular**:
-   ```bash
-   npm run test:stable
-   ```
+## Architecture Decision
 
-3. **Increase memory**:
-   ```bash
-   NODE_OPTIONS="--max-old-space-size=8192" npm test
-   ```
+See [ADR-002: E2E Testing Database Strategy](../../docs/Decisions/0002-E2E-Testing-Database-Strategy.md) for details on why we moved to Playwright's webServer configuration.
 
-### Port Conflicts
-If you see "address already in use" errors:
-
-1. **Check for running processes**:
-   ```bash
-   lsof -i :4200,4210,5172,5173
-   ```
-
-2. **Kill stuck processes**:
-   ```bash
-   kill -9 <PID>
-   ```
-
-3. **Use single worker mode**:
-   ```bash
-   npm run test:single
-   ```
-
-### Test Failures
-For intermittent test failures:
-
-1. **Run with retries**:
-   ```bash
-   npx playwright test --retries=3
-   ```
-
-2. **Use stable configuration**:
-   ```bash
-   npm run test:stable
-   ```
-
-3. **Debug specific test**:
-   ```bash
-   npx playwright test --debug path/to/test.spec.ts
-   ```
+### Key Points:
+- SQLite file locking issues in CI required a new approach
+- Playwright's webServer eliminates 300+ lines of custom code
+- Unique database files per test run prevent locking
+- Same configuration works locally and in CI
 
 ## CI/CD Integration
 
-### GitHub Actions
-The repository includes a GitHub Actions workflow (`.github/workflows/e2e-tests.yml`) that:
-- Runs tests in parallel using sharding
-- Caches Angular builds for faster CI
-- Uploads test results and reports
-- Comments on PRs with test results
+The GitHub Actions workflow uses the webServer configuration:
+- `.github/workflows/e2e-webserver.yml` - Main E2E test workflow
+- Automatic server startup and shutdown
+- Unique database per workflow run
+- Test artifacts uploaded for debugging
 
-### Running in CI
-```yaml
-- name: Run E2E Tests
-  run: npm run test:ci
-```
+## Troubleshooting
 
-## Architecture
+### Database Locking Issues
+If you encounter "database is locked" errors:
+1. Ensure you're using the webServer configuration
+2. Check that TEST_RUN_ID is unique
+3. Verify no other processes are using the database
 
-### Test Structure
-```
-tests/
-├── angular-ui/     # UI tests using Playwright
-├── api/           # API tests
-├── integration/   # Full workflow tests
-├── helpers/       # Test utilities
-├── fixtures/      # Test data and fixtures
-└── setup/         # Test configuration and setup
-```
+### Server Port Conflicts
+If ports 5172 (API) or 4200 (Angular) are in use:
+1. Stop any running servers: `npm run servers:stop`
+2. Check for processes: `lsof -i :5172` or `lsof -i :4200`
+3. Kill processes if needed
 
-### Worker Isolation
-Each test worker runs with:
-- Dedicated API server port (5172 + workerIndex)
-- Dedicated Angular server port (4200 + workerIndex * 10)
-- Isolated SQLite database
-- Automatic cleanup between tests
-
-### Key Components
-1. **WorkerServerManager** - Manages server lifecycle per worker
-2. **WorkerStartupQueue** - Prevents port conflicts during startup
-3. **ApiHelpers** - API testing utilities with retry logic
-4. **PageHelpers** - UI testing utilities
-5. **Test Fixtures** - Ensures proper server startup before tests
-
-## Best Practices
-
-1. **Always use custom test fixtures** in UI tests:
-   ```typescript
-   import { test, expect } from '../setup/test-fixture';
-   ```
-
-2. **Clean up data between tests**:
-   ```typescript
-   test.beforeEach(async ({ apiContext }) => {
-     await apiHelpers.cleanupAll();
-   });
-   ```
-
-3. **Use retry logic for API calls**:
-   ```typescript
-   await apiHelpers.retryOperation(() => apiHelpers.createPerson(data));
-   ```
-
-4. **Wait for specific elements instead of arbitrary timeouts**:
-   ```typescript
-   await page.waitForSelector('button:has-text("Save")');
-   ```
+### Test Failures in CI
+Check the uploaded artifacts:
+- Test results in HTML and JSON format
+- Database files (if tests failed)
+- Server logs (if available)
 
 ## Development Tips
 
-1. **Fast iteration**: Use `npm run test:ui` for interactive development
-2. **Debugging**: Use `npm run test:debug` with breakpoints
-3. **Specific tests**: Use `--grep` to run specific tests:
-   ```bash
-   npm test -- --grep="should create"
-   ```
-4. **Single file**: Test a specific file:
-   ```bash
-   npx playwright test tests/api/people-api.spec.ts
-   ```
+1. **Use webServer config for reliability**: The webServer configuration is more reliable and simpler.
 
-## Performance Metrics
+2. **Keep tests independent**: Each test should work in isolation with database reset.
 
-Typical execution times:
-- Cold start (no pre-build): ~30-60s per worker
-- With pre-build: ~5-10s per worker
-- API tests only: ~2-5s per test
-- UI tests: ~5-15s per test
+3. **Use fixtures**: Leverage the `database-fixture.ts` for automatic cleanup.
+
+4. **Monitor test duration**: Keep smoke tests under 2 minutes, critical under 5.
+
+5. **Debug locally first**: Use `npm run test:headed` to see what's happening.
+
+## Migration from Legacy Setup
+
+If you have custom test configurations:
+1. Switch to `playwright.config.webserver.ts`
+2. Remove dependency on global setup files
+3. Use unique database names with timestamps
+4. Let Playwright manage server lifecycle
 
 ## Contributing
 
 When adding new tests:
-1. Use the appropriate test fixture (`test-fixture.ts` for UI, `api-only-fixture.ts` for API)
-2. Follow existing patterns for data cleanup
-3. Add meaningful test descriptions
-4. Use data-testid attributes for reliable element selection
-5. Consider adding to both API and UI test suites
+1. Tag appropriately (@smoke, @critical, @extended)
+2. Ensure tests are independent
+3. Use the webServer configuration
+4. Add to appropriate spec file category
+5. Keep tests focused and fast

@@ -1,4 +1,5 @@
 using App.Abstractions;
+using Domain.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Repositories.EntityFramework;
 using Infrastructure.Services;
@@ -25,6 +26,11 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
+        
+        // Add authentication services
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();
@@ -38,6 +44,31 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddInfrastructureEntityFrameworkSqlite(this IServiceCollection services, string connectionString)
     {
+        // In CI/Testing environments, optimize SQLite connection for single-use scenarios
+        if (Environment.GetEnvironmentVariable("CI") == "true" || 
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Testing")
+        {
+            // Add parameters to reduce locking issues in CI
+            if (!connectionString.Contains(";"))
+            {
+                connectionString += ";";
+            }
+            // Use Private cache to avoid shared cache locking issues
+            if (!connectionString.Contains("Cache=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Cache=Private;";
+            }
+            // Disable connection pooling to ensure clean connections
+            if (!connectionString.Contains("Pooling=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Pooling=False;";
+            }
+            if (!connectionString.Contains("Mode=", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString += "Mode=ReadWriteCreate;";
+            }
+        }
+        
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(connectionString));
 
@@ -45,6 +76,11 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
         services.AddScoped<IWindowRepository, EfWindowRepository>();
+        
+        // Add authentication services
+        services.AddScoped<IUserRepository, EfUserRepository>();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();

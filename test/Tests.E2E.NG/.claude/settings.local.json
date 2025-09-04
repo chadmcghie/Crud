@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(set CLEANUP_BEFORE_TESTS=true)",
+      "Bash(set KILL_EXISTING_SERVERS=true)",
+      "Bash(npm test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run clean:servers:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run test:clean:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(grep:*)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Api\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\src\\Domain\\Validators/**)",
+      "Bash(npx playwright show-report:*)",
+      "Bash(dir:*)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)",
+      "Read(C:\\Users\\chadm\\source\\repos\\Crud\\.github\\workflows/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

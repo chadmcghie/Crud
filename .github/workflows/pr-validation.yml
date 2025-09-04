@@ -2,17 +2,22 @@ name: Pull Request Validation
 
 on:
   pull_request:
-    branches: [ dev ]
+    branches: [ main, dev ]
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '20.x'
 
 jobs:
-  # Full test suite for PRs targeting dev branch
-  backend-unit-tests:
-    name: Backend Unit Tests
+  build:
+    name: Build Solution
     runs-on: ubuntu-latest
     
     steps:
@@ -23,22 +28,89 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
+      run: dotnet restore Crud.sln
       
-    - name: Build backend
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+    - name: Build solution
+      run: dotnet build Crud.sln --no-restore --configuration Release
       
+    - name: Verify appsettings files exist
+      run: |
+        echo "📁 Verifying appsettings files before artifact upload:"
+        ls -la src/Api/appsettings*.json
+        echo "✅ All appsettings files found"
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+        retention-days: 1
+
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files if they exist
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        elif [ -f "appsettings.json" ]; then
+          cp appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from root"
+        else
+          echo "⚠️ No appsettings files found to copy"
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
     - name: Run Backend Unit Tests
-      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal" --results-directory TestResults/
       
     - name: Upload backend unit test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-unit-test-results-${{ github.run_number }}
+        name: backend-unit-tests-${{ github.run_number }}
         path: TestResults/
+        
+    - name: Publish backend unit test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Unit Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
 
   frontend-unit-tests:
     name: Frontend Unit Tests
@@ -71,13 +143,13 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: frontend-coverage-${{ github.run_number }}
+        name: frontend-unit-tests-${{ github.run_number }}
         path: src/Angular/coverage/
 
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: backend-unit-tests
+    needs: [build]
     
     steps:
     - name: Checkout code
@@ -87,30 +159,160 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Restore dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
-      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files if they exist
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        elif [ -f "appsettings.json" ]; then
+          cp appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from root"
+        else
+          echo "⚠️ No appsettings files found to copy"
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
     - name: Run Backend Integration Tests with SQLite
-      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --results-directory TestResults/
       env:
         CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
       timeout-minutes: 10
       
     - name: Upload integration test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-integration-test-results-${{ github.run_number }}
+        name: backend-integration-tests-${{ github.run_number }}
         path: TestResults/
+        
+    - name: Publish backend integration test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Integration Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
+
+  smoke-tests:
+    name: Smoke Tests (Quick Validation)
+    runs-on: ubuntu-latest
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+    
+    - name: Copy appsettings to test output
+      run: |
+        echo "📁 Setting up smoke test environment..."
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
+        
+        # Copy appsettings files - they should be in src/Api from the artifact
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        else
+          echo "❌ No appsettings files found in src/Api/"
+          echo "📁 Checking current directory:"
+          ls -la *.json 2>/dev/null || echo "No JSON files in root"
+          exit 1
+        fi
+        
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
+        
+    - name: Run API Health Check Test
+      run: |
+        echo "🔥 Running smoke test: API Health Check"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~ApiHealthTests.API_Should_Be_Responsive" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Basic CRUD Smoke Test
+      run: |
+        echo "🔥 Running smoke test: Basic CRUD Operations"
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~PeopleControllerTests.GET_People_Should_Return_Empty_List_Initially" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Run Simple Authentication Test
+      run: |
+        echo "🔥 Running smoke test: Basic Authentication"
+        echo "Current directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        echo "Running test with detailed logging..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --no-build --configuration Release \
+          --filter "FullyQualifiedName~AuthControllerTests.POST_Register_Should_Create_User_And_Return_Tokens" \
+          --logger "console;verbosity=detailed" \
+          --results-directory TestResults/ || (echo "Test failed with exit code: $?" && exit 1)
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      continue-on-error: true
+      
+    - name: Smoke Test Summary
+      if: always()
+      run: |
+        echo "## 🔥 Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Smoke tests are configured with continue-on-error to gather maximum diagnostic information." >> $GITHUB_STEP_SUMMARY
+        echo "Check individual test steps above for specific failures." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if ls TestResults/*.trx 2>/dev/null; then
+          echo "✅ Smoke tests executed and produced results" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ No test result files found - smoke tests may not have executed properly" >> $GITHUB_STEP_SUMMARY
+        fi
 
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests]
+    needs: [build]
+    if: needs.build.result == 'success'
     
     steps:
     - name: Checkout code
@@ -128,11 +330,10 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Restore .NET dependencies
-      run: dotnet restore Crud.All.sln
-      
-    - name: Build solution
-      run: dotnet build Crud.All.sln --no-restore --configuration Release
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -150,68 +351,56 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: npx playwright install --with-deps chromium
       
-    - name: Kill any existing processes on test ports
+    - name: Set execute permissions for API binary
       run: |
-        sudo lsof -ti:5172,4200 | xargs -r kill -9 || true
-        sleep 2
-      
-    - name: Start API server
-      working-directory: ./src/Api
-      run: |
-        dotnet run --no-launch-profile --configuration Release &
-        echo "API_PID=$!" >> $GITHUB_ENV
-      env:
-        ASPNETCORE_ENVIRONMENT: E2E
-        ASPNETCORE_URLS: http://localhost:5172
-        CI: true
-        DatabaseProvider: SQLite
-        ConnectionStrings__DefaultConnection: "Data Source=CrudAppE2E.db"
+        chmod +x ./src/Api/bin/Release/net8.0/Api
+        echo "✅ Execute permissions set for API binary"
         
-    - name: Wait for API to be ready
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:5172/health 2>/dev/null; do echo "Waiting for API..."; sleep 2; done'
-        echo "API is ready!"
-        
-    - name: Start Angular server
-      working-directory: ./src/Angular
-      run: |
-        npm start &
-        echo "ANGULAR_PID=$!" >> $GITHUB_ENV
-        
-    - name: Wait for Angular to be ready
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do echo "Waiting for Angular..."; sleep 2; done'
-        echo "Angular is ready!"
-        
-    - name: Run E2E Tests
+    - name: Run E2E Tests with WebServer Config
       working-directory: ./test/Tests.E2E.NG
       run: |
-        npm run test:api-only
-        npm run test:integration
+        echo "🚀 Running E2E tests with Playwright WebServer configuration..."
+        echo "This uses Playwright's built-in server management - no custom setup needed!"
+        npm run test:webserver
       env:
         CI: true
-        API_BASE_URL: http://localhost:5172
-        ANGULAR_BASE_URL: http://localhost:4200
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        # Unique database per test run to avoid locking
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
         
     - name: Upload E2E test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-test-results-${{ github.run_number }}
+        name: e2e-tests-${{ github.run_number }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
           
-    - name: Stop servers
+    - name: Upload database files (for debugging)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: database-files-${{ github.run_number }}
+        path: |
+          CrudTest_*.db
+          CrudTest_*.db-wal
+          CrudTest_*.db-shm
+          
+    - name: Cleanup
       if: always()
       run: |
-        if [ ! -z "$API_PID" ]; then kill $API_PID || true; fi
-        if [ ! -z "$ANGULAR_PID" ]; then kill $ANGULAR_PID || true; fi
+        echo "🧹 Cleaning up test databases..."
+        # Remove test database files created during this run
+        rm -f CrudTest_*.db CrudTest_*.db-wal CrudTest_*.db-shm 2>/dev/null || true
+        echo "✅ Cleanup complete"
 
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-tests]
     if: always()
     
     steps:
@@ -222,20 +411,25 @@ jobs:
         echo "### Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        
+        echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || (needs.build.result == 'failure' && '❌ Failed') || (needs.build.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || (needs.e2e-tests.result == 'failure' && '❌ Failed') || (needs.e2e-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [ "${{ needs.backend-unit-tests.result }}" == "success" ] && 
-           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && 
-           [ "${{ needs.backend-integration-tests.result }}" == "success" ] && 
+        # Check overall status
+        if [ "${{ needs.build.result }}" == "success" ] && 
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] &&
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] &&
+           [ "${{ needs.backend-integration-tests.result }}" == "success" ] &&
            [ "${{ needs.e2e-tests.result }}" == "success" ]; then
-          echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
-          echo "This PR is ready for review." >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ All validation checks passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**E2E Tests:** Now using Playwright WebServer configuration for improved reliability" >> $GITHUB_STEP_SUMMARY
         else
-          echo "### ❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
-          echo "Please fix the failing tests before merging." >> $GITHUB_STEP_SUMMARY
+          echo "### ❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the test results above for details." >> $GITHUB_STEP_SUMMARY
           exit 1
         fi
