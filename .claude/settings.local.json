@@ -90,7 +90,8 @@
       "WebFetch(domain:docs.github.com)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:playwright.dev)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": [],
