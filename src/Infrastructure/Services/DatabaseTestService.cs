@@ -176,7 +176,7 @@ public class DatabaseTestService
     /// <summary>
     /// Attempts to reset database using Respawn (more reliable but limited SQLite support)
     /// </summary>
-    private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex, bool seedData)
+    private Task<bool> TryResetWithRespawnAsync(string _, int workerIndex, bool __)
     {
         try
         {

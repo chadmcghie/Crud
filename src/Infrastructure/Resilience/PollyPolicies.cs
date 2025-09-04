@@ -153,7 +153,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Timeout policy for database operations (prevents hanging)
         /// </summary>
-        public static IAsyncPolicy GetDatabaseTimeoutPolicy(ILogger? logger = null)
+        public static IAsyncPolicy GetDatabaseTimeoutPolicy(ILogger? _ = null)
         {
             return Policy.TimeoutAsync(TimeSpan.FromSeconds(30)); // 30 second timeout for database operations
         }
@@ -161,7 +161,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Timeout policy for HTTP operations
         /// </summary>
-        public static IAsyncPolicy<HttpResponseMessage> GetHttpTimeoutPolicy(IServiceProvider serviceProvider)
+        public static IAsyncPolicy<HttpResponseMessage> GetHttpTimeoutPolicy(IServiceProvider _)
         {
             return Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(15)); // 15 second timeout for HTTP requests
         }
@@ -195,7 +195,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Bulkhead isolation policy to limit concurrent database operations
         /// </summary>
-        public static IAsyncPolicy GetDatabaseBulkheadPolicy(ILogger? logger = null)
+        public static IAsyncPolicy GetDatabaseBulkheadPolicy(ILogger? _ = null)
         {
             return Policy.BulkheadAsync(20, 50); // Max 20 concurrent database operations, 50 in queue
         }

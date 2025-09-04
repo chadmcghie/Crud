@@ -74,7 +74,7 @@ namespace Infrastructure.Resilience
         }
 
         public static async Task<T> ExecuteWithRetryAsync<T>(
-            this DbContext context,
+            this DbContext _,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
@@ -88,7 +88,7 @@ namespace Infrastructure.Resilience
         }
 
         public static async Task<T> ExecuteWithBulkheadAsync<T>(
-            this DbContext context,
+            this DbContext _,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
