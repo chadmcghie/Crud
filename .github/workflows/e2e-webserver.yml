@@ -67,7 +67,7 @@ jobs:
       run: |
         echo "🚀 Running E2E tests with Playwright WebServer configuration..."
         echo "This uses Playwright's built-in server management - no custom setup needed!"
-        npx playwright test --config=playwright.config.webserver.ts --reporter=dot
+        npx playwright test --config=playwright.config.webserver.ts
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing

@@ -89,14 +89,17 @@ export default defineConfig({
     }
   })(),
   
-  /* Reporter configuration */
-  reporter: [
-    ['list', { printSteps: true }],
-    ['html', { outputFolder: './test-results/html', open: 'never' }],
-    ['json', { outputFile: './test-results/results.json' }],
-    ['junit', { outputFile: './test-results/results.xml' }],
-    process.env.CI ? ['github'] : null,
-  ].filter(Boolean) as any,
+  /* Reporter configuration - minimal output in CI, verbose locally */
+  reporter: process.env.CI 
+    ? [
+        ['dot'],  // Minimal console output
+        ['junit', { outputFile: './test-results/results.xml' }],  // For CI test publishing
+        ['github']  // GitHub annotations
+      ]
+    : [
+        ['list', { printSteps: false }],  // Local development
+        ['html', { outputFolder: './test-results/html', open: 'never' }]
+      ],
   
   /* Output directory */
   outputDir: './test-results/artifacts',
