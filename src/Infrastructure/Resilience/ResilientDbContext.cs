@@ -26,7 +26,7 @@ namespace Infrastructure.Resilience
         {
             _context = context;
             _logger = logger;
-            _retryPolicy = PollyPolicies.GetCombinedDatabasePolicy(logger);
+            _retryPolicy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
         }
 
         public async Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
@@ -66,7 +66,7 @@ namespace Infrastructure.Resilience
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
-            var policy = PollyPolicies.GetDatabaseRetryPolicy(logger);
+            var policy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
             return await policy.ExecuteAsync(async () =>
             {
                 return await context.SaveChangesAsync(cancellationToken);
@@ -79,8 +79,27 @@ namespace Infrastructure.Resilience
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
-            var policy = PollyPolicies.GetDatabaseRetryPolicy(logger);
+            var policy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
             return await policy.ExecuteAsync(async () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return await operation();
+            });
+        }
+
+        public static async Task<T> ExecuteWithBulkheadAsync<T>(
+            this DbContext context,
+            Func<Task<T>> operation,
+            ILogger? logger = null,
+            CancellationToken cancellationToken = default)
+        {
+            var bulkheadPolicy = PollyPolicies.GetDatabaseBulkheadPolicy(logger);
+            var comprehensivePolicy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
+            
+            // Combine bulkhead with comprehensive resilience
+            var combinedPolicy = Policy.WrapAsync(bulkheadPolicy, comprehensivePolicy);
+            
+            return await combinedPolicy.ExecuteAsync(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return await operation();

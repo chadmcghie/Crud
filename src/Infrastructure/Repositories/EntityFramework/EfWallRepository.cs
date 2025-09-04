@@ -1,6 +1,7 @@
 using App.Abstractions;
 using Domain.Entities;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.EntityFramework;
@@ -28,7 +29,7 @@ public class EfWallRepository : IWallRepository
     {
         wall.CreatedAt = DateTime.UtcNow;
         _context.Walls.Add(wall);
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         return wall;
     }
 
@@ -36,7 +37,7 @@ public class EfWallRepository : IWallRepository
     {
         wall.UpdatedAt = DateTime.UtcNow;
         _context.Walls.Update(wall);
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
@@ -45,7 +46,7 @@ public class EfWallRepository : IWallRepository
         if (wall != null)
         {
             _context.Walls.Remove(wall);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
     }
 }

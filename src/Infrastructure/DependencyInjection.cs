@@ -22,6 +22,9 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(connectionString));
 
+        // Register generic repository pattern
+        services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IWallRepository, EfWallRepository>();
@@ -71,6 +74,9 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(connectionString));
+
+        // Register generic repository pattern
+        services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IRoleRepository, EfRoleRepository>();

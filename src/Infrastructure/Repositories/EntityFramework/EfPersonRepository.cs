@@ -1,6 +1,7 @@
 using App.Abstractions;
 using Domain.Entities;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.EntityFramework;
@@ -33,7 +34,7 @@ public class EfPersonRepository : IPersonRepository
         try
         {
             _context.People.Add(person);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             return person;
         }
         catch (DbUpdateException ex)
@@ -47,7 +48,7 @@ public class EfPersonRepository : IPersonRepository
         try
         {
             _context.People.Update(person);
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -67,7 +68,7 @@ public class EfPersonRepository : IPersonRepository
             if (person != null)
             {
                 _context.People.Remove(person);
-                await _context.SaveChangesAsync(ct);
+                await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             }
         }
         catch (DbUpdateConcurrencyException ex)

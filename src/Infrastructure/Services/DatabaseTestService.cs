@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Infrastructure.Data;
+using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Respawn;
@@ -137,7 +138,7 @@ public class DatabaseTestService
                 var seedStart = DateTime.UtcNow;
                 await SeedRolesAsync();
                 await SeedPeopleAsync();
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesWithRetryAsync();
                 seedTime = (DateTime.UtcNow - seedStart).TotalMilliseconds;
                 _logger.LogInformation("[Phase 3] Database seeding completed in {Ms}ms", seedTime);
             }
@@ -235,7 +236,7 @@ public class DatabaseTestService
                 _logger.LogDebug("Seeding database for worker {WorkerIndex}...", workerIndex);
                 await SeedRolesAsync();
                 await SeedPeopleAsync();
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesWithRetryAsync();
             }
 
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
@@ -260,7 +261,7 @@ public class DatabaseTestService
         await SeedRolesAsync();
         await SeedPeopleAsync();
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesWithRetryAsync();
 
         _logger.LogInformation("Database seeding completed for worker {WorkerIndex}", workerIndex);
     }

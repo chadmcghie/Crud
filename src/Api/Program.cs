@@ -108,7 +108,7 @@ namespace Api
                 builder.Services.AddApplication();
 
                 builder.Services.AddHttpClient("default")
-                    .AddPolicyHandler((sp, request) => PollyPolicies.GetCombinedHttpPolicy(sp));
+                    .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
 
                 var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
