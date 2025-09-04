@@ -247,6 +247,7 @@ CConversionReportFiles/
 *.db
 *.db-shm
 *.db-wal
+CrudTest_*.db*
 
 # Business Intelligence projects
 *.rdl.data

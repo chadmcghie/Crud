@@ -104,7 +104,11 @@
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\docs/**)",
       "Read(/C:\\Users\\chadm\\source\\repos\\Crud/**)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG/**)",
+      "Read(/C:\\Users\\chadm\\source\\repos\\Crud\\test\\Tests.E2E.NG\\tests/**)"
     ],
     "deny": [],
     "ask": [],

@@ -45,8 +45,8 @@ export default defineConfig({
       url: 'http://localhost:5172/health',
       timeout: 60 * 1000, // 60 seconds to start
       reuseExistingServer: !process.env.CI, // Reuse locally, fresh in CI
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdout: 'ignore',
+      stderr: 'ignore',
       env: {
         ASPNETCORE_ENVIRONMENT: 'Testing',
         ASPNETCORE_URLS: process.env.CI 
@@ -69,7 +69,7 @@ export default defineConfig({
       timeout: 120 * 1000, // 2 minutes for Angular compilation
       reuseExistingServer: !process.env.CI,
       stdout: 'ignore',
-      stderr: 'pipe',
+      stderr: 'ignore',
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
