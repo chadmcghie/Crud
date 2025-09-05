@@ -174,7 +174,7 @@ public class PersonServiceTests
         }
 
         [Fact]
-        public async Task WithInvalidRoleId_ShouldThrowKeyNotFoundException()
+        public async Task WithInvalidRoleId_ShouldThrowArgumentException()
         {
             // Arrange
             var fullName = "John Doe";
@@ -185,7 +185,7 @@ public class PersonServiceTests
                 .ReturnsAsync((Role?)null);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => _personService.CreateAsync(fullName, null, roleIds));
 
             exception.Message.Should().Contain($"Role {invalidRoleId} not found");
