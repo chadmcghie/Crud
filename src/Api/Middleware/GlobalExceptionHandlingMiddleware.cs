@@ -49,10 +49,12 @@ public class GlobalExceptionHandlingMiddleware
             {
                 Status = HttpStatusCode.BadRequest,
                 Title = "Validation Failed",
-                Errors = validationException.Errors.ToDictionary(
-                    e => e.PropertyName,
-                    e => new[] { e.ErrorMessage }
-                )
+                Errors = validationException.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray()
+                    )
             },
             KeyNotFoundException keyNotFoundException => new ErrorResponse
             {

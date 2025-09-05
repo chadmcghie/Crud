@@ -15,7 +15,7 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
-                    ?? throw new KeyNotFoundException($"Role {roleId} not found");
+                    ?? throw new ArgumentException($"Role {roleId} not found");
                 person.Roles.Add(role);
             }
         }
@@ -40,7 +40,7 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
-                    ?? throw new KeyNotFoundException($"Role {roleId} not found");
+                    ?? throw new ArgumentException($"Role {roleId} not found");
                 person.Roles.Add(role);
             }
         }
