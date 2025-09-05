@@ -11,12 +11,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IPersonService, PersonService>();
-        services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IWallService, WallService>();
-        services.AddScoped<IWindowService, WindowService>();
-
-
         // Register example service demonstrating generic repository with specifications
         services.AddScoped<IPersonQueryService, PersonQueryService>();
 
