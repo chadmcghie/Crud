@@ -213,6 +213,27 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             throw;
         }
     }
+
+    /// <summary>
+    /// Masks an email address for safe logging by showing only first letter and domain.
+    /// </summary>
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+            return "***";
+
+        var atIndex = email.IndexOf('@');
+        if (atIndex < 1)
+            return "***@***";
+
+        var localPart = email.Substring(0, atIndex);
+        var domain = email.Substring(atIndex + 1);
+
+        // Show first character of local part and domain
+        var maskedLocal = localPart[0] + new string('*', Math.Min(localPart.Length - 1, 5));
+
+        return $"{maskedLocal}@{domain}";
+    }
 }
 
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, AuthenticationResponse>
@@ -409,26 +430,5 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
             _logger.LogError(ex, "Error during logout");
             throw;
         }
-    }
-
-    /// <summary>
-    /// Masks an email address for safe logging by showing only first letter and domain.
-    /// </summary>
-    private static string MaskEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email))
-            return "***";
-
-        var atIndex = email.IndexOf('@');
-        if (atIndex < 1)
-            return "***@***";
-
-        var localPart = email.Substring(0, atIndex);
-        var domain = email.Substring(atIndex + 1);
-
-        // Show first character of local part and domain
-        var maskedLocal = localPart[0] + new string('*', Math.Min(localPart.Length - 1, 5));
-
-        return $"{maskedLocal}@{domain}";
     }
 }
