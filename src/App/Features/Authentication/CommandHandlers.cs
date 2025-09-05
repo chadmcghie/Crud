@@ -1,4 +1,3 @@
-using System.Linq;
 using App.Abstractions;
 using Domain.Entities.Authentication;
 using Domain.Events;
@@ -32,36 +31,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
     {
         if (request == null)
             throw new ArgumentNullException(nameof(request));
-
-        // Validate basic input
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new AuthenticationResponse { Success = false, Error = "Email is required" };
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-            return new AuthenticationResponse { Success = false, Error = "Password is required" };
-
-        // Password complexity validation
-        if (request.Password.Length < 8)
-            return new AuthenticationResponse { Success = false, Error = "Password must be at least 8 characters long" };
-
-        if (!request.Password.Any(char.IsUpper))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one uppercase letter" };
-
-        if (!request.Password.Any(char.IsLower))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one lowercase letter" };
-
-        if (!request.Password.Any(char.IsDigit))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one digit" };
-
-        if (!request.Password.Any(c => !char.IsLetterOrDigit(c)))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one special character" };
-
-        if (string.IsNullOrWhiteSpace(request.FirstName))
-            return new AuthenticationResponse { Success = false, Error = "First name is required" };
-
-        if (string.IsNullOrWhiteSpace(request.LastName))
-            return new AuthenticationResponse { Success = false, Error = "Last name is required" };
-
+        
         try
         {
             // Create email value object (will throw if invalid)
@@ -141,14 +111,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
     {
         if (request == null)
             throw new ArgumentNullException(nameof(request));
-
-        // Validate basic input
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new AuthenticationResponse { Success = false, Error = "Email is required" };
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-            return new AuthenticationResponse { Success = false, Error = "Password is required" };
-
+        
         try
         {
             // Create email value object
