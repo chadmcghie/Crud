@@ -61,11 +61,8 @@ export const test = base.extend<ApiOnlyFixtures>({
       }
     } catch (error: any) {
       if (error.message?.includes('timeout')) {
-        console.error('❌ Database reset TIMEOUT after 30 seconds!');
+        console.error('❌ Database reset TIMEOUT after 5 seconds!');
         console.error('This indicates the API is not responding to database reset requests');
-      } else if (error.message?.includes('Request context disposed')) {
-        console.error('❌ Request context was disposed during database reset');
-        console.error('This may indicate timing issues with test cleanup');
       } else {
         console.warn('⚠️ Database cleanup error:', error.message || error);
       }

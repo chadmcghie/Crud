@@ -176,9 +176,7 @@ public class DatabaseTestService
     /// <summary>
     /// Attempts to reset database using Respawn (more reliable but limited SQLite support)
     /// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter
     private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex, bool seedData)
-#pragma warning restore IDE0060 // Remove unused parameter
     {
         try
         {

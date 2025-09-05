@@ -48,14 +48,14 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             // Create test data
             var adminRole = new Role { Name = "Administrator", Description = "Full system access" };
             var userRole = new Role { Name = "User", Description = "Limited access" };
-
+            
             await roleRepository.AddAsync(adminRole);
             await roleRepository.AddAsync(userRole);
             await DbContext.SaveChangesAsync();
 
             var adminPerson = new Person { FullName = "Admin User", Phone = "123-456-7890" };
             adminPerson.Roles.Add(adminRole);
-
+            
             var regularPerson = new Person { FullName = "Regular User", Phone = "098-765-4321" };
             regularPerson.Roles.Add(userRole);
 

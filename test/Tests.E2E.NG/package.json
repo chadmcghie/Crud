@@ -5,9 +5,9 @@
   "scripts": {
     "test": "playwright test",
     "test:quiet": "playwright test --config=playwright.config.quiet.ts",
-    "test:smoke": "npx cross-env TEST_CATEGORY=smoke API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
-    "test:critical": "npx cross-env TEST_CATEGORY=critical API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
-    "test:extended": "npx cross-env TEST_CATEGORY=extended API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:critical": "playwright test --grep @critical",
+    "test:extended": "playwright test --grep @extended",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
