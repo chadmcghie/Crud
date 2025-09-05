@@ -153,9 +153,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Timeout policy for database operations (prevents hanging)
         /// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter
         public static IAsyncPolicy GetDatabaseTimeoutPolicy(ILogger? logger = null)
-#pragma warning restore IDE0060 // Remove unused parameter
         {
             return Policy.TimeoutAsync(TimeSpan.FromSeconds(30)); // 30 second timeout for database operations
         }
@@ -163,9 +161,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Timeout policy for HTTP operations
         /// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter
         public static IAsyncPolicy<HttpResponseMessage> GetHttpTimeoutPolicy(IServiceProvider serviceProvider)
-#pragma warning restore IDE0060 // Remove unused parameter
         {
             return Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(15)); // 15 second timeout for HTTP requests
         }
@@ -199,9 +195,7 @@ namespace Infrastructure.Resilience
         /// <summary>
         /// Bulkhead isolation policy to limit concurrent database operations
         /// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter
         public static IAsyncPolicy GetDatabaseBulkheadPolicy(ILogger? logger = null)
-#pragma warning restore IDE0060 // Remove unused parameter
         {
             return Policy.BulkheadAsync(20, 50); // Max 20 concurrent database operations, 50 in queue
         }

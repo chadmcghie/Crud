@@ -31,7 +31,7 @@ export default defineConfig({
   timeout: 30000, // 30 seconds per test
   
   /* Global setup for shared server management */
-  globalSetup: './tests/setup/optimized-global-setup.ts',
+  globalSetup: './tests/setup/global-setup.ts',
   globalTeardown: './tests/setup/global-teardown.ts',
   
   /* Test categorization using grep patterns */

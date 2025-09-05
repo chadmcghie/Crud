@@ -73,13 +73,11 @@ namespace Infrastructure.Resilience
             });
         }
 
-#pragma warning disable IDE0060 // Remove unused parameter
         public static async Task<T> ExecuteWithRetryAsync<T>(
             this DbContext context,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
-#pragma warning restore IDE0060 // Remove unused parameter
         {
             var policy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
             return await policy.ExecuteAsync(async () =>
@@ -89,13 +87,11 @@ namespace Infrastructure.Resilience
             });
         }
 
-#pragma warning disable IDE0060 // Remove unused parameter
         public static async Task<T> ExecuteWithBulkheadAsync<T>(
             this DbContext context,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
-#pragma warning restore IDE0060 // Remove unused parameter
         {
             var bulkheadPolicy = PollyPolicies.GetDatabaseBulkheadPolicy(logger);
             var comprehensivePolicy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);

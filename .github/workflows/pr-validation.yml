@@ -352,14 +352,12 @@ jobs:
       run: |
         echo "🚀 Running E2E smoke tests only for quick PR validation..."
         echo "Tagged with @smoke - should complete in 2-5 minutes"
-        echo "Using Playwright webServer configuration for reliable server management"
         npm run test:smoke
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
         DatabaseProvider: SQLite
         TEST_RESET_TOKEN: test-only-token
-        # TEST_CATEGORY is set by the npm script
         # Unique database per test run to avoid locking
         TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
         

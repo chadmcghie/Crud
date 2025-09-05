@@ -15,11 +15,11 @@ export default defineConfig({
   workers: 1, // Single worker to prevent database conflicts (ADR-001)
   /* Circuit breaker: stop after X failures to prevent runaway test execution */
   maxFailures: process.env.CI ? 10 : 0, // Stop after 10 failures in CI
-  /* Reasonable timeout for serial execution - increased for CI database operations */
-  timeout: process.env.CI ? 45000 : 30000, // 45s in CI, 30s locally for database operations
+  /* Reasonable timeout for serial execution */
+  timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   
-  /* Global setup and teardown for optimized server management */
-  globalSetup: './tests/setup/optimized-global-setup.ts',
+  /* Global setup and teardown for server management */
+  globalSetup: './tests/setup/global-setup.ts',
   globalTeardown: './tests/setup/global-teardown.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -42,9 +42,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     /* Record video on failure */
     video: 'retain-on-failure',
-    /* Reasonable timeouts without arbitrary waits - increased for CI */
-    actionTimeout: 15000, // Increased from 10000 for CI database operations
-    navigationTimeout: 30000, // Increased from 15000 for CI
+    /* Reasonable timeouts without arbitrary waits */
+    actionTimeout: 10000,
+    navigationTimeout: 15000,
     /* Wait for network to be idle before considering navigation complete */
     // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
   },

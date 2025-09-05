@@ -69,14 +69,7 @@ public class DatabaseTestService
                 return;
             }
 
-            // Try to use Respawn for more reliable database cleanup
-            if (!string.IsNullOrEmpty(connectionString) &&
-                await TryResetWithRespawnAsync(connectionString, workerIndex, seedData))
-            {
-                return;
-            }
-
-            // Fallback to EF Core cleanup with improved transaction handling
+            // Use EF Core cleanup for SQLite compatibility
             await ResetWithEfCoreAsync(workerIndex, seedData);
         }
         catch (Exception ex)
@@ -173,27 +166,6 @@ public class DatabaseTestService
         }
     }
 
-    /// <summary>
-    /// Attempts to reset database using Respawn (more reliable but limited SQLite support)
-    /// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter
-    private Task<bool> TryResetWithRespawnAsync(string connectionString, int workerIndex, bool seedData)
-#pragma warning restore IDE0060 // Remove unused parameter
-    {
-        try
-        {
-            // For SQLite, Respawn has limited support and can cause issues
-            // Skip Respawn for SQLite and use EF Core cleanup instead
-            _logger.LogDebug("Skipping Respawn for SQLite database, using EF Core cleanup for worker {WorkerIndex}", workerIndex);
-            return Task.FromResult(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Respawn reset failed for worker {WorkerIndex}, falling back to EF Core: {Error}",
-                workerIndex, ex.Message);
-            return Task.FromResult(false);
-        }
-    }
 
     /// <summary>
     /// Resets database using EF Core with optimized bulk operations
@@ -205,12 +177,8 @@ public class DatabaseTestService
 
         try
         {
-            // For SQLite, we can use more efficient bulk operations without explicit transactions
-            // since SQLite handles this automatically and transactions can cause locking issues
-
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
-            // Note: Removed AnyAsync() checks as they were causing performance issues in test scenarios
 
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
             var peopleStart = DateTime.UtcNow;
