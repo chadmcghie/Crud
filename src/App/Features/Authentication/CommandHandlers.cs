@@ -158,7 +158,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (user == null)
             {
-                _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
+                _logger.LogWarning("Login attempt with non-existent email: {Email}", MaskEmail(request.Email));
                 return new AuthenticationResponse { Success = false, Error = "Invalid email or password" };
             }
 
@@ -212,6 +212,27 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             _logger.LogError(ex, "Error during user login");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Masks an email address for safe logging by showing only first letter and domain.
+    /// </summary>
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+            return "***";
+
+        var atIndex = email.IndexOf('@');
+        if (atIndex < 1)
+            return "***@***";
+
+        var localPart = email.Substring(0, atIndex);
+        var domain = email.Substring(atIndex + 1);
+
+        // Show first character of local part and domain
+        var maskedLocal = localPart[0] + new string('*', Math.Min(localPart.Length - 1, 5));
+
+        return $"{maskedLocal}@{domain}";
     }
 }
 
