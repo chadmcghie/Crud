@@ -31,7 +31,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
     {
         if (request == null)
             throw new ArgumentNullException(nameof(request));
-        
+
         try
         {
             // Create email value object (will throw if invalid)
@@ -111,7 +111,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
     {
         if (request == null)
             throw new ArgumentNullException(nameof(request));
-        
+
         try
         {
             // Create email value object

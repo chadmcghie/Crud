@@ -40,7 +40,7 @@ public class UpdateWindowCommandHandler(IWindowRepository windowRepository) : IR
 {
     public async Task Handle(UpdateWindowCommand request, CancellationToken cancellationToken)
     {
-        var window = await windowRepository.GetAsync(request.Id, cancellationToken) 
+        var window = await windowRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Window {request.Id} not found");
 
         window.Name = request.Name;

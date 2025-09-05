@@ -31,7 +31,7 @@ public class UpdateWallCommandHandler(IWallRepository wallRepository) : IRequest
 {
     public async Task Handle(UpdateWallCommand request, CancellationToken cancellationToken)
     {
-        var wall = await wallRepository.GetAsync(request.Id, cancellationToken) 
+        var wall = await wallRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Wall {request.Id} not found");
 
         wall.Name = request.Name;

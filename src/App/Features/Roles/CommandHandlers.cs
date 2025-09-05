@@ -21,7 +21,7 @@ public class UpdateRoleCommandHandler(IRoleRepository roleRepository) : IRequest
 {
     public async Task Handle(UpdateRoleCommand request, CancellationToken cancellationToken)
     {
-        var role = await roleRepository.GetAsync(request.Id, cancellationToken) 
+        var role = await roleRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Role {request.Id} not found");
         role.Name = request.Name;
         role.Description = request.Description;
