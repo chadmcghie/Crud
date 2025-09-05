@@ -193,12 +193,8 @@ async function robustGlobalSetup(config: FullConfig) {
   console.log('🚀 Starting Angular server...');
   const angularProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Angular');
   
-  // In CI, use start:ci which is configured for CI environments
-  // In local development, use npm start
-  const npmScript = process.env.CI ? 'start:ci' : 'start';
-  console.log(`Using npm script: ${npmScript}`);
-  
-  angularServerProcess = spawn('npm', ['run', npmScript], {
+  // Use npm start which is already configured properly
+  angularServerProcess = spawn('npm', ['start'], {
     cwd: angularProjectPath,
     env: {
       ...process.env,
@@ -224,11 +220,9 @@ async function robustGlobalSetup(config: FullConfig) {
   
   // Wait for Angular server (takes longer due to compilation)
   console.log('⏳ Waiting for Angular to compile and start (this may take a minute)...');
-  // In CI, Angular needs more time to compile and start
-  const angularTimeout = process.env.CI ? 120000 : 90000;
-  const angularReady = await waitForServer(`http://localhost:${angularPort}`, angularTimeout);
+  const angularReady = await waitForServer(`http://localhost:${angularPort}`, 90000);
   if (!angularReady) {
-    throw new Error(`Angular server failed to start within ${angularTimeout / 1000} seconds`);
+    throw new Error('Angular server failed to start within 90 seconds');
   }
   console.log('✅ Angular server is ready');
   
