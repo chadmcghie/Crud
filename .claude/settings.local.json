@@ -91,7 +91,10 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:playwright.dev)",
       "WebSearch",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(dotnet format:*)",
+      "Bash(cat:*)",
+      "Bash(CI=true npx playwright test api-health.spec.ts --config=playwright.config.webserver.ts --reporter=list --timeout=30000)"
     ],
     "deny": [],
     "ask": [],

@@ -52,27 +52,12 @@ public class DatabaseController : ControllerBase
 
         // Additional security: Check for authorization token
         var testToken = Request.Headers["X-Test-Reset-Token"].FirstOrDefault();
-        var expectedToken = Environment.GetEnvironmentVariable("TEST_RESET_TOKEN");
-        
-        // Generate a secure random token if not set (for development safety)
-        if (string.IsNullOrEmpty(expectedToken))
-        {
-            if (_environment.IsDevelopment())
-            {
-                expectedToken = "dev-test-token-" + Guid.NewGuid().ToString("N")[..8];
-                _logger.LogWarning("TEST_RESET_TOKEN not set. Generated temporary token for development: {Token}", expectedToken);
-            }
-            else
-            {
-                _logger.LogError("TEST_RESET_TOKEN environment variable is required in Testing environment");
-                return StatusCode(500, new { Error = "Server configuration error" });
-            }
-        }
+        var expectedToken = Environment.GetEnvironmentVariable("TEST_RESET_TOKEN") ?? "test-only-token";
 
         if (string.IsNullOrEmpty(testToken) || testToken != expectedToken)
         {
-            _logger.LogWarning("Unauthorized database reset attempt from {RemoteIp} with token: {Token}",
-                Request.HttpContext.Connection.RemoteIpAddress, testToken ?? "null");
+            _logger.LogWarning("Unauthorized database reset attempt from {RemoteIp}",
+                Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized(new { Error = "Invalid or missing test reset token" });
         }
 
@@ -131,6 +116,7 @@ public class DatabaseController : ControllerBase
             return StatusCode(500, new
             {
                 Error = "Failed to reset database",
+                Details = ex.Message,
                 WorkerIndex = request.WorkerIndex,
                 Duration = duration
             });
@@ -174,6 +160,7 @@ public class DatabaseController : ControllerBase
             return StatusCode(500, new
             {
                 Error = "Failed to seed database",
+                Details = ex.Message,
                 WorkerIndex = request.WorkerIndex
             });
         }
@@ -220,7 +207,7 @@ public class DatabaseController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get database status");
-            return StatusCode(500, new { Error = "Failed to get database status" });
+            return StatusCode(500, new { Error = "Failed to get database status", Details = ex.Message });
         }
     }
 
@@ -252,7 +239,7 @@ public class DatabaseController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to validate pre-test database state for worker {WorkerIndex}", workerIndex);
-            return StatusCode(500, new { Error = "Failed to validate database state" });
+            return StatusCode(500, new { Error = "Failed to validate database state", Details = ex.Message });
         }
     }
 
@@ -284,7 +271,7 @@ public class DatabaseController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to validate post-test database state for worker {WorkerIndex}", workerIndex);
-            return StatusCode(500, new { Error = "Failed to validate database state" });
+            return StatusCode(500, new { Error = "Failed to validate database state", Details = ex.Message });
         }
     }
 
@@ -321,7 +308,7 @@ public class DatabaseController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to verify database integrity for worker {WorkerIndex}", workerIndex);
-            return StatusCode(500, new { Error = "Failed to verify database integrity" });
+            return StatusCode(500, new { Error = "Failed to verify database integrity", Details = ex.Message });
         }
     }
 

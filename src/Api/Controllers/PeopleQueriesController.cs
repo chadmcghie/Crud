@@ -29,7 +29,7 @@ public class PeopleQueriesController : ControllerBase
     /// </summary>
     [HttpGet("search")]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> SearchByName(
-        [FromQuery] string name, 
+        [FromQuery] string name,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -45,7 +45,7 @@ public class PeopleQueriesController : ControllerBase
     /// </summary>
     [HttpGet("by-role")]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> FindByRole(
-        [FromQuery] string roleName, 
+        [FromQuery] string roleName,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(roleName))
@@ -86,7 +86,7 @@ public class PeopleQueriesController : ControllerBase
     /// </summary>
     [HttpGet("has-role")]
     public async Task<ActionResult<bool>> HasRole(
-        [FromQuery] string roleName, 
+        [FromQuery] string roleName,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(roleName))

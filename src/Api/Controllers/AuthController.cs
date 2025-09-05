@@ -180,7 +180,7 @@ public class AuthController : ControllerBase
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = HttpContext.Request.IsHttps, // Only secure in HTTPS contexts
+            Secure = true, // Set to true in production (requires HTTPS)
             SameSite = SameSiteMode.Strict,
             Expires = DateTime.UtcNow.AddDays(7) // Refresh token validity
         };
