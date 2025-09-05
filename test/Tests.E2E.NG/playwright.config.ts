@@ -1,6 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
+ * @deprecated DO NOT USE FOR SMOKE/CRITICAL/EXTENDED TESTS IN CI
+ * 
+ * This configuration uses global-setup.ts which has unresolved issues
+ * with Angular server startup in CI environments.
+ * 
+ * Use playwright.config.webserver.ts instead for CI-compatible testing.
+ * See issue #79 for migration to eliminate this file entirely.
+ * 
+ * @see playwright.config.webserver.ts - The recommended configuration
+ * @see docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md
+ */
+
+/**
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({

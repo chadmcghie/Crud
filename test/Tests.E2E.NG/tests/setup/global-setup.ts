@@ -1,3 +1,18 @@
+/**
+ * @deprecated Legacy server management - DO NOT USE FOR CI TESTS
+ * 
+ * This manual server management approach has known issues in CI:
+ * - Angular server binding problems (localhost vs 0.0.0.0)
+ * - Complex port management
+ * - Unreliable server startup detection
+ * 
+ * Use playwright.config.webserver.ts which leverages Playwright's
+ * built-in webServer configuration for reliable server management.
+ * See issue #79 for migration to eliminate this file entirely.
+ * 
+ * @see ../../playwright.config.webserver.ts - Recommended approach
+ */
+
 import { FullConfig } from '@playwright/test';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import * as path from 'path';
