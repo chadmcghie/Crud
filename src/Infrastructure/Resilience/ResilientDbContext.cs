@@ -95,10 +95,10 @@ namespace Infrastructure.Resilience
         {
             var bulkheadPolicy = PollyPolicies.GetDatabaseBulkheadPolicy(logger);
             var comprehensivePolicy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
-            
+
             // Combine bulkhead with comprehensive resilience
             var combinedPolicy = Policy.WrapAsync(bulkheadPolicy, comprehensivePolicy);
-            
+
             return await combinedPolicy.ExecuteAsync(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();

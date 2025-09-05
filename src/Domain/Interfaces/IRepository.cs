@@ -14,6 +14,6 @@ public interface IRepository<T> : IRepositoryBase<T> where T : class
     // - AddAsync, UpdateAsync, DeleteAsync, DeleteRangeAsync
     // - CountAsync, AnyAsync
     // - All methods support specifications for complex queries
-    
+
     // Add any additional domain-specific methods here if needed
 }
