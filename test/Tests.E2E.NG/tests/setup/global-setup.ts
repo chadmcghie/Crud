@@ -193,8 +193,12 @@ async function robustGlobalSetup(config: FullConfig) {
   console.log('🚀 Starting Angular server...');
   const angularProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Angular');
   
-  // Use npm start which is already configured properly
-  angularServerProcess = spawn('npm', ['start'], {
+  // In CI, we need to bind to 0.0.0.0 instead of localhost
+  // Use start:ci which is configured with --host 0.0.0.0
+  const npmScript = process.env.CI ? 'start:ci' : 'start';
+  console.log(`Using npm script: ${npmScript}`);
+  
+  angularServerProcess = spawn('npm', ['run', npmScript], {
     cwd: angularProjectPath,
     env: {
       ...process.env,
@@ -204,18 +208,13 @@ async function robustGlobalSetup(config: FullConfig) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   
-  // Log both stdout and stderr for debugging
-  angularServerProcess.stdout?.on('data', (data) => {
-    const message = data.toString();
-    // In CI, log everything to debug startup issues
-    if (process.env.CI || message.includes('Error') || message.includes('ERROR')) {
-      console.log(`[Angular Output] ${message}`);
-    }
-  });
-  
+  // Only log errors, not all output
   angularServerProcess.stderr?.on('data', (data) => {
     const message = data.toString();
-    console.error(`[Angular Error] ${message}`);
+    // Only show actual errors, not webpack progress
+    if (message.includes('Error') || message.includes('ERROR')) {
+      console.error(`[Angular Error] ${message}`);
+    }
   });
   
   angularServerProcess.on('error', (error) => {
