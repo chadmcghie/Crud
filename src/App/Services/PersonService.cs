@@ -18,7 +18,7 @@ public class PersonService(IPersonRepository people, IRoleRepository roles) : IP
         {
             foreach (var roleId in roleIds)
             {
-                var role = await roles.GetAsync(roleId, ct) ?? throw new KeyNotFoundException($"Role {roleId} not found");
+                var role = await roles.GetAsync(roleId, ct) ?? throw new ArgumentException($"Role {roleId} not found");
                 person.Roles.Add(role);
             }
         }
