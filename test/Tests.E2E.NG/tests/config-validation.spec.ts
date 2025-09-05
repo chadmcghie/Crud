@@ -62,9 +62,8 @@ test.describe('Serial Execution Configuration Validation', () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify globalSetup and globalTeardown are configured for robust execution
-    // Accept both global-setup and optimized-global-setup
-    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/(global-setup|optimized-global-setup|smart-global-setup|robust-global-setup)/);
+    // Verify globalSetup and globalTeardown are configured
+    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/global-setup/);
     expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/global-teardown/);
   });
   

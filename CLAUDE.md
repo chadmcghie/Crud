@@ -47,16 +47,13 @@ dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj
 # Backend integration tests
 dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj
 
-# E2E tests (using Playwright webServer - see ADR-002)
+# E2E tests (using Playwright webServer - see ADR-003)
 cd test/Tests.E2E.NG
 npm run test:webserver   # Recommended: Playwright manages servers
 npm run test:smoke       # 2-minute smoke tests only
 npm run test:critical    # 5-minute critical tests
 npm run test:headed      # Run with visible browser
-
-# Legacy E2E test commands (being phased out)
-npm run test:serial      # Old approach with custom server management
-npm run test:fast        # Quick tests, assumes servers running
+npm run test:serial      # Serial execution with single worker
 
 # Angular tests
 cd src/Angular && npm test
