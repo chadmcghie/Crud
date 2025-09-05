@@ -4,55 +4,58 @@ using MediatR;
 
 namespace App.Features.Walls;
 
-public class CreateWallCommandHandler(IWallService wallService) : IRequestHandler<CreateWallCommand, Wall>
+public class CreateWallCommandHandler(IWallRepository wallRepository) : IRequestHandler<CreateWallCommand, Wall>
 {
     public async Task<Wall> Handle(CreateWallCommand request, CancellationToken cancellationToken)
     {
-        return await wallService.CreateAsync(
-            request.Name,
-            request.Description,
-            request.Length,
-            request.Height,
-            request.Thickness,
-            request.AssemblyType,
-            request.AssemblyDetails,
-            request.RValue,
-            request.UValue,
-            request.MaterialLayers,
-            request.Orientation,
-            request.Location,
-            cancellationToken
-        );
+        var wall = new Wall
+        {
+            Name = request.Name,
+            Description = request.Description,
+            Length = request.Length,
+            Height = request.Height,
+            Thickness = request.Thickness,
+            AssemblyType = request.AssemblyType,
+            AssemblyDetails = request.AssemblyDetails,
+            RValue = request.RValue,
+            UValue = request.UValue,
+            MaterialLayers = request.MaterialLayers,
+            Orientation = request.Orientation,
+            Location = request.Location
+        };
+        return await wallRepository.AddAsync(wall, cancellationToken);
     }
 }
 
-public class UpdateWallCommandHandler(IWallService wallService) : IRequestHandler<UpdateWallCommand>
+public class UpdateWallCommandHandler(IWallRepository wallRepository) : IRequestHandler<UpdateWallCommand>
 {
     public async Task Handle(UpdateWallCommand request, CancellationToken cancellationToken)
     {
-        await wallService.UpdateAsync(
-            request.Id,
-            request.Name,
-            request.Description,
-            request.Length,
-            request.Height,
-            request.Thickness,
-            request.AssemblyType,
-            request.AssemblyDetails,
-            request.RValue,
-            request.UValue,
-            request.MaterialLayers,
-            request.Orientation,
-            request.Location,
-            cancellationToken
-        );
+        var wall = await wallRepository.GetAsync(request.Id, cancellationToken) 
+            ?? throw new KeyNotFoundException($"Wall {request.Id} not found");
+
+        wall.Name = request.Name;
+        wall.Description = request.Description;
+        wall.Length = request.Length;
+        wall.Height = request.Height;
+        wall.Thickness = request.Thickness;
+        wall.AssemblyType = request.AssemblyType;
+        wall.AssemblyDetails = request.AssemblyDetails;
+        wall.RValue = request.RValue;
+        wall.UValue = request.UValue;
+        wall.MaterialLayers = request.MaterialLayers;
+        wall.Orientation = request.Orientation;
+        wall.Location = request.Location;
+        wall.UpdatedAt = DateTime.UtcNow;
+
+        await wallRepository.UpdateAsync(wall, cancellationToken);
     }
 }
 
-public class DeleteWallCommandHandler(IWallService wallService) : IRequestHandler<DeleteWallCommand>
+public class DeleteWallCommandHandler(IWallRepository wallRepository) : IRequestHandler<DeleteWallCommand>
 {
     public async Task Handle(DeleteWallCommand request, CancellationToken cancellationToken)
     {
-        await wallService.DeleteAsync(request.Id, cancellationToken);
+        await wallRepository.DeleteAsync(request.Id, cancellationToken);
     }
 }
