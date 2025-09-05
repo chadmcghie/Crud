@@ -59,8 +59,16 @@ npm run test:serial      # Serial execution with single worker
 cd src/Angular && npm test
 ```
 
-### Linting
+### Code Quality & Formatting
 ```bash
+# IMPORTANT: Always run before committing!
+
+# .NET formatting - check for issues
+dotnet format Crud.sln --verify-no-changes
+
+# .NET formatting - auto-fix issues
+dotnet format Crud.sln
+
 # Angular linting
 cd src/Angular && npm run lint
 ```
@@ -153,6 +161,9 @@ Consider adding these to `.claude/` for better context:
 - **NEVER commit or push without explicit permission**
 - **NEVER create documentation files unless explicitly requested**
 - **ALWAYS prefer editing existing files over creating new ones**
+- **ALWAYS run code formatting before committing:**
+  - `dotnet format Crud.sln` for .NET code
+  - `npm run lint` in src/Angular for TypeScript code
 
 ## Key References
 
@@ -160,3 +171,4 @@ Consider adding these to `.claude/` for better context:
 - Angular port: 4200
 - E2E test fix discussion: @"docs\Misc\AI Discussions\claude-task-e2e-test-serial-execution-fix-20250828.md"
 - Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md
+- Dev branch is the default branch
