@@ -75,7 +75,35 @@ cd src/Angular && npm run lint
 
 ## E2E Testing Strategy
 
-**UPDATE**: E2E tests now use Playwright's built-in webServer configuration. See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for the current approach and `docs/Decisions/0001-Serial-E2E-Testing.md` for background on serial execution.
+⚠️ **CRITICAL: DO NOT CHANGE THE TEST COMMANDS** ⚠️
+
+The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E2E.NG/package.json` MUST use `playwright.config.webserver.ts`. 
+
+**DO NOT "simplify" them to use the default playwright.config.ts** - this will break CI!
+
+### Why This Matters
+- The default `playwright.config.ts` uses `global-setup.ts` which fails in CI
+- The complex-looking commands with environment variables are REQUIRED
+- This has been broken and fixed multiple times - don't repeat the mistake
+- See GitHub issue #79 for plan to eliminate the problematic config entirely
+
+### Correct Commands (DO NOT CHANGE)
+```bash
+# These commands MUST use playwright.config.webserver.ts
+npm run test:smoke       # Uses webserver config - WORKS IN CI
+npm run test:critical    # Uses webserver config - WORKS IN CI  
+npm run test:extended    # Uses webserver config - WORKS IN CI
+npm run test:webserver   # Full E2E suite with webserver config
+```
+
+### What NOT to Do
+```bash
+# NEVER change to these "simpler" versions - THEY BREAK CI
+"test:smoke": "playwright test --grep @smoke"  # ❌ BROKEN IN CI
+"test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
+```
+
+**UPDATE**: E2E tests use Playwright's built-in webServer configuration. See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
 
 - **Playwright webServer**: Automatic server management, unique database per test run (recommended approach)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)

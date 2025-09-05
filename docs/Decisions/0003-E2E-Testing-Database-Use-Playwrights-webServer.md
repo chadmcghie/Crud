@@ -2,7 +2,7 @@
 
 ## Date: 2025-09-04
 
-## Status: Proposed
+## Status: Accepted
 
 ## Context
 
@@ -156,8 +156,14 @@ If issues persist, implement **Option 2** (PostgreSQL) as a robust long-term sol
 
 ### Negative
 - Multiple database files created (minor)
-- Need to update test configuration
-- Team needs to understand new approach
+- Test commands appear more complex (but this complexity is necessary)
+- Risk of future "simplification" breaking the tests again
+
+### Mitigation
+- Added deprecation warnings to problematic files
+- Added explicit warnings in package.json  
+- Documented in CLAUDE.md with clear DO NOT CHANGE warnings
+- GitHub issue #79 tracks complete migration to eliminate problematic files
 
 ### Neutral
 - Different approach from current implementation

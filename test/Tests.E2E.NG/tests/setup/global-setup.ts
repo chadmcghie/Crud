@@ -1,3 +1,18 @@
+/**
+ * @deprecated Legacy server management - DO NOT USE FOR CI TESTS
+ * 
+ * This manual server management approach has known issues in CI:
+ * - Angular server binding problems (localhost vs 0.0.0.0)
+ * - Complex port management
+ * - Unreliable server startup detection
+ * 
+ * Use playwright.config.webserver.ts which leverages Playwright's
+ * built-in webServer configuration for reliable server management.
+ * See issue #79 for migration to eliminate this file entirely.
+ * 
+ * @see ../../playwright.config.webserver.ts - Recommended approach
+ */
+
 import { FullConfig } from '@playwright/test';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import * as path from 'path';
@@ -193,8 +208,12 @@ async function robustGlobalSetup(config: FullConfig) {
   console.log('🚀 Starting Angular server...');
   const angularProjectPath = path.join(process.cwd(), '..', '..', 'src', 'Angular');
   
-  // Use npm start which is already configured properly
-  angularServerProcess = spawn('npm', ['start'], {
+  // In CI, we need to bind to 0.0.0.0 instead of localhost
+  // Use start:ci which is configured with --host 0.0.0.0
+  const npmScript = process.env.CI ? 'start:ci' : 'start';
+  console.log(`Using npm script: ${npmScript}`);
+  
+  angularServerProcess = spawn('npm', ['run', npmScript], {
     cwd: angularProjectPath,
     env: {
       ...process.env,
