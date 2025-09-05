@@ -1,74 +1,138 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
 
 /**
- * @deprecated DO NOT USE FOR SMOKE/CRITICAL/EXTENDED TESTS IN CI
+ * E2E Test Configuration with Playwright's Built-in WebServer
  * 
- * This configuration uses global-setup.ts which has unresolved issues
- * with Angular server startup in CI environments.
+ * This configuration uses Playwright's native webServer feature to manage
+ * server lifecycle, eliminating the need for custom server management code.
  * 
- * Use playwright.config.webserver.ts instead for CI-compatible testing.
- * See issue #79 for migration to eliminate this file entirely.
- * 
- * @see playwright.config.webserver.ts - The recommended configuration
- * @see docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md
+ * Key improvements:
+ * - Automatic server startup and shutdown
+ * - Unique database file per test run to prevent locking
+ * - Simpler configuration and maintenance
+ * - Better CI/CD reliability
  */
 
-/**
- * @see https://playwright.dev/docs/test-configuration
- */
+// Generate unique database name for this test run
+const testRunId = process.env.CI ? Date.now().toString() : 'local';
+const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${testRunId}.db`);
+
+// Export test run ID for teardown
+process.env.TEST_RUN_ID = testRunId;
+
 export default defineConfig({
   testDir: './tests',
-  /* SERIAL EXECUTION - Based on ADR-001 Decision */
-  fullyParallel: false, // Disable parallel execution for SQLite compatibility
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* No retries - tests should be reliable */
-  retries: 0, // No retries as per ADR-001 for reliable tests
-  /* Single worker for serial execution */
-  workers: 1, // Single worker to prevent database conflicts (ADR-001)
-  /* Circuit breaker: stop after X failures to prevent runaway test execution */
-  maxFailures: process.env.CI ? 10 : 0, // Stop after 10 failures in CI
-  /* Reasonable timeout for serial execution */
-  timeout: 15000, // 15 seconds per test should be plenty without arbitrary waits
   
-  /* Global setup and teardown for server management */
-  globalSetup: './tests/setup/global-setup.ts',
-  globalTeardown: './tests/setup/global-teardown.ts',
-
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [
-    ['html', { outputFolder: './playwright-report' }],
-    ['json', { outputFile: './test-results/results.json' }],
-    ['junit', { outputFile: './test-results/results.xml' }],
-    ['list', { printSteps: true }]
+  /* Serial execution for SQLite compatibility */
+  fullyParallel: false,
+  workers: 1,
+  
+  /* Fail fast in CI */
+  forbidOnly: !!process.env.CI,
+  retries: 0,
+  maxFailures: process.env.CI ? 10 : 0,
+  
+  /* Timeouts */
+  timeout: 30000,
+  
+  /* Playwright's built-in webServer configuration */
+  webServer: [
+    {
+      // API Server configuration
+      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile http',
+      cwd: process.cwd(),
+      url: 'http://localhost:5172/health',
+      timeout: 60 * 1000, // 60 seconds to start
+      reuseExistingServer: !process.env.CI, // Reuse locally, fresh in CI
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env: {
+        ASPNETCORE_ENVIRONMENT: 'Testing',
+        ASPNETCORE_URLS: process.env.CI 
+          ? 'http://0.0.0.0:5172'  // Bind to all interfaces in CI
+          : 'http://localhost:5172',
+        DatabaseProvider: 'SQLite',
+        ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
+        TEST_RESET_TOKEN: 'test-only-token',
+        // Disable connection pooling in CI to avoid locking
+        ...(process.env.CI && {
+          'ConnectionStrings__DefaultConnection': `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;`
+        })
+      },
+    },
+    {
+      // Angular Server configuration
+      command: process.env.CI ? 'npm run start:ci' : 'npm start',
+      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      url: 'http://localhost:4200',
+      timeout: 120 * 1000, // 2 minutes for Angular compilation
+      reuseExistingServer: !process.env.CI,
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env: {
+        PORT: '4200',
+        API_URL: 'http://localhost:5172',
+      },
+    }
   ],
   
-  /* Output directory for test artifacts */
-  outputDir: './test-results/',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  /* Test categorization */
+  grep: (() => {
+    const testCategory = process.env.TEST_CATEGORY || 'all';
+    switch (testCategory) {
+      case 'smoke': return /@smoke/;
+      case 'critical': return /@critical/;
+      case 'extended': return /@extended/;
+      case 'all': 
+      default: return undefined;
+    }
+  })(),
+  
+  /* Reporter configuration - minimal output in CI, verbose locally */
+  reporter: process.env.CI 
+    ? [
+        ['dot'],  // Minimal console output
+        ['junit', { outputFile: './test-results/results.xml' }],  // For CI test publishing
+        ['github']  // GitHub annotations
+      ]
+    : [
+        ['list', { printSteps: false }],  // Local development
+        ['html', { outputFolder: './test-results/html', open: 'never' }]
+      ],
+  
+  /* Output directory */
+  outputDir: './test-results/artifacts',
+  
+  /* Test settings */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:4200',
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-    /* Take screenshot on failure */
+    
+    /* API base URL for backend tests */
+    extraHTTPHeaders: {
+      'X-Test-Run-Id': testRunId.toString(),
+    },
+    
+    /* Debugging aids */
+    trace: process.env.CI ? 'retain-on-failure' : 'off',
     screenshot: 'only-on-failure',
-    /* Record video on failure */
-    video: 'retain-on-failure',
-    /* Reasonable timeouts without arbitrary waits */
+    video: process.env.CI ? 'retain-on-failure' : 'off',
+    
+    /* Timeouts */
     actionTimeout: 10000,
-    navigationTimeout: 15000,
-    /* Wait for network to be idle before considering navigation complete */
-    // waitForLoadState: 'networkidle', // Removed - not a valid option in use block
+    navigationTimeout: 30000,
+    
+    expect: {
+      timeout: 5000,
+    },
   },
-
-  /* Single browser configuration for speed (ADR-001) */
+  
+  /* Browser configuration */
   projects: [
     {
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        /* Optimize for speed */
         launchOptions: {
           args: [
             '--disable-blink-features=AutomationControlled',
@@ -83,48 +147,29 @@ export default defineConfig({
       },
     },
     
-    /* Cross-browser testing only when explicitly requested */
+    /* Cross-browser testing */
     ...(process.env.CROSS_BROWSER === 'true' ? [
       {
         name: 'firefox',
         use: { ...devices['Desktop Firefox'] },
       },
       {
-        name: 'webkit',
+        name: 'webkit', 
         use: { ...devices['Desktop Safari'] },
       },
     ] : []),
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
   
-  /* Test categorization using grep patterns (ADR-001) */
-  grep: (() => {
-    const testCategory = process.env.TEST_CATEGORY || 'all';
-    switch (testCategory) {
-      case 'smoke': return /@smoke/; // 2 minute tests
-      case 'critical': return /@critical/; // 5 minute tests  
-      case 'extended': return /@extended/; // 10 minute tests
-      case 'all':
-      default: return undefined; // Run all tests
-    }
-  })(),
+  /* Global teardown for cleanup */
+  globalTeardown: './tests/setup/webserver-teardown.ts',
+  
+  /* Metadata */
+  metadata: {
+    testRun: {
+      timestamp: new Date().toISOString(),
+      mode: 'webserver',
+      databaseFile: path.basename(databasePath),
+      category: process.env.TEST_CATEGORY || 'all',
+    },
+  },
 });

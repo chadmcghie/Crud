@@ -4,14 +4,12 @@
   "description": "End-to-end tests for Angular application and API",
   "scripts": {
     "test": "playwright test",
-    "test:smoke": "npx cross-env TEST_CATEGORY=smoke API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
-    "test:critical": "npx cross-env TEST_CATEGORY=critical API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
-    "test:extended": "npx cross-env TEST_CATEGORY=extended API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
+    "test:smoke": "npx cross-env TEST_CATEGORY=smoke API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test",
+    "test:critical": "npx cross-env TEST_CATEGORY=critical API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test",
+    "test:extended": "npx cross-env TEST_CATEGORY=extended API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "test:serial": "playwright test --config=playwright.config.serial.ts",
-    "test:webserver": "npx cross-env API_PORT=5172 ANGULAR_PORT=4200 DATABASE_PATH=test.db API_URL=http://localhost:5172 ANGULAR_URL=http://localhost:4200 playwright test --config=playwright.config.webserver.ts",
     "report": "playwright show-report",
     "install-browsers": "playwright install",
     "clean": "rm -rf ./test-results ./playwright-report"
