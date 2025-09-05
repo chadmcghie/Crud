@@ -30,10 +30,10 @@ public class GlobalExceptionHandlingMiddleware
         {
             _logger.LogError(ex, "An unhandled exception occurred during request {Method} {Path}. " +
                 "Request ID: {RequestId}, User: {User}",
-                context.Request.Method,
-                context.Request.Path,
+                SanitizeForLogging(context.Request.Method),
+                SanitizeForLogging(context.Request.Path.ToString()),
                 context.TraceIdentifier,
-                context.User?.Identity?.Name ?? "Anonymous");
+                SanitizeForLogging(context.User?.Identity?.Name ?? "Anonymous"));
 
             await HandleExceptionAsync(context, ex);
         }
@@ -96,6 +96,18 @@ public class GlobalExceptionHandlingMiddleware
         };
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+    }
+
+    private static string SanitizeForLogging(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        // Remove newlines, carriage returns, and other control characters to prevent log injection
+        return input.Replace('\n', '_')
+                   .Replace('\r', '_')
+                   .Replace('\t', '_')
+                   .Trim();
     }
 }
 
