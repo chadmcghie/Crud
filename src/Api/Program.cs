@@ -184,14 +184,33 @@ namespace Api
                 builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
 
                 // Configure JWT Authentication
-                var jwtSecret = builder.Configuration["Jwt:Secret"];
+                var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["Jwt:Secret"];
                 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
                 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
                 if (string.IsNullOrEmpty(jwtSecret))
                 {
-                    Log.Warning("JWT Secret not configured. Using default for development.");
-                    jwtSecret = "ThisIsADevelopmentSecretKeyThatShouldBeReplacedInProduction123!";
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        Log.Warning("JWT Secret not configured. Using generated development key - this should not happen in production.");
+                        // Generate a secure random key for development if nothing is configured
+                        var keyBytes = new byte[64]; // 512 bits
+                        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+                        {
+                            rng.GetBytes(keyBytes);
+                        }
+                        jwtSecret = Convert.ToBase64String(keyBytes);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("JWT Secret must be configured via JWT_SECRET environment variable or Jwt:Secret configuration for production environments.");
+                    }
+                }
+
+                // Validate JWT secret strength
+                if (jwtSecret.Length < 32)
+                {
+                    throw new InvalidOperationException("JWT Secret must be at least 32 characters long for security.");
                 }
 
                 if (string.IsNullOrEmpty(jwtIssuer))
@@ -296,6 +315,10 @@ namespace Api
                     });
                 });
 
+                // Add rate limiting for authentication endpoints
+                builder.Services.AddMemoryCache();
+                builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
                 builder.Services.AddHealthChecks();
 
                 builder.Services.AddAutoMapper(
@@ -321,7 +344,30 @@ namespace Api
                     Log.Information("Swagger UI enabled for development environment");
                 }
 
+                // Security headers middleware
+                app.Use(async (context, next) =>
+                {
+                    // Add security headers using indexer to avoid duplicate key issues
+                    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                    context.Response.Headers["X-Frame-Options"] = "DENY";
+                    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+                    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                    
+                    // Only add HSTS in production with HTTPS
+                    if (!app.Environment.IsDevelopment() && context.Request.IsHttps)
+                    {
+                        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+                    }
+
+                    // Add CSP header - adjust as needed for your application
+                    context.Response.Headers["Content-Security-Policy"] = 
+                        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'";
+
+                    await next();
+                });
+
                 app.UseHttpsRedirection();
+                app.UseMiddleware<RateLimitingMiddleware>();
                 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
                 app.UseAuthentication();
