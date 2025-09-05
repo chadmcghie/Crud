@@ -204,13 +204,18 @@ async function robustGlobalSetup(config: FullConfig) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   
-  // Only log errors, not all output
+  // Log both stdout and stderr for debugging
+  angularServerProcess.stdout?.on('data', (data) => {
+    const message = data.toString();
+    // In CI, log everything to debug startup issues
+    if (process.env.CI || message.includes('Error') || message.includes('ERROR')) {
+      console.log(`[Angular Output] ${message}`);
+    }
+  });
+  
   angularServerProcess.stderr?.on('data', (data) => {
     const message = data.toString();
-    // Only show actual errors, not webpack progress
-    if (message.includes('Error') || message.includes('ERROR')) {
-      console.error(`[Angular Error] ${message}`);
-    }
+    console.error(`[Angular Error] ${message}`);
   });
   
   angularServerProcess.on('error', (error) => {
