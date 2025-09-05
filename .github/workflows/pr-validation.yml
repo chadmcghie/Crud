@@ -114,9 +114,24 @@ jobs:
           # Push changes
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
           echo "✅ Formatting changes pushed successfully"
+          
+          # IMPORTANT: Pull the changes back to update our local working copy
+          echo "📥 Pulling formatting changes back to working copy..."
+          git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
         else
           echo "✅ No formatting changes needed - code is already properly formatted"
         fi
+        
+    - name: Verify Final Formatting
+      run: |
+        echo "🔍 Verifying that all code is now properly formatted..."
+        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic
+        if [ $? -ne 0 ]; then
+          echo "❌ ERROR: Code still has formatting issues after auto-format!"
+          echo "This should not happen. Please check the workflow configuration."
+          exit 1
+        fi
+        echo "✅ All code is properly formatted and ready for merge!"
         
     - name: Check for common code issues
       run: |
