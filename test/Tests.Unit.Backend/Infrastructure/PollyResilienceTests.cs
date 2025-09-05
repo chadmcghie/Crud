@@ -1,9 +1,9 @@
-using FluentAssertions;
 using Infrastructure.Resilience;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Polly.CircuitBreaker;
 using Xunit;
+using FluentAssertions;
+using Polly.CircuitBreaker;
 
 namespace Tests.Unit.Backend.Infrastructure;
 
@@ -142,7 +142,7 @@ public class PollyResilienceTests
 
         // Test policy should retry 5 times with faster intervals
         attemptCount.Should().Be(6); // 1 initial + 5 retries
-
+        
         // Should complete faster than database policy due to shorter delays
         // (200ms * 1 + 200ms * 2 + 200ms * 3 + 200ms * 4 + 200ms * 5) = 3000ms + some overhead
         duration.TotalMilliseconds.Should().BeLessThan(5000); // Allow some buffer for test execution
@@ -150,7 +150,7 @@ public class PollyResilienceTests
 
     [Theory]
     [InlineData("timeout")]
-    [InlineData("deadlock")]
+    [InlineData("deadlock")]  
     [InlineData("connection")]
     [InlineData("transient")]
     [InlineData("busy")]
@@ -182,13 +182,13 @@ public class PollyResilienceTests
         // This test demonstrates that the extension methods exist and can be called
         // Note: We can't easily test the actual DbContext retry behavior without a real database
         // but we can verify the methods exist and are accessible
-
+        
         // Arrange
         var policy = PollyPolicies.GetDatabaseRetryPolicy(_mockLogger.Object);
-
+        
         // Act & Assert - Just verify the policy can be created and configured
         policy.Should().NotBeNull();
-
+        
         // Note: The real test is in integration tests where these methods are actually used
         // with real DbContext instances in the repositories
     }
@@ -198,12 +198,12 @@ public class PollyResilienceTests
     {
         // Arrange & Act
         var policy = PollyPolicies.GetDatabaseTimeoutPolicy(_mockLogger.Object);
-
+        
         // Assert
         policy.Should().NotBeNull();
     }
 
-    [Fact]
+    [Fact] 
     public void GetHttpTimeoutPolicy_ShouldReturnValidPolicy()
     {
         // Arrange
@@ -211,10 +211,10 @@ public class PollyResilienceTests
         var mockHttpLogger = new Mock<ILogger<HttpMessageHandler>>();
         mockServiceProvider.Setup(sp => sp.GetService(typeof(ILogger<HttpMessageHandler>)))
                           .Returns(mockHttpLogger.Object);
-
+        
         // Act
         var policy = PollyPolicies.GetHttpTimeoutPolicy(mockServiceProvider.Object);
-
+        
         // Assert
         policy.Should().NotBeNull();
     }
@@ -224,7 +224,7 @@ public class PollyResilienceTests
     {
         // Arrange & Act
         var policy = PollyPolicies.GetDatabaseBulkheadPolicy(_mockLogger.Object);
-
+        
         // Assert
         policy.Should().NotBeNull();
     }
@@ -234,7 +234,7 @@ public class PollyResilienceTests
     {
         // Arrange & Act
         var policy = PollyPolicies.GetComprehensiveDatabasePolicy(_mockLogger.Object);
-
+        
         // Assert
         policy.Should().NotBeNull();
         // This policy combines timeout, retry, and circuit breaker
@@ -248,10 +248,10 @@ public class PollyResilienceTests
         var mockHttpLogger = new Mock<ILogger<HttpMessageHandler>>();
         mockServiceProvider.Setup(sp => sp.GetService(typeof(ILogger<HttpMessageHandler>)))
                           .Returns(mockHttpLogger.Object);
-
+        
         // Act
         var policy = PollyPolicies.GetComprehensiveHttpPolicy(mockServiceProvider.Object);
-
+        
         // Assert
         policy.Should().NotBeNull();
         // This policy combines timeout, retry, and circuit breaker for HTTP

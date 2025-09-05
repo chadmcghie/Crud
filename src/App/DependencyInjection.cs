@@ -16,10 +16,10 @@ public static class DependencyInjection
         services.AddScoped<IWallService, WallService>();
         services.AddScoped<IWindowService, WindowService>();
 
-
+        
         // Register example service demonstrating generic repository with specifications
         services.AddScoped<IPersonQueryService, PersonQueryService>();
-
+        
         // Register MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
