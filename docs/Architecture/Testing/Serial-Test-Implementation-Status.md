@@ -34,10 +34,10 @@ Tests run sequentially with database reset between each test
 ```
 
 ### Key Components
-- **playwright.config.serial.ts**: Main serial configuration
+- **playwright.config.ts**: Main configuration using webServer approach
 - **serial-test-fixture.ts**: Custom fixture with automatic DB cleanup
 - **database-utils.ts**: SQLite file management utilities
-- **serial-global-setup.ts**: Shared server startup
+- **webserver-teardown.ts**: Lightweight cleanup for webServer approach
 
 ## 📊 Performance Metrics
 
