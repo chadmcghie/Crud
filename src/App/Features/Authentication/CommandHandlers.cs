@@ -38,7 +38,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
             // Validate required fields
             if (string.IsNullOrWhiteSpace(request.FirstName))
                 return new AuthenticationResponse { Success = false, Error = "First name is required" };
-            
+
             if (string.IsNullOrWhiteSpace(request.LastName))
                 return new AuthenticationResponse { Success = false, Error = "Last name is required" };
 
