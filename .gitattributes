@@ -9,16 +9,16 @@
 # Force bash scripts to always use LF line endings
 *.sh text eol=lf
 
-# .NET and C# files
-*.cs text eol=lf
-*.csproj text eol=lf
-*.sln text eol=lf
-*.config text eol=lf
-*.props text eol=lf
-*.targets text eol=lf
-*.ruleset text eol=lf
+# .NET and C# files - use CRLF for dotnet format compatibility
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.config text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.ruleset text eol=crlf
 *.json text eol=lf
-*.xml text eol=lf
+*.xml text eol=crlf
 
 # Web files
 *.html text eol=lf
