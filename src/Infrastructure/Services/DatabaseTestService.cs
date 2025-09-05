@@ -38,7 +38,7 @@ public class DatabaseTestService
         }
 
         _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}",
-            connectionString.Replace("Password=", "Password=***"));
+            MaskConnectionString(connectionString));
 
         // Ensure database exists
         await _context.Database.EnsureCreatedAsync();
@@ -85,7 +85,7 @@ public class DatabaseTestService
     private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
-        _logger.LogInformation("Connection string: {ConnectionString}", connectionString?.Replace("Password=", "Password=***"));
+        _logger.LogInformation("Connection string: {ConnectionString}", MaskConnectionString(connectionString));
         var startTime = DateTime.UtcNow;
 
         // Use mutex to ensure only one reset operation at a time
@@ -399,6 +399,31 @@ public class DatabaseTestService
             _context.People.AddRange(people);
             _logger.LogDebug("Added {Count} seed people", people.Length);
         }
+    }
+
+    /// <summary>
+    /// Masks sensitive information in a connection string for safe logging.
+    /// </summary>
+    private static string? MaskConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrEmpty(connectionString))
+            return connectionString;
+
+        // Mask password and other sensitive fields
+        var masked = System.Text.RegularExpressions.Regex.Replace(
+            connectionString,
+            @"(Password|Pwd|User ID|UID|User|Integrated Security)=[^;]+",
+            "$1=***",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // For file-based databases, show only the filename, not the full path
+        masked = System.Text.RegularExpressions.Regex.Replace(
+            masked,
+            @"(Data Source|DataSource|Database)=([^;\\]+\\)*([^;\\]+)",
+            "$1=***/$3",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return masked;
     }
 }
 
