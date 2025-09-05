@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Caching.Memory;
 using System.Net;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Api.Middleware;
 
@@ -15,7 +15,7 @@ public class RateLimitingMiddleware
         _next = next;
         _cache = cache;
         _logger = logger;
-        
+
         // Define rate limiting rules
         _rules = new Dictionary<string, RateLimitRule>
         {
@@ -29,25 +29,25 @@ public class RateLimitingMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant();
-        
+
         if (path != null && _rules.TryGetValue(path, out var rule))
         {
             var clientId = GetClientId(context);
             var cacheKey = $"ratelimit_{path}_{clientId}";
-            
+
             if (_cache.TryGetValue(cacheKey, out int requestCount))
             {
                 if (requestCount >= rule.MaxRequests)
                 {
-                    _logger.LogWarning("Rate limit exceeded for {Path} from {ClientId}. Count: {Count}", 
+                    _logger.LogWarning("Rate limit exceeded for {Path} from {ClientId}. Count: {Count}",
                         path, clientId, requestCount);
-                    
+
                     context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
                     context.Response.Headers["Retry-After"] = (rule.WindowMinutes * 60).ToString();
                     await context.Response.WriteAsync("Rate limit exceeded. Please try again later.");
                     return;
                 }
-                
+
                 _cache.Set(cacheKey, requestCount + 1, TimeSpan.FromMinutes(rule.WindowMinutes));
             }
             else
@@ -67,7 +67,7 @@ public class RateLimitingMiddleware
         {
             return forwarded.Split(',').First().Trim();
         }
-        
+
         return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }
