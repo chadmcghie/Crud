@@ -33,7 +33,7 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             // Assert
             personRepository.Should().NotBeNull("IRepository<Person> should be registered in DI container");
             roleRepository.Should().NotBeNull("IRepository<Role> should be registered in DI container");
-            
+
             return Task.CompletedTask;
         });
     }
