@@ -163,8 +163,15 @@ export class PageHelpers {
 
   // Person management helpers
   async clickAddPerson(): Promise<void> {
+    // Click the Add New Person button which should navigate to the people form
     await this.page.click('button:has-text("Add New Person")');
-    await this.page.waitForSelector('app-people form', { timeout: 10000 });
+    
+    // Wait for navigation to the people form route
+    await this.page.waitForURL('**/people', { timeout: 10000 });
+    
+    // Wait for the people form component to load and be ready
+    await this.page.waitForSelector('app-people', { timeout: 10000 });
+    
     // Wait for form fields to be ready and interactable
     await this.page.waitForSelector('input#fullName', { timeout: 5000 });
     await this.page.waitForFunction(() => {
@@ -217,25 +224,23 @@ export class PageHelpers {
   }
 
   async submitPersonForm(): Promise<void> {
-    // Wait for submit button to be enabled
-    await this.page.waitForSelector('button[type="submit"]:has-text("Create Person"):not([disabled])', { timeout: 5000 });
+    // Wait for submit button to be enabled (handle both Create and Update)
+    await this.page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 5000 });
     
     // Add small delay to ensure form is ready
     await this.page.waitForTimeout(100);
     
-    await this.page.click('button[type="submit"]:has-text("Create Person")');
+    // Click the submit button (works for both Create and Update)
+    await this.page.click('button[type="submit"]');
     
-    // Wait for API response
-    await this.page.waitForResponse(response => 
-      response.url().includes('/api/people') && response.status() === 201,
-      { timeout: 10000 }
-    ).catch(() => {
-      // If no API call, wait for form to hide
-      return this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
-    });
+    // Wait for navigation back to the people-list after successful submission
+    await this.page.waitForURL('**/people-list', { timeout: 10000 });
     
-    // Give UI time to update
-    await this.page.waitForTimeout(200);
+    // Wait for the list component to load
+    await this.page.waitForSelector('app-people-list', { timeout: 5000 });
+    
+    // Give UI time to update with new data
+    await this.page.waitForTimeout(500);
   }
 
   async editPerson(personName: string): Promise<void> {
@@ -245,34 +250,26 @@ export class PageHelpers {
     // Wait for the row to be visible first
     await personRow.waitFor({ state: 'visible', timeout: 10000 });
     
-    // Click the edit button
+    // Click the edit button which should navigate to the people form with edit query param
     await personRow.locator('button:has-text("Edit")').click();
     
-    // Wait for the form to appear and be ready
-    await this.page.waitForSelector('app-people form', { timeout: 10000 });
+    // Wait for navigation to the people form route with edit parameter
+    await this.page.waitForURL('**/people?edit=*', { timeout: 10000 });
+    
+    // Wait for the people form component to load
+    await this.page.waitForSelector('app-people', { timeout: 10000 });
     await this.page.waitForSelector('input#fullName', { timeout: 5000 });
     
-    // Additional wait for form to be fully loaded
+    // Wait for form to be populated with existing data
+    await this.page.waitForFunction(() => {
+      const input = document.querySelector('input#fullName') as HTMLInputElement;
+      return input && input.value && input.value.trim().length > 0;
+    }, { timeout: 5000 });
   }
 
   async updatePersonForm(): Promise<void> {
-    // Add small delay to ensure form is ready
-    await this.page.waitForTimeout(100);
-    
-    await this.page.click('button[type="submit"]:has-text("Update Person")');
-    
-    // Wait for API response
-    await this.page.waitForResponse(response => 
-      response.url().includes('/api/people') && 
-      (response.status() === 200 || response.status() === 204),
-      { timeout: 10000 }
-    ).catch(() => {
-      // If no API call, wait for form to hide
-      return this.page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 });
-    });
-    
-    // Give UI time to update
-    await this.page.waitForTimeout(200);
+    // Use the same submission logic for both create and update
+    await this.submitPersonForm();
   }
 
   async deletePerson(personName: string): Promise<void> {

@@ -2,6 +2,7 @@ import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } fro
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonRequest } from './api.service';
 import { CustomValidators } from './validators/custom-validators';
 
@@ -261,6 +262,8 @@ export class PeopleComponent implements OnInit, OnChanges {
   
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   constructor() {
     this.form = this.fb.group({
@@ -271,9 +274,17 @@ export class PeopleComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.loadRoles();
-    if (this.editingPerson) {
-      this.populateFormForEdit();
-    }
+    
+    // Check for edit query parameter
+    this.route.queryParams.subscribe(params => {
+      if (params['edit']) {
+        const personId = params['edit']; // ID is already a string (GUID)
+        this.loadPersonForEdit(personId);
+      } else {
+        this.editingPerson = null;
+        this.resetForm();
+      }
+    });
   }
 
   ngOnChanges() {
@@ -295,6 +306,21 @@ export class PeopleComponent implements OnInit, OnChanges {
         console.error('Error loading roles:', error);
         this.rolesError = 'Failed to load roles. Role assignment may not work properly.';
         this.roles = []; // Clear roles on error
+      }
+    });
+  }
+
+  private loadPersonForEdit(personId: string) {
+    this.api.getPerson(personId).subscribe({
+      next: (person: PersonResponse) => {
+        this.editingPerson = person;
+        this.populateFormForEdit();
+      },
+      error: (error: any) => {
+        console.error('Error loading person for edit:', error);
+        this.error = 'Failed to load person data';
+        // Navigate back to the list if person not found
+        this.router.navigate(['/people-list']);
       }
     });
   }
@@ -346,7 +372,8 @@ export class PeopleComponent implements OnInit, OnChanges {
           next: () => {
             this.isSubmitting = false;
             this.error = null;
-            this.personSaved.emit(this.editingPerson!);
+            // Navigate back to the list after successful update
+            this.router.navigate(['/people-list']);
           },
           error: (error: unknown) => {
             console.error('Error updating person:', error);
@@ -360,8 +387,9 @@ export class PeopleComponent implements OnInit, OnChanges {
           next: (person: PersonResponse) => {
             this.isSubmitting = false;
             this.error = null;
-            this.personSaved.emit(person);
             this.resetForm();
+            // Navigate back to the list after successful creation
+            this.router.navigate(['/people-list']);
           },
           error: (error: unknown) => {
             console.error('Error creating person:', error);
@@ -374,7 +402,8 @@ export class PeopleComponent implements OnInit, OnChanges {
   }
 
   onCancel() {
-    this.cancelled.emit();
+    // Navigate back to the list
+    this.router.navigate(['/people-list']);
   }
 
   onReset() {
