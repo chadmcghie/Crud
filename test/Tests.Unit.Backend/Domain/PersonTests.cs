@@ -95,7 +95,7 @@ public class PersonTests
         {
             // Domain entities now use GuardClauses for immediate validation
             // This enforces invariants at the domain level
-            
+
             // Arrange & Act & Assert
             var action = () => PersonTestDataBuilder.Default()
                 .WithFullName(invalidName)
@@ -110,7 +110,7 @@ public class PersonTests
         {
             // Arrange
             var longFullName = new string('a', 201); // Max length is 200
-            
+
             // Act & Assert
             var action = () => PersonTestDataBuilder.Default()
                 .WithFullName(longFullName)

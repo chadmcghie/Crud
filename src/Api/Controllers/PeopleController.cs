@@ -22,49 +22,29 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
         var p = await mediator.Send(new GetPersonQuery(id), ct);
-        if (p is null) return NotFound();
+        if (p is null)
+            return NotFound();
         return Ok(mapper.Map<PersonResponse>(p));
     }
 
     [HttpPost]
     public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request, CancellationToken ct)
     {
-        try
-        {
-            var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
-            return CreatedAtAction(nameof(Get), new { id = p.Id }, mapper.Map<PersonResponse>(p));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
+        return CreatedAtAction(nameof(Get), new { id = p.Id }, mapper.Map<PersonResponse>(p));
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonRequest request, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new DeletePersonCommand(id), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new DeletePersonCommand(id), ct);
+        return NoContent();
     }
 }

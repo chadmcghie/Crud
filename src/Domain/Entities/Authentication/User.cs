@@ -32,11 +32,11 @@ namespace Domain.Entities.Authentication
             IsLocked = false;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
-            
+
             // Default role for new users
             _roles.Add("User");
         }
-        
+
         public static User Create(Email email, PasswordHash passwordHash, string? firstName = null, string? lastName = null)
         {
             return new User(email, passwordHash, firstName, lastName);
@@ -56,7 +56,7 @@ namespace Domain.Entities.Authentication
             UpdatedAt = DateTime.UtcNow;
             return refreshToken;
         }
-        
+
         public void AddRefreshToken(RefreshToken refreshToken)
         {
             if (refreshToken == null)
@@ -119,21 +119,21 @@ namespace Domain.Entities.Authentication
             {
                 _refreshTokens.Remove(token);
             }
-            
+
             if (expiredTokens.Any())
             {
                 UpdatedAt = DateTime.UtcNow;
             }
-            
+
             return expiredTokens.Count;
         }
-        
+
         public void LockAccount()
         {
             IsLocked = true;
             UpdatedAt = DateTime.UtcNow;
         }
-        
+
         public void UnlockAccount()
         {
             IsLocked = false;

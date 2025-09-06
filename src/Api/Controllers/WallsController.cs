@@ -22,7 +22,8 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);
-        if (w is null) return NotFound();
+        if (w is null)
+            return NotFound();
         return Ok(mapper.Map<WallResponse>(w));
     }
 
@@ -49,42 +50,28 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWallRequest request, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new UpdateWallCommand(
-                id,
-                request.Name,
-                request.Description,
-                request.Length,
-                request.Height,
-                request.Thickness,
-                request.AssemblyType,
-                request.AssemblyDetails,
-                request.RValue,
-                request.UValue,
-                request.MaterialLayers,
-                request.Orientation,
-                request.Location
-            ), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new UpdateWallCommand(
+            id,
+            request.Name,
+            request.Description,
+            request.Length,
+            request.Height,
+            request.Thickness,
+            request.AssemblyType,
+            request.AssemblyDetails,
+            request.RValue,
+            request.UValue,
+            request.MaterialLayers,
+            request.Orientation,
+            request.Location
+        ), ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new DeleteWallCommand(id), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new DeleteWallCommand(id), ct);
+        return NoContent();
     }
 }

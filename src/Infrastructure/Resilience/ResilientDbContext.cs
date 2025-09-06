@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Polly;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Polly;
 
 namespace Infrastructure.Resilience
 {
@@ -74,7 +74,7 @@ namespace Infrastructure.Resilience
         }
 
         public static async Task<T> ExecuteWithRetryAsync<T>(
-            this DbContext context,
+            this DbContext _,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
@@ -88,17 +88,17 @@ namespace Infrastructure.Resilience
         }
 
         public static async Task<T> ExecuteWithBulkheadAsync<T>(
-            this DbContext context,
+            this DbContext _,
             Func<Task<T>> operation,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
             var bulkheadPolicy = PollyPolicies.GetDatabaseBulkheadPolicy(logger);
             var comprehensivePolicy = PollyPolicies.GetComprehensiveDatabasePolicy(logger);
-            
+
             // Combine bulkhead with comprehensive resilience
             var combinedPolicy = Policy.WrapAsync(bulkheadPolicy, comprehensivePolicy);
-            
+
             return await combinedPolicy.ExecuteAsync(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();

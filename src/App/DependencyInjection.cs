@@ -11,20 +11,18 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IPersonService, PersonService>();
-        services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IWallService, WallService>();
-        services.AddScoped<IWindowService, WindowService>();
-        
+        // Register example service demonstrating generic repository with specifications
+        services.AddScoped<IPersonQueryService, PersonQueryService>();
+
         // Register MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
-        
+
         // Register Validation Pipeline Behavior
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        
+
         // Register Validators
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
-        
+
         return services;
     }
 }

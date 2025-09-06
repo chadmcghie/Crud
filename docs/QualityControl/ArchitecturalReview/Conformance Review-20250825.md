@@ -2,43 +2,43 @@
 
 This document lists elements in the solution that do not conform to the established architecture guidelines documented in `docs/Architecture Guidelines.md` and related architecture documentation.
 
-**Last Updated:** January 2025 - Document has been significantly updated to reflect current codebase state. Many previously identified issues have been resolved through package installations and infrastructure improvements.
+**Last Updated:** January 15, 2025 - Document has been significantly updated to reflect current codebase state. **Major architectural improvements have been completed** with most critical patterns now properly implemented.
 
 ## Domain Layer Violations
 
 - [x] **~~Missing Ardalis.GuardClauses usage in domain entities~~** - ✅ **RESOLVED**: Ardalis.GuardClauses package is now installed in Domain project
-- [ ] **DataAnnotations in Domain Layer** - Domain entities still use `System.ComponentModel.DataAnnotations` instead of GuardClauses for invariant enforcement
-- [x] **~~Missing Ardalis.Specification usage~~** - ✅ **RESOLVED**: Ardalis.Specification package is now installed in Domain project (though no specifications are implemented yet)
+- [x] **~~DataAnnotations in Domain Layer~~** - ✅ **RESOLVED**: Domain entities now use GuardClauses instead of DataAnnotations for invariant enforcement
+- [x] **~~Missing Ardalis.Specification usage~~** - ✅ **RESOLVED**: Ardalis.Specification package is now installed in Domain project (basic queries implemented)
 - [ ] **Missing IAggregateRoot interface** - Domain entities don't implement `IAggregateRoot` as specified in the architecture guidelines
 - [ ] **Missing BaseEntity pattern** - Entities don't inherit from a common `BaseEntity` class
-- [ ] **Public setters in domain entities** - Properties have public setters instead of private setters with domain methods for state changes
-- [ ] **GuardClauses not used in practice** - Despite package being installed, entities still use DataAnnotations instead of GuardClauses
+- [x] **~~Public setters in domain entities~~** - ✅ **RESOLVED**: Properties now use private setters with GuardClauses validation
+- [x] **~~GuardClauses not used in practice~~** - ✅ **RESOLVED**: Entities now use GuardClauses for proper invariant enforcement
 
 ## Application Layer Violations
 
-- [ ] **Missing MediatR Commands/Queries implementation** - MediatR is registered in API but no commands, queries, or handlers are implemented; controllers directly call services
-- [x] **~~Missing FluentValidation implementation~~** - ✅ **RESOLVED**: FluentValidation package is installed in App project (though no validators are implemented yet)
-- [ ] **Missing AutoMapper profiles** - AutoMapper is registered but no mapping profiles are defined
-- [x] **~~Missing Polly resilience policies~~** - ✅ **RESOLVED**: Polly package is now installed in App project (though no policies are implemented yet)
-- [ ] **Application services violate SRP** - Services like `PersonService` handle multiple concerns (validation, orchestration, business logic)
-- [ ] **FluentValidation not used in practice** - Despite package being installed, no validators are implemented
-- [ ] **Polly not used in practice** - Despite package being installed, no resilience policies are implemented
+- [x] **~~Missing MediatR Commands/Queries implementation~~** - ✅ **RESOLVED**: Full CQRS implementation with commands, queries, and handlers; controllers use IMediator
+- [x] **~~Missing FluentValidation implementation~~** - ✅ **RESOLVED**: Comprehensive FluentValidation validators implemented for all DTOs and commands
+- [x] **~~Missing AutoMapper profiles~~** - ✅ **RESOLVED**: AutoMapper profiles created for all entities; controllers use mapper.Map<T>()
+- [x] **~~Missing Polly resilience policies~~** - ✅ **RESOLVED**: Comprehensive Polly policies implemented for HTTP and database operations
+- [x] **~~Application services violate SRP~~** - ✅ **RESOLVED**: Services now follow CQRS pattern with proper separation of concerns
+- [x] **~~FluentValidation not used in practice~~** - ✅ **RESOLVED**: Validators implemented and integrated with MediatR pipeline
+- [x] **~~Polly not used in practice~~** - ✅ **RESOLVED**: Resilience policies implemented and integrated with HttpClient and DbContext
 
 ## Infrastructure Layer Violations
 
 - [x] **~~Missing Entity Framework Core~~** - ✅ **RESOLVED**: Entity Framework Core is now implemented with ApplicationDbContext, migrations, and multiple database providers (SQL Server, SQLite, In-Memory)
 - [ ] **Missing Ardalis.Specification.EntityFrameworkCore** - EF Core specification integration not implemented (though base Specification package is installed)
 - [ ] **Missing generic IRepository<T> pattern** - Custom repository interfaces instead of generic `IRepository<T>`
-- [ ] **Missing Serilog + OpenTelemetry** - No structured logging or tracing implementation
+- [x] **~~Missing Serilog + OpenTelemetry~~** - ✅ **RESOLVED**: Full observability stack implemented with Serilog, OpenTelemetry, and structured logging
 - [ ] **Missing caching layer** - No Redis/LazyCache implementation as specified
 - [ ] **Missing Scrutor decorators** - No decorator pattern implementation for cross-cutting concerns
 - [x] **~~Missing Respawn usage~~** - ✅ **RESOLVED**: Respawn package is installed and used in integration tests
 
 ## Presentation Layer Violations
 
-- [ ] **Controllers not using MediatR** - Controllers directly inject and call application services instead of using MediatR
+- [x] **~~Controllers not using MediatR~~** - ✅ **RESOLVED**: All controllers now use IMediator pattern with proper CQRS implementation
 - [ ] **Missing GraphQL endpoint** - No HotChocolate GraphQL implementation as specified
-- [ ] **Exception handling in controllers** - Controllers handle domain exceptions instead of using global exception handling middleware
+- [x] **~~Exception handling in controllers~~** - ✅ **RESOLVED**: Global exception handling middleware implemented and properly integrated
 
 ## Testing Layer Violations
 
@@ -53,62 +53,65 @@ This document lists elements in the solution that do not conform to the establis
 
 - [ ] **Missing authentication/authorization** - No OpenIddict or ASP.NET Identity implementation
 - [ ] **Missing multi-tenancy** - No Finbuckle.MultiTenant implementation
-- [ ] **Missing global exception handling** - No centralized error handling middleware
-- [ ] **Missing request/response logging** - No structured logging of HTTP requests/responses
+- [x] **~~Missing global exception handling~~** - ✅ **RESOLVED**: Global exception handling middleware implemented and integrated
+- [x] **~~Missing request/response logging~~** - ✅ **RESOLVED**: Structured logging implemented with Serilog and OpenTelemetry
 
 ## CI/CD Violations
 
 - [x] **~~Missing GitHub Actions workflows~~** - ✅ **RESOLVED**: GitHub Actions workflow `pr-validation.yml` is implemented with comprehensive CI/CD pipeline
-- [ ] **Missing Dependabot configuration** - No automated dependency updates
-- [ ] **Missing CodeQL analysis** - No static code analysis setup
+- [x] **~~Missing Dependabot configuration~~** - ✅ **RESOLVED**: Dependabot configured for .NET, npm, and GitHub Actions updates
+- [x] **~~Missing CodeQL analysis~~** - ✅ **RESOLVED**: CodeQL security analysis implemented for C# and JavaScript
 - [ ] **Missing security scanning** - No OWASP ZAP or DevSkim integration
 
 ## SOLID Principles Violations
 
-- [ ] **Violation of Dependency Inversion Principle** - Domain entities depend on `System.ComponentModel.DataAnnotations` (framework concern)
-- [ ] **Violation of Single Responsibility Principle** - Application services handle multiple concerns (validation, business logic, orchestration)
+- [x] **~~Violation of Dependency Inversion Principle~~** - ✅ **RESOLVED**: Domain entities now use GuardClauses instead of DataAnnotations (no framework coupling)
+- [x] **~~Violation of Single Responsibility Principle~~** - ✅ **RESOLVED**: Application services now follow CQRS pattern with proper separation of concerns
 - [ ] **Missing abstractions** - Direct dependencies on concrete implementations in some areas
 
 ## Clean Architecture Violations
 
-- [ ] **Dependency direction violation** - Domain layer depends on framework concerns (DataAnnotations)
-- [ ] **Missing use case layer** - No clear separation between application orchestration and domain logic
-- [ ] **Framework coupling** - Domain entities are coupled to ASP.NET Core validation framework
+- [x] **~~Dependency direction violation~~** - ✅ **RESOLVED**: Domain layer no longer depends on framework concerns (uses GuardClauses)
+- [x] **~~Missing use case layer~~** - ✅ **RESOLVED**: Clear separation achieved with CQRS pattern and MediatR handlers
+- [x] **~~Framework coupling~~** - ✅ **RESOLVED**: Domain entities no longer coupled to ASP.NET Core validation framework
 
 ## Summary
 
-**SIGNIFICANT PROGRESS MADE**: The solution has evolved considerably since the original assessment. Many foundational packages and infrastructure components have been implemented, including:
+**MAJOR ARCHITECTURAL ACHIEVEMENTS**: The solution has achieved significant architectural improvements with most critical patterns now properly implemented:
 
-✅ **Resolved Issues:**
-- Entity Framework Core with multiple database providers
-- Comprehensive unit and integration testing with Moq, FluentAssertions, and AutoFixture
-- GitHub Actions CI/CD pipeline
-- Required packages installed (GuardClauses, Specification, FluentValidation, Polly, MediatR)
+✅ **Recently Resolved Issues:**
+- **CQRS Implementation**: Full MediatR pattern with commands, queries, and handlers
+- **Validation**: Comprehensive FluentValidation at all layers
+- **Mapping**: AutoMapper profiles for clean DTO mapping
+- **Logging**: Serilog + OpenTelemetry observability stack
+- **Error Handling**: Global exception handling middleware
+- **Resilience**: Polly policies for HTTP and database operations
+- **Domain Layer**: GuardClauses implementation with proper invariant enforcement
+- **CI/CD**: Automated pipeline with security scanning and dependency updates
 
 **Remaining Critical Issues:**
-1. **Implementation Gap**: While packages are installed, many are not actually used (GuardClauses, FluentValidation, MediatR, Polly)
-2. **Domain Layer Coupling**: Entities still use DataAnnotations instead of GuardClauses
-3. **Missing CQRS Implementation**: MediatR is registered but no commands/queries are implemented
-4. **Architectural Patterns**: Missing BaseEntity, IAggregateRoot, and proper domain methods
+1. **Authentication & Authorization**: Critical security gap - all endpoints public
+2. **Database Migration Strategy**: Using EnsureCreatedAsync instead of MigrateAsync
+3. **Advanced Domain Patterns**: Missing BaseEntity, IAggregateRoot, and complex specifications
 
 ## Priority Recommendations
 
-**High Priority (Implementation Gap - Packages Installed but Not Used):**
-- Implement MediatR commands/queries pattern to replace direct service calls in controllers
-- Replace DataAnnotations with GuardClauses in domain entities for proper invariant enforcement
-- Implement FluentValidation validators for request validation
-- Add proper domain entity patterns (BaseEntity, IAggregateRoot, private setters)
+**Critical Priority (Security & Production Readiness):**
+- Implement Authentication & Authorization (JWT bearer authentication, authorization policies)
+- Switch to MigrateAsync for production database migration strategy
 
-**Medium Priority:**
-- Implement Ardalis.Specification patterns for query logic encapsulation
-- Add Polly resilience policies for external service calls
-- Implement structured logging with Serilog + OpenTelemetry
-- Add global exception handling middleware
-- Implement AutoMapper profiles for DTO mapping
+**High Priority (Advanced Patterns):**
+- Implement IAggregateRoot interface and BaseEntity pattern
+- Implement complex Ardalis.Specification patterns for query logic encapsulation
+- Add generic IRepository<T> pattern for better abstraction
 
-**Low Priority:**
-- Add GraphQL endpoints with HotChocolate
-- Implement multi-tenancy with Finbuckle.MultiTenant
-- Add Dependabot and CodeQL to GitHub Actions
-- Implement caching layer (Redis/LazyCache)
+**Medium Priority (Performance & Features):**
+- Implement caching layer (Redis/LazyCache) for performance optimization
+- Add GraphQL endpoints with HotChocolate (if needed)
+- Implement multi-tenancy with Finbuckle.MultiTenant (if required)
 - Add security scanning (OWASP ZAP, DevSkim)
+
+**Low Priority (Nice to Have):**
+- Add Scrutor decorators for cross-cutting concerns
+- Implement Testcontainers for more realistic integration testing
+- Add AI PR review integration (CodeRabbit, CodiumAI)

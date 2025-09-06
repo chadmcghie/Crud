@@ -59,7 +59,7 @@ public class RoleTests
         {
             // Domain entities now use GuardClauses for immediate validation
             // This enforces invariants at the domain level
-            
+
             // Arrange & Act & Assert
             var action = () => RoleTestDataBuilder.Default()
                 .WithName(invalidName)
@@ -74,7 +74,7 @@ public class RoleTests
         {
             // Arrange
             var longName = new string('a', 101); // Max length is 100
-            
+
             // Act & Assert
             var action = () => RoleTestDataBuilder.Default()
                 .WithName(longName)
@@ -89,7 +89,7 @@ public class RoleTests
         {
             // Arrange
             var longDescription = new string('a', 501); // Max length is 500
-            
+
             // Act & Assert
             var action = () => RoleTestDataBuilder.Default()
                 .WithDescription(longDescription)

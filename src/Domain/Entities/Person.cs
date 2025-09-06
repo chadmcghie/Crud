@@ -7,10 +7,10 @@ namespace Domain.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
 
         private string _fullName = string.Empty;
-        public string FullName 
-        { 
+        public string FullName
+        {
             get => _fullName;
-            set 
+            set
             {
                 _fullName = Guard.Against.NullOrWhiteSpace(value, nameof(value));
                 Guard.Against.StringTooLong(value, 200, nameof(value));
@@ -22,8 +22,8 @@ namespace Domain.Entities
         // A person can have many roles. Roles are extensible and managed separately
         public ICollection<Role> Roles { get; set; } = new HashSet<Role>();
 
-            // Concurrency token for optimistic concurrency control
-    // Nullable for SQLite compatibility
-    public byte[]? RowVersion { get; set; }
+        // Concurrency token for optimistic concurrency control
+        // Nullable for SQLite compatibility
+        public byte[]? RowVersion { get; set; }
     }
 }

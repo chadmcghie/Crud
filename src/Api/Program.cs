@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Api.Middleware;
 using App;
 using FluentValidation;
@@ -7,15 +10,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Serilog;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Serilog;
 
 
 namespace Api
@@ -46,7 +46,8 @@ namespace Api
     {
         public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonTokenType.Null) return null;
+            if (reader.TokenType == JsonTokenType.Null)
+                return null;
             var dt = reader.GetDateTime();
             return dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
         }
@@ -104,7 +105,7 @@ namespace Api
                         .AddConsoleExporter());
 
                 // 3) App & Infra
-                builder.Services.AddApplication();                
+                builder.Services.AddApplication();
 
                 builder.Services.AddHttpClient("default")
                     .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
@@ -186,18 +187,18 @@ namespace Api
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
                 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
                 var jwtAudience = builder.Configuration["Jwt:Audience"];
-                
+
                 if (string.IsNullOrEmpty(jwtSecret))
                 {
                     Log.Warning("JWT Secret not configured. Using default for development.");
                     jwtSecret = "ThisIsADevelopmentSecretKeyThatShouldBeReplacedInProduction123!";
                 }
-                
+
                 if (string.IsNullOrEmpty(jwtIssuer))
                 {
                     jwtIssuer = "CrudApi";
                 }
-                
+
                 if (string.IsNullOrEmpty(jwtAudience))
                 {
                     jwtAudience = "CrudApiUsers";
@@ -222,7 +223,7 @@ namespace Api
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
                         ClockSkew = TimeSpan.Zero
                     };
-                    
+
                     options.Events = new JwtBearerEvents
                     {
                         OnMessageReceived = context =>
@@ -258,13 +259,13 @@ namespace Api
                     });
 
                 builder.Services.AddEndpointsApiExplorer();
-                
+
                 // Configure Swagger with JWT support
                 builder.Services.AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo 
-                    { 
-                        Title = "Crud API", 
+                    c.SwaggerDoc("v1", new OpenApiInfo
+                    {
+                        Title = "Crud API",
                         Version = "v1",
                         Description = "A CRUD API with JWT authentication"
                     });
@@ -294,7 +295,7 @@ namespace Api
                         }
                     });
                 });
-                
+
                 builder.Services.AddHealthChecks();
 
                 builder.Services.AddAutoMapper(

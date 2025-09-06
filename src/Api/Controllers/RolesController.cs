@@ -23,7 +23,8 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);
-        if (r is null) return NotFound();
+        if (r is null)
+            return NotFound();
         return Ok(mapper.Map<RoleDto>(r));
     }
 
@@ -37,28 +38,14 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        try
-        {
-            await mediator.Send(new DeleteRoleCommand(id), ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new DeleteRoleCommand(id), ct);
+        return NoContent();
     }
 }

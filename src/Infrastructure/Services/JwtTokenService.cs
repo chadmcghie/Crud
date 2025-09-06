@@ -23,7 +23,7 @@ public class JwtTokenService : IJwtTokenService
         _secret = _configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
         _issuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
         _audience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
-        
+
         if (!int.TryParse(_configuration["Jwt:AccessTokenExpirationMinutes"], out _accessTokenExpirationMinutes))
         {
             _accessTokenExpirationMinutes = 15; // Default to 15 minutes
@@ -39,7 +39,7 @@ public class JwtTokenService : IJwtTokenService
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_secret);
-        
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -47,7 +47,7 @@ public class JwtTokenService : IJwtTokenService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
-        
+
         // Add all user roles as claims
         foreach (var role in user.Roles)
         {
@@ -100,7 +100,7 @@ public class JwtTokenService : IJwtTokenService
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-            
+
             if (validatedToken is not JwtSecurityToken jwtToken ||
                 !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
             {

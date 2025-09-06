@@ -7,10 +7,10 @@ public class Role
     public Guid Id { get; set; } = Guid.NewGuid();
 
     private string _name = string.Empty;
-    public string Name 
-    { 
+    public string Name
+    {
         get => _name;
-        set 
+        set
         {
             _name = Guard.Against.NullOrWhiteSpace(value, nameof(value));
             Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -18,10 +18,10 @@ public class Role
     }
 
     private string? _description;
-    public string? Description 
-    { 
+    public string? Description
+    {
         get => _description;
-        set 
+        set
         {
             if (value != null)
             {

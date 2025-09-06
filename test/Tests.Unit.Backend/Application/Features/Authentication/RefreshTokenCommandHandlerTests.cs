@@ -20,7 +20,7 @@ public class RefreshTokenCommandHandlerTests
         _mockUserRepository = new Mock<IUserRepository>();
         _mockJwtTokenService = new Mock<IJwtTokenService>();
         _mockLogger = new Mock<ILogger<RefreshTokenCommandHandler>>();
-        
+
         _handler = new RefreshTokenCommandHandler(
             _mockUserRepository.Object,
             _mockJwtTokenService.Object,
@@ -44,7 +44,7 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             var existingRefreshToken = new RefreshToken(
                 command.RefreshToken,
                 DateTime.UtcNow.AddDays(7),
@@ -82,10 +82,10 @@ public class RefreshTokenCommandHandlerTests
             result.UserId.Should().Be(user.Id);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
-                It.Is<User>(u => 
+                It.Is<User>(u =>
                     !u.RefreshTokens.Any(rt => rt.Token == command.RefreshToken && !rt.IsRevoked) &&
                     u.RefreshTokens.Any(rt => rt.Token == newRefreshTokenValue)),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(user), Times.Once);
@@ -135,7 +135,7 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             var expiredRefreshToken = RefreshToken.CreateForTesting(
                 command.RefreshToken,
                 user.Id,
@@ -176,7 +176,7 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             var revokedRefreshToken = new RefreshToken(
                 command.RefreshToken,
                 DateTime.UtcNow.AddDays(7),
@@ -218,9 +218,9 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             user.LockAccount();
-            
+
             var refreshToken = new RefreshToken(
                 command.RefreshToken,
                 DateTime.UtcNow.AddDays(7),
@@ -255,7 +255,7 @@ public class RefreshTokenCommandHandlerTests
 
             _mockUserRepository.Verify(x => x.GetByRefreshTokenAsync(
                 It.IsAny<string>(),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -281,7 +281,7 @@ public class RefreshTokenCommandHandlerTests
 
             _mockUserRepository.Verify(x => x.GetByRefreshTokenAsync(
                 It.IsAny<string>(),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -342,7 +342,7 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             var oldRefreshToken = new RefreshToken(
                 command.RefreshToken,
                 DateTime.UtcNow.AddDays(7),
@@ -378,10 +378,10 @@ public class RefreshTokenCommandHandlerTests
             result.RefreshToken.Should().NotBe(command.RefreshToken);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
-                It.Is<User>(u => 
+                It.Is<User>(u =>
                     u.RefreshTokens.Any(rt => rt.Token == command.RefreshToken && rt.IsRevoked) &&
                     u.RefreshTokens.Any(rt => rt.Token == newRefreshTokenValue && !rt.IsRevoked)),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -399,7 +399,7 @@ public class RefreshTokenCommandHandlerTests
                 new PasswordHash("hashed_password_with_proper_length_for_bcrypt"),
                 "John",
                 "Doe");
-            
+
             // Add multiple expired tokens
             for (int i = 0; i < 5; i++)
             {
@@ -409,7 +409,7 @@ public class RefreshTokenCommandHandlerTests
                     DateTime.UtcNow.AddDays(-i - 1));
                 user.AddRefreshToken(expiredToken);
             }
-            
+
             var validToken = new RefreshToken(
                 command.RefreshToken,
                 DateTime.UtcNow.AddDays(7),
@@ -443,9 +443,9 @@ public class RefreshTokenCommandHandlerTests
             result.Success.Should().BeTrue();
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
-                It.Is<User>(u => 
+                It.Is<User>(u =>
                     !u.RefreshTokens.Any(rt => rt.Token.StartsWith("expired_token_") && !rt.IsRevoked)),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
     }

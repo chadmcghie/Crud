@@ -12,22 +12,22 @@ public interface ITestWebApplicationFactory : IDisposable
     /// Creates an HTTP client for testing
     /// </summary>
     HttpClient CreateClient();
-    
+
     /// <summary>
     /// Gets the service provider for dependency injection
     /// </summary>
     IServiceProvider Services { get; }
-    
+
     /// <summary>
     /// Ensures the test database is created and ready for use
     /// </summary>
     void EnsureDatabaseCreated();
-    
+
     /// <summary>
     /// Clears all data from the test database
     /// </summary>
     Task ClearDatabaseAsync();
-    
+
     /// <summary>
     /// Gets the test log capture instance for debugging server-side errors (if available)
     /// </summary>

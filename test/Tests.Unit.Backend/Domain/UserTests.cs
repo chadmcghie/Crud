@@ -91,11 +91,11 @@ namespace Tests.Unit.Backend.Domain
             var revokedToken = "revokedToken";
 
             user.AddRefreshToken(activeToken, DateTime.UtcNow.AddDays(7));
-            
+
             // Add expired token using test helper
             var expiredRefreshToken = RefreshToken.CreateForTesting(expiredToken, user.Id, DateTime.UtcNow.AddDays(-1));
             user.AddRefreshTokenForTesting(expiredRefreshToken);
-            
+
             user.AddRefreshToken(revokedToken, DateTime.UtcNow.AddDays(7));
             user.RevokeRefreshToken(revokedToken);
 
@@ -114,7 +114,7 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var user = CreateTestUser();
             var expiredToken = "expiredToken";
-            
+
             // Add expired token using test helper
             var expiredRefreshToken = RefreshToken.CreateForTesting(expiredToken, user.Id, DateTime.UtcNow.AddDays(-1));
             user.AddRefreshTokenForTesting(expiredRefreshToken);
@@ -193,7 +193,7 @@ namespace Tests.Unit.Backend.Domain
             // Arrange
             var user = CreateTestUser();
             user.AddRefreshToken("activeToken", DateTime.UtcNow.AddDays(7));
-            
+
             // Add expired tokens using test helper
             var expiredToken1 = RefreshToken.CreateForTesting("expiredToken1", user.Id, DateTime.UtcNow.AddDays(-1));
             var expiredToken2 = RefreshToken.CreateForTesting("expiredToken2", user.Id, DateTime.UtcNow.AddDays(-2));

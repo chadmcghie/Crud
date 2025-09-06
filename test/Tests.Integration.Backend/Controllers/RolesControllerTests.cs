@@ -40,7 +40,7 @@ public class RolesControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdRole = await ReadJsonAsync<RoleDto>(response);
-        
+
         createdRole.Should().NotBeNull();
         createdRole!.Id.Should().NotBeEmpty();
         createdRole.Name.Should().Be("Administrator");
@@ -70,11 +70,11 @@ public class RolesControllerTests : IntegrationTestBase
     {
         // Arrange
 
-        
+
         // Create test roles
         var role1 = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
         var role2 = TestDataBuilders.CreateRoleRequest("User", "Regular user");
-        
+
         await PostJsonAsync("/api/roles", role1);
         await PostJsonAsync("/api/roles", role2);
 
@@ -84,7 +84,7 @@ public class RolesControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var roles = await ReadJsonAsync<List<RoleDto>>(response);
-        
+
         roles.Should().NotBeNull();
         roles.Should().HaveCount(2);
         roles.Should().Contain(r => r.Name == "Admin");
@@ -105,7 +105,7 @@ public class RolesControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var role = await ReadJsonAsync<RoleDto>(response);
-        
+
         role.Should().NotBeNull();
         role!.Id.Should().Be(createdRole.Id);
         role.Name.Should().Be("Manager");
@@ -145,7 +145,7 @@ public class RolesControllerTests : IntegrationTestBase
         // Verify the update
         var getResponse = await Client.GetAsync($"/api/roles/{createdRole.Id}");
         var updatedRole = await ReadJsonAsync<RoleDto>(getResponse);
-        
+
         updatedRole.Should().NotBeNull();
         updatedRole!.Name.Should().Be("Updated");
         updatedRole.Description.Should().Be("Updated description");
@@ -212,7 +212,7 @@ public class RolesControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var createdRole = await ReadJsonAsync<RoleDto>(response);
-        
+
         createdRole.Should().NotBeNull();
         createdRole!.Name.Should().Be("SimpleRole");
         createdRole.Description.Should().BeNull();
@@ -233,7 +233,7 @@ public class RolesControllerTests : IntegrationTestBase
         var getResponse = await Client.GetAsync($"/api/roles/{createdRole!.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var retrievedRole = await ReadJsonAsync<RoleDto>(getResponse);
-        
+
         retrievedRole.Should().NotBeNull();
         retrievedRole!.Id.Should().Be(createdRole.Id);
         retrievedRole.Name.Should().Be("Persistent");

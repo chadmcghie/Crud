@@ -43,9 +43,9 @@ public class AuthControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var result = await ReadJsonAsync<TokenResponse>(response);
-            
+
             result.Should().NotBeNull();
             result!.AccessToken.Should().NotBeNullOrEmpty();
             result.RefreshToken.Should().NotBeNullOrEmpty();
@@ -109,7 +109,7 @@ public class AuthControllerTests : IntegrationTestBase
             // Arrange
             var email = "login@example.com";
             var password = "Test123!@#";
-            
+
             // First register a user
             var registerCommand = new RegisterUserCommand
             {
@@ -131,10 +131,10 @@ public class AuthControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
-            
+
             result.Should().NotBeNull();
             result!.AccessToken.Should().NotBeNullOrEmpty();
             result.RefreshToken.Should().NotBeNullOrEmpty();
@@ -190,7 +190,7 @@ public class AuthControllerTests : IntegrationTestBase
             // First register and login
             var email = "refresh@example.com";
             var password = "Test123!@#";
-            
+
             var registerCommand = new RegisterUserCommand
             {
                 Email = email,
@@ -211,7 +211,7 @@ public class AuthControllerTests : IntegrationTestBase
 
             var refreshCommand = new RefreshTokenCommand
             {
-                RefreshToken = loginResult!.RefreshToken
+                RefreshToken = loginResult!.RefreshToken!
             };
 
             // Act
@@ -219,10 +219,10 @@ public class AuthControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
-            
+
             result.Should().NotBeNull();
             result!.AccessToken.Should().NotBeNullOrEmpty();
             result.RefreshToken.Should().NotBeNullOrEmpty();
@@ -258,7 +258,7 @@ public class AuthControllerTests : IntegrationTestBase
             // First register and login
             var email = "logout@example.com";
             var password = "Test123!@#";
-            
+
             var registerCommand = new RegisterUserCommand
             {
                 Email = email,
@@ -278,7 +278,7 @@ public class AuthControllerTests : IntegrationTestBase
             var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
             // Add the access token to the request header
-            Client.DefaultRequestHeaders.Authorization = 
+            Client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
             // Act - Logout
@@ -290,7 +290,7 @@ public class AuthControllerTests : IntegrationTestBase
             // Try to use the refresh token after logout - should fail
             var refreshCommand = new RefreshTokenCommand
             {
-                RefreshToken = loginResult.RefreshToken
+                RefreshToken = loginResult!.RefreshToken!
             };
             var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
             refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -318,7 +318,7 @@ public class AuthControllerTests : IntegrationTestBase
             // Arrange
             var email = "protected@example.com";
             var password = "Test123!@#";
-            
+
             var registerCommand = new RegisterUserCommand
             {
                 Email = email,
@@ -338,7 +338,7 @@ public class AuthControllerTests : IntegrationTestBase
             var loginResult = JsonSerializer.Deserialize<AuthenticationResponse>(loginContent, JsonOptions);
 
             // Add the access token to the request header
-            Client.DefaultRequestHeaders.Authorization = 
+            Client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginResult!.AccessToken);
 
             // Act
