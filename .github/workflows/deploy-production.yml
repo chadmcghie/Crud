@@ -62,14 +62,14 @@ jobs:
     - name: Backend Code Format Check
       run: |
         echo "🔍 Checking C# code formatting before production deployment..."
-        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Cannot deploy to production with formatting issues." && exit 1)
+        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Cannot deploy to production with formatting issues." && exit 1)
         
     # Build solution
     - name: Build solution
       run: |
         echo "🏗️ Building solution for production..."
-        dotnet restore Crud.sln
-        dotnet build Crud.sln --configuration Release
+        dotnet restore solutions/Crud.sln
+        dotnet build solutions/Crud.sln --configuration Release
         
     # Run ALL backend unit tests
     - name: Backend unit tests (full suite)
@@ -180,7 +180,7 @@ jobs:
     # Build with production optimizations
     - name: Build backend for production
       run: |
-        dotnet restore Crud.sln
+        dotnet restore solutions/Crud.sln
         dotnet publish src/Api/Api.csproj \
           -c Release \
           -o ./publish/api \
