@@ -17,11 +17,11 @@ test.describe('People Management - Serial Tests', () => {
   // Smoke tests - quick validation of core functionality (2 min total)
   test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     await expect(page.locator('h3')).toContainText(/People Directory/i);
@@ -29,11 +29,11 @@ test.describe('People Management - Serial Tests', () => {
   
   test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -43,11 +43,11 @@ test.describe('People Management - Serial Tests', () => {
   // Critical tests - essential user workflows (5 min total)
   test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button

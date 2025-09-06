@@ -20,7 +20,8 @@ import { HttpClientModule } from '@angular/common/http';
         <nav class="nav-links">
           <a routerLink="/login" routerLinkActive="active">Login</a>
           <a routerLink="/register" routerLinkActive="active">Register</a>
-          <a routerLink="/people-list" routerLinkActive="active">People</a>
+          <a routerLink="/people" routerLinkActive="active">Add Person</a>
+          <a routerLink="/people-list" routerLinkActive="active">People List</a>
           <a routerLink="/roles-list" routerLinkActive="active">Roles</a>
         </nav>
       </header>
