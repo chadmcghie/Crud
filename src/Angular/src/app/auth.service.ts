@@ -240,4 +240,50 @@ export class AuthService {
     }
     return null;
   }
+
+  // Password Reset Methods with Rate Limiting Awareness
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email })
+      .pipe(
+        catchError(error => {
+          // Handle rate limiting specifically
+          if (error.status === 429) {
+            const retryAfter = error.headers?.get('Retry-After');
+            const message = retryAfter 
+              ? `Too many requests. Please try again in ${retryAfter} seconds.`
+              : 'Too many requests. Please try again later.';
+            return throwError(() => ({ error: { error: message } }));
+          }
+          return throwError(() => error);
+        })
+      );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/reset-password`, { 
+      token, 
+      newPassword 
+    }).pipe(
+      catchError(error => {
+        // Handle rate limiting specifically
+        if (error.status === 429) {
+          const retryAfter = error.headers?.get('Retry-After');
+          const message = retryAfter 
+            ? `Too many requests. Please try again in ${retryAfter} seconds.`
+            : 'Too many requests. Please try again later.';
+          return throwError(() => ({ error: { error: message } }));
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  validateResetToken(token: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/validate-reset-token`, { token })
+      .pipe(
+        catchError(error => {
+          return throwError(() => error);
+        })
+      );
+  }
 }
