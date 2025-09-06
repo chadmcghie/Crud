@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree, ActivatedRouteSnapshot } from '@angular/router';
+import { Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RoleGuard } from './role.guard';
 import { AuthService } from './auth.service';
 import { BehaviorSubject } from 'rxjs';
@@ -10,10 +10,6 @@ interface User {
   roles?: string[] | null;
 }
 
-interface MockRouterStateSnapshot {
-  url: string;
-  root: unknown;
-}
 
 describe('RoleGuard', () => {
   let guard: RoleGuard;
@@ -22,7 +18,7 @@ describe('RoleGuard', () => {
   let currentUserSubject: BehaviorSubject<User | null>;
 
   beforeEach(() => {
-    currentUserSubject = new BehaviorSubject(null);
+    currentUserSubject = new BehaviorSubject<User | null>(null);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'hasRole'], {
       currentUser$: currentUserSubject.asObservable()
     });
@@ -92,7 +88,7 @@ describe('RoleGuard', () => {
       const route = createRouteSnapshot(['admin']);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const state: MockRouterStateSnapshot = { url: '/admin/dashboard', root: null };
+      const state = { url: '/admin/dashboard' } as RouterStateSnapshot;
 
       const result = guard.canActivate(route, state);
 
@@ -313,23 +309,8 @@ describe('RoleGuard', () => {
       authService.isAuthenticated.and.returnValue(true);
       currentUserSubject.next({ id: '1', email: 'test@example.com', roles: ['user'] });
       const route = {
-        url: [],
-        params: {},
-        queryParams: {},
-        fragment: null,
-        outlet: 'primary',
-        component: null,
-        routeConfig: {},
-        root: null,
-        parent: null,
-        firstChild: null,
-        children: [],
-        pathFromRoot: [],
-        paramMap: null,
-        queryParamMap: null,
-        data: {},
-        title: undefined
-      } as ActivatedRouteSnapshot;
+        data: {}
+      } as unknown as ActivatedRouteSnapshot;
 
       const result = guard.canActivate(route);
 
@@ -341,22 +322,7 @@ describe('RoleGuard', () => {
   // Helper function to create route snapshot with roles
   function createRouteSnapshot(roles?: string[]): ActivatedRouteSnapshot {
     return {
-      data: roles ? { roles } : {},
-      url: [],
-      params: {},
-      queryParams: {},
-      fragment: null,
-      outlet: 'primary',
-      component: null,
-      routeConfig: { data: roles ? { roles } : {} },
-      root: null,
-      parent: null,
-      firstChild: null,
-      children: [],
-      pathFromRoot: [],
-      paramMap: null,
-      queryParamMap: null,
-      title: undefined
-    } as ActivatedRouteSnapshot;
+      data: roles ? { roles } : {}
+    } as unknown as ActivatedRouteSnapshot;
   }
 });

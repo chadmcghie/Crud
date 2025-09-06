@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ResetPasswordComponent } from './reset-password.component';
 import { AuthService } from '../../auth.service';
@@ -25,7 +25,8 @@ describe('ResetPasswordComponent', () => {
       imports: [
         ResetPasswordComponent,
         ReactiveFormsModule,
-        CommonModule
+        CommonModule,
+        RouterModule
       ],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },

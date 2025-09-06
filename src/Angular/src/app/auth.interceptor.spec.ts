@@ -79,7 +79,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for auth endpoints', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/login');
+      const request = new HttpRequest('POST', '/api/auth/login', {});
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -93,7 +93,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for register endpoint', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/register');
+      const request = new HttpRequest('POST', '/api/auth/register', {});
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -107,7 +107,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for refresh endpoint', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/refresh');
+      const request = new HttpRequest('POST', '/api/auth/refresh', {});
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -171,7 +171,7 @@ describe('AuthInterceptor', () => {
     });
 
     it('should not attempt refresh for auth endpoints', () => {
-      const request = new HttpRequest('POST', '/api/auth/login');
+      const request = new HttpRequest('POST', '/api/auth/login', {});
       const error = new HttpErrorResponse({ status: 401 });
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(throwError(() => error))

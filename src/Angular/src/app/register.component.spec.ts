@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { of, throwError, EMPTY } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { RegisterComponent } from './register.component';
@@ -28,7 +29,7 @@ describe('RegisterComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent, ReactiveFormsModule],
+      imports: [RegisterComponent, ReactiveFormsModule, CommonModule, RouterModule],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
         { provide: Router, useValue: routerSpy },
