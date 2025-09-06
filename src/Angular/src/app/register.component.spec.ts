@@ -15,6 +15,10 @@ describe('RegisterComponent', () => {
 
   beforeEach(async () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['register', 'login']);
+    // Set up default return values for auth service methods
+    authServiceSpy.register.and.returnValue(EMPTY);
+    authServiceSpy.login.and.returnValue(EMPTY);
+    
     const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
     routerSpy.createUrlTree.and.returnValue(Promise.resolve(true));
     routerSpy.serializeUrl.and.returnValue('/test');

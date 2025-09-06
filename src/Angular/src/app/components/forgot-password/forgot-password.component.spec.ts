@@ -1,8 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { ForgotPasswordComponent } from './forgot-password.component';
 import { AuthService } from '../../auth.service';
 
@@ -14,7 +15,13 @@ describe('ForgotPasswordComponent', () => {
 
   beforeEach(async () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['forgotPassword']);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    // Set up default return value for auth service method
+    authServiceSpy.forgotPassword.and.returnValue(of({}));
+    
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+    routerSpy.createUrlTree.and.returnValue(Promise.resolve(true));
+    routerSpy.serializeUrl.and.returnValue('/test');
+    routerSpy.events = EMPTY;
     const activatedRouteSpy = {
       snapshot: { queryParams: {} },
       queryParams: of({})
@@ -110,8 +117,8 @@ describe('ForgotPasswordComponent', () => {
     expect(component.successMessage).toBeFalsy();
   });
 
-  it('should set loading state during submission', () => {
-    authService.forgotPassword.and.returnValue(of({ success: true }));
+  it('should set loading state during submission', fakeAsync(() => {
+    authService.forgotPassword.and.returnValue(of({ success: true }).pipe(delay(100)));
     
     component.forgotPasswordForm.get('email')?.setValue('test@example.com');
     
@@ -120,9 +127,10 @@ describe('ForgotPasswordComponent', () => {
     component.onSubmit();
     expect(component.loading).toBeTruthy();
     
+    tick(100);
     fixture.detectChanges();
     expect(component.loading).toBeFalsy();
-  });
+  }));
 
   it('should clear error message when form is modified', () => {
     component.errorMessage = 'Previous error';
@@ -154,15 +162,16 @@ describe('ForgotPasswordComponent', () => {
     expect(component.errorMessage).toContain('Too many requests');
   });
 
-  it('should clear form after successful submission', () => {
+  it('should clear form after successful submission', fakeAsync(() => {
     authService.forgotPassword.and.returnValue(of({ success: true }));
     
     component.forgotPasswordForm.get('email')?.setValue('test@example.com');
     component.onSubmit();
+    tick();
     fixture.detectChanges();
     
-    expect(component.forgotPasswordForm.get('email')?.value).toBe('');
-  });
+    expect(component.forgotPasswordForm.get('email')?.value).toBeNull();
+  }));
 
   it('should show loading spinner when loading is true', () => {
     component.loading = true;

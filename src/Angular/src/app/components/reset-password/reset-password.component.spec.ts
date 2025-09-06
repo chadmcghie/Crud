@@ -1,8 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { ResetPasswordComponent } from './reset-password.component';
 import { AuthService } from '../../auth.service';
 
@@ -15,7 +16,14 @@ describe('ResetPasswordComponent', () => {
 
   beforeEach(async () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['resetPassword', 'validateResetToken']);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    // Set up default return values for auth service methods
+    authServiceSpy.validateResetToken.and.returnValue(of({}));
+    authServiceSpy.resetPassword.and.returnValue(of({}));
+    
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+    routerSpy.createUrlTree.and.returnValue(Promise.resolve(true));
+    routerSpy.serializeUrl.and.returnValue('/test');
+    routerSpy.events = EMPTY;
     
     activatedRoute = {
       queryParams: of({ token: 'valid-token' })
@@ -79,10 +87,16 @@ describe('ResetPasswordComponent', () => {
   });
 
   it('should show error if no token is provided', () => {
-    component.token = '';
+    // Create a new component with no token in query params
+    activatedRoute.queryParams = of({});
+    
+    // Create a new fixture to trigger ngOnInit with empty queryParams
+    fixture = TestBed.createComponent(ResetPasswordComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     
     expect(component.errorMessage).toContain('Invalid or missing reset token');
+    expect(component.tokenValid).toBe(false);
   });
 
   it('should call authService.resetPassword on valid form submission', () => {
@@ -146,8 +160,8 @@ describe('ResetPasswordComponent', () => {
     expect(strengthIndicator).toBeTruthy();
   });
 
-  it('should set loading state during submission', () => {
-    authService.resetPassword.and.returnValue(of({ success: true }));
+  it('should set loading state during submission', fakeAsync(() => {
+    authService.resetPassword.and.returnValue(of({ success: true }).pipe(delay(100)));
     
     component.token = 'valid-token';
     component.resetPasswordForm.get('password')?.setValue('NewPassword123!');
@@ -158,9 +172,10 @@ describe('ResetPasswordComponent', () => {
     component.onSubmit();
     expect(component.loading).toBeTruthy();
     
+    tick(100);
     fixture.detectChanges();
     expect(component.loading).toBeFalsy();
-  });
+  }));
 
   it('should disable submit button when form is invalid', () => {
     component.resetPasswordForm.get('password')?.setValue('');

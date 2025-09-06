@@ -22,7 +22,9 @@ describe('AuthInterceptor', () => {
       ['getAccessToken', 'refreshToken', 'logout'],
       { isRefreshing: false }
     );
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+    routerSpy.createUrlTree.and.returnValue(Promise.resolve(true));
+    routerSpy.serializeUrl.and.returnValue('/test');
 
     TestBed.configureTestingModule({
       providers: [
