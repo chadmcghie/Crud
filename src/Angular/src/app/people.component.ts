@@ -316,7 +316,7 @@ export class PeopleComponent implements OnInit, OnChanges {
         this.editingPerson = person;
         this.populateFormForEdit();
       },
-      error: (error: any) => {
+      error: (error: unknown) => {
         console.error('Error loading person for edit:', error);
         this.error = 'Failed to load person data';
         // Navigate back to the list if person not found
@@ -384,7 +384,7 @@ export class PeopleComponent implements OnInit, OnChanges {
       } else {
         // Create new person
         this.api.createPerson(payload).subscribe({
-          next: (person: PersonResponse) => {
+          next: (_person: PersonResponse) => {
             this.isSubmitting = false;
             this.error = null;
             this.resetForm();
