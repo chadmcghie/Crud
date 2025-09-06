@@ -56,13 +56,13 @@ jobs:
     - name: Backend Code Format Check
       run: |
         echo "🔍 Checking C# code formatting..."
-        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Run 'dotnet format' locally to fix." && exit 1)
+        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Run 'dotnet format' locally to fix." && exit 1)
         
     # Build solution
     - name: Build solution
       run: |
-        dotnet restore Crud.sln
-        dotnet build Crud.sln --configuration Release
+        dotnet restore solutions/Crud.sln
+        dotnet build solutions/Crud.sln --configuration Release
         
     # Run all backend unit tests
     - name: Backend unit tests (full)
