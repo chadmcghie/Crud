@@ -6,6 +6,11 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write  # Changed from read to write for auto-formatting
   checks: write
