@@ -77,9 +77,9 @@ cd src/Angular && npm run lint
 
 ⚠️ **CRITICAL: DO NOT CHANGE THE TEST COMMANDS** ⚠️
 
-The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E2E.NG/package.json` MUST use `playwright.config.webserver.ts`. 
+The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E2E.NG/package.json` require specific environment variables for CI compatibility. 
 
-**DO NOT "simplify" them to use the default playwright.config.ts** - this will break CI!
+**DO NOT "simplify" them by removing the environment variables** - this will break CI!
 
 ### Why This Matters
 - The complex-looking commands with environment variables are REQUIRED
@@ -101,9 +101,9 @@ npm run test:extended    # Extended test suite
 "test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
 ```
 
-**UPDATE**: E2E tests use Playwright's built-in webServer configuration. See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
+**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
 
-- **Playwright webServer**: Automatic server management, unique database per test run (recommended approach)
+- **Playwright webServer**: Automatic server management, unique database per test run (built into `playwright.config.ts`)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
 - Database isolation via unique filenames prevents locking issues
 - Serial execution strategy (`workers: 1`) for SQLite/EF Core compatibility
