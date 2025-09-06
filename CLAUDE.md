@@ -82,18 +82,16 @@ The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E
 **DO NOT "simplify" them to use the default playwright.config.ts** - this will break CI!
 
 ### Why This Matters
-- The default `playwright.config.ts` uses `global-setup.ts` which fails in CI
 - The complex-looking commands with environment variables are REQUIRED
 - This has been broken and fixed multiple times - don't repeat the mistake
 - See GitHub issue #79 for plan to eliminate the problematic config entirely
 
 ### Correct Commands (DO NOT CHANGE)
 ```bash
-# These commands MUST use playwright.config.webserver.ts
-npm run test:smoke       # Uses webserver config - WORKS IN CI
-npm run test:critical    # Uses webserver config - WORKS IN CI  
-npm run test:extended    # Uses webserver config - WORKS IN CI
-npm run test:webserver   # Full E2E suite with webserver config
+# These commands use environment variables for proper configuration
+npm run test:smoke       # 2-minute smoke tests
+npm run test:critical    # 5-minute critical tests  
+npm run test:extended    # Extended test suite
 ```
 
 ### What NOT to Do
