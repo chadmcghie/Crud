@@ -96,29 +96,63 @@ Use the context-fetcher subagent to clarify scope boundaries and technical consi
 
 </step>
 
-<step number="4" subagent="date-checker" name="date_determination">
+<step number="4" name="github_issue_check">
 
-### Step 4: Date Determination
+### Step 4: GitHub Issue Check
+
+Check GitHub projects and issues for related work before creating the spec.
+
+<github_check_flow>
+  <check_projects>
+    1. Use `gh project list` to list available projects
+    2. Check project boards for related issues using `gh project item-list`
+    3. Note any existing issue numbers and titles
+  </check_projects>
+  
+  <check_issues>
+    IF not found in projects:
+      1. Use `gh issue list --search "[SPEC_KEYWORDS]"` to find related issues
+      2. Review open issues for matches
+      3. Note any existing issue numbers and titles
+  </check_issues>
+  
+  <create_parent_issue>
+    IF no existing issue found:
+      1. Create a new parent issue for the spec
+      2. Use `gh issue create --title "[SPEC_NAME]" --body "[SPEC_OVERVIEW]" --label "spec"`
+      3. Store the issue number for reference in spec
+  </create_parent_issue>
+</github_check_flow>
+
+<issue_reference_storage>
+  Store the GitHub issue number (either existing or newly created) for inclusion in the spec documentation
+</issue_reference_storage>
+
+</step>
+
+<step number="5" subagent="date-checker" name="date_determination">
+
+### Step 5: Date Determination
 
 Use the date-checker subagent to determine the current date in YYYY-MM-DD format for folder naming. The subagent will output today's date which will be used in subsequent steps.
 
 <subagent_output>
-  The date-checker subagent will provide the current date in YYYY-MM-DD format at the end of its response. Store this date for use in folder naming in step 5.
+  The date-checker subagent will provide the current date in YYYY-MM-DD format at the end of its response. Store this date for use in folder naming in step 6.
 </subagent_output>
 
 </step>
 
-<step number="5" subagent="file-creator" name="spec_folder_creation">
+<step number="6" subagent="file-creator" name="spec_folder_creation">
 
-### Step 5: Spec Folder Creation
+### Step 6: Spec Folder Creation
 
-Use the file-creator subagent to create directory: .agent-os/specs/YYYY-MM-DD-spec-name/ using the date from step 4.
+Use the file-creator subagent to create directory: .agent-os/specs/YYYY-MM-DD-spec-name/ using the date from step 5.
 
 Use kebab-case for spec name. Maximum 5 words in name.
 
 <folder_naming>
   <format>YYYY-MM-DD-spec-name</format>
-  <date>use stored date from step 4</date>
+  <date>use stored date from step 5</date>
   <name_constraints>
     - max_words: 5
     - style: kebab-case
@@ -134,9 +168,9 @@ Use kebab-case for spec name. Maximum 5 words in name.
 
 </step>
 
-<step number="6" subagent="file-creator" name="create_spec_md">
+<step number="7" subagent="file-creator" name="create_spec_md">
 
-### Step 6: Create spec.md
+### Step 7: Create spec.md
 
 Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spec-name/spec.md using this template:
 
@@ -146,6 +180,7 @@ Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spe
 
     > Spec: [SPEC_NAME]
     > Created: [CURRENT_DATE]
+    > GitHub Issue: #[ISSUE_NUMBER] - [ISSUE_TITLE]
   </header>
   <required_sections>
     - Overview
@@ -227,9 +262,9 @@ Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spe
 
 </step>
 
-<step number="7" subagent="file-creator" name="create_spec_lite_md">
+<step number="8" subagent="file-creator" name="create_spec_lite_md">
 
-### Step 7: Create spec-lite.md
+### Step 8: Create spec-lite.md
 
 Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spec-name/spec-lite.md for the purpose of establishing a condensed spec for efficient AI context usage.
 
@@ -241,7 +276,7 @@ Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spe
 
 <content_structure>
   <spec_summary>
-    - source: Step 6 spec.md overview section
+    - source: Step 7 spec.md overview section
     - length: 1-3 sentences
     - content: core goal and objective of the feature
   </spec_summary>
@@ -257,9 +292,9 @@ Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spe
 
 </step>
 
-<step number="8" subagent="file-creator" name="create_technical_spec">
+<step number="9" subagent="file-creator" name="create_technical_spec">
 
-### Step 8: Create Technical Specification
+### Step 9: Create Technical Specification
 
 Use the file-creator subagent to create the file: sub-specs/technical-spec.md using this template:
 
@@ -310,9 +345,9 @@ Use the file-creator subagent to create the file: sub-specs/technical-spec.md us
 
 </step>
 
-<step number="9" subagent="file-creator" name="create_database_schema">
+<step number="10" subagent="file-creator" name="create_database_schema">
 
-### Step 9: Create Database Schema (Conditional)
+### Step 10: Create Database Schema (Conditional)
 
 Use the file-creator subagent to create the file: sub-specs/database-schema.md ONLY IF database changes needed for this task.
 
@@ -353,9 +388,9 @@ Use the file-creator subagent to create the file: sub-specs/database-schema.md O
 
 </step>
 
-<step number="10" subagent="file-creator" name="create_api_spec">
+<step number="11" subagent="file-creator" name="create_api_spec">
 
-### Step 10: Create API Specification (Conditional)
+### Step 11: Create API Specification (Conditional)
 
 Use the file-creator subagent to create file: sub-specs/api-spec.md ONLY IF API changes needed.
 
@@ -406,9 +441,9 @@ Use the file-creator subagent to create file: sub-specs/api-spec.md ONLY IF API 
 
 </step>
 
-<step number="11" name="user_review">
+<step number="12" name="user_review">
 
-### Step 11: User Review
+### Step 12: User Review
 
 Request user review of spec.md and all sub-specs files, waiting for approval or revision requests.
 
