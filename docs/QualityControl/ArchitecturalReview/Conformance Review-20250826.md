@@ -1,4 +1,4 @@
-# Conformance Review — 2025-08-26
+# Conformance Review - 2025-08-26
 
 Scope
 - Compare current solution against project docs (docs/README.md and docs/05-Quality Control/Testing/1-Testing Strategy.md).
@@ -55,16 +55,16 @@ Application Layer
 
 Infrastructure Layer
 - EF Core DbContext with DbSets for all entities.
-- Migrations present (InitialCreate) and EnsureCreatedAsync is called at startup (SQLite/SQLServer) — OK for dev/test; prefer MigrateAsync for production.
+- Migrations present (InitialCreate) and EnsureCreatedAsync is called at startup (SQLite/SQLServer) â€” OK for dev/test; prefer MigrateAsync for production.
 - Repositories exist per entity; consistent with App abstractions.
 - Serilog.Extensions.Logging referenced but no Serilog host config; logging currently defaults to Microsoft.Extensions.Logging. Add Serilog host configuration if structured logging is required.
 
 Testing Strategy Alignment
-- Unit tests: xUnit, Moq, FluentAssertions, AutoFixture present (Tests.Unit.Backend) — aligns with docs.
+- Unit tests: xUnit, Moq, FluentAssertions, AutoFixture present (Tests.Unit.Backend) â€” aligns with docs.
 - Integration tests: project exists with Microsoft.AspNetCore.Mvc.Testing and EF Sqlite; no Testcontainers package, and Respawn is not referenced here (Respawn is referenced in Infrastructure). Consider moving Respawn to tests and adding Testcontainers for DB realism.
 - E2E:
   - Angular E2E uses Playwright (good).
-  - MAUI E2E/Integration projects exist but lack a UI automation stack (e.g., .NET MAUI UITest/Appium) — currently placeholders.
+  - MAUI E2E/Integration projects exist but lack a UI automation stack (e.g., .NET MAUI UITest/Appium) â€” currently placeholders.
 - Gaps vs. Testing plan
   - Testcontainers not set up for DB-backed integration tests.
   - No WireMock.Net for external API mocking (if needed later).
