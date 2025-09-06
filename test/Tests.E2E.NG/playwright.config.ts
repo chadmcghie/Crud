@@ -1,91 +1,175 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
 
 /**
- * @see https://playwright.dev/docs/test-configuration
+ * E2E Test Configuration with Playwright's Built-in WebServer
+ * 
+ * This configuration uses Playwright's native webServer feature to manage
+ * server lifecycle, eliminating the need for custom server management code.
+ * 
+ * Key improvements:
+ * - Automatic server startup and shutdown
+ * - Unique database file per test run to prevent locking
+ * - Simpler configuration and maintenance
+ * - Better CI/CD reliability
  */
+
+// Generate unique database name for this test run
+const testRunId = process.env.CI ? Date.now().toString() : 'local';
+const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${testRunId}.db`);
+
+// Export test run ID for teardown
+process.env.TEST_RUN_ID = testRunId;
+
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
-
-  fullyParallel: false, // Disable full parallelism to avoid data conflicts
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  
+  /* Serial execution for SQLite compatibility */
+  fullyParallel: false,
+  workers: 1,
+  
+  /* Fail fast in CI */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Run tests sequentially to avoid data conflicts */
-  workers: 1, // Run tests sequentially to avoid data conflicts
-
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  retries: 0,
+  maxFailures: process.env.CI ? 10 : 0,
+  
+  /* Timeouts */
+  timeout: 30000,
+  
+  /* Playwright's built-in webServer configuration */
+  webServer: [
+    {
+      // API Server configuration
+      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile http',
+      cwd: process.cwd(),
+      url: 'http://localhost:5172/health',
+      timeout: 60 * 1000, // 60 seconds to start
+      reuseExistingServer: !process.env.CI, // Reuse locally, fresh in CI
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env: {
+        ASPNETCORE_ENVIRONMENT: 'Testing',
+        ASPNETCORE_URLS: process.env.CI 
+          ? 'http://0.0.0.0:5172'  // Bind to all interfaces in CI
+          : 'http://localhost:5172',
+        DatabaseProvider: 'SQLite',
+        ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
+        TEST_RESET_TOKEN: 'test-only-token',
+        // Disable connection pooling in CI to avoid locking
+        ...(process.env.CI && {
+          'ConnectionStrings__DefaultConnection': `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;`
+        })
+      },
+    },
+    {
+      // Angular Server configuration
+      command: process.env.CI ? 'npm run start:ci' : 'npm start',
+      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      url: 'http://localhost:4200',
+      timeout: 120 * 1000, // 2 minutes for Angular compilation
+      reuseExistingServer: !process.env.CI,
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env: {
+        PORT: '4200',
+        API_URL: 'http://localhost:5172',
+      },
+    }
+  ],
+  
+  /* Test categorization */
+  grep: (() => {
+    const testCategory = process.env.TEST_CATEGORY || 'all';
+    switch (testCategory) {
+      case 'smoke': return /@smoke/;
+      case 'critical': return /@critical/;
+      case 'extended': return /@extended/;
+      case 'all': 
+      default: return undefined;
+    }
+  })(),
+  
+  /* Reporter configuration - minimal output in CI, verbose locally */
+  reporter: process.env.CI 
+    ? [
+        ['dot'],  // Minimal console output
+        ['junit', { outputFile: './test-results/results.xml' }],  // For CI test publishing
+        ['github']  // GitHub annotations
+      ]
+    : [
+        ['list', { printSteps: false }],  // Local development
+        ['html', { outputFolder: './test-results/html', open: 'never' }]
+      ],
+  
+  /* Output directory */
+  outputDir: './test-results/artifacts',
+  
+  /* Test settings */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:4200',
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-    /* Take screenshot on failure */
+    
+    /* API base URL for backend tests */
+    extraHTTPHeaders: {
+      'X-Test-Run-Id': testRunId.toString(),
+    },
+    
+    /* Debugging aids */
+    trace: process.env.CI ? 'retain-on-failure' : 'off',
     screenshot: 'only-on-failure',
-    /* Record video on failure */
-    video: 'retain-on-failure',
-    /* Increase timeouts for better stability */
+    video: process.env.CI ? 'retain-on-failure' : 'off',
+    
+    /* Timeouts */
     actionTimeout: 10000,
     navigationTimeout: 30000,
-    /* Wait for network to be idle before considering navigation complete */
-    waitForLoadState: 'networkidle',
+    
+    expect: {
+      timeout: 5000,
+    },
   },
-
-  /* Configure projects for major browsers */
+  
+  /* Browser configuration */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+          ],
+        },
+      },
     },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    
+    /* Cross-browser testing */
+    ...(process.env.CROSS_BROWSER === 'true' ? [
+      {
+        name: 'firefox',
+        use: { ...devices['Desktop Firefox'] },
+      },
+      {
+        name: 'webkit', 
+        use: { ...devices['Desktop Safari'] },
+      },
+    ] : []),
   ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: [
-    {
-      command: 'cd ../../src/Api && dotnet run',
-      port: 5172,
-      reuseExistingServer: !process.env.CI,
-      env: {
-        ASPNETCORE_ENVIRONMENT: 'Development'
-      }
+  
+  /* Global teardown for cleanup */
+  globalTeardown: './tests/setup/webserver-teardown.ts',
+  
+  /* Metadata */
+  metadata: {
+    testRun: {
+      timestamp: new Date().toISOString(),
+      mode: 'webserver',
+      databaseFile: path.basename(databasePath),
+      category: process.env.TEST_CATEGORY || 'all',
     },
-    {
-      command: 'cd ../../src/Angular && npm start',
-      port: 4200,
-      reuseExistingServer: !process.env.CI,
-    }
-  ],
+  },
 });

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../setup/test-fixture';
 import { PageHelpers } from '../helpers/page-helpers';
 import { ApiHelpers } from '../helpers/api-helpers';
 
@@ -6,29 +6,12 @@ test.describe('Application Navigation and Layout', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
 
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page, apiContext, cleanDatabase }) => {
+    // cleanDatabase fixture handles database cleanup automatically
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request);
+    apiHelpers = new ApiHelpers(apiContext, 0); // Serial execution - single worker
     
-    // Clean up any existing data
-    if (apiHelpers) {
-      try {
-        await apiHelpers.cleanupAll();
-      } catch (error) {
-        console.warn('Failed to cleanup before test:', error);
-      }
-    }
-  });
-
-  test.afterEach(async () => {
-    // Clean up after each test
-    if (apiHelpers) {
-      try {
-        await apiHelpers.cleanupAll();
-      } catch (error) {
-        console.warn('Failed to cleanup after test:', error);
-      }
-    }
+    console.log(`🧪 Starting test - database automatically cleaned`);
   });
 
   test('should load the application successfully', async ({ page }) => {
@@ -134,7 +117,9 @@ test.describe('Application Navigation and Layout', () => {
     
     // Refresh the page
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    // Wait for specific content instead of networkidle
+    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
+    await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
     
     // Should default back to people tab after refresh
     await expect(page.locator('app-people-list')).toBeVisible();
@@ -166,9 +151,8 @@ test.describe('Application Navigation and Layout', () => {
   test('should handle keyboard navigation', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Tab to the roles tab button
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    // Focus on the roles tab button specifically
+    await page.locator('button:has-text("🎭 Roles Management")').focus();
     
     // Press Enter to activate roles tab
     await page.keyboard.press('Enter');

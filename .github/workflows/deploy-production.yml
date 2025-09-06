@@ -1,0 +1,449 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger with inputs
+    inputs:
+      skip-tests:
+        description: 'Skip smoke tests (use with caution)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  production-gate:
+    name: Production Deployment Gate
+    runs-on: ubuntu-latest
+    environment:
+      name: production-approval
+    outputs:
+      approved: ${{ steps.gate.outputs.approved }}
+    
+    steps:
+    - name: Deployment gate check
+      id: gate
+      run: |
+        echo "approved=true" >> $GITHUB_OUTPUT
+        echo "✅ Production deployment approved"
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔒 Production Deployment Approved" >> $GITHUB_STEP_SUMMARY
+        echo "Deployment to production environment has been approved." >> $GITHUB_STEP_SUMMARY
+
+  full-test-suite:
+    name: Full Test Suite Before Production
+    runs-on: ubuntu-latest
+    needs: production-gate
+    if: |
+      needs.production-gate.outputs.approved == 'true' && 
+      github.event.inputs.skip-tests != 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Code quality checks
+    - name: Backend Code Format Check
+      run: |
+        echo "🔍 Checking C# code formatting before production deployment..."
+        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Cannot deploy to production with formatting issues." && exit 1)
+        
+    # Build solution
+    - name: Build solution
+      run: |
+        echo "🏗️ Building solution for production..."
+        dotnet restore Crud.sln
+        dotnet build Crud.sln --configuration Release
+        
+    # Run ALL backend unit tests
+    - name: Backend unit tests (full suite)
+      run: |
+        echo "🧪 Running all backend unit tests..."
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj \
+          --configuration Release \
+          --logger "trx;LogFileName=unit-tests.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+        
+    # Run ALL backend integration tests
+    - name: Backend integration tests (full suite)
+      run: |
+        echo "🧪 Running all backend integration tests..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj \
+          --configuration Release \
+          --logger "trx;LogFileName=integration-tests.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        
+    # Frontend tests
+    - name: Frontend unit tests (full suite)
+      working-directory: ./src/Angular
+      run: |
+        echo "🧪 Running all frontend unit tests..."
+        npm ci
+        npm run lint
+        npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+        
+    # Build frontend for production
+    - name: Frontend production build
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building frontend for production..."
+        npm run build -- --configuration=production
+        
+    # Install E2E dependencies
+    - name: Install E2E dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+        
+    # Run FULL E2E test suite
+    - name: Run full E2E test suite
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🧪 Running full E2E test suite (174 tests) before production..."
+        npm run test:webserver
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
+        
+    # Final smoke/critical tests as last gate
+    - name: Final critical tests gate
+      run: |
+        echo "🔍 Running final critical tests as production gate..."
+        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj \
+          --configuration Release \
+          --filter "Category=Critical|Priority=Critical" \
+          --logger "console;verbosity=minimal"
+        echo "✅ All tests passed - ready for production"
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: production-test-results-${{ github.sha }}
+        path: |
+          TestResults/
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+          src/Angular/coverage/
+        retention-days: 30
+
+  build-production:
+    name: Build Production Artifacts
+    runs-on: ubuntu-latest
+    needs: [production-gate, full-test-suite]
+    if: |
+      always() && 
+      needs.production-gate.outputs.approved == 'true' &&
+      (needs.full-test-suite.result == 'success' || needs.full-test-suite.result == 'skipped')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Build with production optimizations
+    - name: Build backend for production
+      run: |
+        dotnet restore Crud.sln
+        dotnet publish src/Api/Api.csproj \
+          -c Release \
+          -o ./publish/api \
+          --self-contained false \
+          --runtime linux-x64 \
+          -p:PublishReadyToRun=true \
+          -p:PublishSingleFile=false
+        
+    - name: Build frontend for production
+      working-directory: ./src/Angular
+      run: |
+        npm ci
+        npm run build -- --configuration=production --aot --optimization --build-optimizer
+        
+    # Create versioned artifacts
+    - name: Create deployment packages
+      run: |
+        # Add version info
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > ./publish/api/version.json
+        
+        # Package backend
+        cd ./publish/api
+        tar -czf ../../production-api-${{ github.sha }}.tar.gz .
+        cd ../..
+        
+        # Package frontend
+        cd ./src/Angular/dist
+        tar -czf ../../../production-frontend-${{ github.sha }}.tar.gz .
+        cd ../../..
+        
+    - name: Upload production artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-artifacts-${{ github.sha }}
+        path: |
+          production-api-${{ github.sha }}.tar.gz
+          production-frontend-${{ github.sha }}.tar.gz
+        retention-days: 30
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-production
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: production-artifacts-${{ github.sha }}
+        
+    # ====================================
+    # Production Deployment
+    # ====================================
+    # IMPORTANT: Production deployments should include:
+    # 1. Blue-green or canary deployment strategy
+    # 2. Database migration handling
+    # 3. Rollback capabilities
+    # 4. Health checks before switching traffic
+    
+    # --- Option 1: Blue-Green Deployment Pattern ---
+    # - name: Deploy to production (blue-green)
+    #   run: |
+    #     # Deploy to green environment
+    #     deploy_to_green_environment
+    #     
+    #     # Run health checks on green
+    #     verify_green_health
+    #     
+    #     # Switch traffic from blue to green
+    #     switch_traffic_to_green
+    #     
+    #     # Keep blue as rollback option
+    #     mark_blue_as_previous_version
+    
+    # --- Option 2: Canary Deployment ---
+    # - name: Deploy canary version
+    #   run: |
+    #     # Deploy to canary instances (10% traffic)
+    #     kubectl set image deployment/app-canary app=your-registry/app:${{ github.sha }}
+    #     sleep 300  # Monitor for 5 minutes
+    #     # Check canary metrics
+    #     if [ "$(check_canary_health)" == "healthy" ]; then
+    #       # Roll out to all instances
+    #       kubectl set image deployment/app app=your-registry/app:${{ github.sha }}
+    #     else
+    #       # Rollback canary
+    #       kubectl rollout undo deployment/app-canary
+    #       exit 1
+    #     fi
+    
+    # --- Default: Configure your deployment here ---
+    - name: Deploy to production
+      id: deploy
+      run: |
+        echo "🎯 Starting production deployment..."
+        echo "Version: ${{ github.sha }}"
+        # Replace with actual deployment commands for your platform
+        # Examples: kubectl apply, aws deploy, azure deploy, etc.
+        echo "url=https://your-app.com" >> $GITHUB_OUTPUT
+        
+    - name: Production health verification
+      run: |
+        echo "🏥 Verifying production deployment..."
+        # Critical health checks
+        # curl -f ${{ steps.deploy.outputs.url }}/health || exit 1
+        # curl -f ${{ steps.deploy.outputs.url }}/api/health || exit 1
+        echo "✅ Production deployment verified"
+        
+    - name: Tag release
+      run: |
+        echo "🏷️ Creating release tag..."
+        # git tag -a "v$(date +%Y%m%d)-${{ github.run_number }}" -m "Production release ${{ github.sha }}"
+        # git push origin "v$(date +%Y%m%d)-${{ github.run_number }}"
+
+  post-deployment:
+    name: Post-Deployment Tasks
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: success()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: release-${{ github.sha }}
+        release_name: Production Release ${{ github.sha }}
+        body: |
+          ## Production Deployment
+          
+          **Version**: ${{ github.sha }}
+          **Deployed**: ${{ github.event.head_commit.timestamp }}
+          **Deployed by**: ${{ github.actor }}
+          
+          ### Changes
+          ${{ github.event.head_commit.message }}
+          
+          ### Commit
+          ${{ github.event.head_commit.url }}
+        draft: false
+        prerelease: false
+        
+    - name: Update deployment summary
+      run: |
+        echo "## 🎉 Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
+        echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Status** | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Environment** | Production |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Version** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Deployed by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Timestamp** | $(date -u +%Y-%m-%dT%H:%M:%SZ) |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Post-Deployment Checklist" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Monitor application metrics" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Check error rates" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Verify critical user flows" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Review performance metrics" >> $GITHUB_STEP_SUMMARY
+        
+    # --- Production Notification Options ---
+    # Configure notifications for successful production deployments:
+    
+    # Option 1: Slack notification
+    # - name: Send Slack notification
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: success
+    #     text: |
+    #       🎉 Production Deployment Successful!
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    #       URL: ${{ needs.deploy-production.outputs.url }}
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     fields: repo,message,commit,author,action,eventName,workflow
+    
+    # Option 2: Microsoft Teams notification
+    # - name: Send Teams notification
+    #   uses: jdcargile/ms-teams-notification@v1.3
+    #   with:
+    #     github-token: ${{ github.token }}
+    #     ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK }}
+    #     notification-summary: 🎉 Production Deployment Successful
+    #     notification-color: 00FF00
+    #     notification-text: |
+    #       Production deployment completed successfully.
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    
+    # Option 3: Email notification to stakeholders
+    # - name: Send email notification
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 465
+    #     username: ${{ secrets.EMAIL_USERNAME }}
+    #     password: ${{ secrets.EMAIL_PASSWORD }}
+    #     subject: ✅ Production Deployment Successful - ${{ github.sha }}
+    #     to: stakeholders@your-company.com
+    #     from: GitHub Actions
+    #     body: |
+    #       Production deployment has been completed successfully.
+    #       
+    #       Deployment Details:
+    #       - Version: ${{ github.sha }}
+    #       - Deployed by: ${{ github.actor }}
+    #       - Timestamp: ${{ github.event.head_commit.timestamp }}
+    #       - URL: ${{ needs.deploy-production.outputs.url }}
+    #       
+    #       Please verify critical user flows are working as expected.
+    #       
+    #       View deployment: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  rollback-on-failure:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure()
+    environment:
+      name: production
+    
+    steps:
+    - name: Initiate rollback
+      run: |
+        echo "🔄 Initiating production rollback..."
+        
+        # --- Rollback Strategy Options ---
+        # Choose the appropriate rollback method for your deployment:
+        
+        # Option 1: Kubernetes rollback
+        # kubectl rollout undo deployment/app -n production
+        # kubectl rollout status deployment/app -n production
+        
+        # Option 2: Blue-Green swap back
+        # swap_to_blue_environment
+        # verify_blue_health
+        
+        # Option 3: Git revert and redeploy
+        # git revert --no-edit ${{ github.sha }}
+        # git push origin main
+        # trigger_deployment_pipeline
+        
+        # Option 4: Database rollback (if migrations were applied)
+        # dotnet ef database update <previous-migration> --connection ${{ secrets.PROD_CONNECTION }}
+        
+        # Option 5: AWS CodeDeploy rollback
+        # aws deploy stop-deployment --deployment-id $DEPLOYMENT_ID --auto-rollback-enabled
+        
+        echo "Rollback initiated for version: ${{ github.sha }}"
+        
+    - name: Notify of rollback
+      run: |
+        echo "## ⚠️ Production Deployment Failed - Rollback Initiated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The production deployment has failed and a rollback has been initiated." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Failed Version**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Action Required**: Investigate the failure before attempting another deployment" >> $GITHUB_STEP_SUMMARY

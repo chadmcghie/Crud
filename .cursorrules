@@ -81,7 +81,7 @@ Each project has its own `.cursorrules` file with specific guidelines:
 - `test/Tests.*.cursorrules` - Testing strategies and patterns
 
 ## Getting Started
-1. Clone the repository and open `Crud.All.sln`
+1. Clone the repository and open `Crud.sln`
 2. Restore NuGet packages and npm dependencies
 3. Review the documentation in the `docs/` directory
 4. Follow the project-specific guidelines in each `.cursorrules` file

@@ -104,19 +104,73 @@ export function generateRandomString(length: number = 8): string {
   return result;
 }
 
-export function generateTestRole(overrides: Partial<TestRole> = {}): TestRole {
+// Get worker-specific prefix for test isolation
+export function getWorkerPrefix(workerIndex?: number): string {
+  // Use provided workerIndex or fallback to environment variable or default
+  const workerId = workerIndex !== undefined ? workerIndex.toString() : (process.env.TEST_WORKER_INDEX || '0');
+  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  const randomSuffix = generateRandomString(4); // Add extra randomness
+  return `W${workerId}_T${timestamp}_${randomSuffix}`;
+}
+
+export function generateTestRole(overrides: Partial<TestRole> = {}, workerIndex?: number): TestRole {
+  // If name is explicitly provided in overrides, use it exactly as-is
+  if (overrides.name) {
+    return {
+      name: overrides.name,
+      description: overrides.description || `Test role for ${overrides.name}`,
+      // Apply any other overrides
+      ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'name' && key !== 'description'))
+    };
+  }
+  
+  // Otherwise generate a unique name with prefix
+  const prefix = getWorkerPrefix(workerIndex);
+  const workerId = workerIndex !== undefined ? workerIndex : 0;
+  
   return {
-    name: `Test Role ${generateRandomString(4)}`,
-    description: `Auto-generated test role - ${generateRandomString(6)}`,
-    ...overrides
+    name: `${prefix}_Role_${generateRandomString(4)}`,
+    description: overrides.description || `Worker${workerId}: Auto-generated test role - ${generateRandomString(6)}`,
+    // Apply any other overrides
+    ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'name' && key !== 'description'))
   };
 }
 
-export function generateTestPerson(overrides: Partial<TestPerson> = {}): TestPerson {
+export function generateTestPerson(overrides: Partial<TestPerson> = {}, workerIndex?: number): TestPerson {
+  // If fullName is explicitly provided in overrides, use it exactly as-is
+  if (overrides.fullName) {
+    return {
+      fullName: overrides.fullName,
+      phone: overrides.phone || `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
+      // Apply any other overrides
+      ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'fullName' && key !== 'phone'))
+    };
+  }
+  
+  // Generate realistic names for testing
+  const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'Robert', 'Maria', 'David', 'Emily', 'James', 'Lisa'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+  
+  // Use worker index and timestamp to ensure uniqueness
+  const workerId = workerIndex !== undefined ? workerIndex : 0;
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of timestamp
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  
+  // Create a realistic but unique name without special characters
+  // Use middle name instead of initial to avoid periods
+  const middleNames = ['Anne', 'Lee', 'Marie', 'Lynn', 'Rose', 'Ray', 'Jay', 'Kay', 'Max', 'Sky'];
+  const middleName = middleNames[Math.floor(Math.random() * middleNames.length)];
+  // Add letter suffix for uniqueness (no numbers allowed in names)
+  const suffixLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const uniqueSuffix = workerId > 0 ? ` ${suffixLetters[workerId % 10]}` : '';
+  const fullName = `${firstName} ${middleName} ${lastName}${uniqueSuffix}`;
+  
   return {
-    fullName: `Test Person ${generateRandomString(4)}`,
-    phone: `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
-    ...overrides
+    fullName: fullName,
+    phone: overrides.phone || `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
+    // Apply any other overrides
+    ...Object.fromEntries(Object.entries(overrides).filter(([key]) => key !== 'fullName' && key !== 'phone'))
   };
 }
 

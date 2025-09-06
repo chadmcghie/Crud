@@ -1,5 +1,7 @@
 using Api.Dtos;
-using App.Abstractions;
+using App.Features.People;
+using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -7,67 +9,42 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class PeopleController(IPersonService people) : ControllerBase
+public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> List(CancellationToken ct)
     {
-        var items = await people.ListAsync(ct);
-        return Ok(items.Select(p => new PersonResponse(
-            p.Id,
-            p.FullName,
-            p.Phone,
-            p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))
-        )));
+        var items = await mediator.Send(new ListPeopleQuery(), ct);
+        return Ok(mapper.Map<IEnumerable<PersonResponse>>(items));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
-        var p = await people.GetAsync(id, ct);
-        if (p is null) return NotFound();
-        return Ok(new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
+        var p = await mediator.Send(new GetPersonQuery(id), ct);
+        if (p is null)
+            return NotFound();
+        return Ok(mapper.Map<PersonResponse>(p));
     }
 
     [HttpPost]
     public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request, CancellationToken ct)
     {
-        try
-        {
-            var p = await people.CreateAsync(request.FullName, request.Phone, request.RoleIds, ct);
-            return CreatedAtAction(nameof(Get), new { id = p.Id }, new PersonResponse(p.Id, p.FullName, p.Phone, p.Roles.Select(r => new RoleResponse(r.Id, r.Name, r.Description))));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
+        return CreatedAtAction(nameof(Get), new { id = p.Id }, mapper.Map<PersonResponse>(p));
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonRequest request, CancellationToken ct)
     {
-        try
-        {
-            await people.UpdateAsync(id, request.FullName, request.Phone, request.RoleIds, ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        try
-        {
-            await people.DeleteAsync(id, ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(new DeletePersonCommand(id), ct);
+        return NoContent();
     }
 }

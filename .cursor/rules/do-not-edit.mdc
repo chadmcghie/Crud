@@ -1,7 +1,4 @@
 ---
-description: do not edit my docs files or folder
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
-
 Do not edit, delete, or create files or folders in the Crud\docs directory

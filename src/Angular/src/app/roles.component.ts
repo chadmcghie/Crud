@@ -1,8 +1,9 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api.service';
+import { CustomValidators } from './validators/custom-validators';
 
 @Component({
   selector: 'app-roles',
@@ -24,7 +25,9 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
             [class.error]="isFieldInvalid('name')"
           />
           <div class="error-message" *ngIf="isFieldInvalid('name')">
-            Role name is required
+            <span *ngIf="form.get('name')?.errors?.['required']">Role name is required</span>
+            <span *ngIf="form.get('name')?.errors?.['invalidRoleName']">{{ form.get('name')?.errors?.['invalidRoleName'] }}</span>
+            <span *ngIf="form.get('name')?.errors?.['maxLength']">{{ form.get('name')?.errors?.['maxLength'] }}</span>
           </div>
         </div>
 
@@ -36,8 +39,12 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
             formControlName="description" 
             class="form-control textarea"
             rows="3"
+            [class.error]="isFieldInvalid('description')"
           ></textarea>
-          <div class="help-text">
+          <div class="error-message" *ngIf="isFieldInvalid('description')">
+            <span *ngIf="form.get('description')?.errors?.['maxlength']">Description cannot exceed 500 characters</span>
+          </div>
+          <div class="help-text" *ngIf="!isFieldInvalid('description')">
             Provide a brief description of this role's responsibilities and permissions.
           </div>
         </div>
@@ -52,6 +59,9 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
           <button type="button" class="btn btn-outline" (click)="onReset()" [disabled]="isSubmitting">
             Reset
           </button>
+        </div>
+        <div class="error-alert" *ngIf="error">
+          {{ error }}
         </div>
       </form>
     </div>
@@ -182,6 +192,16 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
       background: #28a745;
       color: white;
     }
+    
+    .error-alert {
+      margin-top: 16px;
+      padding: 12px;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      color: #721c24;
+      font-size: 14px;
+    }
   `]
 })
 export class RolesComponent implements OnInit, OnChanges {
@@ -191,11 +211,15 @@ export class RolesComponent implements OnInit, OnChanges {
 
   form: FormGroup;
   isSubmitting = false;
+  error: string | null = null;
+  
+  private api = inject(ApiService);
+  private fb = inject(FormBuilder);
 
-  constructor(private api: ApiService, private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
-      name: ['', Validators.required],
-      description: ['']
+      name: ['', [Validators.required, CustomValidators.roleName()]],
+      description: ['', [Validators.maxLength(500)]]
     });
   }
 
@@ -248,8 +272,9 @@ export class RolesComponent implements OnInit, OnChanges {
             this.isSubmitting = false;
             this.roleSaved.emit(this.editingRole!);
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error updating role:', error);
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
@@ -261,8 +286,9 @@ export class RolesComponent implements OnInit, OnChanges {
             this.roleSaved.emit(role);
             this.resetForm();
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error creating role:', error);
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
@@ -280,5 +306,23 @@ export class RolesComponent implements OnInit, OnChanges {
 
   private resetForm() {
     this.form.reset();
+    this.error = null;
+  }
+
+  private handleApiError(error: unknown) {
+    const httpError = error as { error?: { errors?: Record<string, string[]>; detail?: string; title?: string } };
+    if (httpError.error?.errors) {
+      const errors = httpError.error.errors;
+      const errorMessages = Object.keys(errors).map(key => 
+        `${key}: ${errors[key].join(', ')}`
+      ).join('; ');
+      this.error = errorMessages;
+    } else if (httpError.error?.detail) {
+      this.error = httpError.error.detail;
+    } else if (httpError.error?.title) {
+      this.error = httpError.error.title;
+    } else {
+      this.error = 'An error occurred. Please check your input and try again.';
+    }
   }
 }
