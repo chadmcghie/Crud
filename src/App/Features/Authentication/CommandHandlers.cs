@@ -201,8 +201,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             throw;
         }
     }
-
-
 }
 
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, AuthenticationResponse>

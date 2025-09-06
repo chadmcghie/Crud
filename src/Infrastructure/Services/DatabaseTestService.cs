@@ -86,8 +86,6 @@ public class DatabaseTestService
     private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
-        // CodeQL: Connection string is masked before logging to prevent sensitive data exposure
-        _logger.LogInformation("Connection string: {ConnectionString}", MaskConnectionString(connectionString)); // lgtm[cs/cleartext-storage-of-sensitive-information]
         var startTime = DateTime.UtcNow;
 
         // Use mutex to ensure only one reset operation at a time
