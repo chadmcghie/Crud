@@ -4,14 +4,14 @@
 
 ## Tasks
 
-- [ ] 1. Angular Authentication Service (Issue: #97)
-  - [ ] 1.1 Write tests for AuthService
-  - [ ] 1.2 Create AuthService with login/register methods
-  - [ ] 1.3 Implement token storage and management
-  - [ ] 1.4 Add current user state with BehaviorSubject
-  - [ ] 1.5 Implement automatic token refresh logic
-  - [ ] 1.6 Add logout functionality
-  - [ ] 1.7 Verify all service tests pass
+- [x] 1. Angular Authentication Service (Issue: #97)
+  - [x] 1.1 Write tests for AuthService
+  - [x] 1.2 Create AuthService with login/register methods
+  - [x] 1.3 Implement token storage and management
+  - [x] 1.4 Add current user state with BehaviorSubject
+  - [x] 1.5 Implement automatic token refresh logic
+  - [x] 1.6 Add logout functionality
+  - [x] 1.7 Verify all service tests pass
 
 - [ ] 2. Login/Register UI Components (Issue: #98)
   - [ ] 2.1 Write tests for LoginComponent
