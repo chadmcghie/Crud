@@ -3,8 +3,7 @@ using Infrastructure.Data;
 using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Respawn;
-using Respawn.Graph;
+
 
 namespace Infrastructure.Services;
 
@@ -49,7 +48,7 @@ public class DatabaseTestService
     /// <summary>
     /// Resets the database to a clean state, removing all data while preserving schema.
     /// In CI/Docker environments, uses file deletion for better performance.
-    /// Uses Respawn when possible, falls back to EF Core for SQLite compatibility.
+    /// Uses EF Core cleanup for SQLite compatibility.
     /// </summary>
     /// <param name="workerIndex">The worker index for parallel test execution</param>
     /// <param name="seedData">Whether to seed initial test data after reset (default: false)</param>
