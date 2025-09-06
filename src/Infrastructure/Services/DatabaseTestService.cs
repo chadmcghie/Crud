@@ -66,7 +66,7 @@ public class DatabaseTestService
             if (Environment.GetEnvironmentVariable("CI") == "true" &&
                 !string.IsNullOrEmpty(connectionString))
             {
-                await ResetByFileDeletionAsync(connectionString, workerIndex, seedData);
+                await ResetByFileDeletionAsync(workerIndex, seedData);
                 return;
             }
 
@@ -83,7 +83,7 @@ public class DatabaseTestService
     /// <summary>
     /// Resets database by deleting the file and recreating it (fastest for CI/Docker)
     /// </summary>
-    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
+    private async Task ResetByFileDeletionAsync(int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
         var startTime = DateTime.UtcNow;
