@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 
@@ -139,7 +139,7 @@ import { Router, RouterModule } from '@angular/router';
   `]
 })
 export class UnauthorizedComponent {
-  constructor(private router: Router) {}
+  private router = inject(Router);
 
   goBack(): void {
     window.history.back();

@@ -1,8 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+interface ErrorResponse {
+  error?: {
+    error?: string;
+  };
+}
 
 @Component({
   selector: 'app-reset-password',
@@ -12,6 +19,11 @@ import { AuthService } from '../../auth.service';
   styleUrls: ['./reset-password.component.css']
 })
 export class ResetPasswordComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  
   resetPasswordForm!: FormGroup;
   loading = false;
   errorMessage = '';
@@ -19,13 +31,6 @@ export class ResetPasswordComponent implements OnInit {
   tokenValid = true;
   showPassword = false;
   showConfirmPassword = false;
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
 
   ngOnInit(): void {
     this.resetPasswordForm = this.fb.group({
@@ -49,7 +54,7 @@ export class ResetPasswordComponent implements OnInit {
       next: () => {
         this.tokenValid = true;
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse & ErrorResponse) => {
         this.tokenValid = false;
         this.errorMessage = error.error?.error || 'Invalid or expired reset token';
       }
@@ -123,7 +128,7 @@ export class ResetPasswordComponent implements OnInit {
           queryParams: { message: 'Password reset successful. Please login with your new password.' }
         });
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse & ErrorResponse) => {
         this.loading = false;
         if (error.error?.error) {
           this.errorMessage = error.error.error;

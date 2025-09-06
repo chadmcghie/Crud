@@ -1,8 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from './auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    roles: string[];
+  };
+}
+
+interface ErrorResponse {
+  error?: {
+    message?: string;
+  };
+}
 
 @Component({
   selector: 'app-register',
@@ -12,16 +29,14 @@ import { AuthService } from './auth.service';
   styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
+  private formBuilder = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  
   registerForm!: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.registerForm = this.formBuilder.group({
@@ -61,7 +76,7 @@ export class RegisterComponent implements OnInit {
     const { email, password, confirmPassword } = this.registerForm.value;
 
     this.authService.register(email, password, confirmPassword).subscribe({
-      next: (response) => {
+      next: (_response: AuthResponse) => {
         this.successMessage = 'Registration successful! Logging you in...';
         this.loading = false;
         
@@ -71,7 +86,7 @@ export class RegisterComponent implements OnInit {
             next: () => {
               this.router.navigate(['/']);
             },
-            error: (error) => {
+            error: (_error: HttpErrorResponse & ErrorResponse) => {
               this.errorMessage = 'Registration successful but login failed. Please try logging in manually.';
               setTimeout(() => {
                 this.router.navigate(['/login']);
@@ -80,7 +95,7 @@ export class RegisterComponent implements OnInit {
           });
         }, 1000); // Give user time to see success message
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse & ErrorResponse) => {
         this.loading = false;
         this.errorMessage = error?.error?.message || 'An error occurred during registration. Please try again.';
       }

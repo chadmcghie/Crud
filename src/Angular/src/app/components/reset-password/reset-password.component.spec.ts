@@ -11,7 +11,7 @@ describe('ResetPasswordComponent', () => {
   let fixture: ComponentFixture<ResetPasswordComponent>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
-  let activatedRoute: any;
+  let activatedRoute: { queryParams: unknown; };
 
   beforeEach(async () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['resetPassword', 'validateResetToken']);

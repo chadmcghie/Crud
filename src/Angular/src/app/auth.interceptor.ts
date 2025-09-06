@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpInterceptor,
+  HttpInterceptorFn,
   HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
@@ -11,17 +11,33 @@ import { catchError, filter, take, switchMap, finalize } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
+interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Functional interceptor (preferred approach)
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  // Create a temporary instance to use existing logic
+  const interceptorInstance = new AuthInterceptor();
+  
+  // Mock HttpHandler for compatibility
+  const handler: HttpHandler = {
+    handle: (request: HttpRequest<unknown>) => next(request)
+  };
+  
+  return interceptorInstance.intercept(req, handler);
+};
+
+// Legacy class-based interceptor for backward compatibility
+export class AuthInterceptor {
   private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Skip authentication for auth endpoints
     if (this.isAuthEndpoint(request.url)) {
       return next.handle(request);
@@ -48,7 +64,7 @@ export class AuthInterceptor implements HttpInterceptor {
     );
   }
 
-  private addToken(request: HttpRequest<any>, token: string): HttpRequest<any> {
+  private addToken(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
     return request.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -56,7 +72,7 @@ export class AuthInterceptor implements HttpInterceptor {
     });
   }
 
-  private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  private handle401Error(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Don't retry auth endpoints
     if (this.isAuthEndpoint(request.url)) {
       return throwError(() => new HttpErrorResponse({ status: 401 }));
@@ -67,7 +83,7 @@ export class AuthInterceptor implements HttpInterceptor {
       this.refreshTokenSubject.next(null);
 
       return this.authService.refreshToken().pipe(
-        switchMap((tokenResponse: any) => {
+        switchMap((tokenResponse: TokenResponse) => {
           this.isRefreshing = false;
           this.refreshTokenSubject.next(tokenResponse.accessToken);
           

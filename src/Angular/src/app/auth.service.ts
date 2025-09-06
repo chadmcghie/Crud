@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError, timer, of } from 'rxjs';
-import { tap, catchError, switchMap, retry } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, catchError, retry } from 'rxjs/operators';
 
 interface User {
   id: string;
@@ -27,10 +27,12 @@ export class AuthService {
   private readonly apiUrl = 'http://localhost:5172/api';
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser$: Observable<User | null>;
-  private refreshTokenTimeout: any;
+  private refreshTokenTimeout: ReturnType<typeof setTimeout> | null = null;
   private useLocalStorage = false;
 
-  constructor(private http: HttpClient) {
+  private http = inject(HttpClient);
+
+  constructor() {
     // Check if there's an access token in storage
     const hasToken = !!(localStorage.getItem('access_token') || sessionStorage.getItem('access_token'));
     if (hasToken) {
@@ -84,7 +86,7 @@ export class AuthService {
     );
   }
 
-  logout(): Observable<any> {
+  logout(): Observable<unknown> {
     this.clearTokenRefreshTimer();
     
     // Clear local state immediately
@@ -169,7 +171,7 @@ export class AuthService {
         return;
       }
 
-      const payload = JSON.parse(atob(parts[1]));
+      const payload = JSON.parse(atob(parts[1])) as { exp: number; };
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const timeUntilRefresh = expirationTime - currentTime - 60000; // Refresh 1 minute before expiration
@@ -200,7 +202,7 @@ export class AuthService {
     }
   }
 
-  private storeTokens(accessToken: string, refreshToken: string): void {
+  private storeTokens(accessToken: string, _refreshToken: string): void {
     if (this.useLocalStorage) {
       localStorage.setItem('access_token', accessToken);
       sessionStorage.removeItem('access_token');
@@ -242,7 +244,7 @@ export class AuthService {
   }
 
   // Password Reset Methods with Rate Limiting Awareness
-  forgotPassword(email: string): Observable<any> {
+  forgotPassword(email: string): Observable<unknown> {
     return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email })
       .pipe(
         catchError(error => {
@@ -259,7 +261,7 @@ export class AuthService {
       );
   }
 
-  resetPassword(token: string, newPassword: string): Observable<any> {
+  resetPassword(token: string, newPassword: string): Observable<unknown> {
     return this.http.post(`${this.apiUrl}/auth/reset-password`, { 
       token, 
       newPassword 
@@ -278,7 +280,7 @@ export class AuthService {
     );
   }
 
-  validateResetToken(token: string): Observable<any> {
+  validateResetToken(token: string): Observable<unknown> {
     return this.http.post(`${this.apiUrl}/auth/validate-reset-token`, { token })
       .pipe(
         catchError(error => {

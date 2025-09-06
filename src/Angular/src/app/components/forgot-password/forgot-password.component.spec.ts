@@ -10,7 +10,7 @@ describe('ForgotPasswordComponent', () => {
   let component: ForgotPasswordComponent;
   let fixture: ComponentFixture<ForgotPasswordComponent>;
   let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  // Router is injected but not used in these tests
 
   beforeEach(async () => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['forgotPassword']);
@@ -34,7 +34,7 @@ describe('ForgotPasswordComponent', () => {
     }).compileComponents();
 
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    // Router setup handled by TestBed
     fixture = TestBed.createComponent(ForgotPasswordComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

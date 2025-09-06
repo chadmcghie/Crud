@@ -1,0 +1,39 @@
+name: Enforce Branch Flow Policy
+on:
+  pull_request:
+    branches: 
+      - main
+      - staging
+
+jobs:
+  validate-branch-flow:
+    name: Validate PR Source Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check main can only receive from staging
+        if: github.base_ref == 'main' && github.head_ref != 'staging'
+        run: |
+          echo "❌ ERROR: Direct PRs to 'main' are not allowed!"
+          echo "📋 Policy: main ← staging ← dev"
+          echo ""
+          echo "Current PR: ${{ github.head_ref }} → ${{ github.base_ref }}"
+          echo ""
+          echo "Please change your PR to target 'dev' instead."
+          echo "The flow to production is: dev → staging → main"
+          exit 1
+      
+      - name: Check staging can only receive from dev  
+        if: github.base_ref == 'staging' && github.head_ref != 'dev'
+        run: |
+          echo "❌ ERROR: PRs to 'staging' must come from 'dev' branch!"
+          echo "📋 Policy: main ← staging ← dev"
+          echo ""
+          echo "Current PR: ${{ github.head_ref }} → ${{ github.base_ref }}"
+          echo ""
+          echo "Please merge to 'dev' first, then create PR from dev to staging."
+          exit 1
+      
+      - name: Branch flow validation passed
+        run: |
+          echo "✅ Branch flow validation passed!"
+          echo "Current PR: ${{ github.head_ref }} → ${{ github.base_ref }}"

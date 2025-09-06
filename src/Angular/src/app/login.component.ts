@@ -1,8 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from './auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+interface ErrorResponse {
+  error?: {
+    message?: string;
+  };
+}
 
 @Component({
   selector: 'app-login',
@@ -12,17 +19,15 @@ import { AuthService } from './auth.service';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
+  private formBuilder = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  
   loginForm!: FormGroup;
   loading = false;
   errorMessage = '';
   returnUrl = '/';
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
 
   ngOnInit(): void {
     this.loginForm = this.formBuilder.group({
@@ -50,7 +55,7 @@ export class LoginComponent implements OnInit {
         this.router.navigate([this.returnUrl]);
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse & ErrorResponse) => {
         this.loading = false;
         this.errorMessage = error?.error?.message || 'An error occurred during login. Please try again.';
       }

@@ -4,11 +4,22 @@ import { RoleGuard } from './role.guard';
 import { AuthService } from './auth.service';
 import { BehaviorSubject } from 'rxjs';
 
+interface User {
+  id: string;
+  email: string;
+  roles?: string[] | null;
+}
+
+interface MockRouterStateSnapshot {
+  url: string;
+  root: unknown;
+}
+
 describe('RoleGuard', () => {
   let guard: RoleGuard;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
-  let currentUserSubject: BehaviorSubject<any>;
+  let currentUserSubject: BehaviorSubject<User | null>;
 
   beforeEach(() => {
     currentUserSubject = new BehaviorSubject(null);
@@ -81,7 +92,7 @@ describe('RoleGuard', () => {
       const route = createRouteSnapshot(['admin']);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const state = { url: '/admin/dashboard', root: null } as any;
+      const state: MockRouterStateSnapshot = { url: '/admin/dashboard', root: null };
 
       const result = guard.canActivate(route, state);
 
@@ -174,7 +185,7 @@ describe('RoleGuard', () => {
       authService.isAuthenticated.and.returnValue(false);
       currentUserSubject.next(null);
       const route = { data: { roles: ['admin'] }, path: 'admin' };
-      const segments = [{ path: 'admin', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } as any }];
+      const segments = [{ path: 'admin', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } }];
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
 
@@ -263,7 +274,7 @@ describe('RoleGuard', () => {
     it('should handle user with null roles', () => {
       authService.isAuthenticated.and.returnValue(true);
       authService.hasRole.and.returnValue(false);
-      currentUserSubject.next({ id: '1', email: 'test@example.com', roles: null });
+      currentUserSubject.next({ id: '1', email: 'test@example.com', roles: null } as User);
       const route = createRouteSnapshot(['admin']);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
@@ -309,13 +320,13 @@ describe('RoleGuard', () => {
         outlet: 'primary',
         component: null,
         routeConfig: {},
-        root: null as any,
+        root: null,
         parent: null,
         firstChild: null,
         children: [],
         pathFromRoot: [],
-        paramMap: null as any,
-        queryParamMap: null as any,
+        paramMap: null,
+        queryParamMap: null,
         data: {},
         title: undefined
       } as ActivatedRouteSnapshot;
@@ -338,13 +349,13 @@ describe('RoleGuard', () => {
       outlet: 'primary',
       component: null,
       routeConfig: { data: roles ? { roles } : {} },
-      root: null as any,
+      root: null,
       parent: null,
       firstChild: null,
       children: [],
       pathFromRoot: [],
-      paramMap: null as any,
-      queryParamMap: null as any,
+      paramMap: null,
+      queryParamMap: null,
       title: undefined
     } as ActivatedRouteSnapshot;
   }

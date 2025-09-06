@@ -1,8 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+interface ErrorResponse {
+  error?: {
+    error?: string;
+  };
+}
 
 @Component({
   selector: 'app-forgot-password',
@@ -12,16 +19,14 @@ import { AuthService } from '../../auth.service';
   styleUrls: ['./forgot-password.component.css']
 })
 export class ForgotPasswordComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  
   forgotPasswordForm!: FormGroup;
   loading = false;
   successMessage = '';
   errorMessage = '';
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.forgotPasswordForm = this.fb.group({
@@ -50,7 +55,7 @@ export class ForgotPasswordComponent implements OnInit {
         this.successMessage = 'Password reset instructions have been sent to your email address.';
         this.forgotPasswordForm.reset();
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse & ErrorResponse) => {
         this.loading = false;
         if (error.error?.error) {
           this.errorMessage = error.error.error;

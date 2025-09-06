@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import { 
-  CanActivate, 
-  CanActivateChild, 
-  CanLoad, 
-  CanMatch,
+  CanActivateFn,
+  CanActivateChildFn,
+  CanLoadFn,
+  CanMatchFn,
   Router, 
   UrlTree, 
   Route, 
@@ -13,52 +13,86 @@ import {
 } from '@angular/router';
 import { AuthService } from './auth.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthGuard implements CanActivate, CanActivateChild, CanLoad, CanMatch {
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+function checkAuth(authService: AuthService, router: Router, returnUrl?: string): boolean | UrlTree {
+  if (authService.isAuthenticated()) {
+    return true;
+  }
+
+  // Redirect to login page with return URL
+  const queryParams = returnUrl ? { returnUrl } : undefined;
+  return router.createUrlTree(['/login'], { queryParams });
+}
+
+export const canActivateGuard: CanActivateFn = (
+  _route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+): boolean | UrlTree => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return checkAuth(authService, router, state?.url);
+};
+
+export const canActivateChildGuard: CanActivateChildFn = (
+  _childRoute: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+): boolean | UrlTree => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return checkAuth(authService, router, state?.url);
+};
+
+export const canLoadGuard: CanLoadFn = (
+  _route: Route,
+  segments: UrlSegment[]
+): boolean | UrlTree => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
+  return checkAuth(authService, router, url);
+};
+
+export const canMatchGuard: CanMatchFn = (
+  _route: Route,
+  segments: UrlSegment[]
+): boolean | UrlTree => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
+  return checkAuth(authService, router, url);
+};
+
+// Legacy class-based guard for backward compatibility
+export class AuthGuard {
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   canActivate(
-    route?: ActivatedRouteSnapshot,
+    _route?: ActivatedRouteSnapshot,
     state?: RouterStateSnapshot
   ): boolean | UrlTree {
-    return this.checkAuth(state?.url);
+    return checkAuth(this.authService, this.router, state?.url);
   }
 
   canActivateChild(
-    childRoute?: ActivatedRouteSnapshot,
+    _childRoute?: ActivatedRouteSnapshot,
     state?: RouterStateSnapshot
   ): boolean | UrlTree {
-    return this.checkAuth(state?.url);
+    return checkAuth(this.authService, this.router, state?.url);
   }
 
   canLoad(
-    route?: Route,
+    _route?: Route,
     segments?: UrlSegment[]
   ): boolean | UrlTree {
     const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-    return this.checkAuth(url);
+    return checkAuth(this.authService, this.router, url);
   }
 
   canMatch(
-    route?: Route,
+    _route?: Route,
     segments?: UrlSegment[]
   ): boolean | UrlTree {
     const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-    return this.checkAuth(url);
-  }
-
-  private checkAuth(returnUrl?: string): boolean | UrlTree {
-    if (this.authService.isAuthenticated()) {
-      return true;
-    }
-
-    // Redirect to login page with return URL
-    const queryParams = returnUrl ? { returnUrl } : undefined;
-    return this.router.createUrlTree(['/login'], { queryParams });
+    return checkAuth(this.authService, this.router, url);
   }
 }

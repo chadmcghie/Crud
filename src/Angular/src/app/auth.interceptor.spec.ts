@@ -1,19 +1,21 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse, HttpResponse, HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpRequest, HttpHandler, HttpErrorResponse, HttpResponse, HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthInterceptor } from './auth.interceptor';
 import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
-import { of, throwError, BehaviorSubject, Subject } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
+
+interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
 import { delay } from 'rxjs/operators';
 
 describe('AuthInterceptor', () => {
   let interceptor: AuthInterceptor;
   let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
-  let httpClient: HttpClient;
   let httpTestingController: HttpTestingController;
-  let refreshTokenSubject: BehaviorSubject<any>;
 
   beforeEach(() => {
     const authServiceSpy = jasmine.createSpyObj('AuthService', 
@@ -34,11 +36,7 @@ describe('AuthInterceptor', () => {
 
     interceptor = TestBed.inject(AuthInterceptor);
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    httpClient = TestBed.inject(HttpClient);
     httpTestingController = TestBed.inject(HttpTestingController);
-    
-    refreshTokenSubject = new BehaviorSubject(null);
   });
 
   afterEach(() => {
@@ -81,7 +79,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for auth endpoints', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/login', null);
+      const request = new HttpRequest('POST', '/api/auth/login');
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -95,7 +93,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for register endpoint', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/register', null);
+      const request = new HttpRequest('POST', '/api/auth/register');
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -109,7 +107,7 @@ describe('AuthInterceptor', () => {
 
     it('should not add Authorization header for refresh endpoint', () => {
       authService.getAccessToken.and.returnValue('test-token');
-      const request = new HttpRequest('POST', '/api/auth/refresh', null);
+      const request = new HttpRequest('POST', '/api/auth/refresh');
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse()))
       };
@@ -173,7 +171,7 @@ describe('AuthInterceptor', () => {
     });
 
     it('should not attempt refresh for auth endpoints', () => {
-      const request = new HttpRequest('POST', '/api/auth/login', null);
+      const request = new HttpRequest('POST', '/api/auth/login');
       const error = new HttpErrorResponse({ status: 401 });
       const next: HttpHandler = {
         handle: jasmine.createSpy('handle').and.returnValue(throwError(() => error))
@@ -214,7 +212,7 @@ describe('AuthInterceptor', () => {
       const secondRequest = new HttpRequest('GET', '/api/data2');
       
       authService.getAccessToken.and.returnValue('expired-token');
-      const refreshSubject = new Subject<any>();
+      const refreshSubject = new Subject<TokenResponse>();
       authService.refreshToken.and.returnValue(refreshSubject.asObservable());
       
       const error = new HttpErrorResponse({ status: 401 });
@@ -242,7 +240,7 @@ describe('AuthInterceptor', () => {
       });
 
       // Start second request while refresh is in progress
-      (interceptor as any).isRefreshing = true;
+      (interceptor as unknown as { isRefreshing: boolean }).isRefreshing = true;
       interceptor.intercept(secondRequest, next2).subscribe({
         next: () => { response2Received = true; }
       });
@@ -251,7 +249,7 @@ describe('AuthInterceptor', () => {
       expect(response2Received).toBeFalsy();
 
       // Complete the refresh
-      refreshSubject.next({ accessToken: 'new-token', refreshToken: 'new-refresh' });
+      refreshSubject.next({ accessToken: 'new-token', refreshToken: 'new-refresh' } as TokenResponse);
       refreshSubject.complete();
 
       // Both requests should complete after refresh
@@ -272,7 +270,7 @@ describe('AuthInterceptor', () => {
       ];
 
       const error = new HttpErrorResponse({ status: 401 });
-      let completedRequests = 0;
+      // Track completed requests for this test
 
       requests.forEach((request, index) => {
         const next: HttpHandler = {
@@ -284,7 +282,7 @@ describe('AuthInterceptor', () => {
         };
 
         interceptor.intercept(request, next).subscribe({
-          next: () => { completedRequests++; }
+          next: () => { /* Request completed */ }
         });
       });
 
@@ -308,15 +306,15 @@ describe('AuthInterceptor', () => {
       };
 
       let error1Received = false;
-      let error2Received = false;
+      // Track error state for this test
 
       interceptor.intercept(request1, next1).subscribe({
         error: () => { error1Received = true; }
       });
 
-      (interceptor as any).isRefreshing = true;
+      (interceptor as unknown as { isRefreshing: boolean }).isRefreshing = true;
       interceptor.intercept(request2, next2).subscribe({
-        error: () => { error2Received = true; }
+        error: () => { /* Error received */ }
       });
 
       expect(error1Received).toBeTruthy();
@@ -327,7 +325,7 @@ describe('AuthInterceptor', () => {
   describe('Edge Cases', () => {
     it('should handle request with existing Authorization header', () => {
       authService.getAccessToken.and.returnValue('new-token');
-      const request = new HttpRequest('GET', '/api/test', {
+      const request = new HttpRequest('GET', '/api/test', null, {
         headers: new HttpHeaders({ Authorization: 'Bearer old-token' })
       });
       const next: HttpHandler = {

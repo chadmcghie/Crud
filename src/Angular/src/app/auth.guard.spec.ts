@@ -2,13 +2,40 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree } from '@angular/router';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
-import { of, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+
+interface User {
+  id: string;
+  email: string;
+  roles?: string[];
+}
+
+interface MockRouterStateSnapshot {
+  url: string;
+  root: unknown;
+}
+
+interface MockRoute {
+  path: string;
+  data: Record<string, unknown>;
+}
+
+interface MockUrlSegment {
+  path: string;
+  parameters: Record<string, unknown>;
+  parameterMap: {
+    get: () => unknown;
+    has: () => boolean;
+    getAll: () => unknown[];
+    keys: unknown[];
+  };
+}
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
-  let currentUserSubject: BehaviorSubject<any>;
+  let currentUserSubject: BehaviorSubject<User | null>;
 
   beforeEach(() => {
     currentUserSubject = new BehaviorSubject(null);
@@ -62,8 +89,8 @@ describe('AuthGuard', () => {
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const route = null as any;
-      const state = { url: '/protected', root: null } as any;
+      const route = null;
+      const state: MockRouterStateSnapshot = { url: '/protected', root: null };
 
       const result = guard.canActivate(route, state);
 
@@ -111,8 +138,8 @@ describe('AuthGuard', () => {
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const childRoute = null as any;
-      const state = { url: '/admin/users', root: null } as any;
+      const childRoute = null;
+      const state: MockRouterStateSnapshot = { url: '/admin/users', root: null };
 
       const result = guard.canActivateChild(childRoute, state);
 
@@ -151,13 +178,13 @@ describe('AuthGuard', () => {
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const route = {
+      const route: MockRoute = {
         path: 'admin',
         data: {}
       };
-      const segments = [
-        { path: 'admin', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } as any },
-        { path: 'dashboard', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } as any }
+      const segments: MockUrlSegment[] = [
+        { path: 'admin', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } },
+        { path: 'dashboard', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } }
       ];
 
       const result = guard.canLoad(route, segments);
@@ -173,7 +200,7 @@ describe('AuthGuard', () => {
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const route = { path: '', data: {} };
+      const route: MockRoute = { path: '', data: {} };
 
       const result = guard.canLoad(route, []);
 
@@ -210,8 +237,8 @@ describe('AuthGuard', () => {
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
-      const route = { path: 'secure', data: {} };
-      const segments = [{ path: 'secure', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } as any }];
+      const route: MockRoute = { path: 'secure', data: {} };
+      const segments: MockUrlSegment[] = [{ path: 'secure', parameters: {}, parameterMap: { get: () => null, has: () => false, getAll: () => [], keys: [] } }];
 
       const result = guard.canMatch(route, segments);
 
@@ -234,7 +261,7 @@ describe('AuthGuard', () => {
 
     it('should handle user without roles property', () => {
       authService.isAuthenticated.and.returnValue(true);
-      currentUserSubject.next({ id: '1', email: 'test@example.com' });
+      currentUserSubject.next({ id: '1', email: 'test@example.com' } as User);
 
       const result = guard.canActivate();
 
@@ -242,7 +269,7 @@ describe('AuthGuard', () => {
     });
 
     it('should handle authentication service returning undefined', () => {
-      authService.isAuthenticated.and.returnValue(undefined as any);
+      authService.isAuthenticated.and.returnValue(undefined as unknown as boolean);
       currentUserSubject.next(null);
       const urlTree = {} as UrlTree;
       router.createUrlTree.and.returnValue(urlTree);
