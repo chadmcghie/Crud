@@ -5,7 +5,7 @@ echo "🔍 Testing formatting in Linux environment (matching CI)"
 echo "================================================"
 
 # Run dotnet format and capture the exit code
-dotnet format Crud.sln --verify-no-changes --verbosity quiet
+dotnet format solutions/Crud.sln --verify-no-changes --verbosity quiet
 FORMAT_EXIT_CODE=$?
 
 if [ $FORMAT_EXIT_CODE -eq 0 ]; then
@@ -15,7 +15,7 @@ else
     echo "❌ Formatting check failed (exit code: $FORMAT_EXIT_CODE)"
     echo ""
     echo "Running format to see what changes are needed:"
-    dotnet format Crud.sln --verbosity diagnostic
+    dotnet format solutions/Crud.sln --verbosity diagnostic
     echo ""
     echo "Checking for differences:"
     git diff --name-only

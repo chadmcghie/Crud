@@ -36,8 +36,9 @@ public class DatabaseTestService
             throw new InvalidOperationException("Database connection string is not available");
         }
 
-        _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}",
-            MaskConnectionString(connectionString));
+        // Logging: Only log provider and database initialization; do not log connection string
+        _logger.LogInformation("Initializing database service for provider {Provider}.",
+            _context.Database.ProviderName);
 
         // Ensure database exists
         await _context.Database.EnsureCreatedAsync();
@@ -64,7 +65,7 @@ public class DatabaseTestService
             if (Environment.GetEnvironmentVariable("CI") == "true" &&
                 !string.IsNullOrEmpty(connectionString))
             {
-                await ResetByFileDeletionAsync(connectionString, workerIndex, seedData);
+                await ResetByFileDeletionAsync(workerIndex, seedData);
                 return;
             }
 
@@ -81,10 +82,9 @@ public class DatabaseTestService
     /// <summary>
     /// Resets database by deleting the file and recreating it (fastest for CI/Docker)
     /// </summary>
-    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
+    private async Task ResetByFileDeletionAsync(int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
-        _logger.LogInformation("Connection string: {ConnectionString}", MaskConnectionString(connectionString));
         var startTime = DateTime.UtcNow;
 
         // Use mutex to ensure only one reset operation at a time
@@ -400,30 +400,7 @@ public class DatabaseTestService
         }
     }
 
-    /// <summary>
-    /// Masks sensitive information in a connection string for safe logging.
-    /// </summary>
-    private static string? MaskConnectionString(string? connectionString)
-    {
-        if (string.IsNullOrEmpty(connectionString))
-            return connectionString;
-
-        // Mask password and other sensitive fields
-        var masked = System.Text.RegularExpressions.Regex.Replace(
-            connectionString,
-            @"(Password|Pwd|User ID|UID|User|Integrated Security)=[^;]+",
-            "$1=***",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // For file-based databases, show only the filename, not the full path
-        masked = System.Text.RegularExpressions.Regex.Replace(
-            masked,
-            @"(Data Source|DataSource|Database)=([^;\\]+\\)*([^;\\]+)",
-            "$1=***/$3",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        return masked;
-    }
+    // The MaskConnectionString method has been removed as we now avoid logging connection strings entirely.
 }
 
 /// <summary>
