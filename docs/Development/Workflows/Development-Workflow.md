@@ -52,6 +52,47 @@ git checkout -b feature/your-feature-name
 # hotfix/critical-security-patch
 ```
 
+## Agent-Assisted Development
+
+This project leverages AI agents to streamline development workflow. We recommend using agents for structured development processes.
+
+### Agent Workflow Integration
+
+**Before Starting Development**:
+1. **Plan with Agent OS**: Use `/create-spec` in Claude to create feature specifications
+2. **Break Down Work**: Use `create-tasks` to generate actionable development tasks
+3. **Review Technical Requirements**: Check generated technical specifications
+
+**During Development**:
+1. **Execute Tasks Systematically**: Use `execute-task` for structured TDD workflow
+2. **Use Context-Aware Tools**: Leverage Cursor for code completion and refactoring
+3. **Pair Program**: Use GitHub Copilot for inline suggestions and test generation
+
+**For Complex Issues**:
+1. **Document Problems**: Use `document-blocking-issue` for persistent issues
+2. **Systematic Troubleshooting**: Use `troubleshoot-with-history` agent
+3. **Follow Protected Changes**: Maintain improvements identified during debugging
+
+**Upon Completion**:
+1. **Update Progress**: Use `post-execution-tasks` to update roadmaps and create recaps
+2. **Verify Completion**: Use `project-manager` agent for task verification
+3. **Document Lessons**: Update knowledge base with lessons learned
+
+### Agent Selection Quick Reference
+
+| Task Type | Recommended Agent | Purpose |
+|-----------|------------------|---------|
+| Feature Planning | Agent OS `create-spec` | Structured specification creation |
+| Task Breakdown | Agent OS `create-tasks` | Actionable development items |
+| Implementation | Agent OS `execute-task` | TDD workflow execution |
+| Code Completion | Cursor AI | Context-aware suggestions |
+| Pair Programming | GitHub Copilot | Inline code assistance |
+| Testing | Claude `test-runner` | Test analysis and debugging |
+| Git Operations | Claude `git-workflow` | PR creation and management |
+| Troubleshooting | Claude `troubleshoot-with-history` | Systematic problem solving |
+
+See [Agent Utilization Guide](../Agent-Utilization-Guide.md) for complete documentation.
+
 ## Development Cycle
 
 ### 1. Local Development
@@ -374,6 +415,41 @@ gh run list
 - GitHub Actions
 - .NET Core Test Explorer
 
+### AI Agent Tools
+
+**Claude Code Commands**:
+```bash
+# Feature planning and specification
+/create-spec [feature description]
+
+# Task breakdown and management
+/create-tasks [spec reference]
+
+# Execute development tasks
+/execute-tasks [task reference]
+
+# Troubleshoot complex issues
+/troubleshoot-issues [issue description]
+
+# Analyze project structure
+/analyze-product
+```
+
+**Agent OS Workflows** (in `.agent-os/instructions/core/`):
+- `plan-product.md` - Product planning and roadmap creation
+- `create-spec.md` - Feature specification generation
+- `create-tasks.md` - Task breakdown and planning
+- `execute-task.md` - Structured development execution
+- `post-execution-tasks.md` - Completion and documentation
+
+**Specialized Agents** (in `.claude/agents/`):
+- `project-manager` - Task completion verification
+- `test-runner` - Test analysis and debugging
+- `git-workflow` - Git operations automation
+- `troubleshoot-with-history` - Systematic problem solving
+
+See [Agent Utilization Guide](../Agent-Utilization-Guide.md) for detailed usage.
+
 ## Troubleshooting
 
 ### Merge Conflicts
@@ -404,8 +480,30 @@ git rebase --continue
 3. Check for timing issues
 4. Review test isolation
 
+### Persistent Development Issues
+
+For complex or recurring problems:
+
+1. **Document the Issue**: Use `document-blocking-issue` agent to create structured documentation
+2. **Systematic Troubleshooting**: Use `troubleshoot-with-history` agent for systematic problem-solving
+3. **Preserve Strategic Changes**: Follow the protected changes mechanism to maintain improvements
+4. **Knowledge Preservation**: Update the blocking-issues registry for future reference
+
+**Blocking Issue Workflow**:
+```bash
+# Document a persistent problem
+/document-blocker [issue description]
+
+# Systematic troubleshooting with history awareness
+/troubleshoot-issues [blocking issue reference]
+```
+
+See [Troubleshooting Agents Design](../../Misc/troubleshooting-agents-design.md) for detailed information.
+
 ## Getting Help
 
+- **Agent Utilization**: Check [Agent Utilization Guide](../Agent-Utilization-Guide.md)
+- **Systematic Problem Solving**: Use `troubleshoot-with-history` agent
 - **Documentation**: Check `/docs` folder
 - **Team Chat**: Use Slack/Teams channel
 - **Issues**: Create GitHub issue
