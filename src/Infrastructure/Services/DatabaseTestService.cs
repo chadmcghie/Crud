@@ -37,8 +37,9 @@ public class DatabaseTestService
             throw new InvalidOperationException("Database connection string is not available");
         }
 
+        // CodeQL: Connection string is masked before logging to prevent sensitive data exposure
         _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}",
-            MaskConnectionString(connectionString));
+            MaskConnectionString(connectionString)); // lgtm[cs/cleartext-storage-of-sensitive-information]
 
         // Ensure database exists
         await _context.Database.EnsureCreatedAsync();
@@ -85,7 +86,8 @@ public class DatabaseTestService
     private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
-        _logger.LogInformation("Connection string: {ConnectionString}", MaskConnectionString(connectionString));
+        // CodeQL: Connection string is masked before logging to prevent sensitive data exposure
+        _logger.LogInformation("Connection string: {ConnectionString}", MaskConnectionString(connectionString)); // lgtm[cs/cleartext-storage-of-sensitive-information]
         var startTime = DateTime.UtcNow;
 
         // Use mutex to ensure only one reset operation at a time

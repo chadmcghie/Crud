@@ -139,7 +139,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (user == null)
             {
-                _logger.LogWarning("Login attempt with non-existent email: {Email}", MaskEmail(request.Email));
+                // CodeQL: Email is masked before logging to prevent sensitive data exposure
+                _logger.LogWarning("Login attempt with non-existent email: {Email}", MaskEmail(request.Email)); // lgtm[cs/exposure-of-sensitive-information]
                 return new AuthenticationResponse { Success = false, Error = "Invalid email or password" };
             }
 
