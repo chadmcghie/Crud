@@ -96,7 +96,9 @@
       "Bash(cat:*)",
       "Bash(CI=true npx playwright test api-health.spec.ts --config=playwright.config.webserver.ts --reporter=list --timeout=30000)",
       "Bash(git commit:*)",
-      "Bash(ng build:*)"
+      "Bash(ng build:*)",
+      "Bash(gh project list:*)",
+      "Read(//c/Users/chadm/source/repos/Crud/.agent-os/specs/2025-09-06-angular-authentication-frontend/**)"
     ],
     "deny": [],
     "ask": [],
