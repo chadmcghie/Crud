@@ -115,10 +115,10 @@ Check the uploaded artifacts:
 ## Migration from Legacy Setup
 
 If you have custom test configurations:
-1. Switch to `playwright.config.webserver.ts`
-2. Remove dependency on global setup files
-3. Use unique database names with timestamps
-4. Let Playwright manage server lifecycle
+1. Use the default `playwright.config.ts` (includes webServer configuration)
+2. Ensure all test commands include required environment variables
+3. Database isolation is handled automatically with unique filenames
+4. Playwright manages server lifecycle via built-in webServer feature
 
 ## Contributing
 
