@@ -211,7 +211,7 @@ public class AuthControllerTests : IntegrationTestBase
 
             var refreshCommand = new RefreshTokenCommand
             {
-                RefreshToken = loginResult!.RefreshToken
+                RefreshToken = loginResult!.RefreshToken!
             };
 
             // Act
@@ -290,7 +290,7 @@ public class AuthControllerTests : IntegrationTestBase
             // Try to use the refresh token after logout - should fail
             var refreshCommand = new RefreshTokenCommand
             {
-                RefreshToken = loginResult.RefreshToken
+                RefreshToken = loginResult!.RefreshToken!
             };
             var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
             refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
