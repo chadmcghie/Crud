@@ -30,10 +30,10 @@ cd src/Angular && npm start
 ### Build
 ```bash
 # Build entire solution
-dotnet build Crud.sln
+dotnet build solutions/Crud.sln
 
 # Build backend only
-dotnet build Crud.Backend.sln
+dotnet build solutions/Crud.Backend.sln
 
 # Build Angular
 cd src/Angular && npm run build
@@ -64,10 +64,10 @@ cd src/Angular && npm test
 # IMPORTANT: Always run before committing!
 
 # .NET formatting - check for issues
-dotnet format Crud.sln --verify-no-changes
+dotnet format solutions/Crud.sln --verify-no-changes
 
 # .NET formatting - auto-fix issues
-dotnet format Crud.sln
+dotnet format solutions/Crud.sln
 
 # Angular linting
 cd src/Angular && npm run lint
@@ -190,7 +190,7 @@ Consider adding these to `.claude/` for better context:
 - **NEVER create documentation files unless explicitly requested**
 - **ALWAYS prefer editing existing files over creating new ones**
 - **ALWAYS run code formatting before committing:**
-  - `dotnet format Crud.sln` for .NET code
+  - `dotnet format solutions/Crud.sln` for .NET code
   - `npm run lint` in src/Angular for TypeScript code
 
 ## Key References
