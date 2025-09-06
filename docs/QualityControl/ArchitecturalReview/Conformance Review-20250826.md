@@ -16,7 +16,7 @@ Architecture & Layering
   - App contains service interfaces and implementations; DI extension AddApplication present.
   - Api hosts controllers and swagger, wires DI.
 - Deviations / Risks
-  - docs/README lists Api.Min (Minimal API). Not present in solution.
+  - Previous documentation (docs/README) listed Api.Min (Minimal API) as required, but current architecture does not include it. If Minimal API is no longer required, update docs/README to reflect this; if still required, add Api.Min project to solution.
   - Application relies on services, but MediatR is registered (in Api) without any handlers. If CQRS via MediatR is intended, handlers should be added and assemblies registered.
 
 Packages vs. Agreed Stack
