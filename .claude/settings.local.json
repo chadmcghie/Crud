@@ -98,7 +98,8 @@
       "Bash(git commit:*)",
       "Bash(ng build:*)",
       "Bash(gh project list:*)",
-      "Read(//c/Users/chadm/source/repos/Crud/.agent-os/specs/2025-09-06-angular-authentication-frontend/**)"
+      "Read(//c/Users/chadm/source/repos/Crud/.agent-os/specs/2025-09-06-angular-authentication-frontend/**)",
+      "Read(//c/Users/chadm/source/repos/Crud/.agent-os/instructions/core/**)"
     ],
     "deny": [],
     "ask": [],
