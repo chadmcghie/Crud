@@ -177,7 +177,7 @@ public class PollyResilienceTests
     }
 
     [Fact]
-    public async Task DatabaseResilienceExtensions_SaveChangesWithRetryAsync_ShouldWorkWithDbContext()
+    public Task DatabaseResilienceExtensions_SaveChangesWithRetryAsync_ShouldWorkWithDbContext()
     {
         // This test demonstrates that the extension methods exist and can be called
         // Note: We can't easily test the actual DbContext retry behavior without a real database
@@ -191,6 +191,7 @@ public class PollyResilienceTests
 
         // Note: The real test is in integration tests where these methods are actually used
         // with real DbContext instances in the repositories
+        return Task.CompletedTask;
     }
 
     [Fact]
