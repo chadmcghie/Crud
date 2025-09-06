@@ -51,37 +51,38 @@ test.describe('Application Navigation and Layout', () => {
     await expect(page.locator('app-roles-list')).not.toBeVisible();
   });
 
-  test('should reset forms when switching pages', async ({ page }) => {
+  test('should navigate between list and form pages', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Open people form
+    // Start on the people list
+    await expect(page.locator('app-people-list')).toBeVisible();
+    
+    // Click add person - should navigate to people form route
     await pageHelpers.clickAddPerson();
-    await expect(page.locator('app-people form')).toBeVisible();
+    await expect(page.locator('app-people')).toBeVisible();
     
-    // Switch to roles tab
-    await pageHelpers.switchToRolesTab();
-    
-    // Switch back to people tab
+    // Navigate back to list via the nav links
     await pageHelpers.switchToPeopleTab();
+    await expect(page.locator('app-people-list')).toBeVisible();
     
-    // Form should be hidden
-    await expect(page.locator('app-people form')).not.toBeVisible();
+    // Form should not be visible on the list page
+    await expect(page.locator('app-people')).not.toBeVisible();
   });
 
   test('should maintain responsive design', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Test desktop view
+    // Test desktop view - check the list page layout
     await page.setViewportSize({ width: 1400, height: 800 });
-    await expect(page.locator('.management-layout')).toBeVisible();
+    await expect(page.locator('.main-content')).toBeVisible();
     
     // Test tablet view
     await page.setViewportSize({ width: 768, height: 600 });
-    await expect(page.locator('.management-layout')).toBeVisible();
+    await expect(page.locator('.main-content')).toBeVisible();
     
     // Test mobile view
     await page.setViewportSize({ width: 400, height: 600 });
-    await expect(page.locator('.management-layout')).toBeVisible();
+    await expect(page.locator('.main-content')).toBeVisible();
   });
 
   test('should display navigation links', async ({ page }) => {
@@ -132,47 +133,49 @@ test.describe('Application Navigation and Layout', () => {
   test('should handle keyboard navigation', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Focus on the roles tab button specifically
-    await page.locator('button:has-text("🎭 Roles Management")').focus();
+    // Focus on the roles link
+    await page.locator('a[routerLink="/roles-list"]').focus();
     
-    // Press Enter to activate roles tab
+    // Press Enter to navigate to roles
     await page.keyboard.press('Enter');
     
-    // Should switch to roles tab
+    // Should navigate to roles page
     await expect(page.locator('app-roles-list')).toBeVisible();
   });
 
   test('should display correct content sections', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Check people tab content
-    await expect(page.locator('.list-section')).toBeVisible();
+    // Check people list content
+    await expect(page.locator('app-people-list')).toBeVisible();
     await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
     
-    // Switch to roles tab
+    // Switch to roles list
     await pageHelpers.switchToRolesTab();
     
-    // Check roles tab content
-    await expect(page.locator('.list-section')).toBeVisible();
+    // Check roles list content
+    await expect(page.locator('app-roles-list')).toBeVisible();
     await expect(page.locator('h3:has-text("Roles Management")')).toBeVisible();
   });
 
-  test('should handle form section visibility', async ({ page }) => {
+  test('should handle form navigation correctly', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // Form section should not be visible initially
-    await expect(page.locator('.form-section')).not.toBeVisible();
+    // Initially on the people list page
+    await expect(page.locator('app-people-list')).toBeVisible();
     
-    // Click add person
+    // Click add person - navigates to form page
     await pageHelpers.clickAddPerson();
     
-    // Form section should now be visible
-    await expect(page.locator('.form-section')).toBeVisible();
+    // Should be on the people form page
+    await expect(page.locator('app-people')).toBeVisible();
+    await expect(page.locator('form')).toBeVisible();
     
-    // Cancel form
+    // Cancel form - navigates back to list
     await page.click('button:has-text("Cancel")');
     
-    // Form section should be hidden again
-    await expect(page.locator('.form-section')).not.toBeVisible();
+    // Should be back on the list page
+    await expect(page.locator('app-people-list')).toBeVisible();
+    await expect(page.locator('app-people')).not.toBeVisible();
   });
 });
