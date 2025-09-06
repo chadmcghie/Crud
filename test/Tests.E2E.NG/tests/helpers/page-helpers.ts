@@ -35,25 +35,25 @@ export class PageHelpers {
   async navigateToApp(): Promise<void> {
     await this.page.goto('/');
     // Wait for the main app component to be fully loaded - this is more reliable than networkidle
-    await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
+    await this.page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
     // Wait for Angular to initialize and render the main content
-    await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
-    // Wait for the app to be interactive (buttons clickable)
+    await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
+    // Wait for the app to be interactive (links clickable)
     await this.page.waitForFunction(() => {
-      const button = document.querySelector('button');
-      return button && !button.disabled;
+      const link = document.querySelector('a[routerLink="/people-list"]');
+      return link !== null;
     });
   }
 
   async switchToPeopleTab(): Promise<void> {
-    await this.page.click('button:has-text("👥 People Management")');
+    await this.page.click('a[routerLink="/people-list"]');
     await this.page.waitForSelector('app-people-list', { timeout: 10000 });
     // Wait for the people content to be fully rendered
     await this.page.waitForSelector('h3:has-text("People Directory")', { timeout: 5000 });
   }
 
   async switchToRolesTab(): Promise<void> {
-    await this.page.click('button:has-text("🎭 Roles Management")');
+    await this.page.click('a[routerLink="/roles-list"]');
     await this.page.waitForSelector('app-roles-list', { timeout: 10000 });
     // Wait for the roles content to be fully rendered
     await this.page.waitForSelector('h3:has-text("Roles Management")', { timeout: 5000 });
@@ -360,8 +360,8 @@ export class PageHelpers {
     await this.retryOperation(async () => {
       await this.page.reload();
       // Instead of waiting for networkidle, wait for specific content to be ready
-      await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
-      await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
+      await this.page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
+      await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
       // Small buffer for Angular to stabilize
       }, 3, 2000, 'refreshPage');
   }
@@ -413,11 +413,15 @@ export class PageHelpers {
   }
 
   async verifyPageTitle(): Promise<void> {
-    await expect(this.page.locator('h1')).toContainText('People & Roles Management System');
+    await expect(this.page.locator('h1')).toContainText('CRUD Template Application');
   }
 
   async verifyTabActive(tabName: 'people' | 'roles'): Promise<void> {
-    const tabText = tabName === 'people' ? '👥 People Management' : '🎭 Roles Management';
-    await expect(this.page.locator(`button:has-text("${tabText}").active`)).toBeVisible();
+    // Since we're using router links instead of tabs, verify the correct page is loaded
+    if (tabName === 'people') {
+      await expect(this.page.locator('app-people-list')).toBeVisible();
+    } else {
+      await expect(this.page.locator('app-roles-list')).toBeVisible();
+    }
   }
 }

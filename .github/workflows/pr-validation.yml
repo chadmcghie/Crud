@@ -416,10 +416,10 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Check overall status
-        if [ "${{ needs.build.result }}" == "success" ] && 
-           [ "${{ needs.backend-unit-tests.result }}" == "success" ] &&
-           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] &&
-           [ "${{ needs.backend-integration-tests.result }}" == "success" ] &&
+        if [ "${{ needs.build.result }}" == "success" ] && \
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
+           [ "${{ needs.backend-integration-tests.result }}" == "success" ] && \
            [ "${{ needs.e2e-smoke-tests.result }}" == "success" ]; then
           echo "### ✅ All validation checks passed!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

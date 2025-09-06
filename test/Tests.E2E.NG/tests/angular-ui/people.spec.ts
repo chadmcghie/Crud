@@ -27,8 +27,8 @@ test.describe('People Management UI', () => {
     await pageHelpers.switchToPeopleTab();
     
     // Wait for the page to fully load - use specific selectors instead of networkidle
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 15000 });
-    await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 15000 });
+    await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe('People Management UI', () => {
     
     // Wait for any pending operations to complete - use specific checks instead of networkidle
     try {
-      await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 3000 });
+      await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 3000 });
     } catch (error) {
       // Page might be in a transitional state, that's okay for cleanup
       console.warn('Page not fully loaded during cleanup, continuing...');

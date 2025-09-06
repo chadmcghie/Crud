@@ -58,7 +58,7 @@ Use the git-workflow subagent to create git commit, push to GitHub, and create p
   REQUEST: "Complete git workflow for [SPEC_NAME] feature:
             - Spec: [SPEC_FOLDER_PATH]
             - Changes: All modified files
-            - Target: main branch
+            - Target: dev branch (repository default)
             - Description: [SUMMARY_OF_IMPLEMENTED_FEATURES]"
   WAIT: For workflow completion
   PROCESS: Save PR URL for summary

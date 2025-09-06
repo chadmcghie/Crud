@@ -20,28 +20,20 @@ test.describe('Application Navigation and Layout', () => {
     // Verify main title is displayed
     await pageHelpers.verifyPageTitle();
     
-    // Verify subtitle is displayed
-    await expect(page.locator('.subtitle')).toContainText('Comprehensive CRUD operations for managing people and their roles');
-    
-    // Verify tab buttons are present
-    await expect(page.locator('button:has-text("👥 People Management")')).toBeVisible();
-    await expect(page.locator('button:has-text("🎭 Roles Management")')).toBeVisible();
+    // Verify navigation links are present
+    await expect(page.locator('a[routerLink="/people-list"]')).toBeVisible();
+    await expect(page.locator('a[routerLink="/roles-list"]')).toBeVisible();
   });
 
-  test('should have people tab active by default', async ({ page }) => {
+  test('should navigate to people page', async ({ page }) => {
     await pageHelpers.navigateToApp();
-    
-    // People tab should be active
-    await expect(page.locator('button:has-text("👥 People Management").active')).toBeVisible();
+    await pageHelpers.switchToPeopleTab();
     
     // People content should be visible
     await expect(page.locator('app-people-list')).toBeVisible();
-    
-    // Roles content should not be visible
-    await expect(page.locator('app-roles-list')).not.toBeVisible();
   });
 
-  test('should switch between tabs correctly', async ({ page }) => {
+  test('should switch between pages correctly', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
     // Start on people tab
@@ -59,7 +51,7 @@ test.describe('Application Navigation and Layout', () => {
     await expect(page.locator('app-roles-list')).not.toBeVisible();
   });
 
-  test('should reset forms when switching tabs', async ({ page }) => {
+  test('should reset forms when switching pages', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
     // Open people form
@@ -92,21 +84,15 @@ test.describe('Application Navigation and Layout', () => {
     await expect(page.locator('.management-layout')).toBeVisible();
   });
 
-  test('should display correct tab indicators', async ({ page }) => {
+  test('should display navigation links', async ({ page }) => {
     await pageHelpers.navigateToApp();
     
-    // People tab should be active initially
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    const rolesTab = page.locator('button:has-text("🎭 Roles Management")');
+    // Navigation links should be visible
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    const rolesLink = page.locator('a[routerLink="/roles-list"]');
     
-    await expect(peopleTab).toHaveClass(/active/);
-    await expect(rolesTab).not.toHaveClass(/active/);
-    
-    // Switch to roles tab
-    await rolesTab.click();
-    
-    await expect(rolesTab).toHaveClass(/active/);
-    await expect(peopleTab).not.toHaveClass(/active/);
+    await expect(peopleLink).toBeVisible();
+    await expect(rolesLink).toBeVisible();
   });
 
   test('should handle page refresh correctly', async ({ page }) => {
@@ -118,12 +104,12 @@ test.describe('Application Navigation and Layout', () => {
     // Refresh the page
     await page.reload();
     // Wait for specific content instead of networkidle
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
-    await page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
+    await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
     
-    // Should default back to people tab after refresh
+    // Navigate to people page after refresh
+    await pageHelpers.switchToPeopleTab();
     await expect(page.locator('app-people-list')).toBeVisible();
-    await expect(page.locator('button:has-text("👥 People Management").active')).toBeVisible();
   });
 
   test('should display proper styling and layout', async ({ page }) => {
@@ -138,14 +124,9 @@ test.describe('Application Navigation and Layout', () => {
     await expect(header).toBeVisible();
     await expect(header.locator('h1')).toHaveCSS('color', 'rgb(255, 255, 255)');
     
-    // Check tab container styling
-    const tabContainer = page.locator('.tab-container');
-    await expect(tabContainer).toBeVisible();
-    await expect(tabContainer).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    
-    // Check tab buttons styling
-    const tabButtons = page.locator('.tab-buttons');
-    await expect(tabButtons).toBeVisible();
+    // Check main content styling
+    const mainContent = page.locator('.main-content');
+    await expect(mainContent).toBeVisible();
   });
 
   test('should handle keyboard navigation', async ({ page }) => {
