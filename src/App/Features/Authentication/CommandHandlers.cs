@@ -1,9 +1,9 @@
-using System.Linq;
 using App.Abstractions;
 using Domain.Entities.Authentication;
 using Domain.Events;
 using Domain.Interfaces;
 using Domain.ValueObjects;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -33,37 +33,15 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validate basic input
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new AuthenticationResponse { Success = false, Error = "Email is required" };
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-            return new AuthenticationResponse { Success = false, Error = "Password is required" };
-
-        // Password complexity validation
-        if (request.Password.Length < 8)
-            return new AuthenticationResponse { Success = false, Error = "Password must be at least 8 characters long" };
-
-        if (!request.Password.Any(char.IsUpper))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one uppercase letter" };
-
-        if (!request.Password.Any(char.IsLower))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one lowercase letter" };
-
-        if (!request.Password.Any(char.IsDigit))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one digit" };
-
-        if (!request.Password.Any(c => !char.IsLetterOrDigit(c)))
-            return new AuthenticationResponse { Success = false, Error = "Password must contain at least one special character" };
-
-        if (string.IsNullOrWhiteSpace(request.FirstName))
-            return new AuthenticationResponse { Success = false, Error = "First name is required" };
-
-        if (string.IsNullOrWhiteSpace(request.LastName))
-            return new AuthenticationResponse { Success = false, Error = "Last name is required" };
-
         try
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(request.FirstName))
+                return new AuthenticationResponse { Success = false, Error = "First name is required" };
+
+            if (string.IsNullOrWhiteSpace(request.LastName))
+                return new AuthenticationResponse { Success = false, Error = "Last name is required" };
+
             // Create email value object (will throw if invalid)
             var email = new Email(request.Email);
 
@@ -105,6 +83,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
                 Roles = user.Roles.ToList()
             };
         }
+        catch (ValidationException ex)
+        {
+            var errors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(ex, "Validation failed during registration: {Errors}", errors);
+            return new AuthenticationResponse { Success = false, Error = errors };
+        }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid input during registration");
@@ -142,15 +126,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validate basic input
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new AuthenticationResponse { Success = false, Error = "Email is required" };
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-            return new AuthenticationResponse { Success = false, Error = "Password is required" };
-
         try
         {
+            // Validate password
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return new AuthenticationResponse { Success = false, Error = "Password is required" };
+
             // Create email value object
             var email = new Email(request.Email);
 
@@ -158,7 +139,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (user == null)
             {
-                _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
+                // Logging email even when masked can still expose sensitive info, so we omit it
+                _logger.LogWarning("Login attempt with non-existent email address"); // No sensitive data logged
                 return new AuthenticationResponse { Success = false, Error = "Invalid email or password" };
             }
 
@@ -202,6 +184,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
                 Roles = user.Roles.ToList()
             };
         }
+        catch (ValidationException ex)
+        {
+            var errors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(ex, "Validation failed during login: {Errors}", errors);
+            return new AuthenticationResponse { Success = false, Error = errors };
+        }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid input during login");
@@ -236,7 +224,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validate input
+        // Validate input - add back basic validation for tests
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return new AuthenticationResponse { Success = false, Error = "Refresh token is required" };
 
@@ -308,6 +296,12 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
                 Roles = user.Roles.ToList()
             };
         }
+        catch (ValidationException ex)
+        {
+            var errors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(ex, "Validation failed during token refresh: {Errors}", errors);
+            return new AuthenticationResponse { Success = false, Error = errors };
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during token refresh");
@@ -334,8 +328,7 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, boo
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-            return false;
+        // Validation is now handled by FluentValidation pipeline behavior
 
         try
         {
@@ -354,6 +347,12 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, boo
             }
 
             return result;
+        }
+        catch (ValidationException ex)
+        {
+            var errors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(ex, "Validation failed during token revocation: {Errors}", errors);
+            return false;
         }
         catch (Exception ex)
         {
@@ -381,8 +380,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        if (request.UserId == Guid.Empty)
-            return false;
+        // Validation is now handled by FluentValidation pipeline behavior
 
         try
         {
@@ -403,6 +401,12 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
             _logger.LogInformation("User logged out successfully: {UserId}", user.Id);
 
             return true;
+        }
+        catch (ValidationException ex)
+        {
+            var errors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+            _logger.LogWarning(ex, "Validation failed during logout: {Errors}", errors);
+            return false;
         }
         catch (Exception ex)
         {

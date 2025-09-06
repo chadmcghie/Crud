@@ -114,11 +114,25 @@ If ports 5172 (API) or 4200 (Angular) are in use:
 
 ## Development Tips
 
-1. **Use Test Categories**: Tag tests appropriately for selective execution
-2. **Keep Tests Independent**: Each test should work in isolation
-3. **Use Helpers**: Leverage `api-helpers.ts` and `page-helpers.ts` for common operations
-4. **Monitor Performance**: Keep tests within target time limits
-5. **Debug Locally**: Use `--headed` and `--debug` modes for development
+
+1. **Use webServer config for reliability**: The webServer configuration is more reliable and simpler.
+
+2. **Keep tests independent**: Each test should work in isolation with database reset.
+
+3. **Use fixtures**: Leverage the `database-fixture.ts` for automatic cleanup.
+
+4. **Monitor test duration**: Keep smoke tests under 2 minutes, critical under 5.
+
+5. **Debug locally first**: Use `npm run test:headed` to see what's happening.
+
+## Migration from Legacy Setup
+
+If you have custom test configurations:
+1. Use the default `playwright.config.ts` (includes webServer configuration)
+2. Ensure all test commands include required environment variables
+3. Database isolation is handled automatically with unique filenames
+4. Playwright manages server lifecycle via built-in webServer feature
+
 
 ## Contributing
 

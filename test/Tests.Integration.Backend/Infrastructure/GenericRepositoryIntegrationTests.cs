@@ -22,9 +22,9 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task IRepository_ShouldBeRegisteredInDIContainer()
+    public Task IRepository_ShouldBeRegisteredInDIContainer()
     {
-        await RunWithCleanDatabaseAsync(async () =>
+        return RunWithCleanDatabaseAsync(() =>
         {
             // Arrange & Act
             var personRepository = Scope.ServiceProvider.GetService<IRepository<Person>>();
@@ -33,6 +33,8 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             // Assert
             personRepository.Should().NotBeNull("IRepository<Person> should be registered in DI container");
             roleRepository.Should().NotBeNull("IRepository<Role> should be registered in DI container");
+
+            return Task.CompletedTask;
         });
     }
 

@@ -30,10 +30,10 @@ cd src/Angular && npm start
 ### Build
 ```bash
 # Build entire solution
-dotnet build Crud.sln
+dotnet build solutions/Crud.sln
 
 # Build backend only
-dotnet build Crud.Backend.sln
+dotnet build solutions/Crud.Backend.sln
 
 # Build Angular
 cd src/Angular && npm run build
@@ -64,10 +64,10 @@ cd src/Angular && npm test
 # IMPORTANT: Always run before committing!
 
 # .NET formatting - check for issues
-dotnet format Crud.sln --verify-no-changes
+dotnet format solutions/Crud.sln --verify-no-changes
 
 # .NET formatting - auto-fix issues
-dotnet format Crud.sln
+dotnet format solutions/Crud.sln
 
 # Angular linting
 cd src/Angular && npm run lint
@@ -75,9 +75,35 @@ cd src/Angular && npm run lint
 
 ## E2E Testing Strategy
 
-**UPDATE**: E2E tests now use Playwright's built-in webServer configuration. See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for the current approach and `docs/Decisions/0001-Serial-E2E-Testing.md` for background on serial execution.
+⚠️ **CRITICAL: DO NOT CHANGE THE TEST COMMANDS** ⚠️
 
-- **Playwright webServer**: Automatic server management, unique database per test run (recommended approach)
+The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E2E.NG/package.json` require specific environment variables for CI compatibility. 
+
+**DO NOT "simplify" them by removing the environment variables** - this will break CI!
+
+### Why This Matters
+- The complex-looking commands with environment variables are REQUIRED
+- This has been broken and fixed multiple times - don't repeat the mistake
+- See GitHub issue #79 for plan to eliminate the problematic config entirely
+
+### Correct Commands (DO NOT CHANGE)
+```bash
+# These commands use environment variables for proper configuration
+npm run test:smoke       # 2-minute smoke tests
+npm run test:critical    # 5-minute critical tests  
+npm run test:extended    # Extended test suite
+```
+
+### What NOT to Do
+```bash
+# NEVER change to these "simpler" versions - THEY BREAK CI
+"test:smoke": "playwright test --grep @smoke"  # ❌ BROKEN IN CI
+"test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
+```
+
+**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
+
+- **Playwright webServer**: Automatic server management, unique database per test run (built into `playwright.config.ts`)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
 - Database isolation via unique filenames prevents locking issues
 - Serial execution strategy (`workers: 1`) for SQLite/EF Core compatibility
@@ -162,7 +188,7 @@ Consider adding these to `.claude/` for better context:
 - **NEVER create documentation files unless explicitly requested**
 - **ALWAYS prefer editing existing files over creating new ones**
 - **ALWAYS run code formatting before committing:**
-  - `dotnet format Crud.sln` for .NET code
+  - `dotnet format solutions/Crud.sln` for .NET code
   - `npm run lint` in src/Angular for TypeScript code
 
 ## Key References

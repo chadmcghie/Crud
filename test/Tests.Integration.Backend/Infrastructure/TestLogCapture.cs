@@ -17,7 +17,7 @@ public class TestLogCapture : ILogger
         _categoryName = categoryName;
     }
 
-    public IDisposable BeginScope<TState>(TState state) => NullDisposable.Instance;
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullDisposable.Instance;
 
     public bool IsEnabled(LogLevel logLevel) => true;
 
