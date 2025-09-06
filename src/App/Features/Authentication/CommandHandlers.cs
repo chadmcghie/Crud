@@ -139,8 +139,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
             var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
             if (user == null)
             {
-                // CodeQL: Email is masked before logging to prevent sensitive data exposure
-                _logger.LogWarning("Login attempt with non-existent email: {Email}", MaskEmail(request.Email)); // lgtm[cs/exposure-of-sensitive-information]
+                // Logging email even when masked can still expose sensitive info, so we omit it
+                _logger.LogWarning("Login attempt with non-existent email address"); // No sensitive data logged
                 return new AuthenticationResponse { Success = false, Error = "Invalid email or password" };
             }
 
@@ -202,26 +202,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
         }
     }
 
-    /// <summary>
-    /// Masks an email address for safe logging by showing only first letter and domain.
-    /// </summary>
-    private static string MaskEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email))
-            return "***";
 
-        var atIndex = email.IndexOf('@');
-        if (atIndex < 1)
-            return "***@***";
-
-        var localPart = email.Substring(0, atIndex);
-        var domain = email.Substring(atIndex + 1);
-
-        // Show first character of local part and domain
-        var maskedLocal = localPart[0] + new string('*', Math.Min(localPart.Length - 1, 5));
-
-        return $"{maskedLocal}@{domain}";
-    }
 }
 
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, AuthenticationResponse>
