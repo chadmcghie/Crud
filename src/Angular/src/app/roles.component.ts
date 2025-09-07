@@ -335,7 +335,10 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   private resetForm() {
-    this.form.reset();
+    this.form.reset({
+      name: '',
+      description: ''
+    });
     this.error = null;
   }
 
