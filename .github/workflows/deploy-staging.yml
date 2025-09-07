@@ -10,12 +10,13 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Skip deployment if it's a Copilot commit
+  # Skip deployment if it's a Copilot commit or if no PR artifacts are available
   check-commit:
-    name: Check Commit Author
+    name: Check Deployment Prerequisites
     runs-on: ubuntu-latest
     outputs:
       should-deploy: ${{ steps.check.outputs.should-deploy }}
+      artifact-exists: ${{ steps.artifact-check.outputs.artifact-exists }}
     
     steps:
     - name: Check if Copilot commit
@@ -29,9 +30,16 @@ jobs:
           echo "should-deploy=true" >> $GITHUB_OUTPUT
           echo "✅ Proceeding with staging deployment"
         fi
+        
+    - name: Check for dev artifacts
+      id: artifact-check
+      run: |
+        # This will be verified when we try to download the artifact
+        echo "artifact-exists=true" >> $GITHUB_OUTPUT
+        echo "📦 Will attempt to download dev-artifact-${{ github.sha }}"
 
-  full-test-suite:
-    name: Full Test Suite
+  staging-smoke-tests:
+    name: Staging Smoke Tests (Reuse PR Artifacts)
     runs-on: ubuntu-latest
     needs: check-commit
     if: needs.check-commit.outputs.should-deploy == 'true'
@@ -40,6 +48,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Download dev artifact from PR validation
+      uses: actions/download-artifact@v4
+      with:
+        name: dev-artifact-${{ github.sha }}
+        
+    - name: Verify artifact contents
+      run: |
+        echo "📦 Verifying downloaded artifact contents..."
+        ls -la 
+        if [ -f "version.json" ]; then
+          echo "📋 Version info:"
+          cat version.json | jq .
+        else
+          echo "⚠️ No version.json found in artifact"
+        fi
+        echo "📁 Checking build outputs:"
+        find . -name "*.dll" -path "*/Release/*" | head -10
+        
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -52,41 +78,26 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Code quality checks
-    - name: Backend Code Format Check
+    # Copy appsettings files for the backend
+    - name: Copy appsettings to test output
       run: |
-        echo "🔍 Checking C# code formatting..."
-        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic || (echo "❌ Code formatting issues found. Run 'dotnet format' locally to fix." && exit 1)
+        echo "📁 Listing artifact structure:"
+        ls -la src/Api/ || echo "src/Api/ not found"
+        ls -la src/Api/bin/Release/net8.0/ || echo "bin directory not found"
         
-    # Build solution
-    - name: Build solution
-      run: |
-        dotnet restore solutions/Crud.sln
-        dotnet build solutions/Crud.sln --configuration Release
+        # Copy appsettings files if they exist
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from src/Api/"
+        elif [ -f "appsettings.json" ]; then
+          cp appsettings*.json src/Api/bin/Release/net8.0/
+          echo "✅ Appsettings files copied from root"
+        else
+          echo "⚠️ No appsettings files found to copy"
+        fi
         
-    # Run all backend unit tests
-    - name: Backend unit tests (full)
-      run: |
-        echo "🧪 Running all backend unit tests..."
-        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --configuration Release --logger "trx;LogFileName=unit-tests.trx"
-        
-    # Run all backend integration tests
-    - name: Backend integration tests (full)
-      run: |
-        echo "🧪 Running all backend integration tests..."
-        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --configuration Release --logger "trx;LogFileName=integration-tests.trx"
-      env:
-        CI: true
-        ASPNETCORE_ENVIRONMENT: Testing
-        
-    # Build and test frontend
-    - name: Frontend build and tests
-      working-directory: ./src/Angular
-      run: |
-        npm ci
-        npm run lint
-        npm run test -- --watch=false --browsers=ChromeHeadless
-        npm run build -- --configuration=staging
+        echo "📁 Final output directory contents:"
+        ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     # Install E2E dependencies
     - name: Install E2E dependencies
@@ -95,74 +106,98 @@ jobs:
         npm ci
         npx playwright install --with-deps chromium
         
-    # Run full E2E test suite
-    - name: Run full E2E test suite
+    # Run smoke tests only - targeting 2 minutes as per issue requirements  
+    - name: Run staging-specific smoke tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🧪 Running full E2E test suite (174 tests)..."
-        npm run test:webserver
+        echo "🚀 Running staging smoke tests only (targeting ~2 minutes)..."
+        echo "Using pre-built artifacts from PR validation - no rebuild needed!"
+        npm run test:smoke  # Instead of full suite
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
         DatabaseProvider: SQLite
         TEST_RESET_TOKEN: test-only-token
-        TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_number }}
+        TEST_RUN_ID: staging-${{ github.run_id }}-${{ github.run_number }}
         
-    - name: Upload test results
+    - name: Upload staging test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: staging-test-results-${{ github.sha }}
+        name: staging-smoke-tests-${{ github.sha }}
         path: |
-          TestResults/
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
         retention-days: 7
 
-  build-artifacts:
-    name: Build Deployment Artifacts  
+  prepare-staging-artifacts:
+    name: Prepare Staging Deployment Artifacts (No Rebuild)
     runs-on: ubuntu-latest
-    needs: full-test-suite
-    if: needs.full-test-suite.result == 'success'
+    needs: staging-smoke-tests
+    if: needs.staging-smoke-tests.result == 'success'
     
     steps:
-    - name: Checkout code
+    - name: Checkout code (for package.json and Angular config only)
       uses: actions/checkout@v4
       
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - name: Download dev artifact from PR validation
+      uses: actions/download-artifact@v4  
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Setup Node.js
+        name: dev-artifact-${{ github.sha }}
+      
+    - name: Setup Node.js (for Angular build only)
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Build Angular for staging
-    - name: Build frontend for staging
+    # IMPORTANT: Only build Angular for staging config - backend artifacts are reused as-is
+    - name: Build frontend for staging (validated code, staging config)
       working-directory: ./src/Angular
       run: |
+        echo "🏗️ Building Angular for staging config using validated code from PR..."
+        echo "NOTE: This is the ONLY rebuild - backend artifacts are reused as-is"
         npm ci
         npm run build -- --configuration=staging
+        echo "✅ Frontend built for staging configuration"
         
-    # Build deployment artifacts
-    - name: Publish backend
-      run: dotnet publish src/Api/Api.csproj -c Release -o ./publish/api
-      
-    - name: Package backend
+    # Reuse pre-built backend binaries without any rebuild
+    - name: Package backend from PR artifacts (no rebuild)
       run: |
-        cd ./publish/api
-        zip -r ../../staging-api.zip .
-        cd ../..
+        echo "📦 Packaging backend using pre-built Release binaries from PR (NO REBUILD)..."
+        # Verify the pre-built binaries exist
+        if [ ! -d "src/Api/bin/Release/net8.0" ]; then
+          echo "❌ ERROR: Pre-built backend artifacts not found!"
+          echo "Expected: src/Api/bin/Release/net8.0/"
+          echo "Available:"
+          find . -name "*.dll" -path "*/Release/*" | head -10
+          exit 1
+        fi
+        
+        # Package the already-built backend
+        mkdir -p ./staging-backend
+        cp -r src/Api/bin/Release/net8.0/* ./staging-backend/
+        
+        # Copy version info from PR validation
+        if [ -f "version.json" ]; then
+          cp version.json ./staging-backend/
+          echo "📋 Version info added:"
+          cat ./staging-backend/version.json
+        fi
+        
+        cd ./staging-backend
+        zip -r ../staging-api.zip .
+        cd ..
+        echo "✅ Backend packaged using PR artifacts WITHOUT rebuilding"
         
     - name: Package frontend
       run: |
+        echo "📦 Packaging frontend build..."
         cd ./src/Angular/dist
         zip -r ../../../staging-frontend.zip .
         cd ../../..
+        echo "✅ Frontend packaged"
         
     - name: Upload staging artifacts
       uses: actions/upload-artifact@v4
@@ -176,7 +211,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging Environment
     runs-on: ubuntu-latest
-    needs: build-artifacts
+    needs: prepare-staging-artifacts
     environment:
       name: staging
       url: ${{ steps.deploy.outputs.url }}
