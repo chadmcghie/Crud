@@ -97,46 +97,7 @@ jobs:
           version.json
         retention-days: 30
 
-  # Reuse feature artifacts (preferred path)  
-  prepare-artifacts:
-    name: Prepare Artifacts for Testing
-    runs-on: ubuntu-latest
-    needs: [verify-feature-artifacts, build]
-    if: always() && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
-    
-    steps:
-    - name: Download feature artifacts (if available)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
-      uses: actions/download-artifact@v4
-      with:
-        name: feature-build-${{ github.sha }}
-        
-    - name: Download fallback build artifacts (if needed)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
-      uses: actions/download-artifact@v4
-      with:
-        name: dev-artifact-${{ github.sha }}
-    
-    - name: Standardize artifact name for downstream jobs
-      run: |
-        echo "📦 Standardizing artifact name for downstream reuse..."
-        # The artifacts are already in the current directory
-        ls -la
-        if [ -f "version.json" ]; then
-          echo "📋 Using artifact version:"
-          cat version.json | jq .
-        fi
-        
-    - name: Upload standardized artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dev-artifact-${{ github.sha }}
-        path: |
-          src/*/bin/Release/
-          test/*/bin/Release/
-          src/Api/appsettings*.json
-          version.json
-        retention-days: 30
+  # Note: No prepare-artifacts job needed - downstream jobs directly use appropriate artifacts
 
   code-quality:
     name: Code Quality & Auto-Format
@@ -245,7 +206,8 @@ jobs:
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: [prepare-artifacts, code-quality]
+    needs: [verify-feature-artifacts, build, code-quality]
+    if: always() && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
     
     steps:
     - name: Checkout code
@@ -258,7 +220,14 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download dev artifact
+    - name: Download feature artifacts (if available)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+        
+    - name: Download fallback build artifacts (if needed)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
       uses: actions/download-artifact@v4
       with:
         name: dev-artifact-${{ github.sha }}
@@ -335,7 +304,8 @@ jobs:
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [prepare-artifacts, code-quality]
+    needs: [verify-feature-artifacts, build, code-quality]
+    if: always() && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
     
     steps:
     - name: Checkout code
@@ -348,7 +318,14 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download dev artifact
+    - name: Download feature artifacts (if available)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+        
+    - name: Download fallback build artifacts (if needed)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
       uses: actions/download-artifact@v4
       with:
         name: dev-artifact-${{ github.sha }}
@@ -398,9 +375,9 @@ jobs:
   e2e-smoke-tests:
     name: E2E Smoke Tests (PRs to Main Only)
     runs-on: ubuntu-latest
-    needs: [prepare-artifacts, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    needs: [verify-feature-artifacts, build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
     # Only run E2E tests for PRs to main (production). PRs to dev get E2E coverage in staging deployment.
-    if: needs.prepare-artifacts.result == 'success' && github.event.pull_request.base.ref == 'main'
+    if: github.event.pull_request.base.ref == 'main' && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
     
     steps:
     - name: Checkout code
@@ -418,7 +395,14 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Download dev artifact
+    - name: Download feature artifacts (if available)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+        
+    - name: Download fallback build artifacts (if needed)
+      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
       uses: actions/download-artifact@v4
       with:
         name: dev-artifact-${{ github.sha }}
@@ -488,7 +472,7 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [prepare-artifacts, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-smoke-tests]
+    needs: [verify-feature-artifacts, build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-smoke-tests]
     if: always()
     
     steps:
@@ -516,7 +500,15 @@ jobs:
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
         
-        echo "| Artifacts | ${{ needs.prepare-artifacts.result == 'success' && '✅ Ready (reused)' || (needs.prepare-artifacts.result == 'failure' && '❌ Failed') || (needs.prepare-artifacts.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        # Determine artifact status
+        ARTIFACTS_STATUS="❌ Failed"
+        if [ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ]; then
+          ARTIFACTS_STATUS="✅ Ready (feature branch)"
+        elif [ "${{ needs.build.result }}" == "success" ]; then
+          ARTIFACTS_STATUS="✅ Ready (fallback build)"
+        fi
+        
+        echo "| Artifacts | $ARTIFACTS_STATUS |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
@@ -532,7 +524,7 @@ jobs:
         # Check overall status - different logic for dev vs main PRs
         if [ "${{ github.event.pull_request.base.ref }}" == "dev" ]; then
           # For dev PRs, don't require E2E tests
-          if [ "${{ needs.prepare-artifacts.result }}" == "success" ] && \
+          if ([ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ] || [ "${{ needs.build.result }}" == "success" ]) && \
              [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.backend-integration-tests.result }}" == "success" ]; then
@@ -547,7 +539,7 @@ jobs:
           fi
         else
           # For main PRs, require E2E tests
-          if [ "${{ needs.prepare-artifacts.result }}" == "success" ] && \
+          if ([ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ] || [ "${{ needs.build.result }}" == "success" ]) && \
              [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.backend-integration-tests.result }}" == "success" ] && \
