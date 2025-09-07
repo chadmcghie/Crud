@@ -13,9 +13,9 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Quick feedback for developers working on feature branches
-  quick-validation:
-    name: Quick Validation
+  # Build once at feature level, create artifacts for downstream reuse
+  build-and-quick-validation:
+    name: Build & Quick Validation
     runs-on: ubuntu-latest
     
     steps:
@@ -26,6 +26,8 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -34,19 +36,43 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Backend checks
+    # Backend build - this is the ONLY build for this code version
     - name: Restore .NET dependencies
       run: dotnet restore solutions/Crud.sln
       
-    - name: Build backend
+    - name: Build backend (once for entire pipeline)
       run: dotnet build solutions/Crud.sln --no-restore --configuration Release
       
-    - name: Run backend unit tests only
+    - name: Create versioned artifact for downstream reuse
       run: |
-        echo "🧪 Running backend unit tests..."
+        echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
+        echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+        # Package with version info for artifact traceability
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"feature-branch-tests\"}" > version.json
+        
+    - name: Verify appsettings files exist
+      run: |
+        echo "📁 Verifying appsettings files before artifact upload:"
+        ls -la src/Api/appsettings*.json
+        echo "✅ All appsettings files found"
+      
+    - name: Upload build artifacts for reuse in PRs
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+          version.json
+        retention-days: 7  # Shorter retention for feature artifacts
+      
+    - name: Run backend unit tests (quick validation)
+      run: |
+        echo "🧪 Running backend unit tests for quick validation..."
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
       
-    # Frontend checks
+    # Frontend quick validation
     - name: Install Angular dependencies
       working-directory: ./src/Angular
       run: npm ci
@@ -62,15 +88,22 @@ jobs:
     - name: Summary
       if: always()
       run: |
-        echo "## 🏃 Feature Branch Quick Validation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "## 🏗️ Feature Branch Build & Validation Complete" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Progressive Testing Strategy**: Feature branch validation completed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Progressive Testing Strategy**: Build artifacts created for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### What was tested:" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Backend build and unit tests" >> $GITHUB_STEP_SUMMARY
+        echo "### What was completed:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Backend build (ONCE for entire pipeline)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Build artifacts created: \`feature-build-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Backend unit tests" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Frontend linting and unit tests" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifact Reuse Strategy:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build artifacts** will be reused by PR validation (no rebuild)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Staging deployment** will reuse PR artifacts (no rebuild)" >> $GITHUB_STEP_SUMMARY  
+        echo "- **Production deployment** will reuse PR artifacts (no rebuild)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Next steps:" >> $GITHUB_STEP_SUMMARY
-        echo "- Create PR to \`dev\`: Full test suite (build + unit + integration)" >> $GITHUB_STEP_SUMMARY
+        echo "- Create PR to \`dev\`: Reuse artifacts + integration tests" >> $GITHUB_STEP_SUMMARY
         echo "- After merge to \`dev\`: E2E smoke tests run during staging deployment" >> $GITHUB_STEP_SUMMARY
-        echo "- PR to \`main\`: E2E smoke tests + production safety checks" >> $GITHUB_STEP_SUMMARY
+        echo "- PR to \`main\`: Reuse artifacts + E2E smoke tests + production safety checks" >> $GITHUB_STEP_SUMMARY
