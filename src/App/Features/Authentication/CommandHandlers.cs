@@ -483,7 +483,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             }
 
             // Log the password reset request
-            _logger.LogInformation("Password reset requested for user: {UserId}, Email: {Email}", user.Id, request.Email);
+            _logger.LogInformation("Password reset requested for user: {UserId}", user.Id);
 
             try
             {
