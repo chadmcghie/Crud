@@ -142,9 +142,8 @@ public class AuthController : ControllerBase
             ? sanitizedEmail.Substring(0, 3) + "***"
             : "***";
 
-        _logger.LogInformation("Password reset requested from IP: {ClientIp} for email: {Email}",
-            clientIp,
-            maskedEmail);
+        _logger.LogInformation("Password reset requested from IP: {ClientIp}",
+            clientIp);
 
         var result = await _mediator.Send(command!, cancellationToken);
 
