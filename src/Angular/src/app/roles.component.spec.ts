@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { RolesComponent } from './roles.component';
 import { ApiService, RoleDto } from './api.service';
@@ -9,6 +10,7 @@ describe('RolesComponent', () => {
   let component: RolesComponent;
   let fixture: ComponentFixture<RolesComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
 
   const mockRole: RoleDto = {
     id: '1',
@@ -19,19 +21,32 @@ describe('RolesComponent', () => {
   beforeEach(async () => {
     const apiServiceSpy = jasmine.createSpyObj('ApiService', [
       'createRole',
-      'updateRole'
+      'updateRole',
+      'getRole'
     ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({})
+    });
 
     await TestBed.configureTestingModule({
       imports: [RolesComponent, ReactiveFormsModule, HttpClientTestingModule],
       providers: [
-        { provide: ApiService, useValue: apiServiceSpy }
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: activatedRouteSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(RolesComponent);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    
+    // Set up default return values for API methods
+    apiService.createRole.and.returnValue(of(mockRole));
+    apiService.updateRole.and.returnValue(of(undefined));
+    apiService.getRole.and.returnValue(of(mockRole));
   });
 
   it('should create', () => {
@@ -45,28 +60,195 @@ describe('RolesComponent', () => {
     expect(component.form.get('description')?.value).toBe('');
   });
 
-  it('should populate form when editing role', () => {
-    component.editingRole = mockRole;
+  it('should reset form when editingRole changes to null', () => {
+    // Test the normal add mode (no edit params)
+    fixture.detectChanges(); // Initialize in add mode
     
+    // Manually set a value to test reset
+    component.form.patchValue({
+      name: 'Test Role',
+      description: 'Test Description'
+    });
+    
+    // Now reset the form 
+    component.onReset();
+    
+    expect(component.form.get('name')?.value).toBe('');
+    expect(component.form.get('description')?.value).toBe('');
+  });
+
+  // Test normal create flow
+  it('should create role successfully', () => {
     fixture.detectChanges();
     
+    component.form.patchValue({
+      name: 'Manager',
+      description: 'Manager role'
+    });
+    
+    component.onSubmit();
+    
+    expect(apiService.createRole).toHaveBeenCalledWith({
+      name: 'Manager',
+      description: 'Manager role'
+    });
+    expect(router.navigate).toHaveBeenCalledWith(['/roles-list']);
+    expect(component.isSubmitting).toBe(false);
+  });
+
+  // Other regular tests continue here...
+});
+
+// Separate describe block for Edit Mode tests
+describe('RolesComponent - Edit Mode', () => {
+  let component: RolesComponent;
+  let fixture: ComponentFixture<RolesComponent>;
+  let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
+
+  const mockRole: RoleDto = {
+    id: '1',
+    name: 'Admin',
+    description: 'Administrator role'
+  };
+
+  beforeEach(async () => {
+    const apiServiceSpy = jasmine.createSpyObj('ApiService', [
+      'createRole',
+      'updateRole',
+      'getRole'
+    ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    // Create ActivatedRoute with edit params
+    const editActivatedRoute = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({ edit: '1' })
+    });
+
+    await TestBed.configureTestingModule({
+      imports: [RolesComponent, ReactiveFormsModule, HttpClientTestingModule],
+      providers: [
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: editActivatedRoute }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(RolesComponent);
+    component = fixture.componentInstance;
+    apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    
+    // Set up default return values for API methods
+    apiService.createRole.and.returnValue(of(mockRole));
+    apiService.updateRole.and.returnValue(of(undefined));
+    apiService.getRole.and.returnValue(of(mockRole));
+  });
+
+  it('should populate form when editing role', () => {
+    fixture.detectChanges(); // This triggers ngOnInit with edit params
+    
+    expect(apiService.getRole).toHaveBeenCalledWith('1');
     expect(component.form.get('name')?.value).toBe(mockRole.name);
     expect(component.form.get('description')?.value).toBe(mockRole.description);
   });
 
-  it('should reset form when editingRole changes to null', () => {
-    component.editingRole = mockRole;
-    fixture.detectChanges();
+  it('should display correct title for editing role', () => {
+    fixture.detectChanges(); // This triggers ngOnInit and loads the role
     
-    // Verify form is populated
-    expect(component.form.get('name')?.value).toBe(mockRole.name);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const title = compiled.querySelector('h3');
     
-    // Change to null (simulating cancel/new role)
-    component.editingRole = null;
-    component.ngOnChanges();
+    expect(title?.textContent).toBe('Edit Role');
+  });
+
+  it('should display correct button text for editing role', () => {
+    fixture.detectChanges(); // This triggers ngOnInit and loads the role
     
-    expect(component.form.get('name')?.value).toBe(null);
-    expect(component.form.get('description')?.value).toBe(null);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const submitButton = compiled.querySelector('.btn-primary') as HTMLButtonElement;
+    
+    expect(submitButton.textContent?.trim()).toBe('Update Role');
+  });
+
+  it('should update role successfully', () => {
+    fixture.detectChanges(); // This loads the role in edit mode
+    
+    // Now modify the form and submit
+    component.form.patchValue({
+      name: 'Updated Admin',
+      description: 'Updated administrator role'
+    });
+    
+    component.onSubmit();
+    
+    expect(apiService.updateRole).toHaveBeenCalledWith('1', {
+      name: 'Updated Admin',
+      description: 'Updated administrator role'
+    });
+    expect(router.navigate).toHaveBeenCalledWith(['/roles-list']);
+    expect(component.isSubmitting).toBe(false);
+  });
+
+  it('should handle update role error', () => {
+    // Set up update role to return error
+    apiService.updateRole.and.returnValue(throwError(() => new Error('API Error')));
+    spyOn(console, 'error');
+    
+    fixture.detectChanges(); // This loads the role in edit mode
+    
+    component.form.patchValue({
+      name: 'Updated Admin'
+    });
+    
+    component.onSubmit();
+    
+    expect(console.error).toHaveBeenCalledWith('Error updating role:', jasmine.any(Error));
+    expect(component.isSubmitting).toBe(false);
+  });
+});
+
+// Continue with regular tests in the main describe block
+describe('RolesComponent - General Tests', () => {
+  let component: RolesComponent;
+  let fixture: ComponentFixture<RolesComponent>;
+  let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
+
+  const mockRole: RoleDto = {
+    id: '1',
+    name: 'Admin',
+    description: 'Administrator role'
+  };
+
+  beforeEach(async () => {
+    const apiServiceSpy = jasmine.createSpyObj('ApiService', [
+      'createRole',
+      'updateRole',
+      'getRole'
+    ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({})
+    });
+
+    await TestBed.configureTestingModule({
+      imports: [RolesComponent, ReactiveFormsModule, HttpClientTestingModule],
+      providers: [
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: activatedRouteSpy }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(RolesComponent);
+    component = fixture.componentInstance;
+    apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    
+    // Set up default return values for API methods
+    apiService.createRole.and.returnValue(of(mockRole));
+    apiService.updateRole.and.returnValue(of(undefined));
+    apiService.getRole.and.returnValue(of(mockRole));
   });
 
   it('should validate required fields', () => {
@@ -89,7 +271,6 @@ describe('RolesComponent', () => {
     };
     
     apiService.createRole.and.returnValue(of(newRole));
-    spyOn(component.roleSaved, 'emit');
     
     fixture.detectChanges();
     
@@ -104,29 +285,7 @@ describe('RolesComponent', () => {
       name: 'Manager',
       description: 'Manager role'
     });
-    expect(component.roleSaved.emit).toHaveBeenCalledWith(newRole);
-    expect(component.isSubmitting).toBe(false);
-  });
-
-  it('should update role successfully', () => {
-    component.editingRole = mockRole;
-    apiService.updateRole.and.returnValue(of(undefined));
-    spyOn(component.roleSaved, 'emit');
-    
-    fixture.detectChanges();
-    
-    component.form.patchValue({
-      name: 'Updated Admin',
-      description: 'Updated administrator role'
-    });
-    
-    component.onSubmit();
-    
-    expect(apiService.updateRole).toHaveBeenCalledWith('1', {
-      name: 'Updated Admin',
-      description: 'Updated administrator role'
-    });
-    expect(component.roleSaved.emit).toHaveBeenCalledWith(mockRole);
+    expect(router.navigate).toHaveBeenCalledWith(['/roles-list']);
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -144,23 +303,6 @@ describe('RolesComponent', () => {
     component.onSubmit();
     
     expect(console.error).toHaveBeenCalledWith('Error creating role:', jasmine.any(Error));
-    expect(component.isSubmitting).toBe(false);
-  });
-
-  it('should handle update role error', () => {
-    component.editingRole = mockRole;
-    apiService.updateRole.and.returnValue(throwError(() => new Error('API Error')));
-    spyOn(console, 'error');
-    
-    fixture.detectChanges();
-    
-    component.form.patchValue({
-      name: 'Updated Admin'
-    });
-    
-    component.onSubmit();
-    
-    expect(console.error).toHaveBeenCalledWith('Error updating role:', jasmine.any(Error));
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -185,12 +327,10 @@ describe('RolesComponent', () => {
     expect(apiService.createRole).not.toHaveBeenCalled();
   });
 
-  it('should emit cancelled event', () => {
-    spyOn(component.cancelled, 'emit');
-    
+  it('should navigate to roles list on cancel', () => {
     component.onCancel();
     
-    expect(component.cancelled.emit).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/roles-list']);
   });
 
   it('should reset form', () => {
@@ -203,8 +343,8 @@ describe('RolesComponent', () => {
     
     component.onReset();
     
-    expect(component.form.get('name')?.value).toBe(null);
-    expect(component.form.get('description')?.value).toBe(null);
+    expect(component.form.get('name')?.value).toBe('');
+    expect(component.form.get('description')?.value).toBe('');
   });
 
   it('should handle empty description as null', () => {
@@ -246,17 +386,6 @@ describe('RolesComponent', () => {
     expect(title?.textContent).toBe('Add New Role');
   });
 
-  it('should display correct title for editing role', () => {
-    component.editingRole = mockRole;
-    
-    fixture.detectChanges();
-    
-    const compiled = fixture.nativeElement as HTMLElement;
-    const title = compiled.querySelector('h3');
-    
-    expect(title?.textContent).toBe('Edit Role');
-  });
-
   it('should display correct button text for new role', () => {
     fixture.detectChanges();
     
@@ -264,17 +393,6 @@ describe('RolesComponent', () => {
     const submitButton = compiled.querySelector('.btn-primary') as HTMLButtonElement;
     
     expect(submitButton.textContent?.trim()).toBe('Create Role');
-  });
-
-  it('should display correct button text for editing role', () => {
-    component.editingRole = mockRole;
-    
-    fixture.detectChanges();
-    
-    const compiled = fixture.nativeElement as HTMLElement;
-    const submitButton = compiled.querySelector('.btn-primary') as HTMLButtonElement;
-    
-    expect(submitButton.textContent?.trim()).toBe('Update Role');
   });
 
   it('should disable submit button when form is invalid', () => {
