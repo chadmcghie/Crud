@@ -59,7 +59,7 @@ public class MockEmailService : IEmailService
         // Log the email details (in production, this would actually send the email)
         _logger.LogInformation(
             "Password reset email sent to {Email} with token {Token} (Mock Service - Not Actually Sent)",
-            email,
+            MaskEmail(email),
             resetToken.Substring(0, Math.Min(10, resetToken.Length)) + "...");
 
         _logger.LogDebug(
@@ -78,6 +78,15 @@ public class MockEmailService : IEmailService
     /// Clears all stored emails from memory
     /// </summary>
     public void ClearSentEmails() => _sentEmails.Clear();
+
+    // Masks an email address for logging: shows first letter, asterisk(s), and domain
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@')) return "masked";
+        var parts = email.Split('@');
+        if (parts[0].Length < 2) return "***@" + parts[1];
+        return $"{parts[0][0]}***@{parts[1]}";
+    }
 
     private static string GenerateEmailBody(string email, string resetUrl)
     {
