@@ -2,7 +2,7 @@ name: Pull Request Validation
 
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, staging ]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
