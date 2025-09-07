@@ -63,11 +63,10 @@ public class MockEmailService : IEmailService
             resetToken.Substring(0, Math.Min(10, resetToken.Length)) + "...");
 
         _logger.LogDebug(
-            "Email Details - From: {From}, To: {To}, Subject: {Subject}, ResetUrl: {ResetUrl}",
+            "Email Details - From: {From}, To: {To}, Subject: {Subject}",
             emailMessage.From,
             emailMessage.To,
-            emailMessage.Subject,
-            fullResetUrl);
+            emailMessage.Subject);
     }
 
     /// <summary>
