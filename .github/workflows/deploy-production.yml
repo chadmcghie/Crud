@@ -141,7 +141,7 @@ jobs:
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
-        retention-days: 30
+        retention-days: 1
 
   prepare-production-artifacts:
     name: Prepare Production Artifacts from PR Validation (No Rebuild)
@@ -230,7 +230,7 @@ jobs:
         path: |
           production-api-${{ github.sha }}.tar.gz
           production-frontend-${{ github.sha }}.tar.gz
-        retention-days: 30
+        retention-days: 1
 
   deploy-production:
     name: Deploy to Production
