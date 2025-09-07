@@ -1,12 +1,11 @@
 name: Feature Branch Tests
 
 on:
-  # TEMPORARILY DISABLED - Only running E2E tests
-  # push:
-  #   branches: 
-  #     - 'feature/**'
-  #     - 'bugfix/**'
-  #     - 'hotfix/**'
+  push:
+    branches: 
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
   workflow_dispatch:
 
 env:
@@ -63,8 +62,15 @@ jobs:
     - name: Summary
       if: always()
       run: |
-        echo "## 🏃 Quick Validation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "## 🏃 Feature Branch Quick Validation Complete" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Feature branch validation completed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Progressive Testing Strategy**: Feature branch validation completed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "This is a quick validation only. Full test suite will run when PR is created." >> $GITHUB_STEP_SUMMARY
+        echo "### What was tested:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Backend build and unit tests" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Frontend linting and unit tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next steps:" >> $GITHUB_STEP_SUMMARY
+        echo "- Create PR to \`dev\`: Full test suite (build + unit + integration)" >> $GITHUB_STEP_SUMMARY
+        echo "- After merge to \`dev\`: E2E smoke tests run during staging deployment" >> $GITHUB_STEP_SUMMARY
+        echo "- PR to \`main\`: E2E smoke tests + production safety checks" >> $GITHUB_STEP_SUMMARY
