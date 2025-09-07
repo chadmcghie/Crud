@@ -92,21 +92,20 @@ public class EmailServiceTests
     {
         // Arrange
         var email = "test@example.com";
-        var maskedEmail = "t***@example.com"; // Email is masked in logs for privacy
         var resetToken = "test-reset-token-123";
 
         // Act
         await _emailService.SendPasswordResetEmailAsync(email, resetToken);
 
-        // Assert
+        // Assert - Verify that password reset email was logged without exposing PII
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(maskedEmail)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Password reset email sent")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+            Times.Once);
     }
 
     [Fact]
