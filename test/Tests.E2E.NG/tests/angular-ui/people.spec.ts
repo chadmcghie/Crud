@@ -232,7 +232,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.refreshPage();
     await pageHelpers.switchToPeopleTab();
     
-    const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     
     // Verify name is displayed
     await expect(personRow.locator('.name-cell')).toContainText(testPerson.fullName);
@@ -256,7 +256,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.refreshPage();
     await pageHelpers.switchToPeopleTab();
     
-    const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await expect(personRow.locator('.roles-cell')).toContainText('No roles assigned');
   });
 
@@ -308,7 +308,7 @@ test.describe('People Management UI', () => {
     // Verify only one role remains
     await pageHelpers.verifyPersonHasRole(createdPerson.fullName, role2.name);
     
-    const personRow = page.locator(`tr:has-text("${createdPerson.fullName}")`);
+    const personRow = page.locator(`tr:has-text("${createdPerson.fullName}")`).first();
     await expect(personRow.locator('.roles-cell')).not.toContainText(role1.name);
   });
 
