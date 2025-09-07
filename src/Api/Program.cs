@@ -253,14 +253,18 @@ namespace Api
                 {
                     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                    // Password reset rate limit: 3 requests per 15 minutes per IP
+                    // Password reset rate limit: 3 requests per 15 minutes per IP (disabled in Testing environment)
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+                    var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
+                    var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
+                    
                     options.AddPolicy("PasswordReset", context =>
                         RateLimitPartition.GetFixedWindowLimiter(
                             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                             factory: _ => new FixedWindowRateLimiterOptions
                             {
-                                PermitLimit = 3,
-                                Window = TimeSpan.FromMinutes(15),
+                                PermitLimit = permitLimit,
+                                Window = window,
                                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                                 QueueLimit = 0
                             }));
