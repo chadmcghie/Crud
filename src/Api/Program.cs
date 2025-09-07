@@ -257,7 +257,7 @@ namespace Api
                     var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
                     var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
                     var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
-                    
+
                     options.AddPolicy("PasswordReset", context =>
                         RateLimitPartition.GetFixedWindowLimiter(
                             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
