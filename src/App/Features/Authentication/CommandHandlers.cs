@@ -474,7 +474,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
             // This prevents email enumeration attacks
             if (user == null)
             {
-                _logger.LogWarning("Password reset requested for non-existent email: {Email}", request.Email);
+                _logger.LogWarning("Password reset requested for non-existent user"); // email omitted for privacy
                 return new ForgotPasswordResponse
                 {
                     Success = true,
