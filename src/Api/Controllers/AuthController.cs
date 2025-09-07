@@ -136,10 +136,15 @@ public class AuthController : ControllerBase
         // Add rate limiting check (3 requests per 15 minutes per IP)
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        // Log the password reset attempt
+        // Log the password reset attempt (sanitized to prevent log injection)
+        var sanitizedEmail = command?.Email?.Replace('\r', ' ').Replace('\n', ' ') ?? "unknown";
+        var maskedEmail = sanitizedEmail.Length > 3
+            ? sanitizedEmail.Substring(0, 3) + "***"
+            : "***";
+
         _logger.LogInformation("Password reset requested from IP: {ClientIp} for email: {Email}",
             clientIp,
-            command?.Email?.Substring(0, Math.Min(3, command.Email.Length)) + "***");
+            maskedEmail);
 
         var result = await _mediator.Send(command!, cancellationToken);
 

@@ -60,12 +60,12 @@ public class MockEmailService : IEmailService
         _logger.LogInformation(
             "Password reset email sent to {Email} with token {Token} (Mock Service - Not Actually Sent)",
             MaskEmail(email),
-            resetToken.Substring(0, Math.Min(10, resetToken.Length)) + "...");
+            "[REDACTED]");
 
         _logger.LogDebug(
             "Email Details - From: {From}, To: {To}, Subject: {Subject}",
-            emailMessage.From,
-            emailMessage.To,
+            "noreply@example.com",
+            MaskEmail(emailMessage.To),
             emailMessage.Subject);
     }
 
