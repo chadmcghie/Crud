@@ -328,7 +328,7 @@ test.describe('Full Workflow Integration Tests', () => {
     }
     
     // Wait for Angular to fully load
-    await page.waitForSelector('app-root', { timeout: 8000 });
+    await page.locator('app-root').waitFor({ state: 'visible', timeout: 8000 });
     // Wait for Angular to be fully initialized
     await page.waitForFunction(() => {
       // Check if Angular is defined and ready

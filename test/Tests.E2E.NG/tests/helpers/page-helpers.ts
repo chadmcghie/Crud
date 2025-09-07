@@ -34,10 +34,10 @@ export class PageHelpers {
   // Navigation helpers
   async navigateToApp(): Promise<void> {
     await this.page.goto('/');
-    // Wait for the main app component to be fully loaded - this is more reliable than networkidle
-    await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
+    // Use locators with auto-retry for better Angular compatibility
+    await this.page.locator('h1:has-text("People & Roles Management System")').waitFor({ state: 'visible', timeout: 30000 });
     // Wait for Angular to initialize and render the main content
-    await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
+    await this.page.locator('button:has-text("👥 People Management")').waitFor({ state: 'visible', timeout: 15000 });
     // Wait for the app to be interactive (buttons clickable)
     await this.page.waitForFunction(() => {
       const button = document.querySelector('button');
@@ -47,25 +47,26 @@ export class PageHelpers {
 
   async switchToPeopleTab(): Promise<void> {
     await this.page.click('button:has-text("👥 People Management")');
-    await this.page.waitForSelector('app-people-list', { timeout: 10000 });
+    await this.page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
     // Wait for the people content to be fully rendered
-    await this.page.waitForSelector('h3:has-text("People Directory")', { timeout: 5000 });
+    await this.page.locator('h3:has-text("People Directory")').waitFor({ state: 'visible', timeout: 5000 });
   }
 
   async switchToRolesTab(): Promise<void> {
     await this.page.click('button:has-text("🎭 Roles Management")');
-    await this.page.waitForSelector('app-roles-list', { timeout: 10000 });
+    await this.page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 10000 });
     // Wait for the roles content to be fully rendered
-    await this.page.waitForSelector('h3:has-text("Roles Management")', { timeout: 5000 });
+    await this.page.locator('h3:has-text("Roles Management")').waitFor({ state: 'visible', timeout: 5000 });
   }
 
   // Role management helpers
   async clickAddRole(): Promise<void> {
     await this.retryOperation(async () => {
       await this.page.click('button:has-text("Add New Role")');
-      await this.page.waitForSelector('app-roles form', { timeout: 10000 });
+      // Use locator with auto-retry for better async handling
+      await this.page.locator('app-roles form').waitFor({ state: 'visible', timeout: 10000 });
       // Wait for form fields to be ready
-      await this.page.waitForSelector('input#name', { timeout: 5000 });
+      await this.page.locator('input#name').waitFor({ state: 'visible', timeout: 5000 });
     }, 3, 500, 'clickAddRole');
   }
 
@@ -164,9 +165,10 @@ export class PageHelpers {
   // Person management helpers
   async clickAddPerson(): Promise<void> {
     await this.page.click('button:has-text("Add New Person")');
-    await this.page.waitForSelector('app-people form', { timeout: 10000 });
+    // Use locator with auto-retry for Angular async rendering
+    await this.page.locator('app-people form').waitFor({ state: 'visible', timeout: 10000 });
     // Wait for form fields to be ready and interactable
-    await this.page.waitForSelector('input#fullName', { timeout: 5000 });
+    await this.page.locator('input#fullName').waitFor({ state: 'visible', timeout: 5000 });
     await this.page.waitForFunction(() => {
       const input = document.querySelector('input#fullName') as HTMLInputElement;
       return input && !input.disabled;
@@ -248,11 +250,9 @@ export class PageHelpers {
     // Click the edit button
     await personRow.locator('button:has-text("Edit")').click();
     
-    // Wait for the form to appear and be ready
-    await this.page.waitForSelector('app-people form', { timeout: 10000 });
-    await this.page.waitForSelector('input#fullName', { timeout: 5000 });
-    
-    // Additional wait for form to be fully loaded
+    // Wait for the form to appear and be ready using locators
+    await this.page.locator('app-people form').waitFor({ state: 'visible', timeout: 10000 });
+    await this.page.locator('input#fullName').waitFor({ state: 'visible', timeout: 5000 });
   }
 
   async updatePersonForm(): Promise<void> {
@@ -310,9 +310,8 @@ export class PageHelpers {
   }
 
   async verifyPersonExists(personName: string): Promise<void> {
-    // Use retry logic with proper timeout
-    await this.page.waitForSelector(`tr:has-text("${personName}")`, { timeout: 10000 });
-    // Use first() to handle multiple matches in strict mode
+    // Use locator with auto-retry for better reliability
+    await this.page.locator(`tr:has-text("${personName}")`).first().waitFor({ state: 'visible', timeout: 10000 });
     await expect(this.page.locator(`tr:has-text("${personName}")`).first()).toBeVisible();
   }
 
@@ -359,10 +358,9 @@ export class PageHelpers {
   async refreshPage(): Promise<void> {
     await this.retryOperation(async () => {
       await this.page.reload();
-      // Instead of waiting for networkidle, wait for specific content to be ready
-      await this.page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 30000 });
-      await this.page.waitForSelector('button:has-text("👥 People Management")', { timeout: 15000 });
-      // Small buffer for Angular to stabilize
+      // Use locators for better async handling
+      await this.page.locator('h1:has-text("People & Roles Management System")').waitFor({ state: 'visible', timeout: 30000 });
+      await this.page.locator('button:has-text("👥 People Management")').waitFor({ state: 'visible', timeout: 15000 });
       }, 3, 2000, 'refreshPage');
   }
 
