@@ -82,9 +82,11 @@ public class MockEmailService : IEmailService
     // Masks an email address for logging: shows first letter, asterisk(s), and domain
     private static string MaskEmail(string email)
     {
-        if (string.IsNullOrEmpty(email) || !email.Contains('@')) return "masked";
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+            return "masked";
         var parts = email.Split('@');
-        if (parts[0].Length < 2) return "***@" + parts[1];
+        if (parts[0].Length < 2)
+            return "***@" + parts[1];
         return $"{parts[0][0]}***@{parts[1]}";
     }
 
