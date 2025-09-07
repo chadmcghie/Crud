@@ -56,7 +56,7 @@ test.describe('@smoke People Module', () => {
     await peopleLink.click();
     
     // Check for people list container
-    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
     const listContainer = page.locator('.people-table, app-people-list').first();
     await expect(listContainer).toBeVisible();
   });
@@ -75,12 +75,18 @@ test.describe('@smoke People Module', () => {
     // Wait for app to load
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Navigate directly to the people form page
-    const peopleFormLink = page.locator('a[routerLink="/people"]');
-    await peopleFormLink.click();
+    // Click on People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Click add button
+    const addButton = page.locator('button:has-text("Add New Person")');
+    await expect(addButton).toBeVisible();
+    await addButton.click();
     
     // Form should be visible
-    await page.waitForSelector('app-people form', { timeout: 5000 });
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
     const form = page.locator('app-people form').first();
     await expect(form).toBeVisible();
     
@@ -102,7 +108,7 @@ test.describe('@smoke Roles Module', () => {
     await rolesLink.click();
     
     // Wait for roles component to load
-    await page.waitForSelector('app-roles-list', { timeout: 5000 });
+    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
     
     // Check for roles list container
     const listContainer = page.locator('.roles-table, app-roles-list').first();

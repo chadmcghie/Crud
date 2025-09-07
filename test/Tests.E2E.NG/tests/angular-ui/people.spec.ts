@@ -276,7 +276,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.editPerson(createdPerson.fullName);
     
     // Check role checkboxes - wait for roles to load first
-    await page.waitForSelector('.roles-grid', { timeout: 10000 });
+    await page.locator('.roles-grid').waitFor({ state: 'visible', timeout: 10000 });
     
     // Find and check the checkboxes for the roles
     const role1Checkbox = page.locator(`input[id="role-${role1.id}"]`);
@@ -298,7 +298,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.editPerson(createdPerson.fullName);
     
     // Wait for roles to load and uncheck role1
-    await page.waitForSelector('.roles-grid', { timeout: 10000 });
+    await page.locator('.roles-grid').waitFor({ state: 'visible', timeout: 10000 });
     const role1CheckboxAgain = page.locator(`input[id="role-${role1.id}"]`);
     await role1CheckboxAgain.waitFor({ state: 'visible', timeout: 5000 });
     await role1CheckboxAgain.uncheck();

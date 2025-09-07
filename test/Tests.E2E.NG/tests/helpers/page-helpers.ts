@@ -49,14 +49,14 @@ export class PageHelpers {
     await this.page.click('a[routerLink="/people-list"]');
     await this.page.waitForSelector('app-people-list', { timeout: 10000 });
     // Wait for the people content to be fully rendered
-    await this.page.waitForSelector('h3:has-text("People Directory")', { timeout: 5000 });
+    await this.page.locator('h3:has-text("People Directory")').waitFor({ state: 'visible', timeout: 5000 });
   }
 
   async switchToRolesTab(): Promise<void> {
     await this.page.click('a[routerLink="/roles-list"]');
     await this.page.waitForSelector('app-roles-list', { timeout: 10000 });
     // Wait for the roles content to be fully rendered
-    await this.page.waitForSelector('h3:has-text("Roles Management")', { timeout: 5000 });
+    await this.page.locator('h3:has-text("Roles Management")').waitFor({ state: 'visible', timeout: 5000 });
   }
 
   // Role management helpers
@@ -72,7 +72,7 @@ export class PageHelpers {
       await this.page.waitForSelector('app-roles', { timeout: 10000 });
       
       // Wait for form fields to be ready
-      await this.page.waitForSelector('input#name', { timeout: 5000 });
+      await this.page.locator('input#name').waitFor({ state: 'visible', timeout: 5000 });
     }, 3, 500, 'clickAddRole');
   }
 
@@ -186,7 +186,7 @@ export class PageHelpers {
     await this.page.waitForSelector('app-people', { timeout: 10000 });
     
     // Wait for form fields to be ready and interactable
-    await this.page.waitForSelector('input#fullName', { timeout: 5000 });
+    await this.page.locator('input#fullName').waitFor({ state: 'visible', timeout: 5000 });
     await this.page.waitForFunction(() => {
       const input = document.querySelector('input#fullName') as HTMLInputElement;
       return input && !input.disabled;
@@ -320,9 +320,8 @@ export class PageHelpers {
   }
 
   async verifyPersonExists(personName: string): Promise<void> {
-    // Use retry logic with proper timeout
-    await this.page.waitForSelector(`tr:has-text("${personName}")`, { timeout: 10000 });
-    // Use first() to handle multiple matches in strict mode
+    // Use locator with auto-retry for better reliability
+    await this.page.locator(`tr:has-text("${personName}")`).first().waitFor({ state: 'visible', timeout: 10000 });
     await expect(this.page.locator(`tr:has-text("${personName}")`).first()).toBeVisible();
   }
 
