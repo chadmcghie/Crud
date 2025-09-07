@@ -130,14 +130,14 @@ jobs:
           test/Tests.E2E.NG/test-results/
         retention-days: 7
 
-  build-artifacts:
-    name: Build Deployment Artifacts from PR Validation
+  prepare-staging-artifacts:
+    name: Prepare Staging Deployment Artifacts (No Rebuild)
     runs-on: ubuntu-latest
     needs: staging-smoke-tests
     if: needs.staging-smoke-tests.result == 'success'
     
     steps:
-    - name: Checkout code
+    - name: Checkout code (for package.json and Angular config only)
       uses: actions/checkout@v4
       
     - name: Download dev artifact from PR validation
@@ -145,51 +145,59 @@ jobs:
       with:
         name: dev-artifact-${{ github.sha }}
       
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Setup Node.js
+    - name: Setup Node.js (for Angular build only)
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Build Angular for staging (reusing already validated code)
-    - name: Build frontend for staging
+    # IMPORTANT: Only build Angular for staging config - backend artifacts are reused as-is
+    - name: Build frontend for staging (validated code, staging config)
       working-directory: ./src/Angular
       run: |
-        echo "🏗️ Building Angular for staging using validated code from PR..."
+        echo "🏗️ Building Angular for staging config using validated code from PR..."
+        echo "NOTE: This is the ONLY rebuild - backend artifacts are reused as-is"
         npm ci
         npm run build -- --configuration=staging
+        echo "✅ Frontend built for staging configuration"
         
-    # Publish backend using pre-built binaries
-    - name: Publish backend from PR artifacts
+    # Reuse pre-built backend binaries without any rebuild
+    - name: Package backend from PR artifacts (no rebuild)
       run: |
-        echo "📦 Publishing backend using pre-built Release binaries from PR..."
-        # The binaries are already built in Release mode from PR validation
-        # Just copy them to the publish directory
-        mkdir -p ./publish/api
-        cp -r src/Api/bin/Release/net8.0/* ./publish/api/
+        echo "📦 Packaging backend using pre-built Release binaries from PR (NO REBUILD)..."
+        # Verify the pre-built binaries exist
+        if [ ! -d "src/Api/bin/Release/net8.0" ]; then
+          echo "❌ ERROR: Pre-built backend artifacts not found!"
+          echo "Expected: src/Api/bin/Release/net8.0/"
+          echo "Available:"
+          find . -name "*.dll" -path "*/Release/*" | head -10
+          exit 1
+        fi
+        
+        # Package the already-built backend
+        mkdir -p ./staging-backend
+        cp -r src/Api/bin/Release/net8.0/* ./staging-backend/
+        
         # Copy version info from PR validation
         if [ -f "version.json" ]; then
-          cp version.json ./publish/api/
+          cp version.json ./staging-backend/
+          echo "📋 Version info added:"
+          cat ./staging-backend/version.json
         fi
-        echo "✅ Backend published using PR artifacts"
-      
-    - name: Package backend
-      run: |
-        cd ./publish/api
-        zip -r ../../staging-api.zip .
-        cd ../..
+        
+        cd ./staging-backend
+        zip -r ../staging-api.zip .
+        cd ..
+        echo "✅ Backend packaged using PR artifacts WITHOUT rebuilding"
         
     - name: Package frontend
       run: |
+        echo "📦 Packaging frontend build..."
         cd ./src/Angular/dist
         zip -r ../../../staging-frontend.zip .
         cd ../../..
+        echo "✅ Frontend packaged"
         
     - name: Upload staging artifacts
       uses: actions/upload-artifact@v4
@@ -203,7 +211,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging Environment
     runs-on: ubuntu-latest
-    needs: build-artifacts
+    needs: prepare-staging-artifacts
     environment:
       name: staging
       url: ${{ steps.deploy.outputs.url }}
