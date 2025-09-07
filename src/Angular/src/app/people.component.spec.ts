@@ -11,6 +11,7 @@ describe('PeopleComponent', () => {
   let fixture: ComponentFixture<PeopleComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
   let router: jasmine.SpyObj<Router>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let activatedRoute: jasmine.SpyObj<ActivatedRoute>;
 
   const mockRoles: RoleDto[] = [
@@ -195,6 +196,7 @@ describe('PeopleComponent', () => {
     const mockActivatedRoute = {
       queryParams: of({ edit: mockPerson.id })
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     component['route'] = mockActivatedRoute as any;
     apiService.getPerson.and.returnValue(of(mockPerson));
     
@@ -248,6 +250,7 @@ describe('PeopleComponent', () => {
     const mockActivatedRoute = {
       queryParams: of({ edit: mockPerson.id })
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     component['route'] = mockActivatedRoute as any;
     apiService.getPerson.and.returnValue(of(mockPerson));
     
