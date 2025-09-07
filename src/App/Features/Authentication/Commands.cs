@@ -31,6 +31,44 @@ public class LogoutCommand : IRequest<bool>
     public Guid UserId { get; set; }
 }
 
+public class ForgotPasswordCommand : IRequest<ForgotPasswordResponse>
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ForgotPasswordResponse
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+public class ResetPasswordCommand : IRequest<ResetPasswordResponse>
+{
+    public string Token { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class ResetPasswordResponse
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+public class ValidateResetTokenQuery : IRequest<ValidateResetTokenResponse>
+{
+    public string Token { get; set; } = string.Empty;
+}
+
+public class ValidateResetTokenResponse
+{
+    public bool IsValid { get; set; }
+    public bool IsExpired { get; set; }
+    public bool IsUsed { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+}
+
 public class AuthenticationResponse
 {
     public bool Success { get; set; }

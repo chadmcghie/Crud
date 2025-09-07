@@ -3,6 +3,7 @@ using App.Features.Authentication;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.Controllers;
 
@@ -125,6 +126,63 @@ public class AuthController : ControllerBase
         }
 
         return BadRequest(new { error = "Failed to logout" });
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("PasswordReset")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken cancellationToken)
+    {
+        // Add rate limiting check (3 requests per 15 minutes per IP)
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // Log the password reset attempt
+        _logger.LogInformation("Password reset requested from IP: {ClientIp} for email: {Email}",
+            clientIp,
+            command?.Email?.Substring(0, Math.Min(3, command.Email.Length)) + "***");
+
+        var result = await _mediator.Send(command!, cancellationToken);
+
+        if (result.Success)
+        {
+            return Ok(new { message = result.Message });
+        }
+
+        return BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("PasswordReset")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
+    {
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        _logger.LogInformation("Password reset attempt from IP: {ClientIp}", clientIp);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.Success)
+        {
+            return Ok(new { message = result.Message });
+        }
+
+        return BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("validate-reset-token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ValidateResetToken([FromBody] ValidateResetTokenQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(new
+        {
+            isValid = result.IsValid,
+            isExpired = result.IsExpired,
+            isUsed = result.IsUsed,
+            expiresAt = result.ExpiresAt
+        });
     }
 
     [HttpGet("me")]

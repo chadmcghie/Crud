@@ -35,6 +35,10 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+        // Add password reset services
+        services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
+        services.AddScoped<IEmailService, MockEmailService>();
+
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();
 
@@ -87,6 +91,10 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+        // Add password reset services
+        services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
+        services.AddScoped<IEmailService, MockEmailService>();
 
         // Add database test service for testing scenarios
         services.AddScoped<DatabaseTestService>();

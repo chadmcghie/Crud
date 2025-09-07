@@ -98,7 +98,8 @@
       "Bash(git commit:*)",
       "Bash(ng build:*)",
       "Bash(gh project list:*)",
-      "Read(//c/Users/chadm/source/repos/Crud/**)"
+      "Read(//c/Users/chadm/source/repos/Crud/**)",
+      "Bash(dotnet ef migrations add:*)"
     ],
     "deny": [],
     "ask": [],
