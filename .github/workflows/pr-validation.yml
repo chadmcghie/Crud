@@ -21,46 +21,37 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Download and verify artifacts from feature branch (no rebuild)
-  verify-feature-artifacts:
-    name: Verify Feature Build Artifacts
+  # Simplified: Always build if needed. Try to download artifacts first, build if not available.
+  build:
+    name: Build Solution
     runs-on: ubuntu-latest
-    outputs:
-      artifacts-available: ${{ steps.check-artifacts.outputs.available }}
     
     steps:
-    - name: Download feature build artifacts
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # Try to download feature artifacts first (optimization)
+    - name: Download feature build artifacts (if available)
       id: download-artifacts
       uses: actions/download-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
       continue-on-error: true
         
-    - name: Check artifact availability
-      id: check-artifacts
+    - name: Check if build needed
+      id: build-needed
       run: |
         if [ "${{ steps.download-artifacts.outcome }}" == "success" ] && [ -f "version.json" ]; then
-          echo "available=true" >> $GITHUB_OUTPUT
-          echo "✅ Feature build artifacts found and verified"
-          echo "📋 Build info:"
+          echo "needed=false" >> $GITHUB_OUTPUT
+          echo "✅ Feature build artifacts found - reusing"
           cat version.json | jq .
         else
-          echo "available=false" >> $GITHUB_OUTPUT
-          echo "❌ Feature build artifacts not found - will need to build"
+          echo "needed=true" >> $GITHUB_OUTPUT
+          echo "🔨 No artifacts found - will build"
         fi
-
-  # Fallback build if no feature artifacts exist (for direct PRs without feature branch push)
-  build:
-    name: Build Solution (Fallback)
-    runs-on: ubuntu-latest
-    needs: verify-feature-artifacts
-    if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
       
     - name: Setup .NET
+      if: steps.build-needed.outputs.needed == 'true'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -68,36 +59,39 @@ jobs:
         cache-dependency-path: 'src/**/*.csproj'
         
     - name: Restore .NET dependencies
+      if: steps.build-needed.outputs.needed == 'true'
       run: dotnet restore solutions/Crud.sln
       
     - name: Build solution
+      if: steps.build-needed.outputs.needed == 'true'
       run: dotnet build solutions/Crud.sln --no-restore --configuration Release
       
-    - name: Create versioned artifact
+    - name: Create versioned artifact (if built)
+      if: steps.build-needed.outputs.needed == 'true'
       run: |
         echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
         echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
         # Package with version info
-        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"pr-validation-fallback\"}" > version.json
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"pr-validation\"}" > version.json
         
-    - name: Verify appsettings files exist
+    - name: Verify appsettings files exist (if built)
+      if: steps.build-needed.outputs.needed == 'true'
       run: |
         echo "📁 Verifying appsettings files before artifact upload:"
         ls -la src/Api/appsettings*.json
         echo "✅ All appsettings files found"
       
-    - name: Upload versioned build artifacts
+    - name: Upload build artifacts (if built)
+      if: steps.build-needed.outputs.needed == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
         path: |
           src/*/bin/Release/
           test/*/bin/Release/
           src/Api/appsettings*.json
           version.json
-        retention-days: 30
-
-  # Note: No prepare-artifacts job needed - downstream jobs directly use appropriate artifacts
+        retention-days: 7
 
   code-quality:
     name: Code Quality & Auto-Format
@@ -206,8 +200,8 @@ jobs:
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: [verify-feature-artifacts, build, code-quality]
-    if: always() && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
+    needs: [build, code-quality]
+    if: always() && needs.build.result == 'success'
     
     steps:
     - name: Checkout code
@@ -220,17 +214,17 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download feature artifacts (if available)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+    - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
+      continue-on-error: true
         
-    - name: Download fallback build artifacts (if needed)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
+    - name: Download PR build artifacts (fallback)
       uses: actions/download-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
     
     - name: Copy appsettings to test output
       run: |
@@ -304,8 +298,8 @@ jobs:
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [verify-feature-artifacts, build, code-quality]
-    if: always() && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
+    needs: [build, code-quality]
+    if: always() && needs.build.result == 'success'
     
     steps:
     - name: Checkout code
@@ -318,17 +312,17 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download feature artifacts (if available)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+    - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
+      continue-on-error: true
         
-    - name: Download fallback build artifacts (if needed)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
+    - name: Download PR build artifacts (fallback)
       uses: actions/download-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
     
     - name: Copy appsettings to test output
       run: |
@@ -375,9 +369,9 @@ jobs:
   e2e-smoke-tests:
     name: E2E Smoke Tests (PRs to Main Only)
     runs-on: ubuntu-latest
-    needs: [verify-feature-artifacts, build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests]
     # Only run E2E tests for PRs to main (production). PRs to dev get E2E coverage in staging deployment.
-    if: github.event.pull_request.base.ref == 'main' && (needs.verify-feature-artifacts.outputs.artifacts-available == 'true' || needs.build.result == 'success')
+    if: github.event.pull_request.base.ref == 'main' && needs.build.result == 'success'
     
     steps:
     - name: Checkout code
@@ -395,17 +389,17 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Download feature artifacts (if available)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available == 'true'
+    - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
+      continue-on-error: true
         
-    - name: Download fallback build artifacts (if needed)
-      if: needs.verify-feature-artifacts.outputs.artifacts-available != 'true'
+    - name: Download PR build artifacts (fallback)
       uses: actions/download-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -472,7 +466,7 @@ jobs:
   pr-validation-summary:
     name: PR Validation Summary
     runs-on: ubuntu-latest
-    needs: [verify-feature-artifacts, build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-smoke-tests]
+    needs: [build, backend-unit-tests, frontend-unit-tests, backend-integration-tests, e2e-smoke-tests]
     if: always()
     
     steps:
@@ -500,15 +494,13 @@ jobs:
         echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
         
-        # Determine artifact status
-        ARTIFACTS_STATUS="❌ Failed"
-        if [ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ]; then
-          ARTIFACTS_STATUS="✅ Ready (feature branch)"
-        elif [ "${{ needs.build.result }}" == "success" ]; then
-          ARTIFACTS_STATUS="✅ Ready (fallback build)"
+        # Build status
+        BUILD_STATUS="❌ Failed"
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          BUILD_STATUS="✅ Success"
         fi
         
-        echo "| Artifacts | $ARTIFACTS_STATUS |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | $BUILD_STATUS |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Unit Tests | ${{ needs.backend-unit-tests.result == 'success' && '✅ Passed' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Frontend Unit Tests | ${{ needs.frontend-unit-tests.result == 'success' && '✅ Passed' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Backend Integration Tests | ${{ needs.backend-integration-tests.result == 'success' && '✅ Passed' || (needs.backend-integration-tests.result == 'failure' && '❌ Failed') || (needs.backend-integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
@@ -524,13 +516,12 @@ jobs:
         # Check overall status - different logic for dev vs main PRs
         if [ "${{ github.event.pull_request.base.ref }}" == "dev" ]; then
           # For dev PRs, don't require E2E tests
-          if ([ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ] || [ "${{ needs.build.result }}" == "success" ]) && \
+          if [ "${{ needs.build.result }}" == "success" ] && \
              [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.backend-integration-tests.result }}" == "success" ]; then
             echo "### ✅ All validation checks passed for dev branch!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Artifact Reuse:** Used build artifacts from feature branch (no rebuild)" >> $GITHUB_STEP_SUMMARY
             echo "**Progressive Testing:** E2E tests will run automatically during staging deployment" >> $GITHUB_STEP_SUMMARY
           else
             echo "### ❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
@@ -539,14 +530,13 @@ jobs:
           fi
         else
           # For main PRs, require E2E tests
-          if ([ "${{ needs.verify-feature-artifacts.outputs.artifacts-available }}" == "true" ] || [ "${{ needs.build.result }}" == "success" ]) && \
+          if [ "${{ needs.build.result }}" == "success" ] && \
              [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
              [ "${{ needs.backend-integration-tests.result }}" == "success" ] && \
              [ "${{ needs.e2e-smoke-tests.result }}" == "success" ]; then
             echo "### ✅ All validation checks passed for main branch!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Artifact Reuse:** Used build artifacts from feature branch (no rebuild)" >> $GITHUB_STEP_SUMMARY
             echo "**E2E Tests:** Smoke tests completed (~22 tests) for production readiness" >> $GITHUB_STEP_SUMMARY
           else
             echo "### ❌ Some validation checks failed" >> $GITHUB_STEP_SUMMARY
