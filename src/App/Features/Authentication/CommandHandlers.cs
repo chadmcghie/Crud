@@ -448,7 +448,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
                 return new ForgotPasswordResponse
                 {
                     Success = false,
-                    Error = "Please provide a valid email address."
+                    Error = "Invalid email format. Please provide a valid email address."
                 };
             }
 
@@ -463,7 +463,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
                 return new ForgotPasswordResponse
                 {
                     Success = false,
-                    Error = "Please provide a valid email address."
+                    Error = "Invalid email format. Please provide a valid email address."
                 };
             }
 

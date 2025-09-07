@@ -92,6 +92,7 @@ public class EmailServiceTests
     {
         // Arrange
         var email = "test@example.com";
+        var maskedEmail = "t***@example.com"; // Email is masked in logs for privacy
         var resetToken = "test-reset-token-123";
 
         // Act
@@ -102,7 +103,7 @@ public class EmailServiceTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(email)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(maskedEmail)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
