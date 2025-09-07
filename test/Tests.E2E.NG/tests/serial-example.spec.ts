@@ -52,7 +52,7 @@ test.describe('People Management - Serial Tests', () => {
     
     // Click add button
     await page.click('button:has-text("Add New Person")');
-    await page.waitForSelector('app-people form', { timeout: 5000 });
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
     
     // Fill in the form with valid name format
     const testName = `John Test Smith`;
@@ -64,7 +64,7 @@ test.describe('People Management - Serial Tests', () => {
     await page.click('button[type="submit"]:has-text("Create Person")');
     
     // Wait for form to close or person to appear in list
-    await page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }).catch(() => {
+    await page.locator('app-people form').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {
       // Form might stay open, check if person was added
     });
     
@@ -89,7 +89,7 @@ test.describe('People Management - Serial Tests', () => {
     await row.locator('button:has-text("Edit")').click();
     
     // Wait for the edit form to appear
-    await page.waitForSelector('.people-form-container', { timeout: 5000 });
+    await page.locator('.people-form-container').waitFor({ state: 'visible', timeout: 5000 });
     
     // Update the name
     const updatedName = `${testPerson.fullName} Updated`;
@@ -140,16 +140,16 @@ test.describe('People Management - Serial Tests', () => {
   test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
     await page.goto(`${baseURL}`);
     
-    // Click People tab first
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link first
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button - be more specific with the selector
     await page.click('button:has-text("Add New Person")');
     
     // Wait for form to appear
-    await page.waitForSelector('.people-form-container, app-people form', { timeout: 5000 });
+    await page.locator('.people-form-container, app-people form').waitFor({ state: 'visible', timeout: 5000 });
     
     // Fill in only partial data to trigger validation
     await page.fill('input#fullName', 'Test');

@@ -94,12 +94,14 @@
       "Bash(git rm:*)",
       "Bash(dotnet format:*)",
       "Bash(cat:*)",
+      "Bash(CI=true npx playwright test api-health.spec.ts --config=playwright.config.webserver.ts --reporter=list --timeout=30000)",
       "Bash(CI=true npx playwright test api-health.spec.ts --reporter=list --timeout=30000)",
       "Bash(git commit:*)",
       "Bash(ng build:*)",
       "Bash(gh project list:*)",
       "Read(//c/Users/chadm/source/repos/Crud/**)",
-      "Bash(dotnet ef migrations add:*)"
+      "Bash(dotnet ef migrations add:*)",
+      "WebFetch(domain:api.github.com)"
     ],
     "deny": [],
     "ask": [],

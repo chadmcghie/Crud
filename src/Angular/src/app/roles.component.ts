@@ -2,6 +2,7 @@ import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } fro
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api.service';
 import { CustomValidators } from './validators/custom-validators';
 
@@ -215,6 +216,8 @@ export class RolesComponent implements OnInit, OnChanges {
   
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   constructor() {
     this.form = this.fb.group({
@@ -224,9 +227,31 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-    if (this.editingRole) {
-      this.populateFormForEdit();
-    }
+    // Check for edit query parameter
+    this.route.queryParams.subscribe(params => {
+      if (params['edit']) {
+        const roleId = params['edit'];
+        this.loadRoleForEdit(roleId);
+      } else {
+        this.editingRole = null;
+        this.resetForm();
+      }
+    });
+  }
+
+  private loadRoleForEdit(roleId: string) {
+    this.api.getRole(roleId).subscribe({
+      next: (role: RoleDto) => {
+        this.editingRole = role;
+        this.populateFormForEdit();
+      },
+      error: (error: unknown) => {
+        console.error('Error loading role for edit:', error);
+        this.error = 'Failed to load role data';
+        // Navigate back to the list if role not found
+        this.router.navigate(['/roles-list']);
+      }
+    });
   }
 
   ngOnChanges() {
@@ -270,7 +295,9 @@ export class RolesComponent implements OnInit, OnChanges {
         this.api.updateRole(this.editingRole.id, payload).subscribe({
           next: () => {
             this.isSubmitting = false;
-            this.roleSaved.emit(this.editingRole!);
+            this.error = null;
+            // Navigate back to the list after successful update
+            this.router.navigate(['/roles-list']);
           },
           error: (error: unknown) => {
             console.error('Error updating role:', error);
@@ -281,10 +308,12 @@ export class RolesComponent implements OnInit, OnChanges {
       } else {
         // Create new role
         this.api.createRole(payload).subscribe({
-          next: (role: RoleDto) => {
+          next: (_role: RoleDto) => {
             this.isSubmitting = false;
-            this.roleSaved.emit(role);
+            this.error = null;
             this.resetForm();
+            // Navigate back to the list after successful creation
+            this.router.navigate(['/roles-list']);
           },
           error: (error: unknown) => {
             console.error('Error creating role:', error);
@@ -297,7 +326,8 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   onCancel() {
-    this.cancelled.emit();
+    // Navigate back to the list
+    this.router.navigate(['/roles-list']);
   }
 
   onReset() {
@@ -305,7 +335,10 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   private resetForm() {
-    this.form.reset();
+    this.form.reset({
+      name: '',
+      description: ''
+    });
     this.error = null;
   }
 

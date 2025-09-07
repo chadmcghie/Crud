@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PeopleComponent } from './people.component';
 import { ApiService, RoleDto, PersonResponse } from './api.service';
@@ -9,6 +10,9 @@ describe('PeopleComponent', () => {
   let component: PeopleComponent;
   let fixture: ComponentFixture<PeopleComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let activatedRoute: jasmine.SpyObj<ActivatedRoute>;
 
   const mockRoles: RoleDto[] = [
     { id: '1', name: 'Admin', description: 'Administrator role' },
@@ -26,19 +30,28 @@ describe('PeopleComponent', () => {
     const apiServiceSpy = jasmine.createSpyObj('ApiService', [
       'listRoles',
       'createPerson',
-      'updatePerson'
+      'updatePerson',
+      'getPerson'
     ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({})
+    });
 
     await TestBed.configureTestingModule({
       imports: [PeopleComponent, ReactiveFormsModule, HttpClientTestingModule],
       providers: [
-        { provide: ApiService, useValue: apiServiceSpy }
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: activatedRouteSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(PeopleComponent);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    activatedRoute = TestBed.inject(ActivatedRoute) as jasmine.SpyObj<ActivatedRoute>;
   });
 
   beforeEach(() => {
@@ -52,8 +65,9 @@ describe('PeopleComponent', () => {
   it('should initialize form with empty values', () => {
     fixture.detectChanges();
     
-    expect(component.form.get('fullName')?.value).toBe('');
-    expect(component.form.get('phone')?.value).toBe('');
+    // After the route parameter handling, form gets reset which sets values to null
+    expect(component.form.get('fullName')?.value).toBeNull();
+    expect(component.form.get('phone')?.value).toBeNull();
     expect(component.selectedRoleIds.size).toBe(0);
   });
 
@@ -77,14 +91,41 @@ describe('PeopleComponent', () => {
     expect(console.error).toHaveBeenCalledWith('Error loading roles:', jasmine.any(Error));
   });
 
-  it('should populate form when editing person', () => {
-    component.editingPerson = mockPerson;
+  it('should populate form when editing person via route parameter', async () => {
+    // Create a separate TestBed configuration for this test
+    const apiServiceSpy = jasmine.createSpyObj('ApiService', [
+      'listRoles',
+      'createPerson', 
+      'updatePerson',
+      'getPerson'
+    ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({ edit: mockPerson.id })
+    });
     
-    fixture.detectChanges();
+    apiServiceSpy.listRoles.and.returnValue(of(mockRoles));
+    apiServiceSpy.getPerson.and.returnValue(of(mockPerson));
     
-    expect(component.form.get('fullName')?.value).toBe(mockPerson.fullName);
-    expect(component.form.get('phone')?.value).toBe(mockPerson.phone);
-    expect(component.selectedRoleIds.has('1')).toBe(true);
+    await TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [PeopleComponent, ReactiveFormsModule, HttpClientTestingModule],
+      providers: [
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: activatedRouteSpy }
+      ]
+    }).compileComponents();
+    
+    const testFixture = TestBed.createComponent(PeopleComponent);
+    const testComponent = testFixture.componentInstance;
+    
+    testFixture.detectChanges();
+    
+    expect(apiServiceSpy.getPerson).toHaveBeenCalledWith(mockPerson.id);
+    expect(testComponent.form.get('fullName')?.value).toBe(mockPerson.fullName);
+    expect(testComponent.form.get('phone')?.value).toBe(mockPerson.phone);
+    expect(testComponent.selectedRoleIds.has('1')).toBe(true);
   });
 
   it('should validate required fields', () => {
@@ -127,7 +168,6 @@ describe('PeopleComponent', () => {
     };
     
     apiService.createPerson.and.returnValue(of(newPerson));
-    spyOn(component.personSaved, 'emit');
     
     fixture.detectChanges();
     
@@ -143,14 +183,22 @@ describe('PeopleComponent', () => {
       phone: '555-0123',
       roleIds: []
     });
-    expect(component.personSaved.emit).toHaveBeenCalledWith(newPerson);
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
   });
 
   it('should update person successfully', () => {
+    // Set up the component as if it's in editing mode before detectChanges
     component.editingPerson = mockPerson;
     apiService.updatePerson.and.returnValue(of(undefined));
-    spyOn(component.personSaved, 'emit');
+    
+    // Mock the route to avoid resetting editingPerson
+    const mockActivatedRoute = {
+      queryParams: of({ edit: mockPerson.id })
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    component['route'] = mockActivatedRoute as any;
+    apiService.getPerson.and.returnValue(of(mockPerson));
     
     fixture.detectChanges();
     
@@ -169,7 +217,7 @@ describe('PeopleComponent', () => {
       phone: '999-888-7777',
       roleIds: ['2']
     });
-    expect(component.personSaved.emit).toHaveBeenCalledWith(mockPerson);
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -194,8 +242,17 @@ describe('PeopleComponent', () => {
   });
 
   it('should handle update person error', () => {
+    // Set up editing person before detectChanges
     component.editingPerson = mockPerson;
     apiService.updatePerson.and.returnValue(throwError(() => new Error('API Error')));
+    
+    // Mock the route to avoid resetting editingPerson
+    const mockActivatedRoute = {
+      queryParams: of({ edit: mockPerson.id })
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    component['route'] = mockActivatedRoute as any;
+    apiService.getPerson.and.returnValue(of(mockPerson));
     
     // Suppress expected console error during test
     spyOn(console, 'error');
@@ -234,12 +291,10 @@ describe('PeopleComponent', () => {
     expect(apiService.createPerson).not.toHaveBeenCalled();
   });
 
-  it('should emit cancelled event', () => {
-    spyOn(component.cancelled, 'emit');
-    
+  it('should navigate to people list on cancel', () => {
     component.onCancel();
     
-    expect(component.cancelled.emit).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
   });
 
   it('should reset form', () => {

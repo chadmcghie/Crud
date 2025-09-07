@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PeopleListComponent } from './people-list.component';
 import { ApiService, PersonResponse } from './api.service';
@@ -8,6 +9,7 @@ describe('PeopleListComponent', () => {
   let component: PeopleListComponent;
   let fixture: ComponentFixture<PeopleListComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
 
   const mockPeople: PersonResponse[] = [
     {
@@ -32,17 +34,20 @@ describe('PeopleListComponent', () => {
       'listPeople',
       'deletePerson'
     ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
       imports: [PeopleListComponent, HttpClientTestingModule],
       providers: [
-        { provide: ApiService, useValue: apiServiceSpy }
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(PeopleListComponent);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
   });
 
   beforeEach(() => {
@@ -99,21 +104,18 @@ describe('PeopleListComponent', () => {
     expect(apiService.listPeople).toHaveBeenCalled();
   });
 
-  it('should emit addPerson event', () => {
-    spyOn(component.addPerson, 'emit');
-    
+  it('should navigate to people form on add person', () => {
     component.onAddPerson();
     
-    expect(component.addPerson.emit).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/people']);
   });
 
-  it('should emit editPerson event with person data', () => {
-    spyOn(component.editPerson, 'emit');
+  it('should navigate to people form with edit parameters', () => {
     const personToEdit = mockPeople[0];
     
     component.onEditPerson(personToEdit);
     
-    expect(component.editPerson.emit).toHaveBeenCalledWith(personToEdit);
+    expect(router.navigate).toHaveBeenCalledWith(['/people'], { queryParams: { edit: personToEdit.id } });
   });
 
   it('should delete person after confirmation', () => {

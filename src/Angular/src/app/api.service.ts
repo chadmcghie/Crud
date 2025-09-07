@@ -40,6 +40,9 @@ export class ApiService {
   listRoles(): Observable<RoleDto[]> {
     return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`);
   }
+  getRole(id: string): Observable<RoleDto> {
+    return this.http.get<RoleDto>(`${this.baseUrl}/roles/${id}`);
+  }
   createRole(req: CreateRoleRequest): Observable<RoleDto> {
     return this.http.post<RoleDto>(`${this.baseUrl}/roles`, req);
   }
@@ -53,6 +56,9 @@ export class ApiService {
   // People
   listPeople(): Observable<PersonResponse[]> {
     return this.http.get<PersonResponse[]>(`${this.baseUrl}/people`);
+  }
+  getPerson(id: string): Observable<PersonResponse> {
+    return this.http.get<PersonResponse>(`${this.baseUrl}/people/${id}`);
   }
   createPerson(req: CreatePersonRequest): Observable<PersonResponse> {
     return this.http.post<PersonResponse>(`${this.baseUrl}/people`, req);
