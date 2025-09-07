@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { RolesListComponent } from './roles-list.component';
 import { ApiService, RoleDto } from './api.service';
@@ -8,6 +9,7 @@ describe('RolesListComponent', () => {
   let component: RolesListComponent;
   let fixture: ComponentFixture<RolesListComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
 
   const mockRoles: RoleDto[] = [
     {
@@ -32,17 +34,20 @@ describe('RolesListComponent', () => {
       'listRoles',
       'deleteRole'
     ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
       imports: [RolesListComponent, HttpClientTestingModule],
       providers: [
-        { provide: ApiService, useValue: apiServiceSpy }
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(RolesListComponent);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
   });
 
   beforeEach(() => {
@@ -81,21 +86,18 @@ describe('RolesListComponent', () => {
     expect(apiService.listRoles).toHaveBeenCalled();
   });
 
-  it('should emit addRole event', () => {
-    spyOn(component.addRole, 'emit');
-    
+  it('should navigate to roles form on add role', () => {
     component.onAddRole();
     
-    expect(component.addRole.emit).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/roles']);
   });
 
-  it('should emit editRole event with role data', () => {
-    spyOn(component.editRole, 'emit');
+  it('should navigate to roles form with edit parameters', () => {
     const roleToEdit = mockRoles[0];
     
     component.onEditRole(roleToEdit);
     
-    expect(component.editRole.emit).toHaveBeenCalledWith(roleToEdit);
+    expect(router.navigate).toHaveBeenCalledWith(['/roles'], { queryParams: { edit: roleToEdit.id } });
   });
 
   it('should delete role after confirmation', () => {

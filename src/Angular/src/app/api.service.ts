@@ -40,6 +40,9 @@ export class ApiService {
   listRoles(): Observable<RoleDto[]> {
     return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`);
   }
+  getRole(id: string): Observable<RoleDto> {
+    return this.http.get<RoleDto>(`${this.baseUrl}/roles/${id}`);
+  }
   createRole(req: CreateRoleRequest): Observable<RoleDto> {
     return this.http.post<RoleDto>(`${this.baseUrl}/roles`, req);
   }

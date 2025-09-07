@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { PeopleComponent } from './people.component';
 import { ApiService, RoleDto, PersonResponse } from './api.service';
@@ -9,6 +10,8 @@ describe('PeopleComponent', () => {
   let component: PeopleComponent;
   let fixture: ComponentFixture<PeopleComponent>;
   let apiService: jasmine.SpyObj<ApiService>;
+  let router: jasmine.SpyObj<Router>;
+  let activatedRoute: jasmine.SpyObj<ActivatedRoute>;
 
   const mockRoles: RoleDto[] = [
     { id: '1', name: 'Admin', description: 'Administrator role' },
@@ -26,19 +29,28 @@ describe('PeopleComponent', () => {
     const apiServiceSpy = jasmine.createSpyObj('ApiService', [
       'listRoles',
       'createPerson',
-      'updatePerson'
+      'updatePerson',
+      'getPerson'
     ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
+      queryParams: of({})
+    });
 
     await TestBed.configureTestingModule({
       imports: [PeopleComponent, ReactiveFormsModule, HttpClientTestingModule],
       providers: [
-        { provide: ApiService, useValue: apiServiceSpy }
+        { provide: ApiService, useValue: apiServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: activatedRouteSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(PeopleComponent);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    activatedRoute = TestBed.inject(ActivatedRoute) as jasmine.SpyObj<ActivatedRoute>;
   });
 
   beforeEach(() => {
@@ -127,7 +139,6 @@ describe('PeopleComponent', () => {
     };
     
     apiService.createPerson.and.returnValue(of(newPerson));
-    spyOn(component.personSaved, 'emit');
     
     fixture.detectChanges();
     
@@ -143,14 +154,13 @@ describe('PeopleComponent', () => {
       phone: '555-0123',
       roleIds: []
     });
-    expect(component.personSaved.emit).toHaveBeenCalledWith(newPerson);
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
   });
 
   it('should update person successfully', () => {
     component.editingPerson = mockPerson;
     apiService.updatePerson.and.returnValue(of(undefined));
-    spyOn(component.personSaved, 'emit');
     
     fixture.detectChanges();
     
@@ -169,7 +179,7 @@ describe('PeopleComponent', () => {
       phone: '999-888-7777',
       roleIds: ['2']
     });
-    expect(component.personSaved.emit).toHaveBeenCalledWith(mockPerson);
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -234,12 +244,10 @@ describe('PeopleComponent', () => {
     expect(apiService.createPerson).not.toHaveBeenCalled();
   });
 
-  it('should emit cancelled event', () => {
-    spyOn(component.cancelled, 'emit');
-    
+  it('should navigate to people list on cancel', () => {
     component.onCancel();
     
-    expect(component.cancelled.emit).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
   });
 
   it('should reset form', () => {
