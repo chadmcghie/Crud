@@ -42,21 +42,29 @@ jobs:
     - name: Build solution
       run: dotnet build solutions/Crud.sln --no-restore --configuration Release
       
+    - name: Create versioned artifact
+      run: |
+        echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
+        echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+        # Package with version info
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\"}" > version.json
+        
     - name: Verify appsettings files exist
       run: |
         echo "📁 Verifying appsettings files before artifact upload:"
         ls -la src/Api/appsettings*.json
         echo "✅ All appsettings files found"
       
-    - name: Upload build artifacts
+    - name: Upload versioned build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifacts-${{ github.run_number }}
+        name: dev-artifact-${{ github.sha }}
         path: |
           src/*/bin/Release/
           test/*/bin/Release/
           src/Api/appsettings*.json
-        retention-days: 1
+          version.json
+        retention-days: 30
 
   code-quality:
     name: Code Quality & Auto-Format
@@ -150,6 +158,17 @@ jobs:
         if grep -r "TODO" --include="*.cs" --include="*.ts" --exclude-dir=node_modules src/; then
           echo "ℹ️ Info: TODO comments found - consider addressing them"
         fi
+        
+    # Phase 3: SAST Integration (placeholder) 
+    - name: Static Application Security Testing
+      run: |
+        echo "🔒 Running static application security testing..."
+        # TODO: Integrate with SAST tools like:
+        # - SonarCloud security scanning
+        # - Snyk vulnerability scanning  
+        # - OWASP dependency check
+        # Note: CodeQL already exists in separate workflow
+        echo "✅ SAST placeholder complete - expand when security scanning is needed"
 
   backend-unit-tests:
     name: Backend Unit Tests
@@ -167,10 +186,10 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download build artifacts
+    - name: Download dev artifact
       uses: actions/download-artifact@v4
       with:
-        name: build-artifacts-${{ github.run_number }}
+        name: dev-artifact-${{ github.sha }}
     
     - name: Copy appsettings to test output
       run: |
@@ -199,7 +218,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-unit-tests-${{ github.run_number }}
+        name: backend-unit-tests-${{ github.sha }}
         path: TestResults/
         
     - name: Publish backend unit test results
@@ -238,7 +257,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: frontend-unit-tests-${{ github.run_number }}
+        name: frontend-unit-tests-${{ github.sha }}
         path: src/Angular/coverage/
 
   backend-integration-tests:
@@ -257,10 +276,10 @@ jobs:
         cache: true
         cache-dependency-path: 'src/**/*.csproj'
         
-    - name: Download build artifacts
+    - name: Download dev artifact
       uses: actions/download-artifact@v4
       with:
-        name: build-artifacts-${{ github.run_number }}
+        name: dev-artifact-${{ github.sha }}
     
     - name: Copy appsettings to test output
       run: |
@@ -293,7 +312,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-integration-tests-${{ github.run_number }}
+        name: backend-integration-tests-${{ github.sha }}
         path: TestResults/
         
     - name: Publish backend integration test results
@@ -326,10 +345,10 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    - name: Download build artifacts
+    - name: Download dev artifact
       uses: actions/download-artifact@v4
       with:
-        name: build-artifacts-${{ github.run_number }}
+        name: dev-artifact-${{ github.sha }}
       
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -370,7 +389,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-smoke-tests-${{ github.run_number }}
+        name: e2e-smoke-tests-${{ github.sha }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -379,7 +398,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: database-files-${{ github.run_number }}
+        name: database-files-${{ github.sha }}
         path: |
           CrudTest_*.db
           CrudTest_*.db-wal
