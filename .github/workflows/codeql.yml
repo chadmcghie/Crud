@@ -4,9 +4,14 @@ on:
   push:
     branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   schedule:
     - cron: '36 5 * * 6'  # Weekly on Saturdays at 5:36 AM UTC
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -46,11 +51,11 @@ jobs:
 
     - name: Restore .NET dependencies
       if: matrix.language == 'csharp'
-      run: dotnet restore Crud.sln
+      run: dotnet restore solutions/Crud.sln
 
     - name: Build .NET solution
       if: matrix.language == 'csharp'
-      run: dotnet build Crud.sln --no-restore --configuration Release
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
 
     - name: Build Angular app
       if: matrix.language == 'javascript'

@@ -3,8 +3,7 @@ using Infrastructure.Data;
 using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Respawn;
-using Respawn.Graph;
+
 
 namespace Infrastructure.Services;
 
@@ -37,8 +36,9 @@ public class DatabaseTestService
             throw new InvalidOperationException("Database connection string is not available");
         }
 
-        _logger.LogInformation("Initializing database service for SQLite: {ConnectionString}",
-            connectionString.Replace("Password=", "Password=***"));
+        // Logging: Only log provider and database initialization; do not log connection string
+        _logger.LogInformation("Initializing database service for provider {Provider}.",
+            _context.Database.ProviderName);
 
         // Ensure database exists
         await _context.Database.EnsureCreatedAsync();
@@ -49,7 +49,7 @@ public class DatabaseTestService
     /// <summary>
     /// Resets the database to a clean state, removing all data while preserving schema.
     /// In CI/Docker environments, uses file deletion for better performance.
-    /// Uses Respawn when possible, falls back to EF Core for SQLite compatibility.
+    /// Uses EF Core cleanup for SQLite compatibility.
     /// </summary>
     /// <param name="workerIndex">The worker index for parallel test execution</param>
     /// <param name="seedData">Whether to seed initial test data after reset (default: false)</param>
@@ -65,7 +65,7 @@ public class DatabaseTestService
             if (Environment.GetEnvironmentVariable("CI") == "true" &&
                 !string.IsNullOrEmpty(connectionString))
             {
-                await ResetByFileDeletionAsync(connectionString, workerIndex, seedData);
+                await ResetByFileDeletionAsync(workerIndex, seedData);
                 return;
             }
 
@@ -82,10 +82,9 @@ public class DatabaseTestService
     /// <summary>
     /// Resets database by deleting the file and recreating it (fastest for CI/Docker)
     /// </summary>
-    private async Task ResetByFileDeletionAsync(string connectionString, int workerIndex, bool seedData)
+    private async Task ResetByFileDeletionAsync(int workerIndex, bool seedData)
     {
         _logger.LogInformation("Resetting database via file deletion for worker {WorkerIndex} in CI environment", workerIndex);
-        _logger.LogInformation("Connection string: {ConnectionString}", connectionString?.Replace("Password=", "Password=***"));
         var startTime = DateTime.UtcNow;
 
         // Use mutex to ensure only one reset operation at a time
@@ -400,6 +399,8 @@ public class DatabaseTestService
             _logger.LogDebug("Added {Count} seed people", people.Length);
         }
     }
+
+    // The MaskConnectionString method has been removed as we now avoid logging connection strings entirely.
 }
 
 /// <summary>

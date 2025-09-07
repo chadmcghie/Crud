@@ -75,7 +75,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         // Step 4: Refresh token
         var refreshCommand = new RefreshTokenCommand
         {
-            RefreshToken = loginResult.RefreshToken
+            RefreshToken = loginResult!.RefreshToken!
         };
 
         var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
@@ -98,7 +98,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         // Step 6: Verify old refresh token no longer works
         var oldRefreshCommand = new RefreshTokenCommand
         {
-            RefreshToken = loginResult.RefreshToken
+            RefreshToken = loginResult!.RefreshToken!
         };
 
         var oldRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", oldRefreshCommand);
@@ -204,7 +204,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         // Verify we can refresh the token
         var refreshCommand = new RefreshTokenCommand
         {
-            RefreshToken = result!.RefreshToken
+            RefreshToken = result!.RefreshToken!
         };
 
         var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
@@ -257,14 +257,14 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         var registerContent = await registerResponse.Content.ReadAsStringAsync();
         var registerResult = JsonSerializer.Deserialize<TokenResponse>(registerContent, _jsonOptions);
 
-        var currentRefreshToken = registerResult!.RefreshToken;
+        var currentRefreshToken = registerResult!.RefreshToken!;
 
         // Refresh multiple times and verify token rotation
         for (int i = 0; i < 3; i++)
         {
             var refreshCommand = new RefreshTokenCommand
             {
-                RefreshToken = currentRefreshToken
+                RefreshToken = currentRefreshToken!
             };
 
             var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);

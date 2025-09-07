@@ -18,13 +18,6 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        // Skip validation for authentication commands as they handle validation internally
-        var requestType = typeof(TRequest);
-        if (requestType.Namespace?.Contains("Authentication") == true)
-        {
-            return await next();
-        }
-
         if (!_validators.Any())
         {
             return await next();

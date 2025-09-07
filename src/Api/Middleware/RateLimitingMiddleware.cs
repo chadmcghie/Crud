@@ -40,7 +40,7 @@ public class RateLimitingMiddleware
                 if (requestCount >= rule.MaxRequests)
                 {
                     _logger.LogWarning("Rate limit exceeded for {Path} from {ClientId}. Count: {Count}",
-                        path, clientId, requestCount);
+                        SanitizeForLogging(path), SanitizeForLogging(clientId), requestCount);
 
                     context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
                     context.Response.Headers["Retry-After"] = (rule.WindowMinutes * 60).ToString();
@@ -69,6 +69,18 @@ public class RateLimitingMiddleware
         }
 
         return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    private static string SanitizeForLogging(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        // Remove newlines, carriage returns, and other control characters to prevent log injection
+        return input.Replace('\n', '_')
+                   .Replace('\r', '_')
+                   .Replace('\t', '_')
+                   .Trim();
     }
 }
 

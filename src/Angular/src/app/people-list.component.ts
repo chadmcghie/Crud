@@ -1,5 +1,6 @@
 import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ApiService, PersonResponse } from './api.service';
 
 @Component({
@@ -193,13 +194,14 @@ import { ApiService, PersonResponse } from './api.service';
   `]
 })
 export class PeopleListComponent implements OnInit {
+  private api = inject(ApiService);
+  private router = inject(Router);
+  
   people: PersonResponse[] = [];
   isLoading = false;
   error: string | null = null;
   @Output() editPerson = new EventEmitter<PersonResponse>();
   @Output() addPerson = new EventEmitter<void>();
-  
-  private api = inject(ApiService);
 
   ngOnInit() {
     this.loadPeople();
@@ -228,11 +230,13 @@ export class PeopleListComponent implements OnInit {
   }
 
   onAddPerson() {
-    this.addPerson.emit();
+    // Navigate to the people form for adding a new person
+    this.router.navigate(['/people']);
   }
 
   onEditPerson(person: PersonResponse) {
-    this.editPerson.emit(person);
+    // Navigate to the people form for editing the person  
+    this.router.navigate(['/people'], { queryParams: { edit: person.id } });
   }
 
   onDeletePerson(person: PersonResponse) {

@@ -1,5 +1,6 @@
 import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ApiService, RoleDto } from './api.service';
 
 @Component({
@@ -170,11 +171,12 @@ import { ApiService, RoleDto } from './api.service';
   `]
 })
 export class RolesListComponent implements OnInit {
+  private api = inject(ApiService);
+  private router = inject(Router);
+  
   roles: RoleDto[] = [];
   @Output() editRole = new EventEmitter<RoleDto>();
   @Output() addRole = new EventEmitter<void>();
-  
-  private api = inject(ApiService);
 
   ngOnInit() {
     this.loadRoles();
@@ -197,11 +199,13 @@ export class RolesListComponent implements OnInit {
   }
 
   onAddRole() {
-    this.addRole.emit();
+    // Navigate to the roles form for adding a new role
+    this.router.navigate(['/roles']);
   }
 
   onEditRole(role: RoleDto) {
-    this.editRole.emit(role);
+    // Navigate to the roles form for editing the role
+    this.router.navigate(['/roles'], { queryParams: { edit: role.id } });
   }
 
   onDeleteRole(role: RoleDto) {

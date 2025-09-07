@@ -58,13 +58,12 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(configContent).toContain("name: 'chromium'");
   });
   
-  test('should have proper global setup configured', async () => {
+  test('should have proper global teardown configured', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify globalSetup and globalTeardown are configured
-    expect(configContent).toMatch(/globalSetup:\s*['"]\.\/(tests\/)?setup\/global-setup/);
-    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/global-teardown/);
+    // Verify globalTeardown is configured for webServer cleanup
+    expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/webserver-teardown/);
   });
   
   test('should execute tests sequentially', async ({ page }) => {

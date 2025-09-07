@@ -4,22 +4,22 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 /**
- * Tests for CI/CD configuration using Playwright globalSetup
+ * Tests for CI/CD configuration using Playwright webServer
  * Verifies the GitHub Actions workflow is properly configured
  */
 test.describe('CI/CD Configuration', () => {
   const workflowPath = path.join(process.cwd(), '..', '..', '.github', 'workflows', 'pr-validation.yml');
 
-  test('should have Playwright globalSetup configured', async () => {
-    // Check playwright.config.ts has globalSetup
+  test('should have Playwright webServer configuration', async () => {
+    // Check playwright.config.ts has webServer instead of globalSetup
     const configPath = path.join(process.cwd(), 'playwright.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
     
-    // Should have robust global setup
-    expect(configContent).toContain('globalSetup:');
-    expect(configContent).toContain('global-setup.ts');
-    expect(configContent).toContain('globalTeardown:');
-    expect(configContent).toContain('global-teardown.ts');
+    // Should have webServer configuration instead of globalSetup
+    expect(configContent).toContain('webServer:');
+    expect(configContent).toContain('webserver-teardown.ts');
+    expect(configContent).not.toContain('global-setup.ts');
+    expect(configContent).not.toContain('globalSetup:');
   });
 
   test('should not have manual server startup in CI', async () => {

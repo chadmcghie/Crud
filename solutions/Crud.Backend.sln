@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "src\Domain\Domain.csproj", "{87EDA1D2-4B5B-E524-38CE-D0BFCA5F4D6B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "..\src\Domain\Domain.csproj", "{87EDA1D2-4B5B-E524-38CE-D0BFCA5F4D6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "src\Api\Api.csproj", "{47F45E86-7E52-F542-917E-6937510E96CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "..\src\Api\Api.csproj", "{47F45E86-7E52-F542-917E-6937510E96CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "src\App\App.csproj", "{822973F2-7138-B717-465B-BCE1756D40F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "..\src\App\App.csproj", "{822973F2-7138-B717-465B-BCE1756D40F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "src\Infrastructure\Infrastructure.csproj", "{3D745DFE-AF9A-E111-755D-FD3FFF280728}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "..\src\Infrastructure\Infrastructure.csproj", "{3D745DFE-AF9A-E111-755D-FD3FFF280728}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Unit.Backend", "test\Tests.Unit.Backend\Tests.Unit.Backend.csproj", "{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Unit.Backend", "..\test\Tests.Unit.Backend\Tests.Unit.Backend.csproj", "{004A7126-1F14-4C44-E6E8-8D8BF9DA8063}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.Backend", "test\Tests.Integration.Backend\Tests.Integration.Backend.csproj", "{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.Integration.Backend", "..\test\Tests.Integration.Backend\Tests.Integration.Backend.csproj", "{66A2C32A-F65F-FFC9-3C2C-11CF4D697D2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

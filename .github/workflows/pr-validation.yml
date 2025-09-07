@@ -6,6 +6,11 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write  # Changed from read to write for auto-formatting
   checks: write
@@ -32,10 +37,10 @@ jobs:
         cache-dependency-path: 'src/**/*.csproj'
         
     - name: Restore .NET dependencies
-      run: dotnet restore Crud.sln
+      run: dotnet restore solutions/Crud.sln
       
     - name: Build solution
-      run: dotnet build Crud.sln --no-restore --configuration Release
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
       
     - name: Verify appsettings files exist
       run: |
@@ -82,7 +87,7 @@ jobs:
     - name: Auto-format Backend Code
       run: |
         echo "🔧 Auto-formatting C# code with dotnet format..."
-        dotnet format Crud.sln
+        dotnet format solutions/Crud.sln
         echo "✅ Formatting complete"
         
     - name: Frontend Linting
@@ -125,7 +130,7 @@ jobs:
     - name: Verify Final Formatting
       run: |
         echo "🔍 Verifying that all code is now properly formatted..."
-        dotnet format Crud.sln --verify-no-changes --verbosity diagnostic
+        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
         if [ $? -ne 0 ]; then
           echo "❌ ERROR: Code still has formatting issues after auto-format!"
           echo "This should not happen. Please check the workflow configuration."
@@ -411,10 +416,10 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Check overall status
-        if [ "${{ needs.build.result }}" == "success" ] && 
-           [ "${{ needs.backend-unit-tests.result }}" == "success" ] &&
-           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] &&
-           [ "${{ needs.backend-integration-tests.result }}" == "success" ] &&
+        if [ "${{ needs.build.result }}" == "success" ] && \
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ] && \
+           [ "${{ needs.backend-integration-tests.result }}" == "success" ] && \
            [ "${{ needs.e2e-smoke-tests.result }}" == "success" ]; then
           echo "### ✅ All validation checks passed!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
