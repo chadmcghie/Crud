@@ -47,9 +47,54 @@ Use the test-runner subagent to run the ALL tests in the application's test suit
 
 </step>
 
-<step number="2" subagent="git-workflow" name="git_workflow">
+<step number="2" subagent="review-agent" name="architecture_review">
 
-### Step 2: Git Workflow
+### Step 2: Architecture and Standards Review
+
+Use the review-agent to verify that the completed implementation adheres to documented architecture guidelines and coding standards before committing.
+
+<instructions>
+  ACTION: Use review-agent
+  REQUEST: "Review the completed [SPEC_NAME] implementation for compliance with:
+            - Architecture Guidelines (Clean Architecture, SOLID)
+            - Code standards and conventions
+            - Testing requirements
+            - Security guidelines"
+  WAIT: For review completion
+  PROCESS: Address any CRITICAL severity issues
+  DOCUMENT: Any HIGH severity deviations that are intentional
+  PROCEED: Only after critical issues are resolved
+</instructions>
+
+<review_criteria>
+  <must_fix>
+    - CRITICAL severity issues (security, data integrity)
+    - Architecture boundary violations
+  </must_fix>
+  <consider_fixing>
+    - HIGH severity issues (missing tests, performance)
+  </consider_fixing>
+  <can_defer>
+    - MEDIUM/LOW severity issues (style, naming)
+  </can_defer>
+</review_criteria>
+
+<failure_handling>
+  IF CRITICAL issues found:
+    - Fix issues before proceeding
+    - Re-run review to confirm fixes
+  IF HIGH issues found:
+    - Evaluate if intentional
+    - Document reasoning if keeping
+  ELSE:
+    - Proceed to git workflow
+</failure_handling>
+
+</step>
+
+<step number="3" subagent="git-workflow" name="git_workflow">
+
+### Step 3: Git Workflow
 
 Use the git-workflow subagent to create git commit, push to GitHub, and create pull request for the implemented features.
 
@@ -81,9 +126,9 @@ Use the git-workflow subagent to create git commit, push to GitHub, and create p
 
 </step>
 
-<step number="3" subagent="project-manager" name="tasks_list_check">
+<step number="4" subagent="project-manager" name="tasks_list_check">
 
-### Step 3: Tasks Completion Verification and GitHub Issue Closing
+### Step 4: Tasks Completion Verification and GitHub Issue Closing
 
 Use the project-manager subagent to read the current spec's tasks.md file and verify that all tasks have been properly marked as complete with [x] or documented with blockers. Then close any associated GitHub issues that were completed.
 
@@ -108,9 +153,9 @@ Use the project-manager subagent to read the current spec's tasks.md file and ve
 
 </step>
 
-<step number="4" subagent="project-manager" name="roadmap_progress_check">
+<step number="5" subagent="project-manager" name="roadmap_progress_check">
 
-### Step 4: Roadmap Progress Update (conditional)
+### Step 5: Roadmap Progress Update (conditional)
 
 Use the project-manager subagent to read @.agent-os/product/roadmap.md and mark roadmap items as complete with [x] ONLY IF the executed tasks have completed any roadmap item(s) and the spec completes that item.
 
@@ -119,7 +164,7 @@ Use the project-manager subagent to read @.agent-os/product/roadmap.md and mark 
     EVALUATE: Did executed tasks complete any roadmap item(s)?
     IF NO:
       SKIP this entire step
-      PROCEED to step 6
+      PROCEED to step 7
     IF YES:
       CONTINUE with roadmap check
   </preliminary_check>
@@ -142,9 +187,9 @@ Use the project-manager subagent to read @.agent-os/product/roadmap.md and mark 
 
 </step>
 
-<step number="5" subagent="project-manager" name="document_recap">
+<step number="6" subagent="project-manager" name="document_recap">
 
-### Step 5: Create Recap Document
+### Step 6: Create Recap Document
 
 Use the project-manager subagent to create a recap document in .agent-os/recaps/ folder that summarizes what was built for this spec.
 
