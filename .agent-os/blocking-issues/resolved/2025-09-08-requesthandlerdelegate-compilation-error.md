@@ -71,9 +71,14 @@ None yet - this is a test-only issue.
 ## DO NOT ROLLBACK
 None yet.
 
-## Current Workaround
-Tests are temporarily commented out in CachingBehaviorTests.cs to allow the build to succeed. 
-The tests need to be rewritten to work with MediatR 13's RequestHandlerDelegate implementation.
+## ~~Current Workaround~~
+~~Tests are temporarily commented out in CachingBehaviorTests.cs to allow the build to succeed.~~
+~~The tests need to be rewritten to work with MediatR 13's RequestHandlerDelegate implementation.~~
+
+## Permanent Solution
+
+**Resolved**: 2025-09-08 17:10
+**Solution Summary**: MediatR 13's RequestHandlerDelegate requires a CancellationToken parameter in the delegate signature.
 
 ## Resolution Approaches
 
@@ -81,10 +86,54 @@ The tests need to be rewritten to work with MediatR 13's RequestHandlerDelegate 
 2. **Alternative Syntax**: Use different lambda syntax that resolves correctly
 3. **Mock Delegate**: Create explicit delegate instances instead of inline lambdas
 
+### Attempt 4: 2025-09-08 17:05
+**Hypothesis**: MediatR 13's RequestHandlerDelegate might expect a CancellationToken parameter
+**Approach**: Try lambda with CancellationToken parameter: `(ct) => ...`
+**Implementation**: Changed lambda expressions to include CancellationToken parameter
+**Result**: SUCCESS - Tests compile and pass
+**Files Modified**: test/Tests.Unit.Backend/App/Behaviors/CachingBehaviorTests.cs
+**Key Learning**: MediatR 13's RequestHandlerDelegate<T> signature is `Func<CancellationToken, Task<T>>`
+**Next Direction**: Resolution complete
+
+## Implementation
+
+```csharp
+// MediatR 13 RequestHandlerDelegate requires CancellationToken parameter
+RequestHandlerDelegate<TestResponse> next = (ct) => Task.FromResult(response);
+
+// For multi-line lambdas:
+RequestHandlerDelegate<TestResponse> next = (ct) =>
+{
+    called = true;
+    return Task.FromResult(response);
+};
+```
+
+## Why This Works
+In MediatR 13, `RequestHandlerDelegate<TResponse>` is defined as a delegate that takes a `CancellationToken` parameter and returns `Task<TResponse>`. This is different from earlier versions and explains why `next()` is called without parameters in production code but needs `(ct) =>` in test delegates.
+
+## Changes Made
+- Modified all test lambda expressions to include CancellationToken parameter
+- Changed test classes from private to public for Moq compatibility
+- Fixed NonCacheableQuery to not inherit from TestQuery (avoiding CacheableAttribute)
+
 ## Files Affected
-- `test/Tests.Unit.Backend/App/Behaviors/CachingBehaviorTests.cs` (lines 42, 70, 95, 131, 155, 183)
+- `test/Tests.Unit.Backend/App/Behaviors/CachingBehaviorTests.cs` - FIXED
 
 ## Impact
-- Unit tests cannot compile
-- CI/CD pipeline blocked for backend changes
-- Cannot verify caching behavior functionality
+- ✅ Unit tests compile successfully
+- ✅ All 6 CachingBehaviorTests pass
+- ✅ CI/CD pipeline unblocked
+- ✅ Caching behavior functionality verified
+
+## Lessons Learned
+- MediatR 13's RequestHandlerDelegate<T> has a different signature than expected
+- The delegate requires a CancellationToken parameter: `Func<CancellationToken, Task<T>>`
+- Production code calls `next()` but the actual invocation passes the token internally
+- Test classes used with Moq must be public when using strong-named assemblies
+
+## Prevention
+- When upgrading major versions of libraries, review breaking changes documentation
+- Pay attention to delegate signatures when mocking pipeline behaviors
+- Consider creating test helpers for common MediatR test patterns
+- Keep test model classes public to avoid Moq proxy generation issues

@@ -12,9 +12,6 @@ using Xunit;
 
 namespace Tests.Unit.Backend.App.Behaviors;
 
-// TODO: Fix RequestHandlerDelegate compilation issues with MediatR 13
-// See blocking issue: .agent-os/blocking-issues/active/2025-09-08-requesthandlerdelegate-compilation-error.md
-/*
 public class CachingBehaviorTests
 {
     private readonly Mock<ICacheService> _cacheServiceMock;
@@ -41,13 +38,20 @@ public class CachingBehaviorTests
         var response = new TestResponse { Data = "test" };
         var called = false;
         
+        // Create behavior for non-cacheable query
+        var loggerMock = new Mock<ILogger<CachingBehavior<NonCacheableQuery, TestResponse>>>();
+        var behavior = new CachingBehavior<NonCacheableQuery, TestResponse>(
+            _cacheServiceMock.Object,
+            _keyGeneratorMock.Object,
+            loggerMock.Object);
+        
         // Act
-        async Task<TestResponse> Next()
+        RequestHandlerDelegate<TestResponse> next = (ct) =>
         {
             called = true;
-            return await Task.FromResult(response);
-        }
-        var result = await _behavior.Handle(request, Next, CancellationToken.None);
+            return Task.FromResult(response);
+        };
+        var result = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -71,12 +75,12 @@ public class CachingBehaviorTests
         var called = false;
 
         // Act
-        async Task<TestResponse> Next()
+        RequestHandlerDelegate<TestResponse> next = (ct) =>
         {
             called = true;
-            return await Task.FromResult(new TestResponse { Data = "new" });
-        }
-        var result = await _behavior.Handle(request, Next, CancellationToken.None);
+            return Task.FromResult(new TestResponse { Data = "new" });
+        };
+        var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         result.Should().Be(cachedResponse);
@@ -97,7 +101,8 @@ public class CachingBehaviorTests
             .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await _behavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
+        RequestHandlerDelegate<TestResponse> next = (ct) => Task.FromResult(response);
+        var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -133,7 +138,8 @@ public class CachingBehaviorTests
             .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await customBehavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
+        RequestHandlerDelegate<TestResponse> next = (ct) => Task.FromResult(response);
+        var result = await customBehavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         _cacheServiceMock.Verify(x => x.SetAsync(
@@ -157,7 +163,8 @@ public class CachingBehaviorTests
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        var result = await _behavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
+        RequestHandlerDelegate<TestResponse> next = (ct) => Task.FromResult(response);
+        var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -185,7 +192,8 @@ public class CachingBehaviorTests
             .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await _behavior.Handle(request, () => Task.FromResult(response!), CancellationToken.None);
+        RequestHandlerDelegate<TestResponse> next = (ct) => Task.FromResult(response!);
+        var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         result.Should().BeNull();
@@ -198,24 +206,24 @@ public class CachingBehaviorTests
 
     // Test classes
     [CacheableAttribute(durationInSeconds: 300)]
-    private class TestQuery : IRequest<TestResponse>
+    public class TestQuery : IRequest<TestResponse>
     {
         public int Id { get; set; }
     }
 
-    private class NonCacheableQuery : TestQuery
+    public class NonCacheableQuery : IRequest<TestResponse>
     {
+        public int Id { get; set; }
     }
 
     [CacheableAttribute(durationInSeconds: 1800)]
-    private class CustomTTLQuery : IRequest<TestResponse>
+    public class CustomTTLQuery : IRequest<TestResponse>
     {
         public int Id { get; set; }
     }
 
-    private class TestResponse
+    public class TestResponse
     {
         public string Data { get; set; } = string.Empty;
     }
 }
-*/
