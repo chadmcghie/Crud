@@ -32,9 +32,47 @@ Retrieve the parent issue information from the spec to use for creating sub-issu
 
 </step>
 
+<step number="1.5" name="template_selection" optional="true">
+
+### Step 1.5: Template Selection (Optional)
+
+Check if a template would be appropriate for this task and offer template-based task generation.
+
+<template_check>
+  ANALYZE spec requirements for common patterns:
+  - CRUD operations → suggest crud-feature.md template
+  - API endpoints → suggest api-endpoint.md template
+  - Domain aggregates → suggest domain-aggregate.md template
+  - Angular components → suggest angular-component.md template
+  - Angular services → suggest angular-service.md template
+  - State management → suggest angular-state.md template
+</template_check>
+
+<template_prompt>
+  IF template_applicable:
+    PROMPT: "This spec appears to involve [PATTERN_TYPE]. Would you like to use the [TEMPLATE_NAME] template to generate tasks? This will create a comprehensive task list with all standard subtasks.
+    
+    Type 'yes' to use the template, or 'no' to create custom tasks."
+</template_prompt>
+
+<template_execution>
+  IF user_confirms_template:
+    1. Load template from .agent-os/templates/[CATEGORY]/[TEMPLATE_NAME]
+    2. Prompt for required variables (e.g., ENTITY_NAME, API_PATH)
+    3. Run template engine:
+       - PowerShell: .agent-os/templates/template-engine.ps1
+       - Bash: .agent-os/templates/template-engine.sh
+    4. Generate tasks.md with substituted values
+    5. Skip to Step 3 (GitHub issue creation)
+  ELSE:
+    CONTINUE to Step 2 (manual task creation)
+</template_execution>
+
+</step>
+
 <step number="2" subagent="file-creator" name="create_tasks">
 
-### Step 2: Create tasks.md
+### Step 2: Create tasks.md (Manual)
 
 Use the file-creator subagent to create file: tasks.md inside of the current feature's spec folder.
 
@@ -80,6 +118,16 @@ Use the file-creator subagent to create file: tasks.md inside of the current fea
   - Group related functionality
   - Build incrementally
 </ordering_principles>
+
+<template_reference>
+  NOTE: For common patterns, consider using templates:
+  - CRUD operations: .agent-os/templates/backend/crud-feature.md
+  - API endpoints: .agent-os/templates/backend/api-endpoint.md
+  - Domain aggregates: .agent-os/templates/backend/domain-aggregate.md
+  - Angular components: .agent-os/templates/frontend/angular-component.md
+  - Angular services: .agent-os/templates/frontend/angular-service.md
+  - State management: .agent-os/templates/frontend/angular-state.md
+</template_reference>
 
 </step>
 

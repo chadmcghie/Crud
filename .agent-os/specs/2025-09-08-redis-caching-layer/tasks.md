@@ -32,6 +32,7 @@
   - [x] 3.6 Register caching behavior in MediatR pipeline
   - [x] 3.7 Verify query caching tests pass (fixed MediatR 13 compilation issues)
 
+
 - [ ] 4. API Response Caching (Issue: #94)
   - [ ] 4.1 Write tests for output caching middleware
   - [ ] 4.2 Configure output caching in Program.cs

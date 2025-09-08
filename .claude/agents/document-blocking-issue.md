@@ -1,4 +1,5 @@
 ---
+name: document-blocking-issue
 description: Document blocking issues following ITIL Problem Management standards
 globs:
 alwaysApply: false
