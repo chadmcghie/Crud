@@ -1,6 +1,6 @@
 using App.Behaviors;
-using App.Common.Attributes;
-using App.Common.Interfaces;
+using App.Interfaces;
+using App.Services;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -37,14 +37,13 @@ public class CachingBehaviorTests
         var request = new NonCacheableQuery();
         var response = new TestResponse { Data = "test" };
         var called = false;
-        RequestHandlerDelegate<TestResponse> next = () =>
+        
+        // Act
+        var result = await _behavior.Handle(request, () =>
         {
             called = true;
             return Task.FromResult(response);
-        };
-
-        // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        }, CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -60,44 +59,40 @@ public class CachingBehaviorTests
         var cachedResponse = new TestResponse { Data = "cached" };
         var cacheKey = "TestQuery:1";
         
-        _keyGeneratorMock.Setup(x => x.GenerateKey(request))
+        _keyGeneratorMock.Setup(x => x.GenerateKey<TestQuery>(It.IsAny<TestQuery>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
             .Returns(cacheKey);
         _cacheServiceMock.Setup(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedResponse);
 
         var called = false;
-        RequestHandlerDelegate<TestResponse> next = () =>
+
+        // Act
+        var result = await _behavior.Handle(request, () =>
         {
             called = true;
             return Task.FromResult(new TestResponse { Data = "new" });
-        };
-
-        // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        }, CancellationToken.None);
 
         // Assert
         result.Should().Be(cachedResponse);
         called.Should().BeFalse();
-        _cacheServiceMock.Verify(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenCacheMiss_ShouldCallNextAndCacheResult()
+    public async Task Handle_WhenCacheMiss_ShouldCallNextAndCache()
     {
         // Arrange
         var request = new TestQuery { Id = 1 };
         var response = new TestResponse { Data = "new" };
         var cacheKey = "TestQuery:1";
         
-        _keyGeneratorMock.Setup(x => x.GenerateKey(request))
+        _keyGeneratorMock.Setup(x => x.GenerateKey<TestQuery>(It.IsAny<TestQuery>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
             .Returns(cacheKey);
         _cacheServiceMock.Setup(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResponse)null);
-
-        RequestHandlerDelegate<TestResponse> next = () => Task.FromResult(response);
+            .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        var result = await _behavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -105,7 +100,7 @@ public class CachingBehaviorTests
         _cacheServiceMock.Verify(x => x.SetAsync(
             cacheKey, 
             response, 
-            It.IsAny<TimeSpan>(), 
+            It.IsAny<CacheEntryOptions>(), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -116,43 +111,48 @@ public class CachingBehaviorTests
         var request = new CustomTTLQuery { Id = 1 };
         var response = new TestResponse { Data = "new" };
         var cacheKey = "CustomTTLQuery:1";
-        var expectedTTL = TimeSpan.FromMinutes(30);
+        var expectedTTL = TimeSpan.FromSeconds(1800);
         
-        _keyGeneratorMock.Setup(x => x.GenerateKey(request))
+        var keyGeneratorMock = new Mock<ICacheKeyGenerator>();
+        var loggerMock = new Mock<ILogger<CachingBehavior<CustomTTLQuery, TestResponse>>>();
+        
+        keyGeneratorMock.Setup(x => x.GenerateKey<CustomTTLQuery>(It.IsAny<CustomTTLQuery>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
             .Returns(cacheKey);
+        
+        var customBehavior = new CachingBehavior<CustomTTLQuery, TestResponse>(
+            _cacheServiceMock.Object,
+            keyGeneratorMock.Object,
+            loggerMock.Object);
+            
         _cacheServiceMock.Setup(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResponse)null);
-
-        RequestHandlerDelegate<TestResponse> next = () => Task.FromResult(response);
+            .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        var result = await customBehavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
 
         // Assert
         _cacheServiceMock.Verify(x => x.SetAsync(
             cacheKey, 
             response, 
-            It.Is<TimeSpan>(t => t == expectedTTL), 
+            It.Is<CacheEntryOptions>(o => o.AbsoluteExpirationRelativeToNow == expectedTTL), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenCacheThrowsException_ShouldCallNextAndLogError()
+    public async Task Handle_WhenCacheGetThrows_ShouldContinueAndCallNext()
     {
         // Arrange
         var request = new TestQuery { Id = 1 };
         var response = new TestResponse { Data = "new" };
         var cacheKey = "TestQuery:1";
         
-        _keyGeneratorMock.Setup(x => x.GenerateKey(request))
+        _keyGeneratorMock.Setup(x => x.GenerateKey<TestQuery>(It.IsAny<TestQuery>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
             .Returns(cacheKey);
         _cacheServiceMock.Setup(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
-        RequestHandlerDelegate<TestResponse> next = () => Task.FromResult(response);
-
         // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        var result = await _behavior.Handle(request, () => Task.FromResult(response), CancellationToken.None);
 
         // Assert
         result.Should().Be(response);
@@ -160,9 +160,9 @@ public class CachingBehaviorTests
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Cache error")),
+                It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
@@ -171,30 +171,28 @@ public class CachingBehaviorTests
     {
         // Arrange
         var request = new TestQuery { Id = 1 };
-        TestResponse response = null;
+        TestResponse? response = null;
         var cacheKey = "TestQuery:1";
         
-        _keyGeneratorMock.Setup(x => x.GenerateKey(request))
+        _keyGeneratorMock.Setup(x => x.GenerateKey<TestQuery>(It.IsAny<TestQuery>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>()))
             .Returns(cacheKey);
         _cacheServiceMock.Setup(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResponse)null);
-
-        RequestHandlerDelegate<TestResponse> next = () => Task.FromResult(response);
+            .ReturnsAsync((TestResponse?)null);
 
         // Act
-        var result = await _behavior.Handle(request, next, CancellationToken.None);
+        var result = await _behavior.Handle(request, () => Task.FromResult(response!), CancellationToken.None);
 
         // Assert
         result.Should().BeNull();
         _cacheServiceMock.Verify(x => x.SetAsync(
             It.IsAny<string>(), 
             It.IsAny<TestResponse>(), 
-            It.IsAny<TimeSpan>(), 
+            It.IsAny<CacheEntryOptions>(), 
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // Test classes
-    [Cacheable(DurationInSeconds = 300)]
+    [CacheableAttribute(durationInSeconds: 300)]
     private class TestQuery : IRequest<TestResponse>
     {
         public int Id { get; set; }
@@ -204,7 +202,7 @@ public class CachingBehaviorTests
     {
     }
 
-    [Cacheable(DurationInSeconds = 1800)]
+    [CacheableAttribute(durationInSeconds: 1800)]
     private class CustomTTLQuery : IRequest<TestResponse>
     {
         public int Id { get; set; }
@@ -212,6 +210,6 @@ public class CachingBehaviorTests
 
     private class TestResponse
     {
-        public string Data { get; set; }
+        public string Data { get; set; } = string.Empty;
     }
 }

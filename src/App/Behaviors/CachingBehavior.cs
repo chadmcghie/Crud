@@ -1,5 +1,5 @@
-using App.Common.Attributes;
-using App.Common.Interfaces;
+using App.Interfaces;
+using App.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,6 +11,7 @@ namespace App.Behaviors;
 
 public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
+    where TResponse : class
 {
     private readonly ICacheService _cacheService;
     private readonly ICacheKeyGenerator _keyGenerator;
@@ -68,7 +69,8 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
             try
             {
                 var ttl = TimeSpan.FromSeconds(cacheableAttribute.DurationInSeconds);
-                await _cacheService.SetAsync(cacheKey, response, ttl, cancellationToken);
+                var options = CacheEntryOptions.FromMinutes((int)ttl.TotalMinutes);
+                await _cacheService.SetAsync(cacheKey, response, options, cancellationToken);
                 _logger.LogDebug("Cached response for key: {CacheKey} with TTL: {TTL}", cacheKey, ttl);
             }
             catch (Exception ex)
