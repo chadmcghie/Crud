@@ -191,6 +191,13 @@ Consider adding these to `.claude/` for better context:
   - `dotnet format solutions/Crud.sln` for .NET code
   - `npm run lint` in src/Angular for TypeScript code
 
+## Known Issues & Workarounds
+
+### Settings.local.json Not Auto-Loading
+- **Issue**: `.claude/settings.local.json` permissions don't load automatically at startup
+- **Workaround**: Run `/permissions` command once at session start to trigger settings loading
+- **Fix Applied**: Removed conflicting `"Bash(echo:*)"` from "ask" section that was overriding specific echo commands in "allow" section
+
 ## Key References
 
 - API ports: 5172 (HTTP), 7268 (HTTPS)

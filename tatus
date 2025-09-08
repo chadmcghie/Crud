@@ -1,0 +1,10 @@
+[33m7211068[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/agent-os-productivity-improvements[m[33m)[m feat(agent-os): implement command dashboard and shell integration
+[33m1276161[m[33m ([m[1;32mtuning/agents[m[33m)[m  define: spec and tasks, for ai agent tuning
+[33m03c714f[m[33m ([m[1;31morigin/tuning/agents[m[33m)[m chore: update Agent-OS configuration and agents
+[33md051f79[m[33m ([m[1;31morigin/feature/redis-caching-layer[m[33m, [m[1;32mfeature/redis-caching-layer[m[33m)[m test: add unit tests for caching services
+[33ma2e7ec3[m feat: update repositories and configure Redis caching
+[33mbe76c6d[m feat: add Redis caching infrastructure layer
+[33mf027b7e[m updating ai agents to merge global changes
+[33meedc231[m[33m ([m[1;31morigin/planning/caching[m[33m, [m[1;32mplanning/caching[m[33m)[m docs: add AI tuning documentation and update README
+[33m762559b[m docs: add Redis caching layer specification
+[33m9b04165[m[33m ([m[1;31morigin/dev[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mdev[m[33m)[m Merge pull request #151 from chadmcghie/fixes/e2e-smoke-test-failures

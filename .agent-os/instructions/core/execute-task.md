@@ -306,6 +306,14 @@ Use the test-runner subagent to run and verify only the tests specific to this p
 
 IMPORTANT: In the tasks.md file, mark this task and its sub-tasks complete by updating each task checkbox to [x].
 
+<github_issue_closure>
+  IF task has associated GitHub issue (Issue: #XXX):
+    ACTION: Close the GitHub issue immediately after marking task complete
+    COMMAND: gh issue close XXX --comment "Task completed as part of spec: [SPEC_PATH]"
+    INCLUDE: Summary of completed subtasks in comment
+  REASON: Provides immediate progress visibility
+</github_issue_closure>
+
 <update_format>
   <completed>- [x] Task description</completed>
   <incomplete>- [ ] Task description</incomplete>
