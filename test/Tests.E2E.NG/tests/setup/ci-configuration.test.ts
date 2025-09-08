@@ -49,6 +49,16 @@ test.describe('CI/CD Configuration', () => {
   });
 
   test('should have simplified environment variables', async () => {
+    // Skip this test if not in CI or if env vars aren't set
+    // The test:webserver script sets these variables
+    const isCI = process.env.CI === 'true';
+    const hasTestEnvVars = process.env.API_PORT || process.env.ANGULAR_PORT;
+    
+    if (!isCI && !hasTestEnvVars) {
+      test.skip();
+      return;
+    }
+    
     // Check that we use minimal env vars
     const expectedEnvVars = [
       'API_PORT',

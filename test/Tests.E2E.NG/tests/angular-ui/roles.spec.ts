@@ -224,7 +224,7 @@ test.describe('Roles Management UI', () => {
     await pageHelpers.refreshPage();
     await pageHelpers.switchToRolesTab();
     
-    const roleRow = page.locator(`tr:has-text("${testRole.name}")`);
+    const roleRow = page.locator(`tr:has-text("${testRole.name}")`).first();
     
     // Verify name is displayed
     await expect(roleRow.locator('.name-cell')).toContainText(testRole.name);
