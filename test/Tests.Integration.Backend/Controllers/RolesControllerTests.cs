@@ -68,27 +68,28 @@ public class RolesControllerTests : IntegrationTestBase
     [Fact]
     public async Task GET_Roles_Should_Return_All_Roles()
     {
-        // Arrange
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            // Create test roles
+            var role1 = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
+            var role2 = TestDataBuilders.CreateRoleRequest("User", "Regular user");
 
+            await PostJsonAsync("/api/roles", role1);
+            await PostJsonAsync("/api/roles", role2);
 
-        // Create test roles
-        var role1 = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
-        var role2 = TestDataBuilders.CreateRoleRequest("User", "Regular user");
+            // Act
+            var response = await Client.GetAsync("/api/roles");
 
-        await PostJsonAsync("/api/roles", role1);
-        await PostJsonAsync("/api/roles", role2);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var roles = await ReadJsonAsync<List<RoleDto>>(response);
 
-        // Act
-        var response = await Client.GetAsync("/api/roles");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var roles = await ReadJsonAsync<List<RoleDto>>(response);
-
-        roles.Should().NotBeNull();
-        roles.Should().HaveCount(2);
-        roles.Should().Contain(r => r.Name == "Admin");
-        roles.Should().Contain(r => r.Name == "User");
+            roles.Should().NotBeNull();
+            roles.Should().HaveCount(2);
+            roles.Should().Contain(r => r.Name == "Admin");
+            roles.Should().Contain(r => r.Name == "User");
+        });
     }
 
     [Fact]
