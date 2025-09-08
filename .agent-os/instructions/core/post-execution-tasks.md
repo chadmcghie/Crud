@@ -83,18 +83,28 @@ Use the git-workflow subagent to create git commit, push to GitHub, and create p
 
 <step number="3" subagent="project-manager" name="tasks_list_check">
 
-### Step 3: Tasks Completion Verification
+### Step 3: Tasks Completion Verification and GitHub Issue Closing
 
-Use the project-manager subagent to read the current spec's tasks.md file and verify that all tasks have been properly marked as complete with [x] or documented with blockers.
+Use the project-manager subagent to read the current spec's tasks.md file and verify that all tasks have been properly marked as complete with [x] or documented with blockers. Then close any associated GitHub issues that were completed.
 
 <instructions>
   ACTION: Use project-manager subagent
   REQUEST: "Verify that all tasks have been marked with their outcome:
             - Read [SPEC_FOLDER_PATH]/tasks.md
-            - Check all tasks are marked complete with [x] or (in rare cases) a documented blocking issue."
-  WAIT: For task verification analysis
-  PROCESS: Update task status as needed
+            - Check all tasks are marked complete with [x] or (in rare cases) a documented blocking issue.
+            - For each completed task, check if it has an associated GitHub issue number (e.g., Issue: #127)
+            - Close all GitHub issues that correspond to completed tasks using gh issue close command
+            - Add a comment to each closed issue referencing the completed spec"
+  WAIT: For task verification and issue closing
+  PROCESS: Update task status and close GitHub issues as needed
 </instructions>
+
+<github_issue_closing>
+  <identify>Look for issue numbers in tasks.md (format: Issue: #XXX)</identify>
+  <verify>Check if task is marked complete with [x]</verify>
+  <close>Use gh issue close command with comment about completion</close>
+  <comment>Reference spec path and completion status</comment>
+</github_issue_closing>
 
 </step>
 

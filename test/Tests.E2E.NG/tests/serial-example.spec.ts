@@ -85,7 +85,7 @@ test.describe('People Management - Serial Tests', () => {
     await page.goto(`${baseURL}`);
     
     // Find and click edit for the test person
-    const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    const row = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await row.locator('button:has-text("Edit")').click();
     
     // Wait for the edit form to appear
@@ -118,7 +118,7 @@ test.describe('People Management - Serial Tests', () => {
     await page.goto(`${baseURL}`);
     
     // Find and click delete for the test person
-    const row = page.locator(`tr:has-text("${testPerson.fullName}")`);
+    const row = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     
     // Handle the confirm dialog that will appear
     page.once('dialog', async dialog => {
@@ -148,8 +148,13 @@ test.describe('People Management - Serial Tests', () => {
     // Click add button - be more specific with the selector
     await page.click('button:has-text("Add New Person")');
     
+//<<<<<<< fixes/e2e-smoke-test-failures
     // Wait for form to appear
-    await page.locator('.people-form-container, app-people form').waitFor({ state: 'visible', timeout: 5000 });
+    //await page.locator('.people-form-container, app-people form').waitFor({ state: 'visible', timeout: 5000 });
+//=======
+    // Wait for form to appear - use first() to handle strict mode
+    await page.locator('app-people form').first().waitFor({ state: 'visible', timeout: 5000 });
+//>>>>>>> staging
     
     // Fill in only partial data to trigger validation
     await page.fill('input#fullName', 'Test');

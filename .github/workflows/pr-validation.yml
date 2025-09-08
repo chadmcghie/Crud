@@ -4,7 +4,7 @@ name: Pull Request Validation
 # to avoid duplicate test runs with feature-branch-tests.yml
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, staging ]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
