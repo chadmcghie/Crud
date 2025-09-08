@@ -73,7 +73,7 @@ public class CacheServiceTests
 
             // Assert
             _mockCacheService.Verify(
-                x => x.SetAsync(key, value, options, It.IsAny<CancellationToken>()), 
+                x => x.SetAsync(key, value, options, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -129,12 +129,12 @@ public class CacheServiceTests
             var key = "test-key";
             var expectedValue = new TestCacheItem { Id = 1, Name = "Test" };
             var options = new CacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.AddHours(1) };
-            
+
             _mockCacheService
                 .Setup(x => x.GetOrSetAsync(
-                    key, 
-                    It.IsAny<Func<CancellationToken, Task<TestCacheItem>>>(), 
-                    options, 
+                    key,
+                    It.IsAny<Func<CancellationToken, Task<TestCacheItem>>>(),
+                    options,
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedValue);
 
@@ -205,7 +205,7 @@ public class CacheServiceTests
 
             // Assert
             _mockCacheService.Verify(
-                x => x.SetManyAsync(items, options, It.IsAny<CancellationToken>()), 
+                x => x.SetManyAsync(items, options, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -264,15 +264,15 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            var options = new CacheEntryOptions 
-            { 
-                AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(1) 
+            var options = new CacheEntryOptions
+            {
+                AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(1)
             };
 
             // Act
             await _cacheService.SetAsync(key, value, options);
             var resultBeforeExpiry = await _cacheService.GetAsync<TestCacheItem>(key);
-            
+
             await Task.Delay(1500); // Wait for expiration
             var resultAfterExpiry = await _cacheService.GetAsync<TestCacheItem>(key);
 
@@ -287,24 +287,24 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            var options = new CacheEntryOptions 
-            { 
-                SlidingExpiration = TimeSpan.FromSeconds(2) 
+            var options = new CacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromSeconds(2)
             };
 
             // Act
             await _cacheService.SetAsync(key, value, options);
-            
+
             // Access multiple times within sliding window
             await Task.Delay(1000);
             var result1 = await _cacheService.GetAsync<TestCacheItem>(key);
-            
+
             await Task.Delay(1000);
             var result2 = await _cacheService.GetAsync<TestCacheItem>(key);
-            
+
             // Should still be cached due to sliding expiration
             result2.Should().NotBeNull();
-            
+
             // Wait without accessing
             await Task.Delay(2500);
             var result3 = await _cacheService.GetAsync<TestCacheItem>(key);
@@ -365,7 +365,7 @@ public class CacheServiceTests
             var key = "test-key";
             var cachedValue = new TestCacheItem { Id = 1, Name = "Cached" };
             _memoryCache.Set(key, cachedValue);
-            
+
             var factoryCalled = false;
             Func<CancellationToken, Task<TestCacheItem>> factory = async ct =>
             {
@@ -387,7 +387,7 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var newValue = new TestCacheItem { Id = 2, Name = "New" };
-            
+
             var factoryCalled = false;
             Func<CancellationToken, Task<TestCacheItem>> factory = async ct =>
             {
@@ -424,7 +424,7 @@ public class CacheServiceTests
             _mockRedisConnection = new Mock<IConnectionMultiplexer>();
             _mockDatabase = new Mock<IDatabase>();
             _mockLogger = new Mock<ILogger<RedisCacheService>>();
-            
+
             _mockRedisConnection
                 .Setup(x => x.GetDatabase(It.IsAny<int>(), It.IsAny<object>()))
                 .Returns(_mockDatabase.Object);
@@ -439,7 +439,7 @@ public class CacheServiceTests
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
             var serializedValue = System.Text.Json.JsonSerializer.Serialize(value);
-            
+
             _mockDatabase
                 .Setup(x => x.StringGetAsync(key, It.IsAny<CommandFlags>()))
                 .ReturnsAsync(new RedisValue(serializedValue));
@@ -458,7 +458,7 @@ public class CacheServiceTests
         {
             // Arrange
             var key = "non-existing-key";
-            
+
             _mockDatabase
                 .Setup(x => x.StringGetAsync(key, It.IsAny<CommandFlags>()))
                 .ReturnsAsync(RedisValue.Null);
@@ -476,9 +476,9 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            var options = new CacheEntryOptions 
-            { 
-                AbsoluteExpiration = DateTimeOffset.UtcNow.AddHours(1) 
+            var options = new CacheEntryOptions
+            {
+                AbsoluteExpiration = DateTimeOffset.UtcNow.AddHours(1)
             };
 
             // Act
@@ -487,12 +487,12 @@ public class CacheServiceTests
             // Assert
             _mockDatabase.Verify(
                 x => x.StringSetAsync(
-                    key, 
-                    It.IsAny<RedisValue>(), 
-                    It.IsAny<TimeSpan?>(), 
+                    key,
+                    It.IsAny<RedisValue>(),
+                    It.IsAny<TimeSpan?>(),
                     false,
-                    When.Always, 
-                    CommandFlags.None), 
+                    When.Always,
+                    CommandFlags.None),
                 Times.Once);
         }
 
@@ -507,7 +507,7 @@ public class CacheServiceTests
 
             // Assert
             _mockDatabase.Verify(
-                x => x.KeyDeleteAsync(key, It.IsAny<CommandFlags>()), 
+                x => x.KeyDeleteAsync(key, It.IsAny<CommandFlags>()),
                 Times.Once);
         }
 
@@ -516,7 +516,7 @@ public class CacheServiceTests
         {
             // Arrange
             var key = "test-key";
-            
+
             _mockDatabase
                 .Setup(x => x.KeyExistsAsync(key, It.IsAny<CommandFlags>()))
                 .ReturnsAsync(true);
@@ -535,22 +535,22 @@ public class CacheServiceTests
             var pattern = "user:*";
             var server = new Mock<IServer>();
             var matchingKeys = new[] { (RedisKey)"user:1", (RedisKey)"user:2" };
-            
+
             _mockRedisConnection
                 .Setup(x => x.GetEndPoints(It.IsAny<bool>()))
                 .Returns(new[] { new System.Net.IPEndPoint(0, 0) });
-            
+
             _mockRedisConnection
                 .Setup(x => x.GetServer(It.IsAny<System.Net.EndPoint>(), It.IsAny<object>()))
                 .Returns(server.Object);
-            
+
             server
                 .Setup(x => x.KeysAsync(
-                    It.IsAny<int>(), 
-                    It.IsAny<RedisValue>(), 
-                    It.IsAny<int>(), 
-                    It.IsAny<long>(), 
-                    It.IsAny<int>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<RedisValue>(),
+                    It.IsAny<int>(),
+                    It.IsAny<long>(),
+                    It.IsAny<int>(),
                     It.IsAny<CommandFlags>()))
                 .Returns(ToAsyncEnumerable(matchingKeys));
 
@@ -559,7 +559,7 @@ public class CacheServiceTests
 
             // Assert
             _mockDatabase.Verify(
-                x => x.KeyDeleteAsync(It.IsAny<RedisKey[]>(), It.IsAny<CommandFlags>()), 
+                x => x.KeyDeleteAsync(It.IsAny<RedisKey[]>(), It.IsAny<CommandFlags>()),
                 Times.Once);
         }
 
@@ -570,7 +570,7 @@ public class CacheServiceTests
             var keys = new[] { "key1", "key2", "key3" };
             var value1 = System.Text.Json.JsonSerializer.Serialize(new TestCacheItem { Id = 1, Name = "Item1" });
             var value2 = System.Text.Json.JsonSerializer.Serialize(new TestCacheItem { Id = 2, Name = "Item2" });
-            
+
             _mockDatabase
                 .Setup(x => x.StringGetAsync(It.IsAny<RedisKey[]>(), It.IsAny<CommandFlags>()))
                 .ReturnsAsync(new RedisValue[] { value1, value2, RedisValue.Null });
@@ -614,7 +614,7 @@ public class CacheServiceTests
             _mockPrimaryCache = new Mock<ICacheService>();
             _mockFallbackCache = new Mock<ICacheService>();
             _mockLogger = new Mock<ILogger<CompositeCacheService>>();
-            
+
             _cacheService = new CompositeCacheService(
                 _mockPrimaryCache.Object,
                 _mockFallbackCache.Object,
@@ -627,7 +627,7 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            
+
             _mockPrimaryCache
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(value);
@@ -647,11 +647,11 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            
+
             _mockPrimaryCache
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Connection failed"));
-            
+
             _mockFallbackCache
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(value);
@@ -687,7 +687,7 @@ public class CacheServiceTests
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
             var options = new CacheEntryOptions();
-            
+
             _mockPrimaryCache
                 .Setup(x => x.SetAsync(key, value, options, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Connection failed"));
@@ -720,11 +720,11 @@ public class CacheServiceTests
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
             var options = new CacheEntryOptions();
-            
+
             _mockPrimaryCache
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TestCacheItem?)null);
-            
+
             _mockFallbackCache
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TestCacheItem?)null);
@@ -787,7 +787,7 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var factoryCallCount = 0;
-            
+
             Func<CancellationToken, Task<TestCacheItem>> factory = async ct =>
             {
                 Interlocked.Increment(ref factoryCallCount);
@@ -801,7 +801,7 @@ public class CacheServiceTests
             {
                 tasks.Add(_cacheService.GetOrSetAsync(key, factory, new CacheEntryOptions()));
             }
-            
+
             var results = await Task.WhenAll(tasks);
 
             // Assert
@@ -815,9 +815,9 @@ public class CacheServiceTests
             // Arrange
             var key = "test-key";
             var value = new TestCacheItem { Id = 1, Name = "Test" };
-            var options = new CacheEntryOptions 
-            { 
-                Priority = global::Infrastructure.Services.Caching.CacheItemPriority.High 
+            var options = new CacheEntryOptions
+            {
+                Priority = global::Infrastructure.Services.Caching.CacheItemPriority.High
             };
 
             // Act

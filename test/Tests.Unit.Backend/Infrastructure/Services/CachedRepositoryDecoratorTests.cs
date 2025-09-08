@@ -21,7 +21,7 @@ public class CachedRepositoryDecoratorTests
         _mockCacheService = new Mock<ICacheService>();
         _mockKeyGenerator = new Mock<ICacheKeyGenerator>();
         _mockCacheConfig = new Mock<ICacheConfiguration>();
-        
+
         // Setup default cache key generation
         _mockKeyGenerator
             .Setup(x => x.GenerateEntityKey<Role>(It.IsAny<Guid>()))
@@ -32,14 +32,14 @@ public class CachedRepositoryDecoratorTests
         _mockKeyGenerator
             .Setup(x => x.GenerateNameKey<Role>(It.IsAny<string>()))
             .Returns<string>(name => $"role:name:{name}");
-        
+
         // Setup default cache options
         _mockCacheConfig
             .Setup(x => x.GetCacheOptions<Role>())
             .Returns(new CacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15) });
-        
+
         _decorator = new CachedRoleRepositoryDecorator(
-            _mockRepository.Object, 
+            _mockRepository.Object,
             _mockCacheService.Object,
             _mockKeyGenerator.Object,
             _mockCacheConfig.Object);

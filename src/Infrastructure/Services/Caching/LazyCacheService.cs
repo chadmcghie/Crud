@@ -28,7 +28,7 @@ public class LazyCacheService : ICacheService
         try
         {
             var result = await Task.FromResult(_cache.Get<T>(key));
-            
+
             if (result == null)
             {
                 _logger.LogDebug("Cache miss for key: {Key}", key);
@@ -37,7 +37,7 @@ public class LazyCacheService : ICacheService
             {
                 _logger.LogDebug("Cache hit for key: {Key}", key);
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -93,15 +93,15 @@ public class LazyCacheService : ICacheService
     }
 
     public async Task<T?> GetOrSetAsync<T>(
-        string key, 
-        Func<CancellationToken, Task<T>> factory, 
-        CacheEntryOptions options, 
+        string key,
+        Func<CancellationToken, Task<T>> factory,
+        CacheEntryOptions options,
         CancellationToken cancellationToken = default) where T : class
     {
         try
         {
             var memoryCacheOptions = ConvertToMemoryCacheOptions(options);
-            
+
             // LazyCache's GetOrAddAsync provides thread-safe lazy loading
             var result = await _cache.GetOrAddAsync(
                 key,
@@ -110,7 +110,7 @@ public class LazyCacheService : ICacheService
                     entry.SetOptions(memoryCacheOptions);
                     return await factory(cancellationToken);
                 });
-            
+
             _logger.LogDebug("GetOrSet completed for key: {Key}", key);
             return result;
         }
@@ -143,12 +143,12 @@ public class LazyCacheService : ICacheService
         try
         {
             var result = new Dictionary<string, T?>();
-            
+
             foreach (var key in keys)
             {
                 result[key] = _cache.Get<T>(key);
             }
-            
+
             return await Task.FromResult(result);
         }
         catch (Exception ex)
@@ -163,12 +163,12 @@ public class LazyCacheService : ICacheService
         try
         {
             var memoryCacheOptions = ConvertToMemoryCacheOptions(options);
-            
+
             foreach (var kvp in items)
             {
                 _cache.Add(kvp.Key, kvp.Value, memoryCacheOptions);
             }
-            
+
             _logger.LogDebug("Set {Count} cache values", items.Count);
             await Task.CompletedTask;
         }
@@ -182,22 +182,22 @@ public class LazyCacheService : ICacheService
     private MemoryCacheEntryOptions ConvertToMemoryCacheOptions(CacheEntryOptions options)
     {
         var memoryCacheOptions = new MemoryCacheEntryOptions();
-        
+
         if (options.AbsoluteExpiration.HasValue)
         {
             memoryCacheOptions.AbsoluteExpiration = options.AbsoluteExpiration;
         }
-        
+
         if (options.AbsoluteExpirationRelativeToNow.HasValue)
         {
             memoryCacheOptions.AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow;
         }
-        
+
         if (options.SlidingExpiration.HasValue)
         {
             memoryCacheOptions.SlidingExpiration = options.SlidingExpiration;
         }
-        
+
         // Convert our custom priority enum to Microsoft's
         memoryCacheOptions.Priority = options.Priority switch
         {
@@ -206,12 +206,12 @@ public class LazyCacheService : ICacheService
             CacheItemPriority.NeverRemove => Microsoft.Extensions.Caching.Memory.CacheItemPriority.NeverRemove,
             _ => Microsoft.Extensions.Caching.Memory.CacheItemPriority.Normal
         };
-        
+
         if (options.Size.HasValue)
         {
             memoryCacheOptions.Size = options.Size;
         }
-        
+
         return memoryCacheOptions;
     }
 }

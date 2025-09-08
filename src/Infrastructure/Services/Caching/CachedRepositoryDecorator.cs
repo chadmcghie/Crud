@@ -39,7 +39,7 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
     public async Task<TEntity?> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var cacheKey = _keyGenerator.GenerateEntityKey<TEntity>(id);
-        
+
         var cachedEntity = await _cacheService.GetAsync<TEntity>(cacheKey, cancellationToken);
         if (cachedEntity != null)
         {
@@ -59,7 +59,7 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
     public async Task<IReadOnlyList<TEntity>> ListAsync(CancellationToken cancellationToken = default)
     {
         var cacheKey = _keyGenerator.GenerateListKey<TEntity>();
-        
+
         var cachedList = await _cacheService.GetAsync<IReadOnlyList<TEntity>>(cacheKey, cancellationToken);
         if (cachedList != null)
         {
@@ -79,17 +79,17 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
     public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         var result = await _repository.AddAsync(entity, cancellationToken);
-        
+
         // Invalidate list cache since we added a new entity
         await InvalidateListCache<TEntity>(cancellationToken);
-        
+
         return result;
     }
 
     public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         await _repository.UpdateAsync(entity, cancellationToken);
-        
+
         // Invalidate both entity and list caches
         var id = GetEntityId(entity);
         if (id.HasValue)
@@ -102,7 +102,7 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await _repository.DeleteAsync(id, cancellationToken);
-        
+
         // Invalidate both entity and list caches
         await InvalidateEntityCache<TEntity>(id, cancellationToken);
         await InvalidateListCache<TEntity>(cancellationToken);

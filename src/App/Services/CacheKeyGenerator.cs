@@ -35,9 +35,9 @@ public class CacheKeyGenerator : ICacheKeyGenerator
     public string GenerateKey(Type requestType, object request, ClaimsPrincipal? user = null)
     {
         var sb = new StringBuilder();
-        
+
         var cacheableAttr = requestType.GetCustomAttribute<CacheableAttribute>();
-        
+
         if (!string.IsNullOrEmpty(cacheableAttr?.CustomCacheKeyPrefix))
         {
             sb.Append(cacheableAttr.CustomCacheKeyPrefix);
@@ -48,7 +48,7 @@ public class CacheKeyGenerator : ICacheKeyGenerator
             sb.Append(requestType.Name);
             sb.Append(':');
         }
-        
+
         if (cacheableAttr?.VaryByUserId == true && user?.Identity?.IsAuthenticated == true)
         {
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -59,11 +59,11 @@ public class CacheKeyGenerator : ICacheKeyGenerator
                 sb.Append(':');
             }
         }
-        
+
         var requestJson = JsonSerializer.Serialize(request, requestType, _jsonOptions);
         var requestHash = ComputeHash(requestJson);
         sb.Append(requestHash);
-        
+
         return sb.ToString();
     }
 
@@ -76,6 +76,6 @@ public class CacheKeyGenerator : ICacheKeyGenerator
             .Replace("/", "_")
             .Replace("+", "-")
             .Replace("=", "")
-            .Substring(0, 16); 
+            .Substring(0, 16);
     }
 }

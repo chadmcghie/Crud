@@ -1,12 +1,12 @@
-using App.Interfaces;
-using App.Services;
-using MediatR;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using App.Interfaces;
+using App.Services;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace App.Behaviors;
 

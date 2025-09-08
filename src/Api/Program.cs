@@ -187,7 +187,7 @@ namespace Api
 
                 // Add caching services
                 builder.Services.AddCachingServices(builder.Configuration);
-                
+
                 // Add cached repository decorators (only if using EF provider)
                 if (usingEfProvider)
                 {

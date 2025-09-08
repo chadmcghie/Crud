@@ -41,13 +41,13 @@ public class CacheKeyGenerator : ICacheKeyGenerator
     private static string GetEntityName<TEntity>() where TEntity : class
     {
         var typeName = typeof(TEntity).Name;
-        
+
         // Remove common suffixes and convert to lowercase
         if (typeName.EndsWith("Entity"))
         {
             typeName = typeName[..^6]; // Remove "Entity" suffix
         }
-        
+
         return typeName.ToLowerInvariant();
     }
 

@@ -31,7 +31,7 @@ public class CacheConfiguration : ICacheConfiguration
     {
         var entityType = typeof(TEntity);
         var ttl = GetTtlForEntity(entityType);
-        
+
         return new CacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = ttl,

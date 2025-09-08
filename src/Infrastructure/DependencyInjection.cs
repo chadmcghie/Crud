@@ -37,7 +37,7 @@ public static class DependencyInjection
         services.AddScoped<EfRoleRepository>();
         services.AddScoped<EfWallRepository>();
         services.AddScoped<EfWindowRepository>();
-        
+
         // Register repository interfaces (without caching - will be overridden by AddCachedRepositories if called)
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IRoleRepository, EfRoleRepository>();
@@ -101,7 +101,7 @@ public static class DependencyInjection
         services.AddScoped<EfRoleRepository>();
         services.AddScoped<EfWallRepository>();
         services.AddScoped<EfWindowRepository>();
-        
+
         // Register repository interfaces (without caching - will be overridden by AddCachedRepositories if called)
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IRoleRepository, EfRoleRepository>();
@@ -192,16 +192,16 @@ public static class DependencyInjection
             services.AddSingleton<RedisCacheService>();
             services.AddSingleton<InMemoryCacheService>();
             services.AddSingleton<LazyCacheService>();
-            
+
             // Register composite cache as the primary ICacheService
             services.AddSingleton<ICacheService>(provider =>
             {
                 var primaryCache = provider.GetRequiredService<RedisCacheService>();
-                var fallbackCache = useLazyCache 
+                var fallbackCache = useLazyCache
                     ? (ICacheService)provider.GetRequiredService<LazyCacheService>()
                     : provider.GetRequiredService<InMemoryCacheService>();
                 var logger = provider.GetRequiredService<ILogger<CompositeCacheService>>();
-                
+
                 return new CompositeCacheService(primaryCache, fallbackCache, logger);
             });
         }
@@ -247,7 +247,7 @@ public static class DependencyInjection
             var cacheService = provider.GetRequiredService<ICacheService>();
             var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
-            
+
             return new CachedPersonRepositoryDecorator(
                 repository, cacheService, keyGenerator, cacheConfig);
         });
@@ -258,7 +258,7 @@ public static class DependencyInjection
             var cacheService = provider.GetRequiredService<ICacheService>();
             var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
-            
+
             return new CachedRoleRepositoryDecorator(
                 repository, cacheService, keyGenerator, cacheConfig);
         });
@@ -269,7 +269,7 @@ public static class DependencyInjection
             var cacheService = provider.GetRequiredService<ICacheService>();
             var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
-            
+
             return new CachedWallRepositoryDecorator(
                 repository, cacheService, keyGenerator, cacheConfig);
         });
@@ -280,7 +280,7 @@ public static class DependencyInjection
             var cacheService = provider.GetRequiredService<ICacheService>();
             var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
-            
+
             return new CachedWindowRepositoryDecorator(
                 repository, cacheService, keyGenerator, cacheConfig);
         });

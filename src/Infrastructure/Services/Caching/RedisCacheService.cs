@@ -33,7 +33,7 @@ public class RedisCacheService : ICacheService
         try
         {
             var value = await _database.StringGetAsync(key);
-            
+
             if (!value.HasValue)
             {
                 _logger.LogDebug("Cache miss for key: {Key}", key);
@@ -56,7 +56,7 @@ public class RedisCacheService : ICacheService
         {
             var serialized = JsonSerializer.Serialize(value, _jsonOptions);
             var expiry = GetExpiry(options);
-            
+
             await _database.StringSetAsync(key, serialized, expiry);
             _logger.LogDebug("Set cache value for key: {Key} with expiry: {Expiry}", key, expiry);
         }
@@ -95,9 +95,9 @@ public class RedisCacheService : ICacheService
     }
 
     public async Task<T?> GetOrSetAsync<T>(
-        string key, 
-        Func<CancellationToken, Task<T>> factory, 
-        CacheEntryOptions options, 
+        string key,
+        Func<CancellationToken, Task<T>> factory,
+        CacheEntryOptions options,
         CancellationToken cancellationToken = default) where T : class
     {
         try
@@ -128,17 +128,17 @@ public class RedisCacheService : ICacheService
         try
         {
             var endpoints = _redis.GetEndPoints();
-            
+
             foreach (var endpoint in endpoints)
             {
                 var server = _redis.GetServer(endpoint);
                 var keys = new List<RedisKey>();
-                
+
                 await foreach (var key in server.KeysAsync(pattern: pattern))
                 {
                     keys.Add(key);
                 }
-                
+
                 if (keys.Any())
                 {
                     await _database.KeyDeleteAsync(keys.ToArray());
@@ -160,7 +160,7 @@ public class RedisCacheService : ICacheService
             var keyArray = keys.ToArray();
             var redisKeys = keyArray.Select(k => (RedisKey)k).ToArray();
             var values = await _database.StringGetAsync(redisKeys);
-            
+
             var result = new Dictionary<string, T?>();
             for (int i = 0; i < keyArray.Length; i++)
             {
@@ -173,7 +173,7 @@ public class RedisCacheService : ICacheService
                     result[keyArray[i]] = null;
                 }
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -189,13 +189,13 @@ public class RedisCacheService : ICacheService
         {
             var tasks = new List<Task>();
             var expiry = GetExpiry(options);
-            
+
             foreach (var kvp in items)
             {
                 var serialized = JsonSerializer.Serialize(kvp.Value, _jsonOptions);
                 tasks.Add(_database.StringSetAsync(kvp.Key, serialized, expiry));
             }
-            
+
             await Task.WhenAll(tasks);
             _logger.LogDebug("Set {Count} cache values", items.Count);
         }
@@ -212,17 +212,17 @@ public class RedisCacheService : ICacheService
         {
             return options.AbsoluteExpiration.Value - DateTimeOffset.UtcNow;
         }
-        
+
         if (options.AbsoluteExpirationRelativeToNow.HasValue)
         {
             return options.AbsoluteExpirationRelativeToNow.Value;
         }
-        
+
         if (options.SlidingExpiration.HasValue)
         {
             return options.SlidingExpiration.Value;
         }
-        
+
         return null;
     }
 }
