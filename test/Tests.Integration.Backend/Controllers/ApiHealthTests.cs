@@ -105,74 +105,75 @@ public class ApiHealthTests : IntegrationTestBase
     [Fact]
     public async Task API_Should_Handle_Concurrent_Requests()
     {
-        // Arrange
-        await ClearDatabaseAsync(); // Start with clean database for health tests
-
-        var tasks = new List<Task<HttpResponseMessage>>();
-
-        // Act - Send multiple concurrent requests
-        for (int i = 0; i < 10; i++)
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            var createRequest = new
+            // Arrange
+            var tasks = new List<Task<HttpResponseMessage>>();
+
+            // Act - Send multiple concurrent requests
+            for (int i = 0; i < 10; i++)
             {
-                Name = $"Concurrent Role {i}",
-                Description = $"Role created in concurrent test {i}"
-            };
-            tasks.Add(PostJsonAsync("/api/roles", createRequest));
-        }
+                var createRequest = new
+                {
+                    Name = $"Concurrent Role {i}",
+                    Description = $"Role created in concurrent test {i}"
+                };
+                tasks.Add(PostJsonAsync("/api/roles", createRequest));
+            }
 
-        var responses = await Task.WhenAll(tasks);
+            var responses = await Task.WhenAll(tasks);
 
-        // Assert
-        responses.Should().HaveCount(10);
-        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
+            // Assert
+            responses.Should().HaveCount(10);
+            responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
 
-        // Verify all roles were created
-        var getResponse = await Client.GetAsync("/api/roles");
-        var roles = await ReadJsonAsync<List<object>>(getResponse);
-        roles.Should().HaveCount(10);
+            // Verify all roles were created
+            var getResponse = await Client.GetAsync("/api/roles");
+            var roles = await ReadJsonAsync<List<object>>(getResponse);
+            roles.Should().HaveCount(10);
+        });
     }
 
     [Fact]
     public async Task API_Should_Maintain_Data_Consistency_Under_Load()
     {
-        // Arrange
-        await ClearDatabaseAsync(); // Start with clean database for health tests
-
-
-        // Create a role first
-        var roleResponse = await PostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });
-        roleResponse.EnsureSuccessStatusCode();
-        var role = await ReadJsonAsync<RoleDto>(roleResponse);
-        var roleId = role?.Id ?? Guid.Empty;
-
-        // Ensure role was created successfully
-        roleId.Should().NotBe(Guid.Empty, "Role must be created before testing");
-
-        var tasks = new List<Task<HttpResponseMessage>>();
-
-        // Act - Create multiple people with the same role concurrently
-        var names = new[] { "John Smith", "Jane Doe", "Bob Johnson", "Alice Brown", "Charlie Davis" };
-        for (int i = 0; i < 5; i++)
+        await RunWithCleanDatabaseAsync(async () =>
         {
-            var createRequest = new
+            // Arrange
+            // Create a role first
+            var roleResponse = await PostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });
+            roleResponse.EnsureSuccessStatusCode();
+            var role = await ReadJsonAsync<RoleDto>(roleResponse);
+            var roleId = role?.Id ?? Guid.Empty;
+
+            // Ensure role was created successfully
+            roleId.Should().NotBe(Guid.Empty, "Role must be created before testing");
+
+            var tasks = new List<Task<HttpResponseMessage>>();
+
+            // Act - Create multiple people with the same role concurrently
+            var names = new[] { "John Smith", "Jane Doe", "Bob Johnson", "Alice Brown", "Charlie Davis" };
+            for (int i = 0; i < 5; i++)
             {
-                FullName = names[i],
-                Phone = $"555-{100 + i:D3}-{1000 + i:D4}",
-                RoleIds = new[] { roleId.ToString() }
-            };
-            tasks.Add(PostJsonAsync("/api/people", createRequest));
-        }
+                var createRequest = new
+                {
+                    FullName = names[i],
+                    Phone = $"555-{100 + i:D3}-{1000 + i:D4}",
+                    RoleIds = new[] { roleId.ToString() }
+                };
+                tasks.Add(PostJsonAsync("/api/people", createRequest));
+            }
 
-        var responses = await Task.WhenAll(tasks);
+            var responses = await Task.WhenAll(tasks);
 
-        // Assert
-        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
+            // Assert
+            responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
 
-        // Verify data consistency
-        var getPeopleResponse = await Client.GetAsync("/api/people");
-        var people = await ReadJsonAsync<List<object>>(getPeopleResponse);
-        people.Should().HaveCount(5);
+            // Verify data consistency
+            var getPeopleResponse = await Client.GetAsync("/api/people");
+            var people = await ReadJsonAsync<List<object>>(getPeopleResponse);
+            people.Should().HaveCount(5);
+        });
     }
 
     [Theory]

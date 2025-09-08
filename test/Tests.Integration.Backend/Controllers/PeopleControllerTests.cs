@@ -74,34 +74,37 @@ public class PeopleControllerTests : IntegrationTestBase
     [Fact]
     public async Task POST_People_With_Roles_Should_Create_Person_With_Roles()
     {
-        // Arrange
-        // Create test roles first
-        var role1Request = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
-        var role2Request = TestDataBuilders.CreateRoleRequest("User", "Regular user");
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            // Create test roles first
+            var role1Request = TestDataBuilders.CreateRoleRequest("Admin", "Administrator");
+            var role2Request = TestDataBuilders.CreateRoleRequest("User", "Regular user");
 
-        var role1Response = await PostJsonAsync("/api/roles", role1Request);
-        var role2Response = await PostJsonAsync("/api/roles", role2Request);
+            var role1Response = await PostJsonAsync("/api/roles", role1Request);
+            var role2Response = await PostJsonAsync("/api/roles", role2Request);
 
-        var role1 = await ReadJsonAsync<RoleDto>(role1Response);
-        var role2 = await ReadJsonAsync<RoleDto>(role2Response);
+            var role1 = await ReadJsonAsync<RoleDto>(role1Response);
+            var role2 = await ReadJsonAsync<RoleDto>(role2Response);
 
-        var createRequest = TestDataBuilders.CreatePersonRequest(
-            "Jane Smith",
-            "987-654-3210",
-            new[] { role1!.Id, role2!.Id });
+            var createRequest = TestDataBuilders.CreatePersonRequest(
+                "Jane Smith",
+                "987-654-3210",
+                new[] { role1!.Id, role2!.Id });
 
-        // Act
-        var response = await PostJsonAsync("/api/people", createRequest);
+            // Act
+            var response = await PostJsonAsync("/api/people", createRequest);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPerson = await ReadJsonAsync<PersonResponse>(response);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            var createdPerson = await ReadJsonAsync<PersonResponse>(response);
 
-        createdPerson.Should().NotBeNull();
-        createdPerson!.FullName.Should().Be("Jane Smith");
-        createdPerson.Roles.Should().HaveCount(2);
-        createdPerson.Roles.Should().Contain(r => r.Name == "Admin");
-        createdPerson.Roles.Should().Contain(r => r.Name == "User");
+            createdPerson.Should().NotBeNull();
+            createdPerson!.FullName.Should().Be("Jane Smith");
+            createdPerson.Roles.Should().HaveCount(2);
+            createdPerson.Roles.Should().Contain(r => r.Name == "Admin");
+            createdPerson.Roles.Should().Contain(r => r.Name == "User");
+        });
     }
 
     [Fact]
