@@ -1,11 +1,7 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-import { PeopleComponent } from './people.component';
-import { RolesComponent } from './roles.component';
-import { PeopleListComponent } from './people-list.component';
-import { RolesListComponent } from './roles-list.component';
-import { PersonResponse, RoleDto } from './api.service';
 
 @Component({
   selector: 'app-root',
@@ -13,105 +9,79 @@ import { PersonResponse, RoleDto } from './api.service';
   imports: [
     CommonModule, 
     HttpClientModule, 
-    RolesComponent, 
-    PeopleComponent, 
-    PeopleListComponent,
-    RolesListComponent
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive
   ],
   template: `
     <div class="app-container">
       <header class="app-header">
-        <h1>People & Roles Management System</h1>
-        <p class="subtitle">Comprehensive CRUD operations for managing people and their roles</p>
+        <h1>CRUD Template Application</h1>
+        <nav class="nav-links">
+          <a routerLink="/login" routerLinkActive="active">Login</a>
+          <a routerLink="/register" routerLinkActive="active">Register</a>
+          <a routerLink="/people" routerLinkActive="active">Add Person</a>
+          <a routerLink="/people-list" routerLinkActive="active">People List</a>
+          <a routerLink="/roles-list" routerLinkActive="active">Roles</a>
+        </nav>
       </header>
 
-      <div class="tab-container">
-        <div class="tab-buttons">
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'people'" 
-            (click)="setActiveTab('people')"
-          >
-            👥 People Management
-          </button>
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'roles'" 
-            (click)="setActiveTab('roles')"
-          >
-            🎭 Roles Management
-          </button>
-        </div>
-
-        <!-- People Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'people'">
-          <div class="management-layout">
-            <div class="list-section">
-              <app-people-list 
-                (editPerson)="onEditPerson($event)"
-                (addPerson)="onAddPerson()"
-                #peopleList>
-              </app-people-list>
-            </div>
-            
-            <div class="form-section" *ngIf="showPeopleForm">
-              <app-people
-                [editingPerson]="editingPerson"
-                (personSaved)="onPersonSaved($event)"
-                (cancelled)="onCancelPerson()">
-              </app-people>
-            </div>
-          </div>
-        </div>
-
-        <!-- Roles Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'roles'">
-          <div class="management-layout">
-            <div class="list-section">
-              <app-roles-list 
-                (editRole)="onEditRole($event)"
-                (addRole)="onAddRole()"
-                #rolesList>
-              </app-roles-list>
-            </div>
-            
-            <div class="form-section" *ngIf="showRolesForm">
-              <app-roles
-                [editingRole]="editingRole"
-                (roleSaved)="onRoleSaved($event)"
-                (cancelled)="onCancelRole()">
-              </app-roles>
-            </div>
-          </div>
-        </div>
-      </div>
+      <main class="main-content">
+        <router-outlet></router-outlet>
+      </main>
     </div>
   `,
   styles: [`
     .app-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
     }
 
     .app-header {
-      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
       color: white;
-      margin-bottom: 30px;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
     .app-header h1 {
-      margin: 0 0 10px 0;
-      font-size: 2.5rem;
-      font-weight: 700;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
 
-    .subtitle {
-      margin: 0;
-      font-size: 1.1rem;
-      opacity: 0.9;
-      font-weight: 300;
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .nav-links a.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .main-content {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
     .tab-container {
@@ -209,75 +179,5 @@ import { PersonResponse, RoleDto } from './api.service';
   `]
 })
 export class App {
-  @ViewChild('peopleList') peopleList!: PeopleListComponent;
-  @ViewChild('rolesList') rolesList!: RolesListComponent;
-  
-  activeTab: 'people' | 'roles' = 'people';
-  
-  // People state
-  showPeopleForm = false;
-  editingPerson: PersonResponse | null = null;
-  
-  // Roles state
-  showRolesForm = false;
-  editingRole: RoleDto | null = null;
-
-  setActiveTab(tab: 'people' | 'roles') {
-    this.activeTab = tab;
-    // Reset forms when switching tabs
-    this.showPeopleForm = false;
-    this.showRolesForm = false;
-    this.editingPerson = null;
-    this.editingRole = null;
-  }
-
-  // People methods
-  onAddPerson() {
-    this.editingPerson = null;
-    this.showPeopleForm = true;
-  }
-
-  onEditPerson(person: PersonResponse) {
-    this.editingPerson = person;
-    this.showPeopleForm = true;
-  }
-
-  onPersonSaved(_person: PersonResponse) {
-    this.showPeopleForm = false;
-    this.editingPerson = null;
-    // Refresh the people list
-    if (this.peopleList) {
-      this.peopleList.refresh();
-    }
-  }
-
-  onCancelPerson() {
-    this.showPeopleForm = false;
-    this.editingPerson = null;
-  }
-
-  // Roles methods
-  onAddRole() {
-    this.editingRole = null;
-    this.showRolesForm = true;
-  }
-
-  onEditRole(role: RoleDto) {
-    this.editingRole = role;
-    this.showRolesForm = true;
-  }
-
-  onRoleSaved(_role: RoleDto) {
-    this.showRolesForm = false;
-    this.editingRole = null;
-    // Refresh the roles list
-    if (this.rolesList) {
-      this.rolesList.refresh();
-    }
-  }
-
-  onCancelRole() {
-    this.showRolesForm = false;
-    this.editingRole = null;
-  }
+  title = 'CRUD Template Application';
 }

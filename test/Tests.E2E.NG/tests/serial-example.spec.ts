@@ -17,11 +17,11 @@ test.describe('People Management - Serial Tests', () => {
   // Smoke tests - quick validation of core functionality (2 min total)
   test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     await expect(page.locator('h3')).toContainText(/People Directory/i);
@@ -29,11 +29,11 @@ test.describe('People Management - Serial Tests', () => {
   
   test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -43,16 +43,16 @@ test.describe('People Management - Serial Tests', () => {
   // Critical tests - essential user workflows (5 min total)
   test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button
     await page.click('button:has-text("Add New Person")');
-    await page.waitForSelector('app-people form', { timeout: 5000 });
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
     
     // Fill in the form with valid name format
     const testName = `John Test Smith`;
@@ -64,7 +64,7 @@ test.describe('People Management - Serial Tests', () => {
     await page.click('button[type="submit"]:has-text("Create Person")');
     
     // Wait for form to close or person to appear in list
-    await page.waitForSelector('app-people form', { state: 'hidden', timeout: 10000 }).catch(() => {
+    await page.locator('app-people form').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {
       // Form might stay open, check if person was added
     });
     
@@ -89,7 +89,7 @@ test.describe('People Management - Serial Tests', () => {
     await row.locator('button:has-text("Edit")').click();
     
     // Wait for the edit form to appear
-    await page.waitForSelector('.people-form-container', { timeout: 5000 });
+    await page.locator('.people-form-container').waitFor({ state: 'visible', timeout: 5000 });
     
     // Update the name
     const updatedName = `${testPerson.fullName} Updated`;
@@ -140,16 +140,21 @@ test.describe('People Management - Serial Tests', () => {
   test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
     await page.goto(`${baseURL}`);
     
-    // Click People tab first
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click People link first
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
     // Click add button - be more specific with the selector
     await page.click('button:has-text("Add New Person")');
     
+//<<<<<<< fixes/e2e-smoke-test-failures
+    // Wait for form to appear
+    //await page.locator('.people-form-container, app-people form').waitFor({ state: 'visible', timeout: 5000 });
+//=======
     // Wait for form to appear - use first() to handle strict mode
     await page.locator('app-people form').first().waitFor({ state: 'visible', timeout: 5000 });
+//>>>>>>> staging
     
     // Fill in only partial data to trigger validation
     await page.fill('input#fullName', 'Test');

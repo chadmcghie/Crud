@@ -6,7 +6,7 @@ version: 1.1
 encoding: UTF-8
 ---
 
-# Spec Creation Rules
+# Task Creation Rules
 
 ## Overview
 
@@ -18,15 +18,31 @@ With the user's approval, proceed to creating a tasks list based on the current 
 
 <process_flow>
 
-<step number="1" subagent="file-creator" name="create_tasks">
+<step number="1" name="github_parent_issue_check">
 
-### Step 1: Create tasks.md
+### Step 1: GitHub Parent Issue Check
+
+Retrieve the parent issue information from the spec to use for creating sub-issues.
+
+<parent_issue_retrieval>
+  1. Read the spec.md file from the current feature spec folder
+  2. Extract the GitHub Issue number from the header
+  3. Store the parent issue number for sub-issue linking
+</parent_issue_retrieval>
+
+</step>
+
+<step number="2" subagent="file-creator" name="create_tasks">
+
+### Step 2: Create tasks.md
 
 Use the file-creator subagent to create file: tasks.md inside of the current feature's spec folder.
 
 <file_template>
   <header>
     # Spec Tasks
+    
+    > Parent Issue: #[PARENT_ISSUE_NUMBER]
   </header>
 </file_template>
 
@@ -47,13 +63,13 @@ Use the file-creator subagent to create file: tasks.md inside of the current fea
 <task_template>
   ## Tasks
 
-  - [ ] 1. [MAJOR_TASK_DESCRIPTION]
+  - [ ] 1. [MAJOR_TASK_DESCRIPTION] (Issue: #[SUB_ISSUE_1])
     - [ ] 1.1 Write tests for [COMPONENT]
     - [ ] 1.2 [IMPLEMENTATION_STEP]
     - [ ] 1.3 [IMPLEMENTATION_STEP]
     - [ ] 1.4 Verify all tests pass
 
-  - [ ] 2. [MAJOR_TASK_DESCRIPTION]
+  - [ ] 2. [MAJOR_TASK_DESCRIPTION] (Issue: #[SUB_ISSUE_2])
     - [ ] 2.1 Write tests for [COMPONENT]
     - [ ] 2.2 [IMPLEMENTATION_STEP]
 </task_template>
@@ -67,9 +83,62 @@ Use the file-creator subagent to create file: tasks.md inside of the current fea
 
 </step>
 
-<step number="2" name="execution_readiness">
+<step number="3" name="check_existing_github_issues">
 
-### Step 2: Execution Readiness Check
+### Step 3: Check for Existing GitHub Issues
+
+Before creating new issues, check if suitable issues already exist.
+
+<existing_issue_check>
+  1. Parse the parent issue body for already linked sub-issues
+  2. Use `gh issue view [PARENT_ISSUE_NUMBER]` to see linked issues
+  3. Check if linked issues match the planned tasks
+  4. Search for related open issues: `gh issue list --search "[KEYWORDS]" --state open`
+  5. Document which tasks have existing issues vs need new ones
+</existing_issue_check>
+
+<decision_tree>
+  IF existing_issues_found_for_all_tasks:
+    SKIP to step 5
+    USE existing issue numbers in tasks.md
+  ELSE:
+    PROCEED to step 4
+    CREATE only missing issues
+</decision_tree>
+
+</step>
+
+<step number="4" name="create_github_sub_issues">
+
+### Step 4: Create GitHub Sub-Issues (Only if Needed)
+
+Create GitHub sub-issues ONLY for tasks that don't have existing issues.
+
+<github_sub_issue_creation>
+  <for_each_major_task_without_existing_issue>
+    1. Verify no existing issue covers this task
+    2. Create sub-issue title: "[SPEC_NAME] - [MAJOR_TASK_DESCRIPTION]"
+    3. Create sub-issue body with:
+       - Reference to parent issue: "Part of #[PARENT_ISSUE_NUMBER]"
+       - Task description
+       - List of subtasks as checklist
+    4. Use command: `gh issue create --title "[TITLE]" --body "[BODY]" --label "enhancement"`
+    5. Store the created issue number
+    6. Update tasks.md with the issue number
+  </for_each_major_task_without_existing_issue>
+  
+  <link_to_parent>
+    IF new_issues_were_created:
+      - Add comment to parent issue listing sub-issues
+      - Use command: `gh issue comment [PARENT_ISSUE_NUMBER] --body "Sub-tasks: #[ISSUE_1], #[ISSUE_2], ..."`
+  </link_to_parent>
+</github_sub_issue_creation>
+
+</step>
+
+<step number="5" name="execution_readiness">
+
+### Step 5: Execution Readiness Check
 
 Evaluate readiness to begin implementation by presenting the first task summary and requesting user confirmation to proceed.
 

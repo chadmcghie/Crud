@@ -148,7 +148,7 @@ Each stage has specific quality gates:
    - Audit trail of all deployments
 
 3. **Rollback Strategy**:
-   - Previous artifacts retained for 30 days
+   - Previous artifacts retained for 1 day
    - Automated rollback on failure
    - Blue-green deployment ready
 

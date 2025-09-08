@@ -145,5 +145,26 @@ namespace Domain.Entities.Authentication
         {
             _refreshTokens.Add(refreshToken);
         }
+
+        /// <summary>
+        /// Factory method for testing with specific user ID
+        /// </summary>
+        public static User CreateForTesting(Guid id, Email email, PasswordHash passwordHash, string? firstName = null, string? lastName = null)
+        {
+            var user = new User
+            {
+                Id = id,
+                Email = email,
+                PasswordHash = passwordHash,
+                FirstName = firstName,
+                LastName = lastName,
+                IsLocked = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            user._roles.Add("User");
+            return user;
+        }
     }
 }

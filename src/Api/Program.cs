@@ -1,12 +1,14 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Api.Middleware;
 using App;
 using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -246,6 +248,40 @@ namespace Api
                     options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
                 });
 
+                // Add rate limiting for password reset endpoint
+                builder.Services.AddRateLimiter(options =>
+                {
+                    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                    // Password reset rate limit: 3 requests per 15 minutes per IP (disabled in Testing environment)
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+                    var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
+                    var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
+
+                    options.AddPolicy("PasswordReset", context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = permitLimit,
+                                Window = window,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0
+                            }));
+
+                    // Global rate limit as fallback
+                    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 100,
+                                Window = TimeSpan.FromMinutes(1),
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 10
+                            }));
+                });
+
                 builder.Services.AddControllers()
                     .AddJsonOptions(options =>
                     {
@@ -324,6 +360,7 @@ namespace Api
                 app.UseHttpsRedirection();
                 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
+                app.UseRateLimiter();
                 app.UseAuthentication();
                 app.UseAuthorization();
                 app.MapControllers();

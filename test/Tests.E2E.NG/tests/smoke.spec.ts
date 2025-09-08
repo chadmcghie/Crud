@@ -33,14 +33,14 @@ test.describe('@smoke Application Health Checks', () => {
     await page.goto(baseURL);
     
     // Wait for the app to load
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Check for tab navigation buttons (the app uses tabs, not nav links)
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    const rolesTab = page.locator('button:has-text("🎭 Roles Management")');
+    // Check for navigation links
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    const rolesLink = page.locator('a[routerLink="/roles-list"]');
     
-    await expect(peopleTab).toBeVisible();
-    await expect(rolesTab).toBeVisible();
+    await expect(peopleLink).toBeVisible();
+    await expect(rolesLink).toBeVisible();
   });
 });
 
@@ -49,14 +49,14 @@ test.describe('@smoke People Module', () => {
     await page.goto(baseURL);
     
     // Wait for app to load
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click on People tab (it should be active by default)
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
+    // Click on People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
     
     // Check for people list container
-    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
     const listContainer = page.locator('.people-table, app-people-list').first();
     await expect(listContainer).toBeVisible();
   });
@@ -73,12 +73,12 @@ test.describe('@smoke People Module', () => {
     await page.goto(baseURL);
     
     // Wait for app to load
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click on People tab
-    const peopleTab = page.locator('button:has-text("👥 People Management")');
-    await peopleTab.click();
-    await page.waitForSelector('app-people-list', { timeout: 5000 });
+    // Click on People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
     
     // Click add button
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -86,7 +86,7 @@ test.describe('@smoke People Module', () => {
     await addButton.click();
     
     // Form should be visible
-    await page.waitForSelector('app-people form', { timeout: 5000 });
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
     const form = page.locator('app-people form').first();
     await expect(form).toBeVisible();
     
@@ -101,14 +101,14 @@ test.describe('@smoke Roles Module', () => {
     await page.goto(baseURL);
     
     // Wait for app to load
-    await page.waitForSelector('h1:has-text("People & Roles Management System")', { timeout: 10000 });
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click on Roles tab
-    const rolesTab = page.locator('button:has-text("🎭 Roles Management")');
-    await rolesTab.click();
+    // Click on Roles link
+    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    await rolesLink.click();
     
     // Wait for roles component to load
-    await page.waitForSelector('app-roles-list', { timeout: 5000 });
+    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
     
     // Check for roles list container
     const listContainer = page.locator('.roles-table, app-roles-list').first();

@@ -58,7 +58,7 @@ Always include:
 Complete git workflow for password-reset feature:
 - Spec: .agent-os/specs/2025-01-29-password-reset/
 - Changes: All files modified
-- Target: main branch
+- Target: dev branch
 ```
 
 ### Just Commit
@@ -72,7 +72,7 @@ Commit current changes:
 ```
 Create pull request:
 - Title: "Add password reset functionality"
-- Target: main
+- Target: dev
 - Include test results from last run
 ```
 
