@@ -28,7 +28,7 @@ public class InMemoryCacheService : ICacheService
                 _logger.LogDebug("Cache hit for key: {Key}", key);
                 return value;
             }
-            
+
             _logger.LogDebug("Cache miss for key: {Key}", key);
             return null;
         }
@@ -84,9 +84,9 @@ public class InMemoryCacheService : ICacheService
     }
 
     public async Task<T?> GetOrSetAsync<T>(
-        string key, 
-        Func<CancellationToken, Task<T>> factory, 
-        CacheEntryOptions options, 
+        string key,
+        Func<CancellationToken, Task<T>> factory,
+        CacheEntryOptions options,
         CancellationToken cancellationToken = default) where T : class
     {
         try
@@ -124,13 +124,13 @@ public class InMemoryCacheService : ICacheService
         try
         {
             var result = new Dictionary<string, T?>();
-            
+
             foreach (var key in keys)
             {
                 _memoryCache.TryGetValue(key, out T? value);
                 result[key] = value;
             }
-            
+
             return await Task.FromResult(result);
         }
         catch (Exception ex)
@@ -145,12 +145,12 @@ public class InMemoryCacheService : ICacheService
         try
         {
             var memoryCacheOptions = ConvertToMemoryCacheOptions(options);
-            
+
             foreach (var kvp in items)
             {
                 _memoryCache.Set(kvp.Key, kvp.Value, memoryCacheOptions);
             }
-            
+
             _logger.LogDebug("Set {Count} cache values", items.Count);
             await Task.CompletedTask;
         }
@@ -164,22 +164,22 @@ public class InMemoryCacheService : ICacheService
     private MemoryCacheEntryOptions ConvertToMemoryCacheOptions(CacheEntryOptions options)
     {
         var memoryCacheOptions = new MemoryCacheEntryOptions();
-        
+
         if (options.AbsoluteExpiration.HasValue)
         {
             memoryCacheOptions.AbsoluteExpiration = options.AbsoluteExpiration;
         }
-        
+
         if (options.AbsoluteExpirationRelativeToNow.HasValue)
         {
             memoryCacheOptions.AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow;
         }
-        
+
         if (options.SlidingExpiration.HasValue)
         {
             memoryCacheOptions.SlidingExpiration = options.SlidingExpiration;
         }
-        
+
         // Convert our custom priority enum to Microsoft's
         memoryCacheOptions.Priority = options.Priority switch
         {
@@ -188,12 +188,12 @@ public class InMemoryCacheService : ICacheService
             CacheItemPriority.NeverRemove => Microsoft.Extensions.Caching.Memory.CacheItemPriority.NeverRemove,
             _ => Microsoft.Extensions.Caching.Memory.CacheItemPriority.Normal
         };
-        
+
         if (options.Size.HasValue)
         {
             memoryCacheOptions.Size = options.Size;
         }
-        
+
         return memoryCacheOptions;
     }
 }

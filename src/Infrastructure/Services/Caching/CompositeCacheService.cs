@@ -53,7 +53,7 @@ public class CompositeCacheService : ICacheService
     public async Task SetAsync<T>(string key, T value, CacheEntryOptions options, CancellationToken cancellationToken = default) where T : class
     {
         var tasks = new List<Task>();
-        
+
         // Try to set in primary cache
         tasks.Add(Task.Run(async () =>
         {
@@ -86,7 +86,7 @@ public class CompositeCacheService : ICacheService
     public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
     {
         var tasks = new List<Task>();
-        
+
         // Remove from primary cache
         tasks.Add(Task.Run(async () =>
         {
@@ -142,9 +142,9 @@ public class CompositeCacheService : ICacheService
     }
 
     public async Task<T?> GetOrSetAsync<T>(
-        string key, 
-        Func<CancellationToken, Task<T>> factory, 
-        CacheEntryOptions options, 
+        string key,
+        Func<CancellationToken, Task<T>> factory,
+        CacheEntryOptions options,
         CancellationToken cancellationToken = default) where T : class
     {
         // Try to get from either cache
@@ -168,7 +168,7 @@ public class CompositeCacheService : ICacheService
     public async Task RemoveByPatternAsync(string pattern, CancellationToken cancellationToken = default)
     {
         var tasks = new List<Task>();
-        
+
         // Remove from primary cache
         tasks.Add(Task.Run(async () =>
         {
@@ -207,7 +207,7 @@ public class CompositeCacheService : ICacheService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Primary cache failed getting multiple values, falling back to secondary cache");
-            
+
             try
             {
                 return await _fallbackCache.GetManyAsync<T>(keys, cancellationToken);
@@ -223,7 +223,7 @@ public class CompositeCacheService : ICacheService
     public async Task SetManyAsync<T>(IDictionary<string, T> items, CacheEntryOptions options, CancellationToken cancellationToken = default) where T : class
     {
         var tasks = new List<Task>();
-        
+
         // Set in primary cache
         tasks.Add(Task.Run(async () =>
         {
