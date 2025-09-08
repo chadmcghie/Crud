@@ -1,0 +1,191 @@
+---
+description: Semantic commit staging configuration for Agent OS workflows
+version: 1.0
+encoding: UTF-8
+---
+
+# Semantic Commit Staging Strategy
+# Defines how to group and commit changes during task execution
+
+commit_boundaries:
+  # Group commits by Clean Architecture layer
+  by_layer:
+    - name: "domain_models"
+      paths: 
+        - "src/Domain/**/*.cs"
+        - "!src/Domain/**/*Tests.cs"
+      message_prefix: "feat(domain): "
+      description: "Domain entities, value objects, and business logic"
+      
+    - name: "application_services"
+      paths: 
+        - "src/App/**/*.cs"
+        - "!src/App/**/*Tests.cs"
+      message_prefix: "feat(app): "
+      description: "Application services, DTOs, and CQRS handlers"
+      
+    - name: "infrastructure"
+      paths: 
+        - "src/Infrastructure/**/*.cs"
+        - "!src/Infrastructure/**/*Tests.cs"
+      message_prefix: "feat(infra): "
+      description: "EF Core, repositories, external services"
+      
+    - name: "api_endpoints"
+      paths: 
+        - "src/Api/Controllers/**/*.cs"
+        - "src/Api/Endpoints/**/*.cs"
+      message_prefix: "feat(api): "
+      description: "API controllers and minimal API endpoints"
+      
+    - name: "angular_components"
+      paths: 
+        - "src/Angular/src/app/**/*.ts"
+        - "src/Angular/src/app/**/*.html"
+        - "src/Angular/src/app/**/*.css"
+        - "!src/Angular/**/*.spec.ts"
+      message_prefix: "feat(ui): "
+      description: "Angular components, services, and templates"
+
+  # Group commits by feature type
+  by_feature:
+    test_first:
+      stage_only: true  # Don't commit tests until feature works
+      paths: 
+        - "**/*.spec.ts"
+        - "**/*Tests.cs"
+        - "**/*Test.cs"
+        - "test/**/*"
+      description: "Stage tests for later commit with implementation"
+      
+    implementation:
+      auto_commit: true
+      group_by: "parent_folder"
+      include_tests: true  # Include staged tests when committing feature
+      description: "Commit implementation with its tests"
+      
+    configuration:
+      message_prefix: "chore: "
+      paths: 
+        - "**/appsettings*.json"
+        - "**/DependencyInjection.cs"
+        - "**/Program.cs"
+        - "**/*.csproj"
+        - "**/package.json"
+        - "**/package-lock.json"
+      description: "Configuration and dependency updates"
+      
+    database:
+      message_prefix: "feat(db): "
+      paths:
+        - "src/Infrastructure/Migrations/**"
+        - "src/Infrastructure/Data/Configuration/**"
+      description: "Database migrations and entity configurations"
+      commit_together: true  # Always commit migrations together
+
+# Rules for semantic commits
+commit_rules:
+  max_files_per_commit: 20
+  group_related_by_folder: true
+  amend_fixes_to_feature: true
+  
+  # Conventional commit format
+  commit_types:
+    feat: "New feature"
+    fix: "Bug fix"
+    docs: "Documentation only"
+    style: "Code style (formatting, missing semicolons, etc)"
+    refactor: "Code refactoring"
+    perf: "Performance improvements"
+    test: "Adding or updating tests"
+    chore: "Build process or auxiliary tool changes"
+    ci: "CI/CD configuration changes"
+    revert: "Revert a previous commit"
+    
+  # Breaking change indicators
+  breaking_change_indicators:
+    - "BREAKING CHANGE:"
+    - "BREAKING:"
+    - "!"  # In commit type, e.g., "feat!:"
+
+# Co-dependency management
+co_dependencies:
+  # Groups that must be committed together
+  must_commit_together:
+    - group: "interface_and_implementation"
+      patterns:
+        - "I*.cs"  # Interface
+        - "*.cs"   # Implementation (same name without I)
+      example: "ICacheService.cs + CacheService.cs"
+      
+    - group: "migration_and_config"
+      patterns:
+        - "Migrations/*.cs"
+        - "Data/Configuration/*.cs"
+      example: "Migration files + Entity configurations"
+      
+    - group: "dto_and_mapping"
+      patterns:
+        - "DTOs/*.cs"
+        - "Mappings/*.cs"
+      example: "DTOs + AutoMapper profiles"
+
+  # Dependencies for cherry-picking
+  cherry_pick_chains:
+    caching:
+      ordered_commits:
+        1: "Cache abstractions (interfaces)"
+        2: "Cache service implementation"
+        3: "Repository decorators"
+        4: "DI configuration"
+      pick_rules:
+        - "1+2 must go together"
+        - "3 requires 1+2"
+        - "4 requires all previous"
+        
+    authentication:
+      ordered_commits:
+        1: "Auth domain models"
+        2: "Auth services"
+        3: "JWT configuration"
+        4: "Auth controllers"
+        5: "Auth middleware"
+      pick_rules:
+        - "1 can go alone"
+        - "2 requires 1"
+        - "3+4+5 require 1+2"
+
+# Task-based commit strategy
+task_commit_strategy:
+  # When to create commits during task execution
+  commit_points:
+    - trigger: "subtask_complete"
+      condition: "creates_standalone_component"
+      action: "commit_with_tests"
+      
+    - trigger: "subtask_complete"
+      condition: "only_tests"
+      action: "stage_only"
+      
+    - trigger: "subtask_complete"
+      condition: "fixes_previous"
+      action: "amend_previous"
+      
+    - trigger: "parent_task_complete"
+      condition: "all_tests_pass"
+      action: "commit_remaining_staged"
+      
+  # Commit message generation
+  message_template: |
+    {type}{scope}: {subject}
+    
+    {body}
+    
+    {footer}
+    
+  message_examples:
+    - "feat(cache): add Redis caching service"
+    - "feat(api): implement password reset endpoint"
+    - "fix(auth): correct JWT token expiration"
+    - "chore: configure Redis in dependency injection"
+    - "test: add integration tests for cache decorators"

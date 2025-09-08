@@ -101,7 +101,8 @@
       "Bash(gh project list:*)",
       "Read(//c/Users/chadm/source/repos/Crud/**)",
       "Bash(dotnet ef migrations add:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Read(//c/Users/chadm/.agent-os/**)"
     ],
     "deny": [],
     "ask": [],
