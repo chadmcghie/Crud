@@ -54,7 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, MockEmailService>();
 
         // Add database test service for testing scenarios
-        services.AddScoped<DatabaseTestService>();
+        services.AddScoped<IDatabaseTestService, DatabaseTestService>();
 
         return services;
     }
@@ -118,7 +118,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, MockEmailService>();
 
         // Add database test service for testing scenarios
-        services.AddScoped<DatabaseTestService>();
+        services.AddScoped<IDatabaseTestService, DatabaseTestService>();
 
         return services;
     }

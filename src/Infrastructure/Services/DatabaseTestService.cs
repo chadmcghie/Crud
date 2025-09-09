@@ -1,4 +1,6 @@
 using System.Data.Common;
+using App.Abstractions;
+using App.Models;
 using Infrastructure.Data;
 using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ namespace Infrastructure.Services;
 /// Service for managing database operations during testing.
 /// Provides database reset and seeding capabilities using EF Core for SQLite.
 /// </summary>
-public class DatabaseTestService
+public class DatabaseTestService : IDatabaseTestService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
@@ -425,33 +427,4 @@ public class DatabaseTestService
     }
 
     // The MaskConnectionString method has been removed as we now avoid logging connection strings entirely.
-}
-
-/// <summary>
-/// Database statistics for debugging and monitoring.
-/// </summary>
-public class DatabaseStats
-{
-    public int PeopleCount { get; set; }
-    public int RolesCount { get; set; }
-    public int WallsCount { get; set; }
-    public int WindowsCount { get; set; }
-    public int UsersCount { get; set; }
-    public int PasswordResetTokensCount { get; set; }
-    public string? ConnectionString { get; set; }
-    public bool CanConnect { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-}
-
-/// <summary>
-/// Result of database validation operations
-/// </summary>
-public class DatabaseValidationResult
-{
-    public int WorkerIndex { get; set; }
-    public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = new List<string>();
-    public DatabaseStats Stats { get; set; } = null!;
-    public string ValidationType { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }

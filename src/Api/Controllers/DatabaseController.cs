@@ -1,8 +1,6 @@
 using System.Net;
-using Infrastructure.Data;
-using Infrastructure.Services;
+using App.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -14,21 +12,18 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class DatabaseController : ControllerBase
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IDatabaseTestService _databaseTestService;
     private readonly ILogger<DatabaseController> _logger;
     private readonly IWebHostEnvironment _environment;
-    private readonly IConfiguration _configuration;
 
     public DatabaseController(
-        IServiceProvider serviceProvider,
+        IDatabaseTestService databaseTestService,
         ILogger<DatabaseController> logger,
-        IWebHostEnvironment environment,
-        IConfiguration configuration)
+        IWebHostEnvironment environment)
     {
-        _serviceProvider = serviceProvider;
+        _databaseTestService = databaseTestService;
         _logger = logger;
         _environment = environment;
-        _configuration = configuration;
     }
 
     /// <summary>
@@ -82,19 +77,8 @@ public class DatabaseController : ControllerBase
         {
             _logger.LogInformation("Starting database reset for worker {WorkerIndex}...", request.WorkerIndex);
 
-            // Create a fresh scope and DbContext for each reset to avoid connection issues
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-
-                // Create a fresh DatabaseTestService with the new DbContext
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
-
-                _logger.LogInformation("Created fresh DbContext for reset operation");
-                // Pass seedData from request (default to false for E2E tests)
-                await databaseTestService.ResetDatabaseAsync(request.WorkerIndex, request.SeedData);
-            }
+            // Use the injected service instead of manual resolution
+            await _databaseTestService.ResetDatabaseAsync(request.WorkerIndex, request.SeedData);
 
             var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
             _logger.LogInformation("Database reset completed for worker {WorkerIndex} in {Duration}ms",
@@ -138,14 +122,7 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
-
-                await databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
-            }
+            await _databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
 
             return Ok(new
             {
@@ -181,28 +158,21 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
+            var stats = await _databaseTestService.GetDatabaseStatsAsync();
+
+            var status = new
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
+                Environment = _environment.EnvironmentName,
+                ConnectionString = stats.ConnectionString,
+                CanConnect = stats.CanConnect,
+                PeopleCount = stats.PeopleCount,
+                RolesCount = stats.RolesCount,
+                WallsCount = stats.WallsCount,
+                WindowsCount = stats.WindowsCount,
+                Timestamp = stats.Timestamp
+            };
 
-                var stats = await databaseTestService.GetDatabaseStatsAsync();
-
-                var status = new
-                {
-                    Environment = _environment.EnvironmentName,
-                    ConnectionString = stats.ConnectionString,
-                    CanConnect = stats.CanConnect,
-                    PeopleCount = stats.PeopleCount,
-                    RolesCount = stats.RolesCount,
-                    WallsCount = stats.WallsCount,
-                    WindowsCount = stats.WindowsCount,
-                    Timestamp = stats.Timestamp
-                };
-
-                return Ok(status);
-            }
+            return Ok(status);
         }
         catch (Exception ex)
         {
@@ -226,15 +196,8 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
-
-                var validation = await databaseTestService.ValidatePreTestStateAsync(workerIndex);
-                return Ok(validation);
-            }
+            var validation = await _databaseTestService.ValidatePreTestStateAsync(workerIndex);
+            return Ok(validation);
         }
         catch (Exception ex)
         {
@@ -258,15 +221,8 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
-
-                var validation = await databaseTestService.ValidatePostTestStateAsync(workerIndex);
-                return Ok(validation);
-            }
+            var validation = await _databaseTestService.ValidatePostTestStateAsync(workerIndex);
+            return Ok(validation);
         }
         catch (Exception ex)
         {
@@ -290,20 +246,13 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
+            var isValid = await _databaseTestService.VerifyDatabaseIntegrityAsync(workerIndex);
+            return Ok(new
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var testServiceLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseTestService>>();
-                var databaseTestService = new DatabaseTestService(dbContext, testServiceLogger);
-
-                var isValid = await databaseTestService.VerifyDatabaseIntegrityAsync(workerIndex);
-                return Ok(new
-                {
-                    IsValid = isValid,
-                    WorkerIndex = workerIndex,
-                    Timestamp = DateTime.UtcNow
-                });
-            }
+                IsValid = isValid,
+                WorkerIndex = workerIndex,
+                Timestamp = DateTime.UtcNow
+            });
         }
         catch (Exception ex)
         {
