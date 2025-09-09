@@ -12,16 +12,16 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class DatabaseController : ControllerBase
 {
-    private readonly IDatabaseTestService _databaseTestService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DatabaseController> _logger;
     private readonly IWebHostEnvironment _environment;
 
     public DatabaseController(
-        IDatabaseTestService databaseTestService,
+        IServiceProvider serviceProvider,
         ILogger<DatabaseController> logger,
         IWebHostEnvironment environment)
     {
-        _databaseTestService = databaseTestService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _environment = environment;
     }
@@ -77,8 +77,12 @@ public class DatabaseController : ControllerBase
         {
             _logger.LogInformation("Starting database reset for worker {WorkerIndex}...", request.WorkerIndex);
 
-            // Use the injected service instead of manual resolution
-            await _databaseTestService.ResetDatabaseAsync(request.WorkerIndex, request.SeedData);
+            // Create a fresh scope for each reset to avoid connection issues
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var databaseTestService = scope.ServiceProvider.GetRequiredService<IDatabaseTestService>();
+                await databaseTestService.ResetDatabaseAsync(request.WorkerIndex, request.SeedData);
+            }
 
             var duration = (DateTime.UtcNow - requestStart).TotalMilliseconds;
             _logger.LogInformation("Database reset completed for worker {WorkerIndex} in {Duration}ms",
@@ -122,7 +126,11 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            await _databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var databaseTestService = scope.ServiceProvider.GetRequiredService<IDatabaseTestService>();
+                await databaseTestService.SeedDatabaseAsync(request.WorkerIndex);
+            }
 
             return Ok(new
             {
@@ -158,21 +166,25 @@ public class DatabaseController : ControllerBase
 
         try
         {
-            var stats = await _databaseTestService.GetDatabaseStatsAsync();
-
-            var status = new
+            using (var scope = _serviceProvider.CreateScope())
             {
-                Environment = _environment.EnvironmentName,
-                ConnectionString = stats.ConnectionString,
-                CanConnect = stats.CanConnect,
-                PeopleCount = stats.PeopleCount,
-                RolesCount = stats.RolesCount,
-                WallsCount = stats.WallsCount,
-                WindowsCount = stats.WindowsCount,
-                Timestamp = stats.Timestamp
-            };
+                var databaseTestService = scope.ServiceProvider.GetRequiredService<IDatabaseTestService>();
+                var stats = await databaseTestService.GetDatabaseStatsAsync();
 
-            return Ok(status);
+                var status = new
+                {
+                    Environment = _environment.EnvironmentName,
+                    ConnectionString = stats.ConnectionString,
+                    CanConnect = stats.CanConnect,
+                    PeopleCount = stats.PeopleCount,
+                    RolesCount = stats.RolesCount,
+                    WallsCount = stats.WallsCount,
+                    WindowsCount = stats.WindowsCount,
+                    Timestamp = stats.Timestamp
+                };
+
+                return Ok(status);
+            }
         }
         catch (Exception ex)
         {
