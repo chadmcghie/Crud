@@ -116,51 +116,40 @@ test.describe('Walls API', () => {
     expect([400, 404, 500, 204]).toContain(response.status());
   });
 
-  test('PUT /api/walls/{id} - should update existing wall', async ({ apiHelpers }) => {
+  test('PUT /api/walls/{id} - should update existing wall', async ({ apiHelpers, page }) => {
     const originalWall = generateTestWall();
     const createdWall = await apiHelpers.createWall(originalWall);
     
     const updatedData = generateTestWall();
     await apiHelpers.updateWall(createdWall.id, updatedData);
     
-    // Verify the wall was updated - with retry in case of race conditions
-    let retrievedWall;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (attempts < maxAttempts) {
-      try {
-        retrievedWall = await apiHelpers.getWall(createdWall.id);
-        break;
-      } catch (error) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          throw new Error(`Wall ${createdWall.id} not found after update - may have been cleaned up by another worker`);
-        }
-        // Exponential backoff before retry
-        await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, attempts - 1), 500)));
-      }
-    }
-    expect(retrievedWall).toMatchObject({
-      id: createdWall.id,
-      name: expect.stringContaining(updatedData.name),
-      description: expect.stringContaining(updatedData.description),
-      length: updatedData.length,
-      height: updatedData.height,
-      thickness: updatedData.thickness,
-      assemblyType: updatedData.assemblyType,
-      assemblyDetails: updatedData.assemblyDetails,
-      rValue: updatedData.rValue,
-      uValue: updatedData.uValue,
-      materialLayers: updatedData.materialLayers,
-      orientation: updatedData.orientation,
-      location: updatedData.location
+    // Use Playwright's expect.toPass() for retry logic instead of manual setTimeout
+    await expect(async () => {
+      const retrievedWall = await apiHelpers.getWall(createdWall.id);
+      expect(retrievedWall).toMatchObject({
+        id: createdWall.id,
+        name: expect.stringContaining(updatedData.name),
+        description: expect.stringContaining(updatedData.description),
+        length: updatedData.length,
+        height: updatedData.height,
+        thickness: updatedData.thickness,
+        assemblyType: updatedData.assemblyType,
+        assemblyDetails: updatedData.assemblyDetails,
+        rValue: updatedData.rValue,
+        uValue: updatedData.uValue,
+        materialLayers: updatedData.materialLayers,
+        orientation: updatedData.orientation,
+        location: updatedData.location
+      });
+      
+      // Verify timestamps
+      expect(new Date(retrievedWall.updatedAt).getTime()).toBeGreaterThan(
+        new Date(createdWall.updatedAt).getTime()
+      );
+    }).toPass({
+      timeout: 5000, // 5 second timeout for the operation
+      intervals: [100, 250, 500] // Retry intervals in milliseconds
     });
-    
-    // Verify timestamps
-    expect(new Date(retrievedWall.updatedAt).getTime()).toBeGreaterThan(
-      new Date(createdWall.updatedAt).getTime()
-    );
   });
 
   test('PUT /api/walls/{id} - should return 404 for non-existent wall', async ({ apiContext }) => {
