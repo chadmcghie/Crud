@@ -15,15 +15,18 @@ public class DatabaseController : ControllerBase
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DatabaseController> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly IDatabaseTestService _databaseTestService;
 
     public DatabaseController(
         IServiceProvider serviceProvider,
         ILogger<DatabaseController> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IDatabaseTestService databaseTestService)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _environment = environment;
+        _databaseTestService = databaseTestService;
     }
 
     /// <summary>
