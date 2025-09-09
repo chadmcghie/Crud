@@ -89,7 +89,6 @@
       "reason": "Database operations timeout after 30s in container, 11 attempts to fix failed. Tests pass with unique data generation.",
       "created": "2025-08-31 13:30",
       "do_not_modify": true
-    }
     },
     {
       "issue_id": "BI-2025-09-08-001",
@@ -100,7 +99,6 @@
       "reason": "MediatR behaviors require App.Interfaces.ICacheService, not Infrastructure's version",
       "created": "2025-09-08 17:48",
       "do_not_modify": true
-    }
     },
     {
       "issue_id": "BI-2025-09-09-001",
@@ -121,9 +119,29 @@
       "reason": "Properly handles SQLite's concurrent write limitations, fixing legitimate test failures in CI",
       "created": "2025-09-09 21:15",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-09-002",
+      "file": "src/Angular/src/app/auth.interceptor.spec.ts",
+      "lines": [244, 256],
+      "hash": "dd32bae",
+      "change_description": "Added centralized checkCompletion() function for async test coordination",
+      "reason": "Better tracking of async operations completion, even though it still uses delays",
+      "created": "2025-09-09 23:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-09-002",
+      "file": "src/Angular/src/app/auth.interceptor.spec.ts",
+      "lines": [265, 276],
+      "hash": "dd32bae",
+      "change_description": "Added descriptive error messages in test failure callbacks",
+      "reason": "Improves debugging when tests fail by providing clear error context",
+      "created": "2025-09-09 23:15",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-09T21:25:00Z",
+  "last_updated": "2025-09-09T23:20:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

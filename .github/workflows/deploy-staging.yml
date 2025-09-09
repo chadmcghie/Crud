@@ -81,6 +81,14 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
+    # Install Angular dependencies so the dev server can start
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for smoke tests..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+        
     # Copy appsettings files for the backend
     - name: Copy appsettings to build output
       run: |
