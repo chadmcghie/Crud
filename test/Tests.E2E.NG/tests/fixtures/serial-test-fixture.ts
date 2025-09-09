@@ -8,6 +8,11 @@ import * as path from 'path';
 export const test = base.extend({
   // Automatic database cleanup before each test
   page: async ({ page }, use) => {
+    // Enable E2E test mode to bypass auth guards
+    await page.addInitScript(() => {
+      localStorage.setItem('e2e-test-mode', 'active');
+    });
+    
     // Reset database via API before test
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
     
@@ -54,6 +59,11 @@ export const test = base.extend({
     
     // Use the page
     await use(page);
+    
+    // Clean up E2E mode
+    await page.evaluate(() => {
+      localStorage.removeItem('e2e-test-mode');
+    });
     
     // Optional: Log database size after test for monitoring
     if (process.env.DATABASE_PATH && process.env.DEBUG_DB) {
