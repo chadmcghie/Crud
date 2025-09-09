@@ -1,4 +1,5 @@
 using App.Abstractions;
+using App.Interfaces;
 using Domain.Entities;
 using FluentAssertions;
 using Infrastructure.Services.Caching;
@@ -10,16 +11,16 @@ namespace Tests.Unit.Backend.Infrastructure.Services;
 public class CachedRepositoryDecoratorTests
 {
     private readonly Mock<IRoleRepository> _mockRepository;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ICacheKeyGenerator> _mockKeyGenerator;
+    private readonly Mock<global::App.Interfaces.ICacheService> _mockCacheService;
+    private readonly Mock<global::Infrastructure.Services.Caching.ICacheKeyGenerator> _mockKeyGenerator;
     private readonly Mock<ICacheConfiguration> _mockCacheConfig;
     private readonly CachedRoleRepositoryDecorator _decorator;
 
     public CachedRepositoryDecoratorTests()
     {
         _mockRepository = new Mock<IRoleRepository>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockKeyGenerator = new Mock<ICacheKeyGenerator>();
+        _mockCacheService = new Mock<global::App.Interfaces.ICacheService>();
+        _mockKeyGenerator = new Mock<global::Infrastructure.Services.Caching.ICacheKeyGenerator>();
         _mockCacheConfig = new Mock<ICacheConfiguration>();
 
         // Setup default cache key generation

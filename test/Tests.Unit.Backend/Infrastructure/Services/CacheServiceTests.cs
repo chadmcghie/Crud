@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using App.Interfaces;
 using FluentAssertions;
 using Infrastructure.Services.Caching;
 using Microsoft.Extensions.Caching.Distributed;
@@ -817,7 +818,7 @@ public class CacheServiceTests
             var value = new TestCacheItem { Id = 1, Name = "Test" };
             var options = new CacheEntryOptions
             {
-                Priority = global::Infrastructure.Services.Caching.CacheItemPriority.High
+                Priority = global::App.Interfaces.CacheItemPriority.High
             };
 
             // Act
