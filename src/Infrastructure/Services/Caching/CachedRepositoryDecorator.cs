@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Abstractions;
+using App.Interfaces;
 using Domain.Entities;
 
 namespace Infrastructure.Services.Caching;
@@ -20,14 +21,14 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
     where TRepository : IRepository<TEntity>
 {
     private readonly TRepository _repository;
-    private readonly ICacheService _cacheService;
-    private readonly ICacheKeyGenerator _keyGenerator;
+    private readonly App.Interfaces.ICacheService _cacheService;
+    private readonly Infrastructure.Services.Caching.ICacheKeyGenerator _keyGenerator;
     private readonly ICacheConfiguration _cacheConfig;
 
     public CachedRepositoryDecorator(
         TRepository repository,
-        ICacheService cacheService,
-        ICacheKeyGenerator keyGenerator,
+        App.Interfaces.ICacheService cacheService,
+        Infrastructure.Services.Caching.ICacheKeyGenerator keyGenerator,
         ICacheConfiguration cacheConfig)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -139,11 +140,11 @@ public class CachedRepositoryDecorator<TEntity, TRepository> : IRepository<TEnti
 public class CachedPersonRepositoryDecorator : IPersonRepository
 {
     private readonly IPersonRepository _repository;
-    private readonly ICacheService _cacheService;
-    private readonly ICacheKeyGenerator _keyGenerator;
+    private readonly App.Interfaces.ICacheService _cacheService;
+    private readonly Infrastructure.Services.Caching.ICacheKeyGenerator _keyGenerator;
     private readonly ICacheConfiguration _cacheConfig;
 
-    public CachedPersonRepositoryDecorator(IPersonRepository repository, ICacheService cacheService, ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
+    public CachedPersonRepositoryDecorator(IPersonRepository repository, App.Interfaces.ICacheService cacheService, Infrastructure.Services.Caching.ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
     {
         _repository = repository;
         _cacheService = cacheService;
@@ -243,11 +244,11 @@ public class CachedPersonRepositoryDecorator : IPersonRepository
 public class CachedRoleRepositoryDecorator : IRoleRepository
 {
     private readonly IRoleRepository _repository;
-    private readonly ICacheService _cacheService;
-    private readonly ICacheKeyGenerator _keyGenerator;
+    private readonly App.Interfaces.ICacheService _cacheService;
+    private readonly Infrastructure.Services.Caching.ICacheKeyGenerator _keyGenerator;
     private readonly ICacheConfiguration _cacheConfig;
 
-    public CachedRoleRepositoryDecorator(IRoleRepository repository, ICacheService cacheService, ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
+    public CachedRoleRepositoryDecorator(IRoleRepository repository, App.Interfaces.ICacheService cacheService, Infrastructure.Services.Caching.ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
     {
         _repository = repository;
         _cacheService = cacheService;
@@ -367,11 +368,11 @@ public class CachedRoleRepositoryDecorator : IRoleRepository
 public class CachedWallRepositoryDecorator : IWallRepository
 {
     private readonly IWallRepository _repository;
-    private readonly ICacheService _cacheService;
-    private readonly ICacheKeyGenerator _keyGenerator;
+    private readonly App.Interfaces.ICacheService _cacheService;
+    private readonly Infrastructure.Services.Caching.ICacheKeyGenerator _keyGenerator;
     private readonly ICacheConfiguration _cacheConfig;
 
-    public CachedWallRepositoryDecorator(IWallRepository repository, ICacheService cacheService, ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
+    public CachedWallRepositoryDecorator(IWallRepository repository, App.Interfaces.ICacheService cacheService, Infrastructure.Services.Caching.ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
     {
         _repository = repository;
         _cacheService = cacheService;
@@ -471,11 +472,11 @@ public class CachedWallRepositoryDecorator : IWallRepository
 public class CachedWindowRepositoryDecorator : IWindowRepository
 {
     private readonly IWindowRepository _repository;
-    private readonly ICacheService _cacheService;
-    private readonly ICacheKeyGenerator _keyGenerator;
+    private readonly App.Interfaces.ICacheService _cacheService;
+    private readonly Infrastructure.Services.Caching.ICacheKeyGenerator _keyGenerator;
     private readonly ICacheConfiguration _cacheConfig;
 
-    public CachedWindowRepositoryDecorator(IWindowRepository repository, ICacheService cacheService, ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
+    public CachedWindowRepositoryDecorator(IWindowRepository repository, App.Interfaces.ICacheService cacheService, Infrastructure.Services.Caching.ICacheKeyGenerator keyGenerator, ICacheConfiguration cacheConfig)
     {
         _repository = repository;
         _cacheService = cacheService;

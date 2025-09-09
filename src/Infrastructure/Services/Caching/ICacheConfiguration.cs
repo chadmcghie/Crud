@@ -1,4 +1,5 @@
 using System;
+using App.Interfaces;
 
 namespace Infrastructure.Services.Caching;
 

@@ -154,8 +154,9 @@ public static class DependencyInjection
         // Configure LazyCache options
         services.Configure<LazyCacheOptions>(configuration.GetSection("Caching:LazyCache"));
 
-        // Register cache infrastructure services
-        services.AddSingleton<ICacheKeyGenerator, CacheKeyGenerator>();
+        // Register cache infrastructure services (for repository-level caching)
+        // Using fully qualified names to avoid conflicts with App layer services
+        services.AddSingleton<Infrastructure.Services.Caching.ICacheKeyGenerator, Infrastructure.Services.Caching.CacheKeyGenerator>();
         services.AddSingleton<ICacheConfiguration, CacheConfiguration>();
 
         // Register cache services based on configuration
@@ -193,12 +194,12 @@ public static class DependencyInjection
             services.AddSingleton<InMemoryCacheService>();
             services.AddSingleton<LazyCacheService>();
 
-            // Register composite cache as the primary ICacheService
-            services.AddSingleton<ICacheService>(provider =>
+            // Register composite cache as the primary App.Interfaces.ICacheService
+            services.AddSingleton<App.Interfaces.ICacheService>(provider =>
             {
                 var primaryCache = provider.GetRequiredService<RedisCacheService>();
                 var fallbackCache = useLazyCache
-                    ? (ICacheService)provider.GetRequiredService<LazyCacheService>()
+                    ? (App.Interfaces.ICacheService)provider.GetRequiredService<LazyCacheService>()
                     : provider.GetRequiredService<InMemoryCacheService>();
                 var logger = provider.GetRequiredService<ILogger<CompositeCacheService>>();
 
@@ -220,16 +221,16 @@ public static class DependencyInjection
             redisOptions.AbortOnConnectFail = abortOnConnectFail;
 
             services.AddSingleton<IConnectionMultiplexer>(provider => ConnectionMultiplexer.Connect(redisOptions));
-            services.AddSingleton<ICacheService, RedisCacheService>();
+            services.AddSingleton<App.Interfaces.ICacheService, RedisCacheService>();
         }
         else if (useLazyCache)
         {
-            services.AddSingleton<ICacheService, LazyCacheService>();
+            services.AddSingleton<App.Interfaces.ICacheService, LazyCacheService>();
         }
         else
         {
             // Default to in-memory cache
-            services.AddSingleton<ICacheService, InMemoryCacheService>();
+            services.AddSingleton<App.Interfaces.ICacheService, InMemoryCacheService>();
         }
 
         return services;
@@ -244,8 +245,8 @@ public static class DependencyInjection
         services.AddScoped<IPersonRepository>(provider =>
         {
             var repository = provider.GetRequiredService<EfPersonRepository>();
-            var cacheService = provider.GetRequiredService<ICacheService>();
-            var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
+            var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();
+            var keyGenerator = provider.GetRequiredService<Infrastructure.Services.Caching.ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
 
             return new CachedPersonRepositoryDecorator(
@@ -255,8 +256,8 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository>(provider =>
         {
             var repository = provider.GetRequiredService<EfRoleRepository>();
-            var cacheService = provider.GetRequiredService<ICacheService>();
-            var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
+            var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();
+            var keyGenerator = provider.GetRequiredService<Infrastructure.Services.Caching.ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
 
             return new CachedRoleRepositoryDecorator(
@@ -266,8 +267,8 @@ public static class DependencyInjection
         services.AddScoped<IWallRepository>(provider =>
         {
             var repository = provider.GetRequiredService<EfWallRepository>();
-            var cacheService = provider.GetRequiredService<ICacheService>();
-            var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
+            var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();
+            var keyGenerator = provider.GetRequiredService<Infrastructure.Services.Caching.ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
 
             return new CachedWallRepositoryDecorator(
@@ -277,8 +278,8 @@ public static class DependencyInjection
         services.AddScoped<IWindowRepository>(provider =>
         {
             var repository = provider.GetRequiredService<EfWindowRepository>();
-            var cacheService = provider.GetRequiredService<ICacheService>();
-            var keyGenerator = provider.GetRequiredService<ICacheKeyGenerator>();
+            var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();
+            var keyGenerator = provider.GetRequiredService<Infrastructure.Services.Caching.ICacheKeyGenerator>();
             var cacheConfig = provider.GetRequiredService<ICacheConfiguration>();
 
             return new CachedWindowRepositoryDecorator(

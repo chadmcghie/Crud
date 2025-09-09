@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using App.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -183,9 +184,9 @@ public class InMemoryCacheService : ICacheService
         // Convert our custom priority enum to Microsoft's
         memoryCacheOptions.Priority = options.Priority switch
         {
-            CacheItemPriority.Low => Microsoft.Extensions.Caching.Memory.CacheItemPriority.Low,
-            CacheItemPriority.High => Microsoft.Extensions.Caching.Memory.CacheItemPriority.High,
-            CacheItemPriority.NeverRemove => Microsoft.Extensions.Caching.Memory.CacheItemPriority.NeverRemove,
+            App.Interfaces.CacheItemPriority.Low => Microsoft.Extensions.Caching.Memory.CacheItemPriority.Low,
+            App.Interfaces.CacheItemPriority.High => Microsoft.Extensions.Caching.Memory.CacheItemPriority.High,
+            App.Interfaces.CacheItemPriority.NeverRemove => Microsoft.Extensions.Caching.Memory.CacheItemPriority.NeverRemove,
             _ => Microsoft.Extensions.Caching.Memory.CacheItemPriority.Normal
         };
 

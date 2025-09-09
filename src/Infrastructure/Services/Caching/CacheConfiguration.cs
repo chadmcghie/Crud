@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using App.Interfaces;
 using Domain.Entities;
 
 namespace Infrastructure.Services.Caching;
