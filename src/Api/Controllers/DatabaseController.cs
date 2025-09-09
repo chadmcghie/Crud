@@ -32,7 +32,7 @@ public class DatabaseController : ControllerBase
     }
 
     /// <summary>
-    /// Resets the database to a clean state using Respawn.
+    /// Resets the database to a clean state using EF Core.
     /// Only available in Development and Testing environments.
     /// Requires authentication token for security.
     /// </summary>
