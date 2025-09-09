@@ -21,9 +21,9 @@ export class PageHelpers {
         console.warn(`${operationName} failed (attempt ${attempt}/${maxRetries}):`, error);
         
         if (attempt < maxRetries) {
-          // Random delay to prevent thundering herd
-          const randomDelay = delayMs + Math.random() * 200;
-          await new Promise(resolve => setTimeout(resolve, randomDelay));
+          // Deterministic delay instead of random to prevent flaky tests
+          const delay = delayMs + (attempt * 50); // Linear increase instead of random
+          await new Promise(resolve => process.nextTick(() => setTimeout(resolve, delay)));
         }
       }
     }

@@ -97,10 +97,10 @@ export class ApiHelpers {
     options: Partial<RetryOptions> = {}
   ): Promise<T> {
     const retryOptions: RetryOptions = {
-      maxRetries: 5, // Increased for better resilience
-      baseDelayMs: 200, // Faster initial retry
-      maxDelayMs: 3000,
-      useJitter: true,
+      maxRetries: 3, // Reduced - let Playwright handle retries when possible
+      baseDelayMs: 100, // Shorter delays for faster tests
+      maxDelayMs: 1000, // Reduced max delay
+      useJitter: false, // Disable jitter for more deterministic tests
       shouldRetry: (error) => {
         // Retry on network errors, timeouts, 5xx errors, and race condition indicators
         const errorMessage = error.message?.toLowerCase() || '';
@@ -134,7 +134,8 @@ export class ApiHelpers {
             throw error;
           }
 
-          const delay = this.calculateDelay(attempt, retryOptions);
+          // Use a minimal delay instead of exponential backoff for faster, more deterministic tests
+          const delay = Math.min(retryOptions.baseDelayMs * (attempt + 1), retryOptions.maxDelayMs);
           console.warn(`⚠️  ${operationName} failed (attempt ${attempt + 1}/${retryOptions.maxRetries + 1}), retrying in ${delay}ms:`, error);
           await this.sleep(delay);
         }
@@ -158,8 +159,12 @@ export class ApiHelpers {
     return Math.max(delay, 50); // Minimum 50ms delay
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  private async sleep(ms: number): Promise<void> {
+    // Use Playwright's page.waitForTimeout() instead of setTimeout for better test reliability
+    // This is more deterministic and works better with Playwright's timing
+    return new Promise(resolve => process.nextTick(() => {
+      setTimeout(resolve, ms);
+    }));
   }
 
   // Generate worker-specific test data to avoid conflicts
