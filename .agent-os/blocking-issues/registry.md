@@ -6,7 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
-| BI-2025-09-09-002 | 2025-09-09 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally | high |
+| BI-2025-09-09-002 | 2025-09-09 | refactor-database-controller | test | Test delay anti-pattern in AuthInterceptor tests causing CI failures | high |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -22,7 +22,7 @@ Master registry of all blocking issues encountered in the project. This registry
 Document recurring issue patterns here as they emerge.
 
 ## Statistics
-- Total Issues: 7
+- Total Issues: 8
 - Active: 1
-- Resolved: 6
+- Resolved: 7
 - Average Resolution Time: ~8 hours
