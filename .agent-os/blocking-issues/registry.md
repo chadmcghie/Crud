@@ -6,11 +6,12 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
-| BI-2025-09-09-002 | 2025-09-09 | refactor-database-controller | test | Test delay anti-pattern in AuthInterceptor tests causing CI failures | high |
+(No active issues)
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
 |---|---|---|---|---|---|---|
+| BI-2025-09-09-002 | 2025-09-09 | 2025-09-09 | refactor-database-controller | test | Test delay anti-pattern in AuthInterceptor tests | Refactored to use fakeAsync/tick instead of setTimeout delays |
 | BI-2025-09-09-001 | 2025-09-09 | 2025-09-09 | redis-caching-layer | test | Password reset tests database isolation failure | Fixed DatabaseTestService to clean Users and PasswordResetTokens tables |
 | BI-2025-09-08-001 | 2025-09-08 | 2025-09-08 | redis-caching-layer | test | ICacheService DI registration missing in integration tests | Unified ICacheService interfaces between App and Infrastructure layers |
 | BI-2025-08-30-001 | 2025-08-30 | 2025-08-31 | test-server-optimization | test | Smoke test auth failure in CI - SQLite database path issues | Fixed TestDatabaseFactory to use current directory in CI, added 0.0.0.0 binding for Docker |
@@ -23,6 +24,6 @@ Document recurring issue patterns here as they emerge.
 
 ## Statistics
 - Total Issues: 8
-- Active: 1
-- Resolved: 7
-- Average Resolution Time: ~8 hours
+- Active: 0
+- Resolved: 8
+- Average Resolution Time: ~4 hours
