@@ -67,7 +67,7 @@ function addToken(request: HttpRequest<unknown>, token: string): HttpRequest<unk
 
 function handle401Error(
   request: HttpRequest<unknown>, 
-  next: HttpInterceptorFn,
+  next: (req: HttpRequest<unknown>) => Observable<HttpEvent<unknown>>,
   authService: AuthService,
   router: Router
 ): Observable<HttpEvent<unknown>> {
