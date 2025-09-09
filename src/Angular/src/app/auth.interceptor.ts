@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -128,12 +128,36 @@ function isExternalUrl(url: string): boolean {
 
 // Legacy class-based interceptor for backward compatibility
 // @deprecated Use authInterceptor instead
-import { Injectable } from '@angular/core';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Delegate to functional interceptor
-    return authInterceptor(request, (req) => next.handle(req));
+    // Skip authentication for auth endpoints
+    if (isAuthEndpoint(request.url)) {
+      return next.handle(request);
+    }
+
+    // Skip authentication for external APIs
+    if (isExternalUrl(request.url)) {
+      return next.handle(request);
+    }
+
+    // Add token to request if available
+    const token = this.authService.getAccessToken();
+    if (token) {
+      request = addToken(request, token);
+    }
+
+    return next.handle(request).pipe(
+      catchError(error => {
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          return handle401Error(request, (req) => next.handle(req), this.authService, this.router);
+        }
+        return throwError(() => error);
+      })
+    );
   }
 }
