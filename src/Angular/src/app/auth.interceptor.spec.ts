@@ -209,7 +209,7 @@ describe('AuthInterceptor', () => {
   });
 
   describe('Request Queuing', () => {
-    it('should queue requests during token refresh', () => {
+    it('should queue requests during token refresh', (done) => {
       const firstRequest = new HttpRequest('GET', '/api/data1');
       const secondRequest = new HttpRequest('GET', '/api/data2');
       
@@ -235,27 +235,43 @@ describe('AuthInterceptor', () => {
 
       let response1Received = false;
       let response2Received = false;
+      let completedCount = 0;
 
-      // Start first request
+      // Start first request which will trigger refresh
       interceptor.intercept(firstRequest, next1).subscribe({
-        next: () => { response1Received = true; }
+        next: () => { 
+          response1Received = true;
+          completedCount++;
+          if (completedCount === 2) {
+            expect(authService.refreshToken).toHaveBeenCalledTimes(1);
+            expect(response1Received).toBeTruthy();
+            expect(response2Received).toBeTruthy();
+            done();
+          }
+        }
       });
 
-      // Start second request while refresh is in progress
-      (interceptor as unknown as { isRefreshing: boolean }).isRefreshing = true;
-      interceptor.intercept(secondRequest, next2).subscribe({
-        next: () => { response2Received = true; }
-      });
+      // Start second request after a short delay to ensure first request triggers refresh
+      setTimeout(() => {
+        interceptor.intercept(secondRequest, next2).subscribe({
+          next: () => { 
+            response2Received = true;
+            completedCount++;
+            if (completedCount === 2) {
+              expect(authService.refreshToken).toHaveBeenCalledTimes(1);
+              expect(response1Received).toBeTruthy();
+              expect(response2Received).toBeTruthy();
+              done();
+            }
+          }
+        });
 
-      expect(response1Received).toBeFalsy();
-      expect(response2Received).toBeFalsy();
-
-      // Complete the refresh
-      refreshSubject.next({ accessToken: 'new-token', refreshToken: 'new-refresh' } as TokenResponse);
-      refreshSubject.complete();
-
-      // Both requests should complete after refresh
-      expect(authService.refreshToken).toHaveBeenCalledTimes(1);
+        // Complete the refresh after both requests are queued
+        setTimeout(() => {
+          refreshSubject.next({ accessToken: 'new-token', refreshToken: 'new-refresh' } as TokenResponse);
+          refreshSubject.complete();
+        }, 10);
+      }, 10);
     });
 
     it('should handle multiple concurrent 401 responses', () => {
@@ -292,7 +308,7 @@ describe('AuthInterceptor', () => {
       expect(authService.refreshToken).toHaveBeenCalledTimes(1);
     });
 
-    it('should release queued requests when refresh fails', () => {
+    it('should release queued requests when refresh fails', (done) => {
       const request1 = new HttpRequest('GET', '/api/data1');
       const request2 = new HttpRequest('GET', '/api/data2');
       
@@ -308,19 +324,38 @@ describe('AuthInterceptor', () => {
       };
 
       let error1Received = false;
-      // Track error state for this test
+      let error2Received = false;
+      let errorCount = 0;
 
+      // First request triggers refresh which will fail
       interceptor.intercept(request1, next1).subscribe({
-        error: () => { error1Received = true; }
+        error: () => { 
+          error1Received = true;
+          errorCount++;
+          if (errorCount === 2) {
+            expect(error1Received).toBeTruthy();
+            expect(error2Received).toBeTruthy();
+            expect(authService.logout).toHaveBeenCalled();
+            done();
+          }
+        }
       });
 
-      (interceptor as unknown as { isRefreshing: boolean }).isRefreshing = true;
-      interceptor.intercept(request2, next2).subscribe({
-        error: () => { /* Error received */ }
-      });
-
-      expect(error1Received).toBeTruthy();
-      expect(authService.logout).toHaveBeenCalled();
+      // Second request should also fail when refresh fails
+      setTimeout(() => {
+        interceptor.intercept(request2, next2).subscribe({
+          error: () => { 
+            error2Received = true;
+            errorCount++;
+            if (errorCount === 2) {
+              expect(error1Received).toBeTruthy();
+              expect(error2Received).toBeTruthy();
+              expect(authService.logout).toHaveBeenCalled();
+              done();
+            }
+          }
+        });
+      }, 10);
     });
   });
 
