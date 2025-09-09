@@ -150,8 +150,8 @@ npm run test:improved
 
 ### Server State
 Check server state in temp directory:
-- Windows: `%TEMP%\crud-test-servers-state.json`
-- Linux/Mac: `/tmp/crud-test-servers-state.json`
+- Location: `${TEMP}/crud-test-servers-state.json`
+- Find your temp directory with: `echo $TEMP` (Windows) or `echo $TMPDIR` (Mac/Linux)
 
 ### Health Checks
 Servers are monitored every 30 seconds. Check logs for health status:

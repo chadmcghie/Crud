@@ -213,8 +213,8 @@ The framework has retry logic, but if persistent:
 
 1. Stop all servers: `npm run servers:stop`
 2. Delete temp databases manually:
-   - Windows: `%TEMP%\CrudTest_*.db`
-   - Mac/Linux: `/tmp/CrudTest_*.db`
+   - Look for `CrudTest_*.db` files in your system's temp directory
+   - Temp directory location varies by OS (use `echo $TEMP` or `echo $TMPDIR` to find it)
 3. Restart tests
 
 ## Performance Tips

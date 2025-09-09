@@ -2,13 +2,14 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createTestDatabase, resetDatabase } from './database-utils';
+import { getTempDirectory } from './temp-directory';
 
 /**
  * Tests to verify database isolation between test files
  * Ensures each test file gets a clean database state
  */
 test.describe('Database Isolation Verification', () => {
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+  const tempDir = getTempDirectory();
 
   test('should create unique database paths for each test run', async () => {
     const db1 = createTestDatabase('IsolationTest1');
