@@ -179,6 +179,18 @@ public class DatabaseTestService
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
 
+            // Delete PasswordResetTokens first (has FK to Users)
+            _logger.LogDebug("Deleting PasswordResetTokens for worker {WorkerIndex}...", workerIndex);
+            var tokensStart = DateTime.UtcNow;
+            await _context.PasswordResetTokens.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted PasswordResetTokens in {Ms}ms", (DateTime.UtcNow - tokensStart).TotalMilliseconds);
+
+            // Delete Users (authentication data)
+            _logger.LogDebug("Deleting Users for worker {WorkerIndex}...", workerIndex);
+            var usersStart = DateTime.UtcNow;
+            await _context.Users.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted Users in {Ms}ms", (DateTime.UtcNow - usersStart).TotalMilliseconds);
+
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
             var peopleStart = DateTime.UtcNow;
             await _context.People.ExecuteDeleteAsync();
@@ -246,6 +258,8 @@ public class DatabaseTestService
             RolesCount = await _context.Roles.CountAsync(),
             WallsCount = await _context.Walls.CountAsync(),
             WindowsCount = await _context.Windows.CountAsync(),
+            UsersCount = await _context.Users.CountAsync(),
+            PasswordResetTokensCount = await _context.PasswordResetTokens.CountAsync(),
             ConnectionString = _context.Database.GetConnectionString()?.Replace("Password=", "Password=***"),
             CanConnect = await _context.Database.CanConnectAsync()
         };
@@ -270,6 +284,10 @@ public class DatabaseTestService
             issues.Add($"Walls table contains {stats.WallsCount} records");
         if (stats.WindowsCount > 0)
             issues.Add($"Windows table contains {stats.WindowsCount} records");
+        if (stats.UsersCount > 0)
+            issues.Add($"Users table contains {stats.UsersCount} records");
+        if (stats.PasswordResetTokensCount > 0)
+            issues.Add($"PasswordResetTokens table contains {stats.PasswordResetTokensCount} records");
 
         // Check database connectivity
         if (!stats.CanConnect)
@@ -316,6 +334,10 @@ public class DatabaseTestService
             issues.Add($"Walls table not cleaned up: {stats.WallsCount} records remain");
         if (stats.WindowsCount > 0)
             issues.Add($"Windows table not cleaned up: {stats.WindowsCount} records remain");
+        if (stats.UsersCount > 0)
+            issues.Add($"Users table not cleaned up: {stats.UsersCount} records remain");
+        if (stats.PasswordResetTokensCount > 0)
+            issues.Add($"PasswordResetTokens table not cleaned up: {stats.PasswordResetTokensCount} records remain");
 
         // Check database connectivity
         if (!stats.CanConnect)
@@ -358,6 +380,8 @@ public class DatabaseTestService
             await _context.Roles.CountAsync();
             await _context.Walls.CountAsync();
             await _context.Windows.CountAsync();
+            await _context.Users.CountAsync();
+            await _context.PasswordResetTokens.CountAsync();
 
             _logger.LogDebug("Database integrity verification passed for worker {WorkerIndex}", workerIndex);
             return true;
@@ -412,6 +436,8 @@ public class DatabaseStats
     public int RolesCount { get; set; }
     public int WallsCount { get; set; }
     public int WindowsCount { get; set; }
+    public int UsersCount { get; set; }
+    public int PasswordResetTokensCount { get; set; }
     public string? ConnectionString { get; set; }
     public bool CanConnect { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
