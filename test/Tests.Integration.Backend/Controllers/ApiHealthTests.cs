@@ -151,12 +151,12 @@ public class ApiHealthTests : IntegrationTestBase
 
             var successfulCreations = 0;
             var names = new[] { "John Smith", "Jane Doe", "Bob Johnson", "Alice Brown", "Charlie Davis" };
-            
+
             // Act - Create multiple people sequentially with small delays to avoid SQLite locking issues
             // SQLite has limitations with concurrent writes, so we'll use a hybrid approach:
             // Start tasks with small staggered delays to test concurrency while avoiding lock conflicts
             var tasks = new List<Task<HttpResponseMessage>>();
-            
+
             for (int i = 0; i < 5; i++)
             {
                 var index = i;
@@ -164,7 +164,7 @@ public class ApiHealthTests : IntegrationTestBase
                 {
                     // Add a small random delay to stagger the requests slightly
                     await Task.Delay(index * 50);
-                    
+
                     var createRequest = new
                     {
                         FullName = names[index],
