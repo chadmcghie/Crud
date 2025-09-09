@@ -40,7 +40,12 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
   - `Backend Unit Tests`
   - `Frontend Unit Tests`
   - `Backend Integration Tests`
-  - `End-to-End Tests`
+  - ❌ ~~`End-to-End Tests`~~ **REMOVED** - E2E tests run during staging deployment
+
+**Note:** E2E tests are intentionally excluded from dev branch requirements because:
+- PRs to `dev` use progressive testing strategy (smoke tests only)
+- Full E2E test suite runs automatically during staging deployment
+- This provides faster PR feedback while maintaining comprehensive testing
 
 **Additional settings**
 - ✅ Require conversation resolution before merging

@@ -12,8 +12,14 @@ import {
   RouterStateSnapshot
 } from '@angular/router';
 import { AuthService } from './auth.service';
+import { TestAuthService } from './test-auth.service';
 
-function checkAuth(authService: AuthService, router: Router, returnUrl?: string): boolean | UrlTree {
+function checkAuth(authService: AuthService, router: Router, testAuthService: TestAuthService, returnUrl?: string): boolean | UrlTree {
+  // Allow bypass for E2E tests in non-production environments
+  if (testAuthService.isE2ETestMode()) {
+    return true;
+  }
+
   if (authService.isAuthenticated()) {
     return true;
   }
@@ -29,7 +35,8 @@ export const canActivateGuard: CanActivateFn = (
 ): boolean | UrlTree => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  return checkAuth(authService, router, state?.url);
+  const testAuthService = inject(TestAuthService);
+  return checkAuth(authService, router, testAuthService, state?.url);
 };
 
 export const canActivateChildGuard: CanActivateChildFn = (
@@ -38,7 +45,8 @@ export const canActivateChildGuard: CanActivateChildFn = (
 ): boolean | UrlTree => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  return checkAuth(authService, router, state?.url);
+  const testAuthService = inject(TestAuthService);
+  return checkAuth(authService, router, testAuthService, state?.url);
 };
 
 export const canLoadGuard: CanLoadFn = (
@@ -47,8 +55,9 @@ export const canLoadGuard: CanLoadFn = (
 ): boolean | UrlTree => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const testAuthService = inject(TestAuthService);
   const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-  return checkAuth(authService, router, url);
+  return checkAuth(authService, router, testAuthService, url);
 };
 
 export const canMatchGuard: CanMatchFn = (
@@ -57,27 +66,29 @@ export const canMatchGuard: CanMatchFn = (
 ): boolean | UrlTree => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const testAuthService = inject(TestAuthService);
   const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-  return checkAuth(authService, router, url);
+  return checkAuth(authService, router, testAuthService, url);
 };
 
 // Legacy class-based guard for backward compatibility
 export class AuthGuard {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private testAuthService = inject(TestAuthService);
 
   canActivate(
     _route?: ActivatedRouteSnapshot,
     state?: RouterStateSnapshot
   ): boolean | UrlTree {
-    return checkAuth(this.authService, this.router, state?.url);
+    return checkAuth(this.authService, this.router, this.testAuthService, state?.url);
   }
 
   canActivateChild(
     _childRoute?: ActivatedRouteSnapshot,
     state?: RouterStateSnapshot
   ): boolean | UrlTree {
-    return checkAuth(this.authService, this.router, state?.url);
+    return checkAuth(this.authService, this.router, this.testAuthService, state?.url);
   }
 
   canLoad(
@@ -85,7 +96,7 @@ export class AuthGuard {
     segments?: UrlSegment[]
   ): boolean | UrlTree {
     const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-    return checkAuth(this.authService, this.router, url);
+    return checkAuth(this.authService, this.router, this.testAuthService, url);
   }
 
   canMatch(
@@ -93,6 +104,6 @@ export class AuthGuard {
     segments?: UrlSegment[]
   ): boolean | UrlTree {
     const url = segments ? '/' + segments.map(s => s.path).join('/') : undefined;
-    return checkAuth(this.authService, this.router, url);
+    return checkAuth(this.authService, this.router, this.testAuthService, url);
   }
 }
