@@ -4,7 +4,9 @@
 Master registry of all blocking issues encountered in the project. This registry provides quick lookup for issue patterns and resolutions.
 
 ## Active Issues
-*No active blocking issues*
+| ID | Created | Spec | Category | Description | Severity |
+|---|---|---|---|---|---|
+| BI-2025-09-09-002 | 2025-09-09 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally | high |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -20,7 +22,7 @@ Master registry of all blocking issues encountered in the project. This registry
 Document recurring issue patterns here as they emerge.
 
 ## Statistics
-- Total Issues: 6
-- Active: 0
+- Total Issues: 7
+- Active: 1
 - Resolved: 6
 - Average Resolution Time: ~8 hours
