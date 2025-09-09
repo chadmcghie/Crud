@@ -7,11 +7,11 @@ encoding: UTF-8
 # Global env (tune in VS/CI)
 # =========================================
 <env>
-  CLAUDE_PLANNING_MODEL: "claude-3-opus-latest"
-  CLAUDE_EXECUTION_MODEL: "claude-3-5-sonnet-latest"
+  CLAUDE_PLANNING_MODEL: "claude-4-opus-latest"
+  CLAUDE_EXECUTION_MODEL: "claude-4-5-sonnet-latest"
   BIG_CONTEXT_TOKEN_THRESHOLD: "100000"
   # Optional: budgets/guards you can wire into your runner
-  CLAUDE_OPUS_MAX_COST_PER_TASK: "5.00"
+  CLAUDE_OPUS_MAX_COST_PER_TASK: "1.00"
   CLAUDE_OPUS_MAX_LATENCY_MS: "20000"
 </env>
 

@@ -1,4 +1,5 @@
 ---
+name: troubleshoot-with-history
 description: Systematic troubleshooting using blocking issue history to prevent regression
 globs:
 alwaysApply: false
@@ -27,6 +28,7 @@ Search blocking issues for similar problems before starting troubleshooting.
   <primary>.agent-os/blocking-issues/active/</primary>
   <secondary>.agent-os/blocking-issues/resolved/</secondary>
   <registry>.agent-os/blocking-issues/registry.md</registry>
+  <learning>.agent-os/learning/patterns.md</learning>
 </search_locations>
 
 <search_criteria>
@@ -46,6 +48,12 @@ Search blocking issues for similar problems before starting troubleshooting.
     - Identify last attempt number
     - Extract protected changes
     - Review lessons learned
+  
+  IF matching pattern in learning cache:
+    - Apply known solution from patterns.md
+    - Reference pattern ID in solution
+    - Skip failed approaches documented
+  
   ELSE:
     - Proceed with fresh troubleshooting
     - Be prepared to document if blocking

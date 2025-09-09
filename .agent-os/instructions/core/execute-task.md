@@ -188,6 +188,80 @@ Execute the parent task and all sub-tasks in order using test-driven development
 
 </step>
 
+<step number="5.5" subagent="commit-strategist" name="semantic_commit_checkpoint">
+
+### Step 5.5: Semantic Commit Checkpoint
+
+After completing implementation sub-tasks, create semantic commits based on the staging strategy to maintain clean git history with logical, cherry-pickable commits.
+
+<commit_decision_logic>
+  LOAD: @.agent-os/config/staging-strategy.yml
+  
+  FOR each completed sub-task:
+    ANALYZE: Changed files and their domains
+    
+    IF sub-task is "Write tests for [feature]":
+      - Stage all test files
+      - DO NOT commit yet (will include with implementation)
+      
+    ELIF sub-task creates standalone component:
+      - Group files by layer (domain/app/infra/api/ui)
+      - Include any staged tests for this component
+      - Create semantic commit with conventional format
+      
+    ELIF sub-task is configuration/DI:
+      - Commit as "chore: configure [feature]"
+      
+    ELIF sub-task fixes issues from previous:
+      - Consider amending previous commit
+      
+    ELSE:
+      - Stage changes for next logical commit
+</commit_decision_logic>
+
+<semantic_grouping>
+  <by_clean_architecture_layer>
+    - Domain models + interfaces → "feat(domain): add [feature] entities"
+    - App services + handlers → "feat(app): implement [feature] use cases"
+    - Infrastructure + repos → "feat(infra): add [feature] persistence"
+    - API controllers → "feat(api): add [feature] endpoints"
+    - Angular components → "feat(ui): add [feature] interface"
+  </by_clean_architecture_layer>
+  
+  <by_feature_completeness>
+    - Complete vertical slice → single commit with all layers
+    - Partial implementation → commit by layer
+    - Tests + implementation → commit together
+  </by_feature_completeness>
+</semantic_grouping>
+
+<commit_execution>
+  IF files_to_commit:
+    USE git-workflow subagent with:
+      REQUEST: "Create semantic commit:
+                - Files: [STAGED_FILES]
+                - Type: [COMMIT_TYPE]
+                - Scope: [LAYER/FEATURE]
+                - Message: [DESCRIPTION]
+                - Include tests: [YES/NO]"
+    
+    WAIT: For commit completion
+    CONTINUE: With next sub-task
+</commit_execution>
+
+<instructions>
+  ACTION: Use commit-strategist subagent if needed
+  REQUEST: "Analyze changes and suggest commit boundaries for:
+            - Changed files: [LIST]
+            - Sub-task: [DESCRIPTION]
+            - Context: [PARENT_TASK]"
+  EVALUATE: Whether to commit now or stage for later
+  EXECUTE: Semantic commit if appropriate
+  DOCUMENT: Commit SHA for cherry-pick reference
+</instructions>
+
+</step>
+
 <step number="6" subagent="test-runner" name="task_test_verification">
 
 ### Step 6: Task-Specific Test Verification
@@ -231,6 +305,14 @@ Use the test-runner subagent to run and verify only the tests specific to this p
 ### Step 7: Mark this task and sub-tasks complete
 
 IMPORTANT: In the tasks.md file, mark this task and its sub-tasks complete by updating each task checkbox to [x].
+
+<github_issue_closure>
+  IF task has associated GitHub issue (Issue: #XXX):
+    ACTION: Close the GitHub issue immediately after marking task complete
+    COMMAND: gh issue close XXX --comment "Task completed as part of spec: [SPEC_PATH]"
+    INCLUDE: Summary of completed subtasks in comment
+  REASON: Provides immediate progress visibility
+</github_issue_closure>
 
 <update_format>
   <completed>- [x] Task description</completed>

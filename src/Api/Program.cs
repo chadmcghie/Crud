@@ -185,6 +185,15 @@ namespace Api
                 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
                 builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
 
+                // Add caching services
+                builder.Services.AddCachingServices(builder.Configuration);
+
+                // Add cached repository decorators (only if using EF provider)
+                if (usingEfProvider)
+                {
+                    builder.Services.AddCachedRepositories();
+                }
+
                 // Configure JWT Authentication
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
                 var jwtIssuer = builder.Configuration["Jwt:Issuer"];

@@ -90,8 +90,30 @@
       "created": "2025-08-31 13:30",
       "do_not_modify": true
     }
+    },
+    {
+      "issue_id": "BI-2025-09-08-001",
+      "file": "src/Infrastructure/DependencyInjection.cs",
+      "lines": [158, 233],
+      "hash": "pending-commit",
+      "change_description": "Register App.Interfaces.ICacheService and use fully qualified Infrastructure cache key generator",
+      "reason": "MediatR behaviors require App.Interfaces.ICacheService, not Infrastructure's version",
+      "created": "2025-09-08 17:48",
+      "do_not_modify": true
+    }
+    },
+    {
+      "issue_id": "BI-2025-09-09-001",
+      "file": "src/Infrastructure/Services/DatabaseTestService.cs",
+      "lines": [182, 192],
+      "hash": "pending-commit",
+      "change_description": "Added Users and PasswordResetTokens cleanup to ResetWithEfCoreAsync",
+      "reason": "Password reset tests require proper database cleanup between test runs",
+      "created": "2025-09-09 00:35",
+      "do_not_modify": true
+    }
   ],
-  "last_updated": "2025-08-31T13:30:00Z",
+  "last_updated": "2025-09-09T00:25:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

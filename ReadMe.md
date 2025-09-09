@@ -19,12 +19,27 @@ The Crud project is intended as deeply opinionated, configured, and veted templa
 - **Extensibility**: The project is designed to be easily extensible, allowing developers to add new features and functionality as needed.
 
 ## High Level Directory Structure
+## Root Directory: Crud/
 
-- [Architecture] 
-- [Decisions]
-- [Development]
-- [Misc]
-- [Quality Control]
+### docs/
+- Architecture/
+- Decisions/
+- Development/
+- Misc/
+- QualityControl/
+
+### src/
+- Angular/
+- Api/
+- App/
+- Domain/
+- Infrastructure/
+
+### test/
+- Tests.E2E.NG/
+- Tests.Integration.Backend/
+- Tests.Integration.NG/
+- Tests.Unit.Backend/
 
 ## AI-Powered Development Workflow
 
