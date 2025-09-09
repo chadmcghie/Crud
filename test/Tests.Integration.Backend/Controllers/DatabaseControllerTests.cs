@@ -27,7 +27,7 @@ public class DatabaseControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             // Basic validation that the response contains expected properties
             content.Should().Contain("environment");
@@ -50,7 +50,7 @@ public class DatabaseControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             content.Should().Contain("Database seeded successfully");
             content.Should().Contain("\"workerIndex\":1");
@@ -67,11 +67,11 @@ public class DatabaseControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var result = JsonSerializer.Deserialize<DatabaseValidationResult>(content, options);
-            
+
             result.Should().NotBeNull();
             result!.WorkerIndex.Should().Be(1);
             result.ValidationType.Should().Be("PreTest");
@@ -93,7 +93,7 @@ public class DatabaseControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             content.Should().Contain("Database reset successfully");
             content.Should().Contain("\"workerIndex\":1");
@@ -128,7 +128,7 @@ public class DatabaseControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             content.Should().Contain("isValid");
             content.Should().Contain("\"workerIndex\":1");
