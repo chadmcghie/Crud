@@ -89,6 +89,14 @@ jobs:
         npm ci
         echo "✅ Angular dependencies installed"
         
+    # Verify Angular can compile and run
+    - name: Verify Angular setup
+      working-directory: ./src/Angular
+      run: |
+        echo "🔍 Verifying Angular can compile..."
+        npm run ng -- version
+        echo "✅ Angular CLI verified"
+        
     # Copy appsettings files for the backend
     - name: Copy appsettings to build output
       run: |
