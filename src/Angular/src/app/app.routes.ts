@@ -5,9 +5,8 @@ import { PeopleComponent } from './people.component';
 import { PeopleListComponent } from './people-list.component';
 import { RolesComponent } from './roles.component';
 import { RolesListComponent } from './roles-list.component';
-// Temporarily commented out for E2E tests - TODO: Re-enable after E2E tests are updated
-// import { AuthGuard } from './auth.guard';
-// import { RoleGuard } from './role.guard';
+import { AuthGuard } from './auth.guard';
+import { RoleGuard } from './role.guard';
 
 export const routes: Routes = [
   // Public routes
@@ -22,32 +21,30 @@ export const routes: Routes = [
     loadComponent: () => import('./components/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
   },
   
-  // Protected routes - temporarily removing guards for E2E tests
-  // TODO: Re-enable authentication guards after E2E tests are updated to handle auth
+  // Protected routes
   { 
     path: 'people', 
-    component: PeopleComponent
-    // canActivate: [AuthGuard]
+    component: PeopleComponent,
+    canActivate: [AuthGuard]
   },
   { 
     path: 'people-list', 
-    component: PeopleListComponent
-    // canActivate: [AuthGuard]
+    component: PeopleListComponent,
+    canActivate: [AuthGuard]
   },
   
-  // Admin routes - temporarily removing guards for E2E tests
-  // TODO: Re-enable role guards after E2E tests are updated to handle auth
+  // Admin routes
   { 
     path: 'roles', 
-    component: RolesComponent
-    // canActivate: [RoleGuard],
-    // data: { roles: ['admin'] }
+    component: RolesComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ['admin'] }
   },
   { 
     path: 'roles-list', 
-    component: RolesListComponent
-    // canActivate: [RoleGuard],
-    // data: { roles: ['admin'] }
+    component: RolesListComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ['admin'] }
   },
   
   // Unauthorized page (lazy loaded)
