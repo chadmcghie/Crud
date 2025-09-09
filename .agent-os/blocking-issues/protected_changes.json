@@ -111,9 +111,19 @@
       "reason": "Password reset tests require proper database cleanup between test runs",
       "created": "2025-09-09 00:35",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-09-002",
+      "file": "test/Tests.Integration.Backend/Controllers/ApiHealthTests.cs",
+      "lines": [138, 205],
+      "hash": "2e75881",
+      "change_description": "Modified concurrent test to handle SQLite locking with staggered delays and accept 409 conflicts",
+      "reason": "Properly handles SQLite's concurrent write limitations, fixing legitimate test failures in CI",
+      "created": "2025-09-09 21:15",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-09T00:25:00Z",
+  "last_updated": "2025-09-09T21:25:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {
