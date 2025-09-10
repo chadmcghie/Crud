@@ -2,7 +2,7 @@
 
 > Spec: Controller Authorization Protection
 > Created: 2025-01-15
-> GitHub Issue: #42 - Authentication Authorization (Sub-issue)
+> GitHub Issue: #177 - Auth Decorators on Controllers
 > Status: IN PROGRESS
 
 ## Overview
