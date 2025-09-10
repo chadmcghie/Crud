@@ -130,9 +130,12 @@ public class CachingE2ETests : IntegrationTestBase
                 $"Endpoint {endpoint} should return at least one cache-related header");
 
             _output.WriteLine($"Endpoint: {endpoint}");
-            if (hasCacheControl) _output.WriteLine($"  Cache-Control: {response.Headers.CacheControl}");
-            if (hasETag) _output.WriteLine($"  ETag: {response.Headers.ETag}");
-            if (hasLastModified) _output.WriteLine($"  Last-Modified: {response.Content.Headers.LastModified}");
+            if (hasCacheControl)
+                _output.WriteLine($"  Cache-Control: {response.Headers.CacheControl}");
+            if (hasETag)
+                _output.WriteLine($"  ETag: {response.Headers.ETag}");
+            if (hasLastModified)
+                _output.WriteLine($"  Last-Modified: {response.Content.Headers.LastModified}");
         });
     }
 
