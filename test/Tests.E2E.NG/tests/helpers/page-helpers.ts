@@ -47,16 +47,36 @@ export class PageHelpers {
 
   async switchToPeopleTab(): Promise<void> {
     await this.page.click('a[routerLink="/people-list"]');
-    await this.page.waitForSelector('app-people-list', { timeout: 10000 });
-    // Wait for the people content to be fully rendered
-    await this.page.locator('h3:has-text("People Directory")').waitFor({ state: 'visible', timeout: 5000 });
+    // Increased timeout for CI environment - component loading can be slower
+    const timeout = process.env.CI ? 15000 : 10000;
+    await this.page.waitForSelector('app-people-list', { timeout });
+    // Wait for the people content to be fully rendered with increased timeout
+    await this.page.locator('h3:has-text("People Directory")').waitFor({ state: 'visible', timeout });
+    // Additional wait for component to be fully interactive in CI
+    if (process.env.CI) {
+      await this.page.waitForFunction(() => {
+        const component = document.querySelector('app-people-list');
+        const buttons = component?.querySelectorAll('button') || [];
+        return component && buttons.length > 0;
+      }, { timeout: 5000 });
+    }
   }
 
   async switchToRolesTab(): Promise<void> {
     await this.page.click('a[routerLink="/roles-list"]');
-    await this.page.waitForSelector('app-roles-list', { timeout: 10000 });
-    // Wait for the roles content to be fully rendered
-    await this.page.locator('h3:has-text("Roles Management")').waitFor({ state: 'visible', timeout: 5000 });
+    // Increased timeout for CI environment - component loading can be slower
+    const timeout = process.env.CI ? 15000 : 10000;
+    await this.page.waitForSelector('app-roles-list', { timeout });
+    // Wait for the roles content to be fully rendered with increased timeout
+    await this.page.locator('h3:has-text("Roles Management")').waitFor({ state: 'visible', timeout });
+    // Additional wait for component to be fully interactive in CI
+    if (process.env.CI) {
+      await this.page.waitForFunction(() => {
+        const component = document.querySelector('app-roles-list');
+        const buttons = component?.querySelectorAll('button') || [];
+        return component && buttons.length > 0;
+      }, { timeout: 5000 });
+    }
   }
 
   // Role management helpers

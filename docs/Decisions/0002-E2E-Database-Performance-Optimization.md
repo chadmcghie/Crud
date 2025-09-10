@@ -59,11 +59,15 @@ await _context.Walls.ExecuteDeleteAsync();
 Change test database location from potentially inaccessible temp directory to reliable working directory:
 
 ```typescript
-// OLD - Could cause path/permission issues:
+// OLD - Platform-specific hardcoded paths:
 const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
 const databasePath = path.join(tempDir, `CrudTest_${timestamp}.db`);
 
-// NEW - Reliable path in project directory:
+// BETTER - Cross-platform temp directory:
+const tempDir = process.env.TEMP || process.env.TMP || process.env.TMPDIR || os.tmpdir();
+const databasePath = path.join(tempDir, `CrudTest_${timestamp}.db`);
+
+// ALTERNATIVE - Project directory (if temp not available):
 const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${timestamp}.db`);
 ```
 

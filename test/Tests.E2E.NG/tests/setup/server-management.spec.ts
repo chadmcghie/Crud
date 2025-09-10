@@ -1,6 +1,7 @@
 import { test, expect } from '../fixtures/serial-test-fixture';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
+import { getTempDirectory } from './temp-directory';
 import * as fs from 'fs/promises';
 
 /**
@@ -13,7 +14,7 @@ let apiProcess: ChildProcess | null = null;
 let angularProcess: ChildProcess | null = null;
 const testApiPort = '5182';
 const testAngularPort = '4210';
-const testDbPath = path.join(process.platform === 'win32' ? process.env.TEMP || 'C:\temp' : '/tmp', 'test-server-mgmt.db');
+const testDbPath = path.join(getTempDirectory(), 'test-server-mgmt.db');
 
 test.afterAll(async () => {
   // Clean up any test processes using Playwright's page context for timing
@@ -158,7 +159,7 @@ test('should handle server startup errors gracefully @smoke', async () => {
 });
 
 test('should clean up database files after tests @smoke', async () => {
-  const testFile = path.join(process.platform === 'win32' ? process.env.TEMP || 'C:\temp' : '/tmp', 'test-cleanup.db');
+  const testFile = path.join(getTempDirectory(), 'test-cleanup.db');
   
   // Create test file
   await fs.writeFile(testFile, 'test data');

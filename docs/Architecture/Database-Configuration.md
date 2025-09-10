@@ -53,9 +53,9 @@ The application supports multiple database configurations:
 ### End-to-End Testing (appsettings.Testing.json)
 ```json
 {
-  "DatabasePath": "C:\\Temp\\CrudTest_Serial.db",
+  "DatabasePath": "${TEMP}/CrudTest_Serial.db",
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=C:\\Temp\\CrudTest_Serial.db"
+    "DefaultConnection": "Data Source=${TEMP}/CrudTest_Serial.db"
   },
   "DatabaseProvider": "SQLite"
 }
@@ -79,8 +79,11 @@ Based on ADR-001 (Serial E2E Testing Decision), our testing strategy requires:
 
 ### Testing Database Locations
 ```
-Windows: %TEMP%\CrudTest_Serial_[timestamp].db
-Linux/Mac: /tmp/CrudTest_Serial_[timestamp].db
+${TEMP}/CrudTest_Serial_[timestamp].db
+
+Where ${TEMP} resolves to:
+- Windows: %TEMP% or %TMP% (typically C:\Users\{user}\AppData\Local\Temp)
+- Linux/Mac: $TMPDIR or /tmp
 ```
 
 ## Environment-Specific Configuration
@@ -90,8 +93,8 @@ You can override the database provider using environment variables:
 ```bash
 # Use SQLite (Production & Testing)
 export DatabaseProvider="SQLite"
-export DatabasePath="/tmp/CrudApp.db"
-export ConnectionStrings__DefaultConnection="Data Source=/tmp/CrudApp.db"
+export DatabasePath="${TEMP}/CrudApp.db"
+export ConnectionStrings__DefaultConnection="Data Source=${TEMP}/CrudApp.db"
 
 # Use Entity Framework In-Memory (Unit Tests)
 export DatabaseProvider="EntityFrameworkInMemory"
@@ -152,9 +155,9 @@ For SQL Server, this will:
 
 ### SQLite (Current Default)
 ```
-Data Source=C:\path\to\database.db
-Data Source=/path/to/database.db
-Data Source=:memory:  // For in-memory database
+Data Source=${PROJECT_ROOT}/database.db    // Project-relative path
+Data Source=${TEMP}/database.db            // Temp directory path  
+Data Source=:memory:                       // For in-memory database
 ```
 
 ### SQL Server LocalDB
