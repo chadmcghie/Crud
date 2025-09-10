@@ -30,13 +30,13 @@
   - [x] 3.6 Configure vary-by parameters for query strings (page, size, filter)
   - [x] 3.7 Verify endpoint caching integration tests pass
 
-- [ ] 4. Conditional Request Support
-  - [ ] 4.1 Write tests for conditional request handling
-  - [ ] 4.2 Implement If-None-Match header processing for ETag validation
-  - [ ] 4.3 Implement If-Modified-Since header processing for timestamp validation
-  - [ ] 4.4 Add 304 Not Modified response logic to controllers
-  - [ ] 4.5 Create action filter for conditional request handling
-  - [ ] 4.6 Verify conditional request tests pass
+- [x] 4. Conditional Request Support
+  - [x] 4.1 Write tests for conditional request handling
+  - [x] 4.2 Implement If-None-Match header processing for ETag validation
+  - [x] 4.3 Implement If-Modified-Since header processing for timestamp validation
+  - [x] 4.4 Add 304 Not Modified response logic to controllers
+  - [x] 4.5 Create action filter for conditional request handling
+  - [x] 4.6 Verify conditional request tests pass
 
 - [ ] 5. Cache Invalidation Integration
   - [ ] 5.1 Write tests for cache invalidation on mutations

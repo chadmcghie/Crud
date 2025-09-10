@@ -295,7 +295,14 @@ namespace Api
                             }));
                 });
 
-                builder.Services.AddControllers()
+                // Register the conditional request filter
+                builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+                
+                builder.Services.AddControllers(options =>
+                    {
+                        // Add conditional request filter globally
+                        options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                    })
                     .AddJsonOptions(options =>
                     {
                         // Configure DateTime serialization to include UTC "Z" suffix
