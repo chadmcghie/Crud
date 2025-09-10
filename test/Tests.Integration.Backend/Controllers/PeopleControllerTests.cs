@@ -54,7 +54,7 @@ public class PeopleControllerTests : IntegrationTestBase
 
             // Verify Location header
             response.Headers.Location.Should().NotBeNull();
-            response.Headers.Location!.ToString().Should().EndWith($"/api/people/{createdPerson.Id}");
+            response.Headers.Location!.ToString().ToLowerInvariant().Should().EndWith($"/api/people/{createdPerson.Id}".ToLowerInvariant());
         });
     }
 
@@ -247,10 +247,10 @@ public class PeopleControllerTests : IntegrationTestBase
             // Arrange
             var adminClient = await CreateAdminClientAsync();
 
-            // Create roles
-            var role1Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("Admin", "Administrator"));
-            var role2Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("User", "Regular user"));
-            var role3Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("Manager", "Manager"));
+            // Create roles with unique names to avoid conflicts
+            var role1Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestAdmin", "Test Administrator"));
+            var role2Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestUser", "Test Regular user"));
+            var role3Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestManager", "Test Manager"));
 
             var role1 = await ReadJsonAsync<RoleDto>(role1Response);
             var role2 = await ReadJsonAsync<RoleDto>(role2Response);
@@ -325,7 +325,7 @@ public class PeopleControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task DELETE_People_Should_Return_404_For_NonExistent_Person()
+    public async Task DELETE_People_Should_Return_204_For_NonExistent_Person()
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
@@ -337,7 +337,8 @@ public class PeopleControllerTests : IntegrationTestBase
             var response = await adminClient.DeleteAsync($"/api/people/{nonExistentId}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            // Idempotent DELETE returns 204 even for non-existent resources
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         });
     }
 

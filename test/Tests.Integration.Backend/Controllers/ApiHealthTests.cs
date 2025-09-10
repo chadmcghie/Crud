@@ -120,7 +120,7 @@ public class ApiHealthTests : IntegrationTestBase
                     Name = $"Concurrent Role {i}",
                     Description = $"Role created in concurrent test {i}"
                 };
-                tasks.Add(PostJsonAsync("/api/roles", createRequest));
+                tasks.Add(AuthenticatedPostJsonAsync("/api/roles", createRequest));
             }
 
             var responses = await Task.WhenAll(tasks);
