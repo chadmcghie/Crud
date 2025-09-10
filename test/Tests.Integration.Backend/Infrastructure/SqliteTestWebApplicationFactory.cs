@@ -161,17 +161,17 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
+
         // The Roles field stores comma-separated values
         // For testing, we'll just set it to "User,Admin" if Admin is requested
         var rolesValue = role == "Admin" ? "User,Admin" : "User";
-        
+
         // Use raw SQL to avoid EF issues with owned entities
         var sql = @"
             UPDATE Users 
             SET Roles = @p0, UpdatedAt = @p1
             WHERE Email = @p2";
-        
+
         await dbContext.Database.ExecuteSqlRawAsync(sql, rolesValue, DateTime.UtcNow, email);
     }
 
