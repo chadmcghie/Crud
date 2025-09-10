@@ -20,7 +20,7 @@ public class WindowsControllerTests : IntegrationTestBase
 
 
             // Act
-            var response = await Client.GetAsync("/api/windows");
+            var response = await AuthenticatedGetAsync("/api/windows");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -60,7 +60,7 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/windows", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -101,7 +101,7 @@ public class WindowsControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await PostJsonAsync("/api/windows", invalidRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/windows", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -122,7 +122,7 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/windows", invalidRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/windows", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -138,11 +138,11 @@ public class WindowsControllerTests : IntegrationTestBase
         var window1 = TestDataBuilders.CreateWindowRequest("Window 1", "First window", 1.2, 1.8, 2.16, "Vinyl", "Single Pane");
         var window2 = TestDataBuilders.CreateWindowRequest("Window 2", "Second window", 1.0, 1.5, 1.5, "Wood", "Triple Pane");
 
-        await PostJsonAsync("/api/windows", window1);
-        await PostJsonAsync("/api/windows", window2);
+        await AuthenticatedPostJsonAsync("/api/windows", window1);
+        await AuthenticatedPostJsonAsync("/api/windows", window2);
 
         // Act
-        var response = await Client.GetAsync("/api/windows");
+        var response = await AuthenticatedGetAsync("/api/windows");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -160,11 +160,11 @@ public class WindowsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWindowRequest("Test Window", "Test description", 1.5, 2.0, 3.0, "Aluminum", "Double Pane");
-        var createResponse = await PostJsonAsync("/api/windows", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
 
         // Act
-        var response = await Client.GetAsync($"/api/windows/{createdWindow!.Id}");
+        var response = await AuthenticatedGetAsync($"/api/windows/{createdWindow!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -189,7 +189,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid();
 
         // Act
-        var response = await Client.GetAsync($"/api/windows/{nonExistentId}");
+        var response = await AuthenticatedGetAsync($"/api/windows/{nonExistentId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -201,7 +201,7 @@ public class WindowsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWindowRequest("Original Window", "Original description", 1.0, 1.5, 1.5, "Wood", "Single Pane");
-        var createResponse = await PostJsonAsync("/api/windows", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
 
         var updateRequest = TestDataBuilders.UpdateWindowRequest(
@@ -219,13 +219,13 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PutJsonAsync($"/api/windows/{createdWindow!.Id}", updateRequest);
+        var response = await AuthenticatedPutJsonAsync($"/api/windows/{createdWindow!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify the update
-        var getResponse = await Client.GetAsync($"/api/windows/{createdWindow.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/windows/{createdWindow.Id}");
         var updatedWindow = await ReadJsonAsync<WindowResponse>(getResponse);
 
         updatedWindow.Should().NotBeNull();
@@ -253,7 +253,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var updateRequest = TestDataBuilders.UpdateWindowRequest("Updated Window", "Updated description", 2.0, 2.5, 5.0, "Vinyl", "Triple Pane");
 
         // Act
-        var response = await PutJsonAsync($"/api/windows/{nonExistentId}", updateRequest);
+        var response = await AuthenticatedPutJsonAsync($"/api/windows/{nonExistentId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -265,17 +265,17 @@ public class WindowsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWindowRequest("To Delete", "Window to be deleted", 1.0, 1.5, 1.5, "Wood", "Single Pane");
-        var createResponse = await PostJsonAsync("/api/windows", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/windows/{createdWindow!.Id}");
+        var response = await AuthenticatedDeleteAsync($"/api/windows/{createdWindow!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify the window is deleted
-        var getResponse = await Client.GetAsync($"/api/windows/{createdWindow.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/windows/{createdWindow.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -286,7 +286,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid();
 
         // Act
-        var response = await Client.DeleteAsync($"/api/windows/{nonExistentId}");
+        var response = await AuthenticatedDeleteAsync($"/api/windows/{nonExistentId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -322,7 +322,7 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/windows", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -377,7 +377,7 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/windows", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -425,8 +425,8 @@ public class WindowsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response1 = await PostJsonAsync("/api/windows", createRequest1);
-        var response2 = await PostJsonAsync("/api/windows", createRequest2);
+        var response1 = await AuthenticatedPostJsonAsync("/api/windows", createRequest1);
+        var response2 = await AuthenticatedPostJsonAsync("/api/windows", createRequest2);
 
         // Assert
         response1.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -450,7 +450,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var createRequest = TestDataBuilders.CreateWindowRequest("Timestamp Test", "Test timestamps", 1.0, 1.5, 1.5, "Wood", "Double Pane");
 
         // Act - Create window
-        var createResponse = await PostJsonAsync("/api/windows", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
         var createdWindow = await ReadJsonAsync<WindowResponse>(createResponse);
         var createdAt = createdWindow!.CreatedAt;
 
@@ -459,10 +459,10 @@ public class WindowsControllerTests : IntegrationTestBase
 
         // Act - Update window
         var updateRequest = TestDataBuilders.UpdateWindowRequest("Updated Timestamp Test", "Updated timestamps", 1.2, 1.8, 2.16, "Vinyl", "Triple Pane");
-        await PutJsonAsync($"/api/windows/{createdWindow.Id}", updateRequest);
+        await AuthenticatedPutJsonAsync($"/api/windows/{createdWindow.Id}", updateRequest);
 
         // Act - Get updated window
-        var getResponse = await Client.GetAsync($"/api/windows/{createdWindow.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/windows/{createdWindow.Id}");
         var updatedWindow = await ReadJsonAsync<WindowResponse>(getResponse);
 
         // Assert

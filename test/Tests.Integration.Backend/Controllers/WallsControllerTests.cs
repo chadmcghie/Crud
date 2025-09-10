@@ -20,7 +20,7 @@ public class WallsControllerTests : IntegrationTestBase
 
 
             // Act
-            var response = await Client.GetAsync("/api/walls");
+            var response = await AuthenticatedGetAsync("/api/walls");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -51,7 +51,7 @@ public class WallsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/walls", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -89,7 +89,7 @@ public class WallsControllerTests : IntegrationTestBase
         };
 
         // Act
-        var response = await PostJsonAsync("/api/walls", invalidRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/walls", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -109,7 +109,7 @@ public class WallsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/walls", invalidRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/walls", invalidRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -127,11 +127,11 @@ public class WallsControllerTests : IntegrationTestBase
             var wall1 = TestDataBuilders.CreateWallRequest("Wall 1", "First wall", 10.0, 3.0, 0.3, "Wood Frame");
             var wall2 = TestDataBuilders.CreateWallRequest("Wall 2", "Second wall", 8.0, 2.5, 0.25, "Steel Frame");
 
-            await PostJsonAsync("/api/walls", wall1);
-            await PostJsonAsync("/api/walls", wall2);
+            await AuthenticatedPostJsonAsync("/api/walls", wall1);
+            await AuthenticatedPostJsonAsync("/api/walls", wall2);
 
             // Act
-            var response = await Client.GetAsync("/api/walls");
+            var response = await AuthenticatedGetAsync("/api/walls");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -150,11 +150,11 @@ public class WallsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWallRequest("Test Wall", "Test description", 12.0, 3.5, 0.4, "Concrete");
-        var createResponse = await PostJsonAsync("/api/walls", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
 
         // Act
-        var response = await Client.GetAsync($"/api/walls/{createdWall!.Id}");
+        var response = await AuthenticatedGetAsync($"/api/walls/{createdWall!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -178,7 +178,7 @@ public class WallsControllerTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid();
 
         // Act
-        var response = await Client.GetAsync($"/api/walls/{nonExistentId}");
+        var response = await AuthenticatedGetAsync($"/api/walls/{nonExistentId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -190,7 +190,7 @@ public class WallsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWallRequest("Original Wall", "Original description", 10.0, 3.0, 0.3, "Wood Frame");
-        var createResponse = await PostJsonAsync("/api/walls", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
 
         var updateRequest = TestDataBuilders.UpdateWallRequest(
@@ -205,13 +205,13 @@ public class WallsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PutJsonAsync($"/api/walls/{createdWall!.Id}", updateRequest);
+        var response = await AuthenticatedPutJsonAsync($"/api/walls/{createdWall!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify the update
-        var getResponse = await Client.GetAsync($"/api/walls/{createdWall.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/walls/{createdWall.Id}");
         var updatedWall = await ReadJsonAsync<WallResponse>(getResponse);
 
         updatedWall.Should().NotBeNull();
@@ -236,7 +236,7 @@ public class WallsControllerTests : IntegrationTestBase
         var updateRequest = TestDataBuilders.UpdateWallRequest("Updated Wall", "Updated description", 15.0, 4.0, 0.4, "Steel Frame");
 
         // Act
-        var response = await PutJsonAsync($"/api/walls/{nonExistentId}", updateRequest);
+        var response = await AuthenticatedPutJsonAsync($"/api/walls/{nonExistentId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -248,17 +248,17 @@ public class WallsControllerTests : IntegrationTestBase
         // Arrange
 
         var createRequest = TestDataBuilders.CreateWallRequest("To Delete", "Wall to be deleted", 10.0, 3.0, 0.3, "Wood Frame");
-        var createResponse = await PostJsonAsync("/api/walls", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
 
         // Act
-        var response = await Client.DeleteAsync($"/api/walls/{createdWall!.Id}");
+        var response = await AuthenticatedDeleteAsync($"/api/walls/{createdWall!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify the wall is deleted
-        var getResponse = await Client.GetAsync($"/api/walls/{createdWall.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/walls/{createdWall.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -269,7 +269,7 @@ public class WallsControllerTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid();
 
         // Act
-        var response = await Client.DeleteAsync($"/api/walls/{nonExistentId}");
+        var response = await AuthenticatedDeleteAsync($"/api/walls/{nonExistentId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -296,7 +296,7 @@ public class WallsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/walls", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -321,7 +321,7 @@ public class WallsControllerTests : IntegrationTestBase
         var createRequest = TestDataBuilders.CreateWallRequest("Timestamp Test", "Test timestamps", 10.0, 3.0, 0.3, "Wood Frame");
 
         // Act - Create wall
-        var createResponse = await PostJsonAsync("/api/walls", createRequest);
+        var createResponse = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
         var createdWall = await ReadJsonAsync<WallResponse>(createResponse);
         var createdAt = createdWall!.CreatedAt;
 
@@ -330,10 +330,10 @@ public class WallsControllerTests : IntegrationTestBase
 
         // Act - Update wall
         var updateRequest = TestDataBuilders.UpdateWallRequest("Updated Timestamp Test", "Updated timestamps", 12.0, 3.5, 0.35, "Steel Frame");
-        await PutJsonAsync($"/api/walls/{createdWall.Id}", updateRequest);
+        await AuthenticatedPutJsonAsync($"/api/walls/{createdWall.Id}", updateRequest);
 
         // Act - Get updated wall
-        var getResponse = await Client.GetAsync($"/api/walls/{createdWall.Id}");
+        var getResponse = await AuthenticatedGetAsync($"/api/walls/{createdWall.Id}");
         var updatedWall = await ReadJsonAsync<WallResponse>(getResponse);
 
         // Assert
@@ -364,7 +364,7 @@ public class WallsControllerTests : IntegrationTestBase
         );
 
         // Act
-        var response = await PostJsonAsync("/api/walls", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);

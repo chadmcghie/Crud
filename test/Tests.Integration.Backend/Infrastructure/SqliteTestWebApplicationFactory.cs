@@ -156,6 +156,27 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         // Use the improved database reset logic with proper transaction handling
         await databaseService.ResetDatabaseAsync(_workerIndex);
     }
+    
+    public async Task SetUserRoleAsync(string email, string role)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user != null)
+        {
+            // The User entity uses string roles, not Role entities
+            // Clear existing roles and add the new one
+            var currentRoles = user.Roles.ToList();
+            foreach (var existingRole in currentRoles)
+            {
+                user.RemoveRole(existingRole);
+            }
+            user.AddRole(role);
+            
+            await dbContext.SaveChangesAsync();
+        }
+    }
 
     protected override void Dispose(bool disposing)
     {
