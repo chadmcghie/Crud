@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Api.Configuration;
 using Api.Extensions;
 using Api.Middleware;
 using App;
@@ -109,6 +110,9 @@ namespace Api
 
                 // 3) App & Infra
                 builder.Services.AddApplication();
+
+                // 4) Response Compression
+                builder.Services.AddResponseCompressionServices();
 
                 builder.Services.AddHttpClient("default")
                     .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
@@ -381,6 +385,9 @@ namespace Api
                 }
 
                 app.UseHttpsRedirection();
+                app.UseResponseCompression();
+                app.UseStaticFiles(); // Serve static files with compression
+                app.UseMiddleware<CompressionPerformanceMiddleware>();
                 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
                 app.UseRateLimiter();
