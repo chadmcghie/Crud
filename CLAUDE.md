@@ -232,3 +232,4 @@ npm run test:extended    # Extended test suite
 - E2E test fix discussion: @"docs\Misc\AI Discussions\claude-task-e2e-test-serial-execution-fix-20250828.md"
 - Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
+- No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
