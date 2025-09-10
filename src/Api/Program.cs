@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Api.Configuration;
+using Api.Extensions;
 using Api.Middleware;
 using App;
 using FluentValidation;
@@ -198,6 +199,9 @@ namespace Api
                     builder.Services.AddCachedRepositories();
                 }
 
+                // Add output caching
+                builder.Services.AddApiOutputCaching(builder.Configuration);
+
                 // Configure JWT Authentication
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
                 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -295,7 +299,17 @@ namespace Api
                             }));
                 });
 
-                builder.Services.AddControllers()
+                // Register the conditional request filter
+                builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+
+                // Register cache invalidation service
+                builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
+
+                builder.Services.AddControllers(options =>
+                    {
+                        // Add conditional request filter globally
+                        options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                    })
                     .AddJsonOptions(options =>
                     {
                         // Configure DateTime serialization to include UTC "Z" suffix
@@ -379,6 +393,13 @@ namespace Api
                 app.UseRateLimiter();
                 app.UseAuthentication();
                 app.UseAuthorization();
+
+                // Add output caching middleware
+                app.UseOutputCache();
+
+                // Note: Cache status and HTTP headers are handled within controllers
+                // to avoid conflicts with response streaming
+
                 app.MapControllers();
                 app.MapHealthChecks("/health");
 
