@@ -26,9 +26,10 @@ public class OutputCachingTests : IntegrationTestBase
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
-            // Act - Make multiple requests
-            var response1 = await Client.GetAsync("/api/people");
-            var response2 = await Client.GetAsync("/api/people");
+            // Act - Make multiple requests with authenticated client
+            var userClient = await CreateUserClientAsync();
+            var response1 = await userClient.GetAsync("/api/people");
+            var response2 = await userClient.GetAsync("/api/people");
 
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
@@ -52,9 +53,10 @@ public class OutputCachingTests : IntegrationTestBase
             DbContext.Roles.AddRange(role1, role2);
             await DbContext.SaveChangesAsync();
 
-            // Act - Make multiple requests
-            var response1 = await Client.GetAsync("/api/roles");
-            var response2 = await Client.GetAsync("/api/roles");
+            // Act - Make multiple requests with authenticated client
+            var userClient = await CreateUserClientAsync();
+            var response1 = await userClient.GetAsync("/api/roles");
+            var response2 = await userClient.GetAsync("/api/roles");
 
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
@@ -84,9 +86,10 @@ public class OutputCachingTests : IntegrationTestBase
             DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
 
-            // Act - Make multiple requests
-            var response1 = await Client.GetAsync("/api/walls");
-            var response2 = await Client.GetAsync("/api/walls");
+            // Act - Make multiple requests with authenticated client
+            var userClient = await CreateUserClientAsync();
+            var response1 = await userClient.GetAsync("/api/walls");
+            var response2 = await userClient.GetAsync("/api/walls");
 
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
@@ -117,9 +120,10 @@ public class OutputCachingTests : IntegrationTestBase
             DbContext.Windows.Add(window);
             await DbContext.SaveChangesAsync();
 
-            // Act - Make multiple requests
-            var response1 = await Client.GetAsync("/api/windows");
-            var response2 = await Client.GetAsync("/api/windows");
+            // Act - Make multiple requests with authenticated client
+            var userClient = await CreateUserClientAsync();
+            var response1 = await userClient.GetAsync("/api/windows");
+            var response2 = await userClient.GetAsync("/api/windows");
 
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
@@ -144,9 +148,10 @@ public class OutputCachingTests : IntegrationTestBase
 
             var personId = person.Id;
 
-            // Act - Make multiple requests for the same entity
-            var response1 = await Client.GetAsync($"/api/people/{personId}");
-            var response2 = await Client.GetAsync($"/api/people/{personId}");
+            // Act - Make multiple requests for the same entity with authenticated client
+            var userClient = await CreateUserClientAsync();
+            var response1 = await userClient.GetAsync($"/api/people/{personId}");
+            var response2 = await userClient.GetAsync($"/api/people/{personId}");
 
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
