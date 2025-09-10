@@ -36,10 +36,10 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
-        
+
         // Invalidate collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("roles", ct);
-        
+
         return CreatedAtAction(nameof(Get), new { id = r.Id }, mapper.Map<RoleDto>(r));
     }
 
@@ -47,10 +47,10 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
-        
+
         // Invalidate both entity and collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("roles", id, ct);
-        
+
         return NoContent();
     }
 
@@ -58,10 +58,10 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteRoleCommand(id), ct);
-        
+
         // Invalidate both entity and collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("roles", id, ct);
-        
+
         return NoContent();
     }
 }

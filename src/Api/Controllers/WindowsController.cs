@@ -57,10 +57,10 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
             request.HasScreens,
             request.HasStormWindows
         ), ct);
-        
+
         // Invalidate collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("windows", ct);
-        
+
         return CreatedAtAction(nameof(Get), new { id = w.Id }, mapper.Map<WindowResponse>(w));
     }
 
@@ -93,12 +93,12 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
                 request.HasScreens,
             request.HasStormWindows
         ), ct);
-        
-        // Invalidate both entity and collection cache
-        await cacheInvalidation.InvalidateEntityCacheAsync("windows", id, ct);
-        
-        return NoContent();
-    }
+
+            // Invalidate both entity and collection cache
+            await cacheInvalidation.InvalidateEntityCacheAsync("windows", id, ct);
+
+            return NoContent();
+        }
         catch (KeyNotFoundException)
         {
             return NotFound();
@@ -109,10 +109,10 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWindowCommand(id), ct);
-        
+
         // Invalidate both entity and collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("windows", id, ct);
-        
+
         return NoContent();
     }
 }

@@ -91,7 +91,7 @@ public class CacheInvalidationTests : IntegrationTestBase
             // Assert
             content1.Should().NotBe(content2, "Entity cache should be invalidated after PUT");
             content2.Should().Contain("Updated Name", "Entity should have updated name");
-            
+
             listContent1.Should().NotBe(listContent2, "Collection cache should be invalidated after PUT");
             listContent2.Should().Contain("Updated Name", "Collection should have updated name");
         });
@@ -167,8 +167,8 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create initial data
-            var wall1 = new Domain.Entities.Wall 
-            { 
+            var wall1 = new Domain.Entities.Wall
+            {
                 Name = "Wall 1",
                 AssemblyType = "Brick",
                 Length = 10,
@@ -184,8 +184,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content1 = await response1.Content.ReadAsStringAsync();
 
             // Act - Create new wall (should invalidate cache)
-            var createRequest = new 
-            { 
+            var createRequest = new
+            {
                 name = "Wall Two",
                 assemblyType = "Concrete",
                 length = 15.0,
@@ -212,8 +212,8 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create initial data
-            var window1 = new Domain.Entities.Window 
-            { 
+            var window1 = new Domain.Entities.Window
+            {
                 Name = "Window 1",
                 FrameType = "Aluminum",
                 GlazingType = "Double",
@@ -230,8 +230,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content1 = await response1.Content.ReadAsStringAsync();
 
             // Act - Create new window (should invalidate cache)
-            var createRequest = new 
-            { 
+            var createRequest = new
+            {
                 name = "Window Two",
                 frameType = "Vinyl",
                 glazingType = "Triple",

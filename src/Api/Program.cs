@@ -297,10 +297,10 @@ namespace Api
 
                 // Register the conditional request filter
                 builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
-                
+
                 // Register cache invalidation service
                 builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
-                
+
                 builder.Services.AddControllers(options =>
                     {
                         // Add conditional request filter globally
@@ -386,13 +386,13 @@ namespace Api
                 app.UseRateLimiter();
                 app.UseAuthentication();
                 app.UseAuthorization();
-                
+
                 // Add output caching middleware
                 app.UseOutputCache();
-                
+
                 // Note: Cache status and HTTP headers are handled within controllers
                 // to avoid conflicts with response streaming
-                
+
                 app.MapControllers();
                 app.MapHealthChecks("/health");
 

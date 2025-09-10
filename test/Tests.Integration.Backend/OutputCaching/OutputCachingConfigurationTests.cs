@@ -111,7 +111,7 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         // Assert
         outputCacheOptions.Should().NotBeNull();
         outputCacheOptions.Value.Should().NotBeNull();
-        
+
         // Verify durations from settings
         switch (policyName)
         {

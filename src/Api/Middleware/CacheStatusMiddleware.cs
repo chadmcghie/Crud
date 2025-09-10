@@ -38,7 +38,7 @@ public class CacheStatusMiddleware
                 isLikelyHit = timeSinceLast.TotalSeconds < 30;
             }
             _requestTracker[path] = DateTime.UtcNow;
-            
+
             // Clean up old entries
             if (_requestTracker.Count > 100)
             {
@@ -56,7 +56,7 @@ public class CacheStatusMiddleware
 
         // Call the next middleware
         await _next(context);
-        
+
         stopwatch.Stop();
 
         // Only add header for successful responses
@@ -64,12 +64,12 @@ public class CacheStatusMiddleware
         {
             // Simple heuristic: if this is a repeated request and it was fast, it's likely cached
             var cacheStatus = isLikelyHit && stopwatch.ElapsedMilliseconds < 50 ? "HIT" : "MISS";
-            
+
             // Add X-Cache header if not already present
             if (!context.Response.Headers.ContainsKey("X-Cache"))
             {
                 context.Response.Headers["X-Cache"] = cacheStatus;
-                _logger.LogDebug("Request to {Path} took {ElapsedMs}ms - Cache {Status}", 
+                _logger.LogDebug("Request to {Path} took {ElapsedMs}ms - Cache {Status}",
                     context.Request.Path, stopwatch.ElapsedMilliseconds, cacheStatus);
             }
         }

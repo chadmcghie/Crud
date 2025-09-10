@@ -46,9 +46,9 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await Client.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.NotModified, 
+            response2.StatusCode.Should().Be(HttpStatusCode.NotModified,
                 "Server should return 304 when ETag matches");
-            
+
             var content = await response2.Content.ReadAsStringAsync();
             content.Should().BeEmpty("304 response should have no body");
         });
@@ -70,9 +70,9 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response = await Client.SendAsync(request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK, 
+            response.StatusCode.Should().Be(HttpStatusCode.OK,
                 "Server should return 200 when ETag doesn't match");
-            
+
             var content = await response.Content.ReadAsStringAsync();
             content.Should().NotBeEmpty("200 response should have body");
         });
@@ -105,9 +105,9 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await Client.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.NotModified, 
+            response2.StatusCode.Should().Be(HttpStatusCode.NotModified,
                 "Server should return 304 when resource hasn't been modified since the given date");
-            
+
             var content = await response2.Content.ReadAsStringAsync();
             content.Should().BeEmpty("304 response should have no body");
         });
@@ -129,9 +129,9 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response = await Client.SendAsync(request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK, 
+            response.StatusCode.Should().Be(HttpStatusCode.OK,
                 "Server should return 200 when resource has been modified since the given date");
-            
+
             var content = await response.Content.ReadAsStringAsync();
             content.Should().NotBeEmpty("200 response should have body");
         });
@@ -166,7 +166,7 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await Client.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.NotModified, 
+            response2.StatusCode.Should().Be(HttpStatusCode.NotModified,
                 "Server should return 304 for list endpoints when ETag matches");
         });
     }
@@ -188,11 +188,11 @@ public class ConditionalRequestTests : IntegrationTestBase
             request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue("\"some-etag\""));
             request.Headers.IfModifiedSince = DateTimeOffset.UtcNow.AddMinutes(1);
             request.Content = JsonContent.Create(createRequest);
-            
+
             var response = await Client.SendAsync(request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Created, 
+            response.StatusCode.Should().Be(HttpStatusCode.Created,
                 "POST requests should ignore conditional headers");
         });
     }

@@ -27,7 +27,7 @@ public class RedisOutputCacheStore : IOutputCacheStore
         {
             var fullKey = $"{KeyPrefix}{key}";
             var value = await _database.StringGetAsync(fullKey);
-            
+
             if (value.IsNullOrEmpty)
             {
                 _logger.LogDebug("Output cache miss for key: {Key}", key);
@@ -50,7 +50,7 @@ public class RedisOutputCacheStore : IOutputCacheStore
         {
             var fullKey = $"{KeyPrefix}{key}";
             await _database.StringSetAsync(fullKey, value, validFor);
-            
+
             // Store tags for cache invalidation
             if (tags != null && tags.Length > 0)
             {
@@ -77,13 +77,13 @@ public class RedisOutputCacheStore : IOutputCacheStore
         {
             var tagKey = $"{KeyPrefix}tag:{tag}";
             var keys = await _database.SetMembersAsync(tagKey);
-            
+
             if (keys.Length > 0)
             {
                 var keysToDelete = keys.Select(k => (RedisKey)$"{KeyPrefix}{k}").ToArray();
                 await _database.KeyDeleteAsync(keysToDelete);
                 await _database.KeyDeleteAsync(tagKey);
-                
+
                 _logger.LogDebug("Evicted {Count} cache entries for tag: {Tag}", keys.Length, tag);
             }
         }

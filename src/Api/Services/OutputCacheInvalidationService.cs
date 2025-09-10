@@ -11,12 +11,12 @@ public interface IOutputCacheInvalidationService
     /// Invalidates cache entries for a specific entity type
     /// </summary>
     Task InvalidateEntityCacheAsync(string entityType, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Invalidates cache entries for a specific entity and its collection
     /// </summary>
     Task InvalidateEntityCacheAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Invalidates all cache entries with the given tags
     /// </summary>
@@ -45,7 +45,7 @@ public class OutputCacheInvalidationService : IOutputCacheInvalidationService
 
         var tag = entityType.ToLowerInvariant();
         _logger.LogDebug("Invalidating cache for entity type: {EntityType} with tag: {Tag}", entityType, tag);
-        
+
         try
         {
             await _cacheStore.EvictByTagAsync(tag, cancellationToken);
@@ -77,9 +77,9 @@ public class OutputCacheInvalidationService : IOutputCacheInvalidationService
             $"{entityType.ToLowerInvariant()}:{entityId}"
         };
 
-        _logger.LogDebug("Invalidating cache for entity: {EntityType}/{EntityId} with tags: {Tags}", 
+        _logger.LogDebug("Invalidating cache for entity: {EntityType}/{EntityId} with tags: {Tags}",
             entityType, entityId, string.Join(", ", tags));
-        
+
         await InvalidateByTagsAsync(tags, cancellationToken);
     }
 

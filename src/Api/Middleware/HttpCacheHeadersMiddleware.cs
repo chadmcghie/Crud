@@ -50,11 +50,11 @@ public class HttpCacheHeadersMiddleware
                 // Return 304 Not Modified
                 context.Response.StatusCode = 304;
                 context.Response.ContentLength = 0;
-                
+
                 // Add headers
                 context.Response.Headers.ETag = $"\"{etag}\"";
                 context.Response.Headers.LastModified = lastModified.ToString("R");
-                
+
                 _logger.LogDebug("Returning 304 Not Modified for {Path}", context.Request.Path);
                 return;
             }
@@ -73,7 +73,7 @@ public class HttpCacheHeadersMiddleware
     private void AddCacheHeaders(HttpContext context, string etag, DateTime lastModified)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
-        
+
         // Determine cache duration based on endpoint
         int maxAge;
         if (path.Contains("/people"))
@@ -89,13 +89,13 @@ public class HttpCacheHeadersMiddleware
 
         // Set Cache-Control header
         context.Response.Headers.CacheControl = $"public, max-age={maxAge}";
-        
+
         // Set ETag header
         context.Response.Headers.ETag = $"\"{etag}\"";
-        
+
         // Set Last-Modified header
         context.Response.Headers.LastModified = lastModified.ToString("R");
-        
+
         // Set Vary header to indicate cache varies by these headers
         context.Response.Headers.Vary = "Accept, Accept-Encoding";
     }

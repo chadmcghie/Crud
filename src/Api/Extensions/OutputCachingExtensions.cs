@@ -106,7 +106,7 @@ public static class OutputCachingExtensions
     {
         return app.UseMiddleware<HttpCacheHeadersMiddleware>();
     }
-    
+
     /// <summary>
     /// Adds middleware to track output cache hits
     /// </summary>
@@ -116,7 +116,7 @@ public static class OutputCachingExtensions
         {
             // Set initial cache status to MISS
             context.Items["CacheHit"] = false;
-            
+
             // Hook into the output cache feature if available
             var outputCacheFeature = context.Features.Get<IOutputCacheFeature>();
             if (outputCacheFeature != null)
@@ -134,7 +134,7 @@ public static class OutputCachingExtensions
                     return Task.CompletedTask;
                 });
             }
-            
+
             await next();
         });
     }

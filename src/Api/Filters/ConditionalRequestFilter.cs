@@ -43,7 +43,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
 
         // Generate ETag from the response data
         var etag = GenerateETag(okResult.Value);
-        
+
         // Determine Last-Modified date
         var lastModified = GetLastModified(okResult.Value);
 
@@ -67,7 +67,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
             {
                 if (lastModified.HasValue && lastModified.Value <= ifModifiedSince)
                 {
-                    _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since {Date})", 
+                    _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since {Date})",
                         request.Path, ifModifiedSince);
                     SetNotModifiedResponse(context, etag, lastModified);
                     return;
@@ -88,7 +88,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
         // Serialize the object to JSON and compute hash
         var json = JsonSerializer.Serialize(data);
         var bytes = Encoding.UTF8.GetBytes(json);
-        
+
         using var md5 = MD5.Create();
         var hash = md5.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
@@ -98,7 +98,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
     {
         // Try to extract UpdatedAt or CreatedAt from the entity
         var type = data.GetType();
-        
+
         // Check if it's a collection
         if (data is System.Collections.IEnumerable enumerable && !(data is string))
         {
@@ -113,17 +113,18 @@ public class ConditionalRequestFilter : IAsyncActionFilter
             }
             return latestDate;
         }
-        
+
         // Single entity
         return GetEntityDate(data);
     }
 
     private static DateTimeOffset? GetEntityDate(object entity)
     {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         var type = entity.GetType();
-        
+
         // Try UpdatedAt first
         var updatedAtProp = type.GetProperty("UpdatedAt");
         if (updatedAtProp != null)
@@ -134,7 +135,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
             if (value is DateTimeOffset dto)
                 return dto;
         }
-        
+
         // Fall back to CreatedAt
         var createdAtProp = type.GetProperty("CreatedAt");
         if (createdAtProp != null)
@@ -145,7 +146,7 @@ public class ConditionalRequestFilter : IAsyncActionFilter
             if (value is DateTimeOffset dto)
                 return dto;
         }
-        
+
         // Default to current time if no timestamp found
         return DateTimeOffset.UtcNow;
     }
@@ -154,11 +155,13 @@ public class ConditionalRequestFilter : IAsyncActionFilter
     {
         foreach (var value in ifNoneMatch)
         {
-            if (value == "*") return true;
-            
+            if (value == "*")
+                return true;
+
             // Remove quotes and weak indicator for comparison
             var cleanValue = value?.Trim().Trim('"').TrimStart('W', '/').Trim('"');
-            if (cleanValue == etag) return true;
+            if (cleanValue == etag)
+                return true;
         }
         return false;
     }
@@ -166,17 +169,17 @@ public class ConditionalRequestFilter : IAsyncActionFilter
     private static void SetNotModifiedResponse(ActionExecutingContext context, string etag, DateTimeOffset? lastModified)
     {
         var response = context.HttpContext.Response;
-        
+
         // Set 304 status
         context.Result = new StatusCodeResult(StatusCodes.Status304NotModified);
-        
+
         // Add headers
         response.Headers.ETag = $"\"{etag}\"";
         if (lastModified.HasValue)
         {
             response.Headers.LastModified = lastModified.Value.ToString("R");
         }
-        
+
         // Clear any content
         response.ContentLength = 0;
     }

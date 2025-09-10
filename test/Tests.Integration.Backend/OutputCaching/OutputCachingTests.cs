@@ -29,10 +29,10 @@ public class OutputCachingTests : IntegrationTestBase
             // Act - Make multiple requests
             var response1 = await Client.GetAsync("/api/people");
             var response2 = await Client.GetAsync("/api/people");
-            
+
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
-            
+
             var content1 = await response1.Content.ReadAsStringAsync();
             var content2 = await response2.Content.ReadAsStringAsync();
 
@@ -55,10 +55,10 @@ public class OutputCachingTests : IntegrationTestBase
             // Act - Make multiple requests
             var response1 = await Client.GetAsync("/api/roles");
             var response2 = await Client.GetAsync("/api/roles");
-            
+
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
-            
+
             var content1 = await response1.Content.ReadAsStringAsync();
             var content2 = await response2.Content.ReadAsStringAsync();
 
@@ -73,8 +73,8 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var wall = new Domain.Entities.Wall 
-            { 
+            var wall = new Domain.Entities.Wall
+            {
                 Name = "Test Wall",
                 AssemblyType = "Brick",
                 Length = 10,
@@ -87,10 +87,10 @@ public class OutputCachingTests : IntegrationTestBase
             // Act - Make multiple requests
             var response1 = await Client.GetAsync("/api/walls");
             var response2 = await Client.GetAsync("/api/walls");
-            
+
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
-            
+
             var content1 = await response1.Content.ReadAsStringAsync();
             var content2 = await response2.Content.ReadAsStringAsync();
 
@@ -105,8 +105,8 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var window = new Domain.Entities.Window 
-            { 
+            var window = new Domain.Entities.Window
+            {
                 Name = "Test Window",
                 FrameType = "Aluminum",
                 GlazingType = "Double",
@@ -120,10 +120,10 @@ public class OutputCachingTests : IntegrationTestBase
             // Act - Make multiple requests
             var response1 = await Client.GetAsync("/api/windows");
             var response2 = await Client.GetAsync("/api/windows");
-            
+
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
-            
+
             var content1 = await response1.Content.ReadAsStringAsync();
             var content2 = await response2.Content.ReadAsStringAsync();
 
@@ -141,16 +141,16 @@ public class OutputCachingTests : IntegrationTestBase
             var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
-            
+
             var personId = person.Id;
 
             // Act - Make multiple requests for the same entity
             var response1 = await Client.GetAsync($"/api/people/{personId}");
             var response2 = await Client.GetAsync($"/api/people/{personId}");
-            
+
             response1.EnsureSuccessStatusCode();
             response2.EnsureSuccessStatusCode();
-            
+
             var content1 = await response1.Content.ReadAsStringAsync();
             var content2 = await response2.Content.ReadAsStringAsync();
 
