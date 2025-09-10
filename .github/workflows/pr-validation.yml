@@ -1,7 +1,7 @@
 name: Pull Request Validation
 
-# This workflow handles ALL testing for branches with open PRs
-# to avoid duplicate test runs with feature-branch-tests.yml
+# This workflow handles comprehensive testing when PRs are opened or updated
+# It runs in addition to feature-branch-tests.yml for thorough validation
 on:
   pull_request:
     branches: [ main, dev, staging ]
