@@ -78,7 +78,7 @@ public class CompressionPerformanceMiddleware
                 "Response not compressed: {ContentType} | Size: {Size} bytes | Path: {Path}",
                 context.Response.ContentType ?? "unknown",
                 originalSize,
-                context.Request.Path);
+                SanitizeForLog(context.Request.Path));
         }
 
         // Copy the response back to the original stream
@@ -103,5 +103,16 @@ public class CompressionPerformanceMiddleware
 
         // Brotli typically achieves 10-20% better compression than gzip
         return encoding.Contains("br") ? Math.Min(baseRatio + 10.0, 85.0) : baseRatio;
+    }
+
+    /// <summary>
+    /// Sanitizes a string for safe logging by removing potentially log-forging characters.
+    /// </summary>
+    private static string SanitizeForLog(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+        // Remove CR, LF, form feed, and tab characters (add more if paranoid)
+        return input.Replace("\r", "").Replace("\n", "").Replace("\f", "").Replace("\t", "");
     }
 }
