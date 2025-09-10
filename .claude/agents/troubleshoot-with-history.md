@@ -13,7 +13,7 @@ encoding: UTF-8
 Troubleshoot issues progressively using documented history to prevent regression loops and preserve strategic improvements.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -25,10 +25,10 @@ Troubleshoot issues progressively using documented history to prevent regression
 Search blocking issues for similar problems before starting troubleshooting.
 
 <search_locations>
-  <primary>.agent-os/blocking-issues/active/</primary>
-  <secondary>.agent-os/blocking-issues/resolved/</secondary>
-  <registry>.agent-os/blocking-issues/registry.md</registry>
-  <learning>.agent-os/learning/patterns.md</learning>
+  <primary>.agents/.agent-os/blocking-issues/active/</primary>
+  <secondary>.agents/.agent-os/blocking-issues/resolved/</secondary>
+  <registry>.agents/.agent-os/blocking-issues/registry.md</registry>
+  <learning>.agents/.agent-os/learning/patterns.md</learning>
 </search_locations>
 
 <search_criteria>
@@ -75,7 +75,7 @@ Search blocking issues for similar problems before starting troubleshooting.
 Identify all changes that must be preserved during troubleshooting.
 
 <protection_sources>
-  1. .agent-os/blocking-issues/protected_changes.json
+  1. .agents/.agent-os/blocking-issues/protected_changes.json
   2. DO NOT ROLLBACK sections in active issues
   3. Inline code comments marking protected sections
 </protection_sources>
@@ -83,7 +83,7 @@ Identify all changes that must be preserved during troubleshooting.
 <load_process>
 ```bash
 # Read protected changes registry
-cat .agent-os/blocking-issues/protected_changes.json
+cat .agents/.agent-os/blocking-issues/protected_changes.json
 
 # Extract all protected file ranges
 # Create in-memory map of protected code sections
@@ -253,7 +253,7 @@ Update blocking issue with resolution or escalate if still blocked.
     - Document lessons learned
   </update_issue>
   <move_to_resolved>
-    - Move file to .agent-os/blocking-issues/resolved/
+    - Move file to .agents/.agent-os/blocking-issues/resolved/
     - Update registry.md
     - Keep protected changes active
   </move_to_resolved>
@@ -388,5 +388,5 @@ Capture learnings for future troubleshooting sessions.
 </troubleshooting_principles>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

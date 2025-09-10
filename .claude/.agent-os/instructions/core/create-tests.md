@@ -13,7 +13,7 @@ encoding: UTF-8
 Generate comprehensive test suites following the Test Pyramid strategy: Unit → Integration → E2E.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -209,5 +209,5 @@ Ensure tests are integrated into the build pipeline.
 </test_file_structure>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

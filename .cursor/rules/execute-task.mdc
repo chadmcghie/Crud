@@ -3,7 +3,7 @@ alwaysApply: true
 ---
 # Execute Task
 
-Execute the next task.
+Execute a single task from a task list
 
 Refer to the instructions located in this file:
-@.agents/.agent-os/instructions/core/execute-tasks.md
+@.agents/.agent-os/instructions/core/execute-task.md

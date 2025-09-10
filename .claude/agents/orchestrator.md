@@ -247,7 +247,7 @@ graph TD
 
 ## Learning Cache Integration
 
-The orchestrator consults the learning cache at `.agent-os/learning/patterns.md` for:
+The orchestrator consults the learning cache at `.agents/.agent-os/learning/patterns.md` for:
 - Known error patterns and solutions
 - Memory references for important decisions
 - Common troubleshooting approaches
