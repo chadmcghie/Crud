@@ -1,3 +1,0 @@
-# Spec Summary (Lite)
-
-Implement secure backend password reset functionality with email verification to complete the authentication system. The feature includes three API endpoints (forgot-password, reset-password, validate-reset-token), cryptographically secure token generation with 1-hour expiration, email service integration, and rate limiting to prevent abuse. This backend implementation will integrate with the already-completed Angular frontend password reset UI.
