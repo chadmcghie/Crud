@@ -13,17 +13,17 @@ public static class AuthenticationTestHelper
     /// Creates a test user and returns an authenticated HttpClient
     /// </summary>
     public static async Task<HttpClient> CreateAuthenticatedClientAsync(
-        ITestWebApplicationFactory factory, 
+        ITestWebApplicationFactory factory,
         string role = "User",
         string? email = null,
         string? password = null)
     {
         var client = factory.CreateClient();
-        
+
         // Use provided credentials or generate test ones
         email ??= $"test-{Guid.NewGuid()}@example.com";
         password ??= "Test123!@#";
-        
+
         // Register the user
         var registerCommand = new RegisterUserCommand
         {
@@ -32,12 +32,12 @@ public static class AuthenticationTestHelper
             FirstName = "Test",
             LastName = "User"
         };
-        
+
         var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
         registerResponse.EnsureSuccessStatusCode();
-        
+
         var tokenResponse = await registerResponse.Content.ReadFromJsonAsync<TokenResponse>();
-        
+
         // If admin role is requested, we need to update the user's role
         // This would typically be done through a separate admin endpoint
         if (role == "Admin")
@@ -46,15 +46,15 @@ public static class AuthenticationTestHelper
             // This should be done through the factory's database context
             await factory.SetUserRoleAsync(email, "Admin");
         }
-        
+
         // Create a new client with the authentication token
         var authenticatedClient = factory.CreateClient();
-        authenticatedClient.DefaultRequestHeaders.Authorization = 
+        authenticatedClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", tokenResponse!.AccessToken);
-        
+
         return authenticatedClient;
     }
-    
+
     /// <summary>
     /// Creates an admin user and returns an authenticated HttpClient
     /// </summary>
@@ -62,7 +62,7 @@ public static class AuthenticationTestHelper
     {
         return await CreateAuthenticatedClientAsync(factory, "Admin");
     }
-    
+
     /// <summary>
     /// Creates a regular user and returns an authenticated HttpClient
     /// </summary>
@@ -70,7 +70,7 @@ public static class AuthenticationTestHelper
     {
         return await CreateAuthenticatedClientAsync(factory, "User");
     }
-    
+
     /// <summary>
     /// Adds authentication header to an existing HttpClient
     /// </summary>
@@ -81,14 +81,14 @@ public static class AuthenticationTestHelper
             Email = email,
             Password = password
         };
-        
+
         var response = await client.PostAsJsonAsync("/api/auth/login", loginCommand);
         response.EnsureSuccessStatusCode();
-        
+
         var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
         return tokenResponse!.AccessToken!;
     }
-    
+
     /// <summary>
     /// Registers a test user and returns the token
     /// </summary>
@@ -99,7 +99,7 @@ public static class AuthenticationTestHelper
     {
         email ??= $"test-{Guid.NewGuid()}@example.com";
         password ??= "Test123!@#";
-        
+
         var registerCommand = new RegisterUserCommand
         {
             Email = email,
@@ -107,10 +107,10 @@ public static class AuthenticationTestHelper
             FirstName = "Test",
             LastName = "User"
         };
-        
+
         var response = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
         response.EnsureSuccessStatusCode();
-        
+
         var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
         return tokenResponse!.AccessToken!;
     }

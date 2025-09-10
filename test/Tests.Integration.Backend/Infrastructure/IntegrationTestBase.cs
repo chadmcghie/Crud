@@ -214,7 +214,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     {
         return await AuthenticationTestHelper.CreateAuthenticatedClientAsync(Factory, role);
     }
-    
+
     /// <summary>
     /// Creates an authenticated client with admin privileges
     /// </summary>
@@ -222,7 +222,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     {
         return await AuthenticationTestHelper.CreateAdminClientAsync(Factory);
     }
-    
+
     /// <summary>
     /// Creates an authenticated client with regular user privileges
     /// </summary>
@@ -230,14 +230,14 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
     {
         return await AuthenticationTestHelper.CreateUserClientAsync(Factory);
     }
-    
+
     /// <summary>
     /// Adds authentication to the default client
     /// </summary>
     protected async Task AuthenticateClientAsync(string role = "User")
     {
         var token = await AuthenticationTestHelper.RegisterAndGetTokenAsync(Client);
-        
+
         if (role == "Admin")
         {
             // Need to get the email from the token or registration process
@@ -247,11 +247,11 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         }
         else
         {
-            Client.DefaultRequestHeaders.Authorization = 
+            Client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
         }
     }
-    
+
     /// <summary>
     /// Performs an authenticated POST request with admin privileges
     /// </summary>
@@ -260,7 +260,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         var adminClient = await CreateAdminClientAsync();
         return await adminClient.PostAsJsonAsync(requestUri, content);
     }
-    
+
     /// <summary>
     /// Performs an authenticated PUT request with admin privileges
     /// </summary>
@@ -269,7 +269,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         var adminClient = await CreateAdminClientAsync();
         return await adminClient.PutAsJsonAsync(requestUri, content);
     }
-    
+
     /// <summary>
     /// Performs an authenticated DELETE request with admin privileges
     /// </summary>
@@ -278,7 +278,7 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         var adminClient = await CreateAdminClientAsync();
         return await adminClient.DeleteAsync(requestUri);
     }
-    
+
     /// <summary>
     /// Performs an authenticated GET request with user privileges
     /// </summary>

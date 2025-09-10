@@ -372,7 +372,7 @@ public class PeopleControllerTests : IntegrationTestBase
             personRole.Description.Should().Be("Test role");
         });
     }
-    
+
     [Fact]
     public async Task GET_People_Should_Return_401_Without_Authentication()
     {
@@ -385,7 +385,7 @@ public class PeopleControllerTests : IntegrationTestBase
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         });
     }
-    
+
     [Fact]
     public async Task POST_People_Should_Return_401_Without_Authentication()
     {
@@ -401,7 +401,7 @@ public class PeopleControllerTests : IntegrationTestBase
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         });
     }
-    
+
     [Fact]
     public async Task POST_People_Should_Return_403_For_Non_Admin_User()
     {
@@ -418,7 +418,7 @@ public class PeopleControllerTests : IntegrationTestBase
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         });
     }
-    
+
     [Fact]
     public async Task DELETE_People_Should_Return_403_For_Non_Admin_User()
     {
@@ -427,7 +427,7 @@ public class PeopleControllerTests : IntegrationTestBase
             // Arrange
             var adminClient = await CreateAdminClientAsync();
             var userClient = await CreateUserClientAsync();
-            
+
             // Create a person as admin
             var createRequest = TestDataBuilders.CreatePersonRequest("John Doe", "123-456-7890");
             var createResponse = await adminClient.PostAsJsonAsync("/api/people", createRequest);

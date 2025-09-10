@@ -156,12 +156,12 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         // Use the improved database reset logic with proper transaction handling
         await databaseService.ResetDatabaseAsync(_workerIndex);
     }
-    
+
     public async Task SetUserRoleAsync(string email, string role)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
+
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user != null)
         {
@@ -173,7 +173,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 user.RemoveRole(existingRole);
             }
             user.AddRole(role);
-            
+
             await dbContext.SaveChangesAsync();
         }
     }
