@@ -4,6 +4,7 @@ using App.Features.Roles;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Controllers;
 
@@ -13,6 +14,7 @@ namespace Api.Controllers;
 public class RolesController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = "RolesPolicy")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
@@ -20,6 +22,7 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = "RolesPolicy")]
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);

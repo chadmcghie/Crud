@@ -3,6 +3,7 @@ using App.Features.People;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace Api.Controllers;
 public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = "PeoplePolicy")]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListPeopleQuery(), ct);
@@ -19,6 +21,7 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     }
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = "PeoplePolicy")]
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
         var p = await mediator.Send(new GetPersonQuery(id), ct);

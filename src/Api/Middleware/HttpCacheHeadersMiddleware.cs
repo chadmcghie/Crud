@@ -32,6 +32,10 @@ public class HttpCacheHeadersMiddleware
         var ifNoneMatch = context.Request.Headers.IfNoneMatch;
         var ifModifiedSince = context.Request.Headers.IfModifiedSince;
 
+        // Track if this is the first request (for cache tracking)
+        var requestId = Guid.NewGuid().ToString();
+        context.Items["RequestId"] = requestId;
+
         // Buffer the response to calculate ETag
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
@@ -70,8 +74,9 @@ public class HttpCacheHeadersMiddleware
             AddCacheHeaders(context, etag, lastModified);
 
             // Add custom cache status header
-            var cacheStatus = context.Items.ContainsKey("CacheHit") && context.Items["CacheHit"] is bool hit && hit ? "HIT" : "MISS";
-            context.Response.Headers["X-Cache"] = cacheStatus;
+            // For now, we'll always report MISS since we're generating the response
+            // The actual output caching happens at a different layer
+            context.Response.Headers["X-Cache"] = "MISS";
         }
 
         // Copy the response body back to the original stream

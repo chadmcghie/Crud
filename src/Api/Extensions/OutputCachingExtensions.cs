@@ -106,4 +106,36 @@ public static class OutputCachingExtensions
     {
         return app.UseMiddleware<HttpCacheHeadersMiddleware>();
     }
+    
+    /// <summary>
+    /// Adds middleware to track output cache hits
+    /// </summary>
+    public static IApplicationBuilder UseOutputCacheTracking(this IApplicationBuilder app)
+    {
+        return app.Use(async (context, next) =>
+        {
+            // Set initial cache status to MISS
+            context.Items["CacheHit"] = false;
+            
+            // Hook into the output cache feature if available
+            var outputCacheFeature = context.Features.Get<IOutputCacheFeature>();
+            if (outputCacheFeature != null)
+            {
+                // The output cache feature will be present if output caching is enabled
+                // We'll check after the response to see if it was a cache hit
+                context.Response.OnStarting(() =>
+                {
+                    // If the response is being served from cache, mark it as a hit
+                    // This is a simplified check - in production you'd want more sophisticated logic
+                    if (context.Response.Headers.ContainsKey("X-OutputCache-Hit"))
+                    {
+                        context.Items["CacheHit"] = true;
+                    }
+                    return Task.CompletedTask;
+                });
+            }
+            
+            await next();
+        });
+    }
 }

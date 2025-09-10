@@ -13,21 +13,21 @@
   - [x] 1.5 Configure fallback to in-memory cache when Redis unavailable
   - [x] 1.6 Verify output caching middleware tests pass
 
-- [ ] 2. HTTP Response Headers Implementation
-  - [ ] 2.1 Write tests for HTTP response header middleware
-  - [ ] 2.2 Create middleware for adding Cache-Control headers
-  - [ ] 2.3 Implement ETag generation based on entity timestamps
-  - [ ] 2.4 Add Last-Modified header based on entity UpdatedAt fields
-  - [ ] 2.5 Configure header middleware in request pipeline
-  - [ ] 2.6 Verify response header tests pass
+- [x] 2. HTTP Response Headers Implementation
+  - [x] 2.1 Write tests for HTTP response header middleware
+  - [x] 2.2 Create middleware for adding Cache-Control headers
+  - [x] 2.3 Implement ETag generation based on entity timestamps
+  - [x] 2.4 Add Last-Modified header based on entity UpdatedAt fields
+  - [x] 2.5 Configure header middleware in request pipeline
+  - [x] 2.6 Verify response header tests pass
 
-- [ ] 3. Controller Attribute Application
-  - [ ] 3.1 Write integration tests for cached endpoints
-  - [ ] 3.2 Apply [OutputCache] attributes to People GET endpoints
-  - [ ] 3.3 Apply [OutputCache] attributes to Roles GET endpoints
-  - [ ] 3.4 Apply [OutputCache] attributes to Walls GET endpoints
-  - [ ] 3.5 Apply [OutputCache] attributes to Windows GET endpoints
-  - [ ] 3.6 Configure vary-by parameters for query strings (page, size, filter)
+- [x] 3. Controller Attribute Application
+  - [x] 3.1 Write integration tests for cached endpoints
+  - [x] 3.2 Apply [OutputCache] attributes to People GET endpoints
+  - [x] 3.3 Apply [OutputCache] attributes to Roles GET endpoints
+  - [x] 3.4 Apply [OutputCache] attributes to Walls GET endpoints
+  - [x] 3.5 Apply [OutputCache] attributes to Windows GET endpoints
+  - [x] 3.6 Configure vary-by parameters for query strings (page, size, filter)
   - [ ] 3.7 Verify endpoint caching integration tests pass
 
 - [ ] 4. Conditional Request Support

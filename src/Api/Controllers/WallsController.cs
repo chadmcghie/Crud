@@ -3,6 +3,7 @@ using App.Features.Walls;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace Api.Controllers;
 public class WallsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWallsQuery(), ct);
@@ -19,6 +21,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);

@@ -3,6 +3,7 @@ using App.Features.Windows;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace Api.Controllers;
 public class WindowsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWindowsQuery(), ct);
@@ -19,6 +21,7 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
+    [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWindowQuery(id), ct);
