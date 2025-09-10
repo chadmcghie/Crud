@@ -298,6 +298,9 @@ namespace Api
                 // Register the conditional request filter
                 builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
                 
+                // Register cache invalidation service
+                builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
+                
                 builder.Services.AddControllers(options =>
                     {
                         // Add conditional request filter globally

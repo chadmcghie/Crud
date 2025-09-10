@@ -38,14 +38,14 @@
   - [x] 4.5 Create action filter for conditional request handling
   - [x] 4.6 Verify conditional request tests pass
 
-- [ ] 5. Cache Invalidation Integration
-  - [ ] 5.1 Write tests for cache invalidation on mutations
-  - [ ] 5.2 Extend POST endpoint handlers to invalidate collection cache
-  - [ ] 5.3 Extend PUT endpoint handlers to invalidate entity and collection cache
-  - [ ] 5.4 Extend DELETE endpoint handlers to invalidate entity and collection cache
-  - [ ] 5.5 Create cache invalidation service for output cache
-  - [ ] 5.6 Integrate with existing MediatR command handlers
-  - [ ] 5.7 Verify cache invalidation tests pass
+- [x] 5. Cache Invalidation Integration
+  - [x] 5.1 Write tests for cache invalidation on mutations
+  - [x] 5.2 Extend POST endpoint handlers to invalidate collection cache
+  - [x] 5.3 Extend PUT endpoint handlers to invalidate entity and collection cache
+  - [x] 5.4 Extend DELETE endpoint handlers to invalidate entity and collection cache
+  - [x] 5.5 Create cache invalidation service for output cache
+  - [x] 5.6 Integrate with existing MediatR command handlers
+  - [x] 5.7 Verify cache invalidation tests pass
 
 - [ ] 6. Performance Testing & Validation
   - [ ] 6.1 Write E2E tests for complete caching workflow

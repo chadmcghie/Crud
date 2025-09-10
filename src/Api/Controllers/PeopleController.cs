@@ -5,12 +5,14 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
+using Api.Services;
+
 namespace Api.Controllers;
 
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBase
+public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
     [OutputCache(PolicyName = "PeoplePolicy")]
@@ -34,6 +36,10 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request, CancellationToken ct)
     {
         var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
+        
+        // Invalidate collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("people", ct);
+        
         return CreatedAtAction(nameof(Get), new { id = p.Id }, mapper.Map<PersonResponse>(p));
     }
 
@@ -41,6 +47,10 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
+        
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("people", id, ct);
+        
         return NoContent();
     }
 
@@ -48,6 +58,10 @@ public class PeopleController(IMediator mediator, IMapper mapper) : ControllerBa
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeletePersonCommand(id), ct);
+        
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("people", id, ct);
+        
         return NoContent();
     }
 }

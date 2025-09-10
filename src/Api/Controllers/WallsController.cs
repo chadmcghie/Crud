@@ -1,4 +1,5 @@
 using Api.Dtos;
+using Api.Services;
 using App.Features.Walls;
 using AutoMapper;
 using MediatR;
@@ -10,7 +11,7 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-public class WallsController(IMediator mediator, IMapper mapper) : ControllerBase
+public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
     [OutputCache(PolicyName = "WallsPolicy")]
@@ -47,6 +48,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
             request.Orientation,
             request.Location
         ), ct);
+        
+        // Invalidate collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", ct);
+        
         return CreatedAtAction(nameof(Get), new { id = w.Id }, mapper.Map<WallResponse>(w));
     }
 
@@ -68,6 +73,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
             request.Orientation,
             request.Location
         ), ct);
+        
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", id, ct);
+        
         return NoContent();
     }
 
@@ -75,6 +84,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWallCommand(id), ct);
+        
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", id, ct);
+        
         return NoContent();
     }
 }
