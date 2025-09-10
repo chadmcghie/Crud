@@ -46,10 +46,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Download dev artifact from PR validation
+    - name: Download PR build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
+        
+    - name: Download feature build artifacts (fallback)
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+      continue-on-error: true
         
     - name: Verify artifact and version
       run: |
@@ -156,10 +163,17 @@ jobs:
     - name: Checkout code (for package.json and Angular config only)
       uses: actions/checkout@v4
       
-    - name: Download dev artifact from PR validation
+    - name: Download PR build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: dev-artifact-${{ github.sha }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
+        
+    - name: Download feature build artifacts (fallback)
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+      continue-on-error: true
         
     - name: Setup Node.js (for Angular build only)
       uses: actions/setup-node@v4
