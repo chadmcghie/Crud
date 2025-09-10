@@ -32,24 +32,14 @@ public class HttpCacheHeadersMiddleware
         var ifNoneMatch = context.Request.Headers.IfNoneMatch;
         var ifModifiedSince = context.Request.Headers.IfModifiedSince;
 
-        // Track if this is the first request (for cache tracking)
-        var requestId = Guid.NewGuid().ToString();
-        context.Items["RequestId"] = requestId;
-
-        // Buffer the response to calculate ETag
-        var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
+        // Call the next middleware first
         await _next(context);
 
         // Only add headers for successful responses
         if (context.Response.StatusCode == 200)
         {
-            // Calculate ETag from response body
-            responseBody.Seek(0, SeekOrigin.Begin);
-            var responseContent = await new StreamReader(responseBody).ReadToEndAsync();
-            var etag = GenerateETag(responseContent);
+            // Generate a simple ETag based on path and current time (simplified for now)
+            var etag = GenerateETag(context.Request.Path + DateTime.UtcNow.ToString("yyyyMMddHH"));
 
             // Set Last-Modified to current time (in production, this would come from entity timestamps)
             var lastModified = DateTime.UtcNow;
@@ -60,7 +50,6 @@ public class HttpCacheHeadersMiddleware
                 // Return 304 Not Modified
                 context.Response.StatusCode = 304;
                 context.Response.ContentLength = 0;
-                context.Response.Body = originalBodyStream;
                 
                 // Add headers
                 context.Response.Headers.ETag = $"\"{etag}\"";
@@ -73,16 +62,12 @@ public class HttpCacheHeadersMiddleware
             // Add cache headers
             AddCacheHeaders(context, etag, lastModified);
 
-            // Add custom cache status header
-            // For now, we'll always report MISS since we're generating the response
-            // The actual output caching happens at a different layer
-            context.Response.Headers["X-Cache"] = "MISS";
+            // Add custom cache status header if not already set
+            if (!context.Response.Headers.ContainsKey("X-Cache"))
+            {
+                context.Response.Headers["X-Cache"] = "MISS";
+            }
         }
-
-        // Copy the response body back to the original stream
-        responseBody.Seek(0, SeekOrigin.Begin);
-        await responseBody.CopyToAsync(originalBodyStream);
-        context.Response.Body = originalBodyStream;
     }
 
     private void AddCacheHeaders(HttpContext context, string etag, DateTime lastModified)

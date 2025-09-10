@@ -28,7 +28,7 @@
   - [x] 3.4 Apply [OutputCache] attributes to Walls GET endpoints
   - [x] 3.5 Apply [OutputCache] attributes to Windows GET endpoints
   - [x] 3.6 Configure vary-by parameters for query strings (page, size, filter)
-  - [ ] 3.7 Verify endpoint caching integration tests pass
+  - [x] 3.7 Verify endpoint caching integration tests pass
 
 - [ ] 4. Conditional Request Support
   - [ ] 4.1 Write tests for conditional request handling

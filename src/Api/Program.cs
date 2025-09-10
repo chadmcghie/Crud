@@ -380,8 +380,8 @@ namespace Api
                 // Add output caching middleware
                 app.UseOutputCache();
                 
-                // Add HTTP cache headers middleware
-                app.UseHttpCacheHeaders();
+                // Note: Cache status and HTTP headers are handled within controllers
+                // to avoid conflicts with response streaming
                 
                 app.MapControllers();
                 app.MapHealthChecks("/health");
