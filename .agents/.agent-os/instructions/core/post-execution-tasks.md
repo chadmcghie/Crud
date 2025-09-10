@@ -157,7 +157,7 @@ Use the project-manager subagent to read the current spec's tasks.md file and ve
 
 ### Step 5: Roadmap Progress Update (conditional)
 
-Use the project-manager subagent to read @.agents/.agent-os/product/roadmap.md and mark roadmap items as complete with [x] ONLY IF the executed tasks have completed any roadmap item(s) and the spec completes that item.
+Use the project-manager subagent to read @docs/03-Development/product/roadmap.md and mark roadmap items as complete with [x] ONLY IF the executed tasks have completed any roadmap item(s) and the spec completes that item.
 
 <conditional_execution>
   <preliminary_check>
@@ -191,12 +191,12 @@ Use the project-manager subagent to read @.agents/.agent-os/product/roadmap.md a
 
 ### Step 6: Create Recap Document
 
-Use the project-manager subagent to create a recap document in .agents/.agent-os/recaps/ folder that summarizes what was built for this spec.
+Use the project-manager subagent to create a recap document in docs/03-Development/recaps/ folder that summarizes what was built for this spec.
 
 <instructions>
   ACTION: Use project-manager subagent
   REQUEST: "Create recap document for current spec:
-            - Create file: .agents/.agent-os/recaps/[SPEC_FOLDER_NAME].md
+            - Create file: docs/03-Development/recaps/[SPEC_FOLDER_NAME].md
             - Use template format with completed features summary
             - Include context from spec-lite.md
             - Document: [SPEC_FOLDER_PATH]"
@@ -207,7 +207,7 @@ Use the project-manager subagent to create a recap document in .agents/.agent-os
 <recap_template>
   # [yyyy-mm-dd] Recap: Feature Name
 
-  This recaps what was built for the spec documented at .agents/.agent-os/specs/[spec-folder-name]/spec.md.
+  This recaps what was built for the spec documented at docs/03-Development/specs/[spec-folder-name]/spec.md.
 
   ## Recap
 
@@ -219,7 +219,7 @@ Use the project-manager subagent to create a recap document in .agents/.agent-os
 </recap_template>
 
 <file_creation>
-  <location>.agents/.agent-os/recaps/</location>
+  <location>docs/03-Development/recaps/</location>
   <naming>[SPEC_FOLDER_NAME].md</naming>
   <format>markdown with yaml frontmatter if needed</format>
 </file_creation>

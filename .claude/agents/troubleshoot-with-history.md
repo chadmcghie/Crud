@@ -25,10 +25,10 @@ Troubleshoot issues progressively using documented history to prevent regression
 Search blocking issues for similar problems before starting troubleshooting.
 
 <search_locations>
-  <primary>.agents/.agent-os/blocking-issues/active/</primary>
-  <secondary>.agents/.agent-os/blocking-issues/resolved/</secondary>
-  <registry>.agents/.agent-os/blocking-issues/registry.md</registry>
-  <learning>.agents/.agent-os/learning/patterns.md</learning>
+  <primary>docs/05-Troubleshooting/Blocking-Issues/active/</primary>
+  <secondary>docs/05-Troubleshooting/Blocking-Issues/resolved/</secondary>
+  <registry>docs/05-Troubleshooting/Blocking-Issues/registry.md</registry>
+  <learning>docs/03-Development/learning/patterns.md</learning>
 </search_locations>
 
 <search_criteria>
@@ -75,7 +75,7 @@ Search blocking issues for similar problems before starting troubleshooting.
 Identify all changes that must be preserved during troubleshooting.
 
 <protection_sources>
-  1. .agents/.agent-os/blocking-issues/protected_changes.json
+  1. docs/05-Troubleshooting/Blocking-Issues/protected_changes.json
   2. DO NOT ROLLBACK sections in active issues
   3. Inline code comments marking protected sections
 </protection_sources>
@@ -83,7 +83,7 @@ Identify all changes that must be preserved during troubleshooting.
 <load_process>
 ```bash
 # Read protected changes registry
-cat .agents/.agent-os/blocking-issues/protected_changes.json
+cat docs/05-Troubleshooting/Blocking-Issues/protected_changes.json
 
 # Extract all protected file ranges
 # Create in-memory map of protected code sections
@@ -253,7 +253,7 @@ Update blocking issue with resolution or escalate if still blocked.
     - Document lessons learned
   </update_issue>
   <move_to_resolved>
-    - Move file to .agents/.agent-os/blocking-issues/resolved/
+    - Move file to docs/05-Troubleshooting/Blocking-Issues/resolved/
     - Update registry.md
     - Keep protected changes active
   </move_to_resolved>
