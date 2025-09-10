@@ -5,13 +5,13 @@
 
 ## Tasks
 
-- [ ] 1. Output Caching Infrastructure Setup
-  - [ ] 1.1 Write tests for output caching middleware configuration
-  - [ ] 1.2 Configure ASP.NET Core output caching in Program.cs
-  - [ ] 1.3 Create named cache policies (PeoplePolicy, RolesPolicy, WallsPolicy, WindowsPolicy)
-  - [ ] 1.4 Integrate output cache store with existing Redis infrastructure
-  - [ ] 1.5 Configure fallback to in-memory cache when Redis unavailable
-  - [ ] 1.6 Verify output caching middleware tests pass
+- [x] 1. Output Caching Infrastructure Setup
+  - [x] 1.1 Write tests for output caching middleware configuration
+  - [x] 1.2 Configure ASP.NET Core output caching in Program.cs
+  - [x] 1.3 Create named cache policies (PeoplePolicy, RolesPolicy, WallsPolicy, WindowsPolicy)
+  - [x] 1.4 Integrate output cache store with existing Redis infrastructure
+  - [x] 1.5 Configure fallback to in-memory cache when Redis unavailable
+  - [x] 1.6 Verify output caching middleware tests pass
 
 - [ ] 2. HTTP Response Headers Implementation
   - [ ] 2.1 Write tests for HTTP response header middleware

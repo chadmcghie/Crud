@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Api.Extensions;
 using Api.Middleware;
 using App;
 using FluentValidation;
@@ -194,6 +195,9 @@ namespace Api
                     builder.Services.AddCachedRepositories();
                 }
 
+                // Add output caching
+                builder.Services.AddApiOutputCaching(builder.Configuration);
+
                 // Configure JWT Authentication
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
                 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -372,6 +376,13 @@ namespace Api
                 app.UseRateLimiter();
                 app.UseAuthentication();
                 app.UseAuthorization();
+                
+                // Add output caching middleware
+                app.UseOutputCache();
+                
+                // Add HTTP cache headers middleware
+                app.UseHttpCacheHeaders();
+                
                 app.MapControllers();
                 app.MapHealthChecks("/health");
 
