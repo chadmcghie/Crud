@@ -40,6 +40,9 @@ Generated\ Files/
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 
+# Prevent test results in root folder
+/TestResults/
+
 # NUnit
 *.VisualState.xml
 TestResult.xml

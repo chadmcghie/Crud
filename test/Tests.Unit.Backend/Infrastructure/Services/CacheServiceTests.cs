@@ -142,7 +142,7 @@ public class CacheServiceTests
             // Act
             var result = await _mockCacheService.Object.GetOrSetAsync(
                 key,
-                async ct => expectedValue,
+                ct => Task.FromResult(expectedValue),
                 options);
 
             // Assert
@@ -368,10 +368,10 @@ public class CacheServiceTests
             _memoryCache.Set(key, cachedValue);
 
             var factoryCalled = false;
-            Func<CancellationToken, Task<TestCacheItem>> factory = async ct =>
+            Func<CancellationToken, Task<TestCacheItem>> factory = ct =>
             {
                 factoryCalled = true;
-                return new TestCacheItem { Id = 2, Name = "New" };
+                return Task.FromResult(new TestCacheItem { Id = 2, Name = "New" });
             };
 
             // Act
@@ -390,10 +390,10 @@ public class CacheServiceTests
             var newValue = new TestCacheItem { Id = 2, Name = "New" };
 
             var factoryCalled = false;
-            Func<CancellationToken, Task<TestCacheItem>> factory = async ct =>
+            Func<CancellationToken, Task<TestCacheItem>> factory = ct =>
             {
                 factoryCalled = true;
-                return newValue;
+                return Task.FromResult(newValue);
             };
 
             // Act
@@ -730,7 +730,7 @@ public class CacheServiceTests
                 .Setup(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TestCacheItem?)null);
 
-            Func<CancellationToken, Task<TestCacheItem>> factory = async ct => value;
+            Func<CancellationToken, Task<TestCacheItem>> factory = ct => Task.FromResult(value);
 
             // Act
             var result = await _cacheService.GetOrSetAsync(key, factory, options);
