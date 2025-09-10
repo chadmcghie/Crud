@@ -3,16 +3,19 @@ using App.Abstractions;
 using App.Features.Roles;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Tags("People")]
+[Tags("Roles")]
 [Route("api/[controller]")]
+[Authorize]
 public class RolesController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
@@ -20,6 +23,7 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);
@@ -29,6 +33,7 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
@@ -36,6 +41,7 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
@@ -43,6 +49,7 @@ public class RolesController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteRoleCommand(id), ct);

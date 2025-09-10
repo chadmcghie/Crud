@@ -2,6 +2,7 @@ using Api.Dtos;
 using App.Features.Windows;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -9,9 +10,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
+[Authorize]
 public class WindowsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWindowsQuery(), ct);
@@ -19,6 +22,7 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWindowQuery(id), ct);
@@ -28,6 +32,7 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<WindowResponse>> Create([FromBody] CreateWindowRequest request, CancellationToken ct)
     {
         var w = await mediator.Send(new CreateWindowCommand(
@@ -57,6 +62,7 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWindowRequest request, CancellationToken ct)
     {
         try
@@ -94,6 +100,7 @@ public class WindowsController(IMediator mediator, IMapper mapper) : ControllerB
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWindowCommand(id), ct);

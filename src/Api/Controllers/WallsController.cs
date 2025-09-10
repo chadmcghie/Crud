@@ -2,6 +2,7 @@ using Api.Dtos;
 using App.Features.Walls;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -9,9 +10,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
+[Authorize]
 public class WallsController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWallsQuery(), ct);
@@ -19,6 +22,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);
@@ -28,6 +32,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<WallResponse>> Create([FromBody] CreateWallRequest request, CancellationToken ct)
     {
         var w = await mediator.Send(new CreateWallCommand(
@@ -48,6 +53,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWallRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateWallCommand(
@@ -69,6 +75,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWallCommand(id), ct);
