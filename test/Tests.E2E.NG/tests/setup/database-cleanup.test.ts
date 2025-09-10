@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { getTempDirectory } from './temp-directory';
 
 /**
  * Tests for simplified SQLite file-based database cleanup
  * Verifies simple delete/recreate pattern works correctly
  */
 test.describe('Simplified Database Cleanup', () => {
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+  const tempDir = getTempDirectory();
   const testDbPath = path.join(tempDir, 'test-cleanup.db');
 
   test.afterAll(async () => {

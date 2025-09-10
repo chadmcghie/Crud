@@ -1,4 +1,5 @@
 ---
+name: document-blocking-issue
 description: Document blocking issues following ITIL Problem Management standards
 globs:
 alwaysApply: false
@@ -12,7 +13,7 @@ encoding: UTF-8
 Document blocking issues systematically to prevent regression and maintain knowledge base following ITIL Problem Management standards.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -53,7 +54,7 @@ Determine if issue qualifies as blocking after 3 failed attempts or 30 minutes e
 
 ### Step 2: Create Issue Documentation
 
-Create new blocking issue file in .agent-os/blocking-issues/active/ with standardized format.
+Create new blocking issue file in docs/05-Troubleshooting/Blocking-Issues/active/ with standardized format.
 
 <file_naming>
   FORMAT: YYYY-MM-DD-{issue-slug}.md
@@ -141,7 +142,7 @@ List of improvements made during troubleshooting that must be preserved:
 </issue_template>
 
 <instructions>
-  ACTION: Create new file in .agent-os/blocking-issues/active/
+  ACTION: Create new file in docs/05-Troubleshooting/Blocking-Issues/active/
   USE: Issue template above
   POPULATE: All sections with known information
   ASSIGN: Unique ID with date prefix
@@ -206,7 +207,7 @@ Mark improvements that must not be rolled back and update protection registry.
 <protection_process>
   1. List each beneficial change in issue document
   2. Include file path, line numbers, and reason
-  3. Update .agent-os/blocking-issues/protected_changes.json
+  3. Update docs/05-Troubleshooting/Blocking-Issues/protected_changes.json
   4. Mark changes with protection comment in code
 </protection_process>
 
@@ -246,7 +247,7 @@ Mark improvements that must not be rolled back and update protection registry.
 Add entry to blocking issues registry for quick lookup.
 
 <registry_update>
-  <location>.agent-os/blocking-issues/registry.md</location>
+  <location>docs/05-Troubleshooting/Blocking-Issues/registry.md</location>
   <add_to>Active Issues table</add_to>
   <fields>
     - ID (from issue file)
@@ -294,7 +295,7 @@ Alert relevant parties if issue is critical or requires external help.
   **Impact**: [What's blocked]
   **Attempts**: 3 solutions tried
   
-  See: .agent-os/blocking-issues/active/YYYY-MM-DD-issue-slug.md
+  See: docs/05-Troubleshooting/Blocking-Issues/active/YYYY-MM-DD-issue-slug.md
 </notification_format>
 
 <instructions>
@@ -308,5 +309,5 @@ Alert relevant parties if issue is critical or requires external help.
 </process_flow>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

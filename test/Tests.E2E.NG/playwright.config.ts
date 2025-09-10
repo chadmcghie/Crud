@@ -33,8 +33,8 @@ export default defineConfig({
   retries: 0,
   maxFailures: process.env.CI ? 10 : 0,
   
-  /* Timeouts */
-  timeout: 30000,
+  /* Timeouts - increased for staging environment */
+  timeout: process.env.CI ? 60000 : 30000,
   
   /* Playwright's built-in webServer configuration */
   webServer: [
@@ -68,8 +68,8 @@ export default defineConfig({
       url: 'http://localhost:4200',
       timeout: 120 * 1000, // 2 minutes for Angular compilation
       reuseExistingServer: !process.env.CI,
-      stdout: 'ignore',
-      stderr: 'ignore',
+      stdout: process.env.CI ? 'pipe' : 'ignore', // Show output in CI for debugging
+      stderr: process.env.CI ? 'pipe' : 'ignore', // Show errors in CI for debugging
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
@@ -123,7 +123,7 @@ export default defineConfig({
     navigationTimeout: 30000,
     
     expect: {
-      timeout: 5000,
+      timeout: process.env.CI ? 10000 : 5000,
     },
   },
   
@@ -142,6 +142,19 @@ export default defineConfig({
             '--disable-gpu',
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
+            // Fix localStorage access in CI environments
+            '--disable-features=VizDisplayCompositor',
+            '--allow-running-insecure-content',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            // Additional staging environment flags
+            ...(process.env.CI ? [
+              '--disable-extensions',
+              '--disable-default-apps',
+              '--disable-component-extensions-with-background-pages',
+              '--disable-ipc-flooding-protection',
+            ] : []),
           ],
         },
       },

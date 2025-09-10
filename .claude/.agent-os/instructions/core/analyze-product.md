@@ -13,7 +13,7 @@ encoding: UTF-8
 Install Agent OS into an existing codebase, analyze current product state and progress.  Builds on plan-product.md
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -103,7 +103,7 @@ Execute our standard flow for installing Agent OS in existing products
 </execution_parameters>
 
 <execution_prompt>
-  @.agent-os/instructions/core/plan-product.md
+  @.agents/.agent-os/instructions/core/plan-product.md
 
   I'm installing Agent OS into an existing product. Here's what I've gathered:
 
@@ -121,7 +121,7 @@ Execute our standard flow for installing Agent OS in existing products
 <instructions>
   ACTION: Execute plan-product.md with gathered information
   PROVIDE: All context as structured input
-  ALLOW: plan-product.md to create .agent-os/product/ structure
+  ALLOW: plan-product.md to create .agents/.agent-os/product/ structure
 </instructions>
 
 </step>
@@ -171,7 +171,7 @@ Refine the generated documentation to ensure accuracy for the existing product b
 Verify installation completeness and provide clear next steps for the user to start using Agent OS with their existing codebase.
 
 <verification_checklist>
-  - [ ] .agent-os/product/ directory created
+  - [ ] .agents/.agent-os/product/ directory created
   - [ ] All product documentation reflects actual codebase
   - [ ] Roadmap shows completed and planned features accurately
   - [ ] Tech stack matches installed dependencies
@@ -191,18 +191,18 @@ Verify installation completeness and provide clear next steps for the user to st
 
   ### What Was Created
 
-  - ✓ Product documentation in `.agent-os/product/`
+  - ✓ Product documentation in `.agents/.agent-os/product/`
   - ✓ Roadmap with completed work in Phase 0
   - ✓ Tech stack reflecting actual dependencies
 
   ### Next Steps
 
-  1. Review the generated documentation in `.agent-os/product/`
+  1. Review the generated documentation in `.agents/.agent-os/product/`
   2. Make any necessary adjustments to reflect your vision
   3. See the Agent OS README for usage instructions: https://github.com/buildermethods/agent-os
   4. Start using Agent OS for your next feature:
      ```
-     @.agent-os/instructions/core/create-spec.md
+     @.agents/.agent-os/instructions/core/create-spec.md
      ```
 
   Your codebase is now Agent OS-enabled! 🚀
@@ -214,5 +214,5 @@ Verify installation completeness and provide clear next steps for the user to st
 </process_flow>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

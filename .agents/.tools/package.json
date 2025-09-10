@@ -1,0 +1,23 @@
+{
+  "name": "agent-os",
+  "version": "1.0.0",
+  "description": "Agent OS Template System and Tools",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "*.js",
+      "!tests/**"
+    ]
+  }
+}

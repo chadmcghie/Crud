@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { getTempDirectory, getUniqueTempPath } from './temp-directory';
 
 /**
  * Simple database utilities for SQLite test databases
@@ -10,10 +11,7 @@ import * as path from 'path';
  * Creates a unique database path for testing
  */
 export function createTestDatabasePath(): string {
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(7);
-  return path.join(tempDir, `CrudTest_${timestamp}_${random}.db`);
+  return getUniqueTempPath('CrudTest', '.db');
 }
 
 /**
@@ -42,7 +40,7 @@ export async function resetDatabase(dbPath: string): Promise<void> {
  * Cleans up old test databases
  */
 export async function cleanupOldTestDatabases(): Promise<void> {
-  const tempDir = process.platform === 'win32' ? process.env.TEMP || 'C:\\temp' : '/tmp';
+  const tempDir = getTempDirectory();
   
   try {
     const files = await fs.readdir(tempDir);

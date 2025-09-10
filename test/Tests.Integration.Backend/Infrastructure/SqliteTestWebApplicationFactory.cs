@@ -1,8 +1,10 @@
+using Infrastructure;
 using Infrastructure.Data;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -72,6 +74,23 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
             // Register DatabaseTestService for improved database cleanup
             services.AddScoped<DatabaseTestService>();
+
+            // Register cache services for integration tests
+            // Create a minimal configuration for caching (in-memory only for tests)
+            var inMemorySettings = new Dictionary<string, string?>
+            {
+                ["Caching:UseRedis"] = "false",
+                ["Caching:UseLazyCache"] = "false",
+                ["Caching:UseComposite"] = "false",
+                ["Caching:DefaultExpirationMinutes"] = "5"
+            };
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+
+            // Use the same caching configuration as production but with in-memory only
+            services.AddCachingServices(configuration);
 
             // Configure logging for better error debugging in tests
             _logCapture = new TestLogCapture("IntegrationTest");

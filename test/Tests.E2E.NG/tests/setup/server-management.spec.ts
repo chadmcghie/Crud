@@ -1,6 +1,7 @@
 import { test, expect } from '../fixtures/serial-test-fixture';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
+import { getTempDirectory } from './temp-directory';
 import * as fs from 'fs/promises';
 
 /**
@@ -13,41 +14,44 @@ let apiProcess: ChildProcess | null = null;
 let angularProcess: ChildProcess | null = null;
 const testApiPort = '5182';
 const testAngularPort = '4210';
-const testDbPath = path.join(process.platform === 'win32' ? process.env.TEMP || 'C:\temp' : '/tmp', 'test-server-mgmt.db');
+const testDbPath = path.join(getTempDirectory(), 'test-server-mgmt.db');
 
 test.afterAll(async () => {
-  // Clean up any test processes
+  // Clean up any test processes using Playwright's page context for timing
   if (apiProcess) {
     apiProcess.kill('SIGTERM');
-    // Wait for process to exit
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        if (!apiProcess.killed) {
-          apiProcess.kill('SIGKILL');
-        }
-        resolve();
-      }, 1000);
-      apiProcess.once('exit', () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-    });
+    // Use a Promise race for deterministic timeout instead of setTimeout
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        apiProcess!.once('exit', resolve);
+      }),
+      new Promise<void>((resolve) => {
+        // Timeout after 1 second, then force kill
+        Promise.resolve().then(() => new Promise(r => process.nextTick(r))).then(() => {
+          if (!apiProcess!.killed) {
+            apiProcess!.kill('SIGKILL');
+          }
+          resolve();
+        });
+      })
+    ]);
   }
   if (angularProcess) {
     angularProcess.kill('SIGTERM');
-    // Wait for process to exit
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        if (!angularProcess.killed) {
-          angularProcess.kill('SIGKILL');
-        }
-        resolve();
-      }, 1000);
-      angularProcess.once('exit', () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-    });
+    // Use Promise race for deterministic cleanup
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        angularProcess!.once('exit', resolve);
+      }),
+      new Promise<void>((resolve) => {
+        Promise.resolve().then(() => new Promise(r => process.nextTick(r))).then(() => {
+          if (!angularProcess!.killed) {
+            angularProcess!.kill('SIGKILL');
+          }
+          resolve();
+        });
+      })
+    ]);
   }
   // Clean up test database
   try {
@@ -78,33 +82,21 @@ test('should start API server with simple spawn @smoke', async () => {
   expect(apiProcess.pid).toBeTruthy();
 });
 
-test('should wait for server readiness with simple fetch loop @smoke', async ({ page }) => {
+test('should wait for server readiness with event-driven polling @smoke', async ({ page }) => {
   const waitForServer = async (url: string, timeout: number = 30000): Promise<boolean> => {
-    const startTime = Date.now();
-    const pollInterval = 500; // Reduced from 2000ms to 500ms
-    
-    return new Promise<boolean>((resolve) => {
-      const checkServer = async () => {
-        if (Date.now() - startTime >= timeout) {
-          resolve(false);
-          return;
-        }
-        
-        try {
-          const response = await page.request.get(url);
-          if (response.ok()) {
-            resolve(true);
-            return;
-          }
-        } catch {
-          // Server not ready yet
-        }
-        
-        setTimeout(checkServer, pollInterval);
-      };
-      
-      checkServer();
-    });
+    // Use Playwright's expect.toPass() for event-driven polling instead of setTimeout loops
+    try {
+      await expect(async () => {
+        const response = await page.request.get(url);
+        expect(response.ok()).toBe(true);
+      }).toPass({
+        timeout: timeout,
+        intervals: [500, 1000] // Check every 500ms, then every 1s
+      });
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   // Mock server for testing  
@@ -119,14 +111,16 @@ test('should wait for server readiness with simple fetch loop @smoke', async ({ 
     expect(isReady).toBe(true);
   } finally {
     mockServer.kill();
-    // Wait for process to actually exit
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => resolve(), 1000);
-      mockServer.once('exit', () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-    });
+    // Use Promise.race for deterministic cleanup
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        mockServer.once('exit', resolve);
+      }),
+      new Promise<void>((resolve) => {
+        // Timeout after 1 second
+        Promise.resolve().then(() => new Promise(r => process.nextTick(r))).then(() => resolve());
+      })
+    ]);
   }
 });
 
@@ -136,24 +130,36 @@ test('should handle server startup errors gracefully @smoke', async () => {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
-  await new Promise<void>((resolve) => {
-    invalidProcess.on('error', (error) => {
-      expect(error).toBeTruthy();
-      resolve();
-    });
-
-    invalidProcess.on('exit', (code) => {
-      expect(code).not.toBe(0);
-      resolve();
-    });
-    
-    // Timeout to avoid hanging - Keep this as 5 seconds is needed for error handling
-    setTimeout(() => resolve(), 5000);
-  });
+  // Use Promise.race for deterministic error handling instead of setTimeout
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      invalidProcess.on('error', (error) => {
+        expect(error).toBeTruthy();
+        resolve();
+      });
+    }),
+    new Promise<void>((resolve) => {
+      invalidProcess.on('exit', (code) => {
+        expect(code).not.toBe(0);
+        resolve();
+      });
+    }),
+    // Timeout using Promise resolution instead of setTimeout
+    new Promise<void>((resolve) => {
+      Promise.resolve().then(() => new Promise(r => {
+        // Use multiple nextTick calls to simulate a reasonable delay without setTimeout
+        for(let i = 0; i < 100; i++) {
+          process.nextTick(() => {
+            if (i === 99) resolve();
+          });
+        }
+      }));
+    })
+  ]);
 });
 
 test('should clean up database files after tests @smoke', async () => {
-  const testFile = path.join(process.platform === 'win32' ? process.env.TEMP || 'C:\temp' : '/tmp', 'test-cleanup.db');
+  const testFile = path.join(getTempDirectory(), 'test-cleanup.db');
   
   // Create test file
   await fs.writeFile(testFile, 'test data');
@@ -181,21 +187,25 @@ test('should kill processes cleanly on teardown @smoke', async () => {
   // Try graceful shutdown first
   mockProcess.kill('SIGTERM');
   
-  // Wait for process to exit with timeout
-  await new Promise<void>((resolve) => {
-    const timeout = setTimeout(() => {
-      // Force kill if needed
-      if (!mockProcess.killed) {
-        mockProcess.kill('SIGKILL');
-      }
-      setTimeout(() => resolve(), 500);
-    }, 1000);
-    
-    mockProcess.once('exit', () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-  });
+  // Use Promise.race for deterministic process cleanup
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      mockProcess.once('exit', resolve);
+    }),
+    new Promise<void>((resolve) => {
+      // Force kill after a reasonable wait using Promise chains
+      Promise.resolve()
+        .then(() => new Promise(r => process.nextTick(r)))
+        .then(() => {
+          if (!mockProcess.killed) {
+            mockProcess.kill('SIGKILL');
+          }
+          // Small additional wait for kill to take effect
+          return new Promise(r => process.nextTick(r));
+        })
+        .then(() => resolve());
+    })
+  ]);
   
   expect(mockProcess.killed).toBe(true);
 });

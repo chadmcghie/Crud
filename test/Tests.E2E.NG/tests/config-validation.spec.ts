@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getTempDirectory } from './setup/temp-directory';
 
 /**
  * Tests to validate serial execution configuration
@@ -69,7 +70,7 @@ test.describe('Serial Execution Configuration Validation', () => {
   test('should execute tests sequentially', async ({ page }) => {
     // This test verifies runtime behavior
     // Create a timestamp file to track execution order
-    const timestampFile = path.join(process.env.TEMP || '/tmp', 'test-execution-order.txt');
+    const timestampFile = path.join(getTempDirectory(), 'test-execution-order.txt');
     const timestamp = Date.now();
     
     // Append timestamp to file

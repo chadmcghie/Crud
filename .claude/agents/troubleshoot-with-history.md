@@ -1,4 +1,5 @@
 ---
+name: troubleshoot-with-history
 description: Systematic troubleshooting using blocking issue history to prevent regression
 globs:
 alwaysApply: false
@@ -12,7 +13,7 @@ encoding: UTF-8
 Troubleshoot issues progressively using documented history to prevent regression loops and preserve strategic improvements.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -24,9 +25,10 @@ Troubleshoot issues progressively using documented history to prevent regression
 Search blocking issues for similar problems before starting troubleshooting.
 
 <search_locations>
-  <primary>.agent-os/blocking-issues/active/</primary>
-  <secondary>.agent-os/blocking-issues/resolved/</secondary>
-  <registry>.agent-os/blocking-issues/registry.md</registry>
+  <primary>docs/05-Troubleshooting/Blocking-Issues/active/</primary>
+  <secondary>docs/05-Troubleshooting/Blocking-Issues/resolved/</secondary>
+  <registry>docs/05-Troubleshooting/Blocking-Issues/registry.md</registry>
+  <learning>docs/03-Development/learning/patterns.md</learning>
 </search_locations>
 
 <search_criteria>
@@ -46,6 +48,12 @@ Search blocking issues for similar problems before starting troubleshooting.
     - Identify last attempt number
     - Extract protected changes
     - Review lessons learned
+  
+  IF matching pattern in learning cache:
+    - Apply known solution from patterns.md
+    - Reference pattern ID in solution
+    - Skip failed approaches documented
+  
   ELSE:
     - Proceed with fresh troubleshooting
     - Be prepared to document if blocking
@@ -67,7 +75,7 @@ Search blocking issues for similar problems before starting troubleshooting.
 Identify all changes that must be preserved during troubleshooting.
 
 <protection_sources>
-  1. .agent-os/blocking-issues/protected_changes.json
+  1. docs/05-Troubleshooting/Blocking-Issues/protected_changes.json
   2. DO NOT ROLLBACK sections in active issues
   3. Inline code comments marking protected sections
 </protection_sources>
@@ -75,7 +83,7 @@ Identify all changes that must be preserved during troubleshooting.
 <load_process>
 ```bash
 # Read protected changes registry
-cat .agent-os/blocking-issues/protected_changes.json
+cat docs/05-Troubleshooting/Blocking-Issues/protected_changes.json
 
 # Extract all protected file ranges
 # Create in-memory map of protected code sections
@@ -245,7 +253,7 @@ Update blocking issue with resolution or escalate if still blocked.
     - Document lessons learned
   </update_issue>
   <move_to_resolved>
-    - Move file to .agent-os/blocking-issues/resolved/
+    - Move file to docs/05-Troubleshooting/Blocking-Issues/resolved/
     - Update registry.md
     - Keep protected changes active
   </move_to_resolved>
@@ -380,5 +388,5 @@ Capture learnings for future troubleshooting sessions.
 </troubleshooting_principles>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

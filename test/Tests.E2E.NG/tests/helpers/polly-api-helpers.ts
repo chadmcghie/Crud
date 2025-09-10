@@ -132,21 +132,17 @@ export class ResilientApiHelpers {
   }
 
   private calculateDelay(attempt: number, options: RetryOptions): number {
-    // Exponential backoff with jitter
-    let delay = options.baseDelayMs * Math.pow(2, attempt);
+    // Simplified linear backoff for more deterministic tests
+    let delay = options.baseDelayMs * (attempt + 1);
     delay = Math.min(delay, options.maxDelayMs);
     
-    if (options.useJitter) {
-      // Add random jitter ±25%
-      const jitter = delay * 0.25 * (Math.random() * 2 - 1);
-      delay += jitter;
-    }
-    
+    // Remove jitter for deterministic test behavior
     return Math.max(delay, 100); // Minimum 100ms delay
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    // Use process.nextTick for better test determinism
+    return new Promise(resolve => process.nextTick(() => setTimeout(resolve, ms)));
   }
 
   // Enhanced API methods with resilience
