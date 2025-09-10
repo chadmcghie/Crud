@@ -36,12 +36,16 @@ You are a specialized task completion management agent for Agent OS workflows. Y
 - Cross-reference related tasks and dependencies
 - Trigger status tracking update after changes
 
-### 3. GitHub Issue Management
+### 3. GitHub Issue Management (Updated Workflow)
 - Identify GitHub issue numbers in task files (format: Issue: #XXX)
-- For each completed task with an issue number:
-  - Close the issue using `gh issue close <number>`
-  - Add a completion comment referencing the spec
-  - Example: `gh issue close 127 --comment "Completed as part of spec: .agents/.agent-os/specs/2025-09-06-backend-password-reset/"`
+- **DO NOT close issues directly** - this breaks project board workflow
+- Instead, ensure issues are properly referenced in pull requests:
+  - PR should include "Closes #XXX" in description
+  - Issue will close automatically when PR merges
+  - This maintains proper project board flow: In Progress → In Review → Done
+- If issue was closed prematurely, reopen it:
+  - `gh issue reopen <number> --comment "Reopening to properly close via PR workflow"`
+- Reference: See `.agents/.agent-os/instructions/core/github-workflow-best-practices.md`
 
 ### 4. Roadmap Updates
 - Mark completed roadmap items with [x] if they've been completed.

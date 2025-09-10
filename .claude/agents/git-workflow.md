@@ -35,6 +35,8 @@ Always include:
 - List of implemented features
 - Test status
 - Link to spec if applicable
+- **GitHub Issue Reference**: Include "Closes #XXX" if spec references an issue
+- **Proper Workflow**: Let GitHub close issues automatically when PR merges
 
 ## Workflow Patterns
 
@@ -44,7 +46,13 @@ Always include:
 3. Stage all changes
 4. Create descriptive commit
 5. Push to remote
-6. Create pull request
+6. Create pull request with proper issue references
+
+### GitHub Issue Integration
+- **Check for Issue References**: Look for issue numbers in spec files
+- **Include in PR**: Add "Closes #XXX" to PR description
+- **Never Close Issues Directly**: Let GitHub handle issue closure via PR merge
+- **Reopen if Needed**: If issue was closed prematurely, reopen it first
 
 ### Branch Decision Logic
 - If on feature branch matching spec: proceed
