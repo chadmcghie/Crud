@@ -54,7 +54,8 @@ public class CompressionPerformanceMiddleware
             // For compressed responses, we need to estimate the original uncompressed size
             // This is an approximation since we don't have the actual uncompressed size
             var compressionRatio = EstimateCompressionRatio(contentEncoding, context.Response.ContentType);
-            var estimatedOriginalSize = (long)(originalSize / (1.0 - compressionRatio / 100.0));
+            var safeCompressionRatio = Math.Min(compressionRatio, 95.0); // Clamp to max 95%
+            var estimatedOriginalSize = (long)(originalSize / (1.0 - safeCompressionRatio / 100.0));
 
             var compressionPercent = Math.Round(compressionRatio, 2);
 
