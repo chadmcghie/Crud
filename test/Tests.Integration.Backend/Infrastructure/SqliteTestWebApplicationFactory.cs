@@ -161,21 +161,18 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user != null)
-        {
-            // The User entity uses string roles, not Role entities
-            // Clear existing roles and add the new one
-            var currentRoles = user.Roles.ToList();
-            foreach (var existingRole in currentRoles)
-            {
-                user.RemoveRole(existingRole);
-            }
-            user.AddRole(role);
-
-            await dbContext.SaveChangesAsync();
-        }
+        
+        // The Roles field stores comma-separated values
+        // For testing, we'll just set it to "User,Admin" if Admin is requested
+        var rolesValue = role == "Admin" ? "User,Admin" : "User";
+        
+        // Use raw SQL to avoid EF issues with owned entities
+        var sql = @"
+            UPDATE Users 
+            SET Roles = @p0, UpdatedAt = @p1
+            WHERE Email = @p2";
+        
+        await dbContext.Database.ExecuteSqlRawAsync(sql, rolesValue, DateTime.UtcNow, email);
     }
 
     protected override void Dispose(bool disposing)

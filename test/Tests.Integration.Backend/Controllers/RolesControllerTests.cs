@@ -56,15 +56,17 @@ public class RolesControllerTests : IntegrationTestBase
     [Fact]
     public async Task POST_Roles_Should_Return_400_For_Invalid_Data()
     {
-        // Arrange
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            var invalidRequest = new { Name = "", Description = "Invalid role" }; // Empty name
 
-        var invalidRequest = new { Name = "", Description = "Invalid role" }; // Empty name
+            // Act
+            var response = await AuthenticatedPostJsonAsync("/api/roles", invalidRequest);
 
-        // Act
-        var response = await AuthenticatedPostJsonAsync("/api/roles", invalidRequest);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        });
     }
 
     [Fact]
@@ -97,36 +99,41 @@ public class RolesControllerTests : IntegrationTestBase
     [Fact]
     public async Task GET_Role_By_Id_Should_Return_Role_When_Exists()
     {
-        // Arrange
-        var createRequest = TestDataBuilders.CreateRoleRequest("Manager", "Department manager");
-        var createResponse = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
-        var createdRole = await ReadJsonAsync<RoleDto>(createResponse);
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            var createRequest = TestDataBuilders.CreateRoleRequest("Manager", "Department manager");
+            var createResponse = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
+            var createdRole = await ReadJsonAsync<RoleDto>(createResponse);
 
-        // Act
-        var response = await AuthenticatedGetAsync($"/api/roles/{createdRole!.Id}");
+            // Act
+            var response = await AuthenticatedGetAsync($"/api/roles/{createdRole!.Id}");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var role = await ReadJsonAsync<RoleDto>(response);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var role = await ReadJsonAsync<RoleDto>(response);
 
-        role.Should().NotBeNull();
-        role!.Id.Should().Be(createdRole.Id);
-        role.Name.Should().Be("Manager");
-        role.Description.Should().Be("Department manager");
+            role.Should().NotBeNull();
+            role!.Id.Should().Be(createdRole.Id);
+            role.Name.Should().Be("Manager");
+            role.Description.Should().Be("Department manager");
+        });
     }
 
     [Fact]
     public async Task GET_Role_By_Id_Should_Return_404_When_Not_Exists()
     {
-        // Arrange
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
 
-        var nonExistentId = Guid.NewGuid();
+            // Act
+            var response = await AuthenticatedGetAsync($"/api/roles/{nonExistentId}");
 
-        // Act
-        var response = await AuthenticatedGetAsync($"/api/roles/{nonExistentId}");
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        });
     }
 
     [Fact]
