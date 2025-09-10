@@ -69,8 +69,10 @@ public class CacheStatusMiddleware
             if (!context.Response.Headers.ContainsKey("X-Cache"))
             {
                 context.Response.Headers["X-Cache"] = cacheStatus;
+                // Sanitize the path to prevent log injection attacks
+                var sanitizedPath = context.Request.Path.Value?.Replace("\r", "").Replace("\n", "");
                 _logger.LogDebug("Request to {Path} took {ElapsedMs}ms - Cache {Status}",
-                    context.Request.Path, stopwatch.ElapsedMilliseconds, cacheStatus);
+                    sanitizedPath, stopwatch.ElapsedMilliseconds, cacheStatus);
             }
         }
     }

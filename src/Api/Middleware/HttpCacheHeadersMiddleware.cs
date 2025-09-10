@@ -55,7 +55,9 @@ public class HttpCacheHeadersMiddleware
                 context.Response.Headers.ETag = $"\"{etag}\"";
                 context.Response.Headers.LastModified = lastModified.ToString("R");
 
-                _logger.LogDebug("Returning 304 Not Modified for {Path}", context.Request.Path);
+                // Sanitize the path to prevent log injection attacks
+                var sanitizedPath = context.Request.Path.ToString().Replace("\r", "").Replace("\n", "");
+                _logger.LogDebug("Returning 304 Not Modified for {Path}", sanitizedPath);
                 return;
             }
 
