@@ -53,7 +53,9 @@ public class ConditionalRequestFilter : IAsyncActionFilter
         {
             if (CheckIfNoneMatch(ifNoneMatch, etag))
             {
-                _logger.LogDebug("Returning 304 Not Modified for {Path} (ETag match)", request.Path);
+                // Sanitize the path to prevent log injection attacks
+                var sanitizedPath = request.Path.Value?.Replace("\r", "").Replace("\n", "");
+                _logger.LogDebug("Returning 304 Not Modified for {Path} (ETag match)", sanitizedPath);
                 SetNotModifiedResponse(context, etag, lastModified);
                 return;
             }
@@ -67,8 +69,10 @@ public class ConditionalRequestFilter : IAsyncActionFilter
             {
                 if (lastModified.HasValue && lastModified.Value <= ifModifiedSince)
                 {
+                    // Sanitize the path to prevent log injection attacks
+                    var sanitizedPath = request.Path.Value?.Replace("\r", "").Replace("\n", "");
                     _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since {Date})",
-                        request.Path, ifModifiedSince);
+                        sanitizedPath, ifModifiedSince);
                     SetNotModifiedResponse(context, etag, lastModified);
                     return;
                 }
