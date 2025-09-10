@@ -442,6 +442,70 @@ aos-update() {
   aos_print $NC "Manual update: Check https://github.com/anthropics/agent-os for updates"
 }
 
+# GitHub Workflow Best Practices Command
+aos-github-workflow() {
+  local action="${1:-help}"
+  
+  if ! aos_check_project; then
+    return 1
+  fi
+  
+  case "$action" in
+    "help")
+      aos_print $CYAN "GitHub Workflow Best Practices"
+      aos_print $CYAN "=============================="
+      echo
+      aos_print $YELLOW "Commands:"
+      aos_print $NC "  aos-github-workflow help          - Show this help"
+      aos_print $NC "  aos-github-workflow check         - Check current workflow status"
+      aos_print $NC "  aos-github-workflow fix-issue <#> - Fix improperly closed issue"
+      aos_print $NC "  aos-github-workflow validate      - Validate PR-issue relationships"
+      echo
+      aos_print $YELLOW "Best Practices:"
+      aos_print $NC "  • Never close issues directly when work is done"
+      aos_print $NC "  • Reference issues in PRs with 'Closes #XXX'"
+      aos_print $NC "  • Let GitHub close issues automatically when PR merges"
+      aos_print $NC "  • This maintains proper project board flow"
+      ;;
+      
+    "check")
+      aos_print $YELLOW "Checking GitHub workflow status..."
+      gh issue list --state open --limit 5
+      echo
+      aos_print $YELLOW "Recent PRs:"
+      gh pr list --state open --limit 5
+      ;;
+      
+    "validate")
+      aos_print $YELLOW "Validating PR-issue relationships..."
+      local prs=$(gh pr list --state open --json number,title,body)
+      echo "$prs" | jq -r '.[] | "\(.number)|\(.title)|\(.body)"' | while IFS='|' read -r number title body; do
+        if echo "$body" | grep -q "Closes #"; then
+          aos_print $GREEN "✅ PR #$number properly references issue"
+        else
+          aos_print $YELLOW "⚠️  PR #$number missing issue reference"
+        fi
+      done
+      ;;
+      
+    "fix-issue")
+      local issue_number="$2"
+      if [ -n "$issue_number" ]; then
+        aos_print $YELLOW "Fixing issue #$issue_number workflow..."
+        gh issue reopen "$issue_number" --comment "Reopening to properly close via PR workflow"
+        aos_print $GREEN "Issue #$issue_number reopened. Now reference it in your PR with 'Closes #$issue_number'"
+      else
+        aos_print $RED "Usage: aos-github-workflow fix-issue <number>"
+      fi
+      ;;
+      
+    *)
+      aos_print $RED "Unknown action: $action"
+      aos_print $YELLOW "Run 'aos-github-workflow help' for available commands"
+      ;;
+  esac
+}
+
 # Define aliases
 alias aos='aos-help'
 alias aosi='aos-init'
@@ -451,6 +515,7 @@ alias aose='aos-execute'
 alias aosr='aos-review'
 alias aosg='aos-git'
 alias aosst='aos-status'
+alias aosgh='aos-github-workflow'
 
 # Print success message
 aos_print $GREEN "Agent OS commands loaded successfully!"
