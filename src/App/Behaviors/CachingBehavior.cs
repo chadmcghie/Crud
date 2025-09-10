@@ -80,6 +80,6 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
             }
         }
 
-        return response;
+        return response!;
     }
 }

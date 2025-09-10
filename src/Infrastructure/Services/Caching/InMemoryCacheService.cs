@@ -20,18 +20,18 @@ public class InMemoryCacheService : ICacheService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class
+    public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class
     {
         try
         {
             if (_memoryCache.TryGetValue(key, out T? value))
             {
                 _logger.LogDebug("Cache hit for key: {Key}", key);
-                return value;
+                return Task.FromResult(value);
             }
 
             _logger.LogDebug("Cache miss for key: {Key}", key);
-            return null;
+            return Task.FromResult<T?>(null);
         }
         catch (Exception ex)
         {

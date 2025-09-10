@@ -14,4 +14,4 @@ Before creating any new GitHub issues:
 4. Only create new issues if no suitable existing issues are found
 
 Refer to the instructions located in this file:
-@.agent-os/instructions/core/create-tasks.md
+@.agents/.agent-os/instructions/core/create-tasks.md

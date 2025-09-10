@@ -13,7 +13,7 @@ encoding: UTF-8
 Generate detailed feature specifications aligned with product roadmap and mission.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -29,7 +29,7 @@ Use the context-fetcher subagent to identify spec initiation method by either fi
     - "what's next?"
   </trigger_phrases>
   <actions>
-    1. CHECK @.agent-os/product/roadmap.md
+    1. CHECK @.agents/.agent-os/product/roadmap.md
     2. FIND next uncompleted item
     3. SUGGEST item to user
     4. WAIT for approval
@@ -48,7 +48,7 @@ Use the context-fetcher subagent to identify spec initiation method by either fi
 
 ### Step 2: Context Gathering (Conditional)
 
-Use the context-fetcher subagent to read @.agent-os/product/mission-lite.md and @.agent-os/product/tech-stack.md only if not already in context to ensure minimal context for spec alignment.
+Use the context-fetcher subagent to read @.agents/.agent-os/product/mission-lite.md and @.agents/.agent-os/product/tech-stack.md only if not already in context to ensure minimal context for spec alignment.
 
 <conditional_logic>
   IF both mission-lite.md AND tech-stack.md already read in current context:
@@ -112,7 +112,7 @@ Use the date-checker subagent to determine the current date in YYYY-MM-DD format
 
 ### Step 5: Spec Folder Creation
 
-Use the file-creator subagent to create directory: .agent-os/specs/YYYY-MM-DD-spec-name/ using the date from step 4.
+Use the file-creator subagent to create directory: .agents/.agent-os/specs/YYYY-MM-DD-spec-name/ using the date from step 4.
 
 Use kebab-case for spec name. Maximum 5 words in name.
 
@@ -138,7 +138,7 @@ Use kebab-case for spec name. Maximum 5 words in name.
 
 ### Step 6: Create spec.md
 
-Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spec-name/spec.md using this template:
+Use the file-creator subagent to create the file: .agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec.md using this template:
 
 <file_template>
   <header>
@@ -231,7 +231,7 @@ Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spe
 
 ### Step 7: Create spec-lite.md
 
-Use the file-creator subagent to create the file: .agent-os/specs/YYYY-MM-DD-spec-name/spec-lite.md for the purpose of establishing a condensed spec for efficient AI context usage.
+Use the file-creator subagent to create the file: .agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec-lite.md for the purpose of establishing a condensed spec for efficient AI context usage.
 
 <file_template>
   <header>
@@ -267,7 +267,7 @@ Use the file-creator subagent to create the file: sub-specs/technical-spec.md us
   <header>
     # Technical Specification
 
-    This is the technical specification for the spec detailed in @.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the technical specification for the spec detailed in @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -327,7 +327,7 @@ Use the file-creator subagent to create the file: sub-specs/database-schema.md O
   <header>
     # Database Schema
 
-    This is the database schema implementation for the spec detailed in @.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the database schema implementation for the spec detailed in @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -370,7 +370,7 @@ Use the file-creator subagent to create file: sub-specs/api-spec.md ONLY IF API 
   <header>
     # API Specification
 
-    This is the API specification for the spec detailed in @.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the API specification for the spec detailed in @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -415,9 +415,9 @@ Request user review of spec.md and all sub-specs files, waiting for approval or 
 <review_request>
   I've created the spec documentation:
 
-  - Spec Requirements: @.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
-  - Spec Summary: @.agent-os/specs/YYYY-MM-DD-spec-name/spec-lite.md
-  - Technical Spec: @.agent-os/specs/YYYY-MM-DD-spec-name/sub-specs/technical-spec.md
+  - Spec Requirements: @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec.md
+  - Spec Summary: @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/spec-lite.md
+  - Technical Spec: @.agents/.agent-os/specs/YYYY-MM-DD-spec-name/sub-specs/technical-spec.md
   [LIST_OTHER_CREATED_SPECS]
 
   Please review and let me know if any changes are needed.
@@ -430,5 +430,5 @@ Request user review of spec.md and all sub-specs files, waiting for approval or 
 </process_flow>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

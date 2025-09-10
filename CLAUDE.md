@@ -1,6 +1,9 @@
 # CLAUDE.md
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Settings 
+.claude\settings.local.json
+
 
 ## Architecture
 
@@ -15,10 +18,10 @@ This is a multi-platform CRUD application using Clean Architecture with:
 ### Development
 ```bash
 # Start both API and Angular (use PowerShell)
-./LaunchApps.ps1
+.scripts/LaunchApps.ps1
 
 # Kill running servers before builds
-./kill-servers.ps1
+.scripts/kill-servers.ps1
 
 # Start API only
 dotnet run --project src/Api/Api.csproj --launch-profile http
@@ -111,67 +114,90 @@ npm run test:extended    # Extended test suite
 
 ## Project Structure
 
+### Source Code (`src/`)
 - `src/Domain/` - Business entities and logic (no dependencies)
+  - `Entities/` - Domain entities (Person, Role, Wall, Window, etc.)
+  - `Enums/` - Domain enumerations
+  - `Events/` - Domain events
+  - `Interfaces/` - Domain interfaces
+  - `Specifications/` - Domain specifications
+  - `Validators/` - Domain validators
+  - `ValueObjects/` - Domain value objects
 - `src/App/` - Application services, CQRS handlers, DTOs
+  - `Abstractions/` - Application abstractions
+  - `Behaviors/` - MediatR behaviors
+  - `Features/` - Feature-based organization (Authentication, People, Roles, Walls, Windows)
+  - `Interfaces/` - Application interfaces
+  - `Mappings/` - AutoMapper profiles
+  - `Models/` - Application models
+  - `Services/` - Application services
 - `src/Infrastructure/` - EF Core, repositories, external services
+  - `Data/` - DbContext and configurations
+  - `Migrations/` - Entity Framework migrations
+  - `Repositories/` - Repository implementations
+  - `Resilience/` - Polly resilience patterns
+  - `Services/` - Infrastructure services
 - `src/Api/` - ASP.NET Core Web API controllers
+  - `Controllers/` - API controllers
+  - `Dtos/` - Data transfer objects
+  - `Mappings/` - API mapping profiles
+  - `Middleware/` - Custom middleware
+  - `Validators/` - API validators
 - `src/Angular/` - Angular frontend application
+  - `src/app/` - Angular application code
+  - `src/assets/` - Static assets
+  - `public/` - Public assets
+  - `proxy.conf*.json` - Development proxy configurations
+
+### Test Projects (`test/`)
 - `test/Tests.Unit.Backend/` - xUnit, Moq, FluentAssertions
+  - `App/` - Application layer unit tests
+  - `Domain/` - Domain layer unit tests
+  - `Infrastructure/` - Infrastructure layer unit tests
+  - `TestData/` - Test data builders
+  - `Validators/` - Validator unit tests
 - `test/Tests.Integration.Backend/` - API integration tests with WebApplicationFactory
+  - `Api/` - API integration tests
+  - `Controllers/` - Controller integration tests
+  - `E2E/` - End-to-end integration tests
+  - `Infrastructure/` - Infrastructure integration tests
 - `test/Tests.Integration.NG/` - Angular integration tests with Karma
 - `test/Tests.E2E.NG/` - Playwright E2E tests
-- `.claude/` - Claude Code configuration and custom tools
+  - `tests/` - E2E test files organized by feature
+  - `test-artifacts/` - Test artifacts and reports
+  - `test-results/` - Test execution results
 
-## Claude Configuration (.claude folder)
+### Solutions (`solutions/`)
+- `solutions/Crud.sln` - Complete solution file
+- `solutions/Crud.Backend.sln` - Backend-only solution
+- `solutions/Crud.Angular.sln` - Angular-only solution
 
-The `.claude` folder contains project-specific Claude Code configurations and tools:
+### Documentation (`docs/`)
+- `docs/Architecture/` - Architecture documentation and guidelines
+- `docs/Development/` - Development guides, specs, and workflows
+- `docs/Misc/` - Miscellaneous documentation and references
+- `docs/QualityControl/` - Quality control and review documentation
 
-### Structure
-- `.claude/settings.local.json` - Pre-approved actions and permissions
-- `.claude/commands/` - Custom slash commands for common workflows
-- `.claude/agents/` - Specialized agent configurations
-- `.claude/.agent-os/` - Agent OS standards and instructions
+### Scripts (`scripts/`)
+- `scripts/LaunchApps.ps1` - Launch both API and Angular
+- `scripts/kill-servers.ps1` - Kill running servers
 
-### Available Commands
-Located in `.claude/commands/`:
-- `analyze-product` - Analyze codebase and install Agent OS
-- `create-spec` - Create specifications for features
-- `create-tasks` - Break down work into manageable tasks
-- `document-blocker` - Document blocking issues
-- `execute-tasks` - Execute planned tasks
-- `plan-product` - Plan product features and architecture
-- `summarize-thread` - Summarize conversation threads
-- `troubleshoot-issues` - Debug and resolve problems
-
-### Specialized Agents
-Located in `.claude/agents/`:
-- `test-runner` - Run tests and analyze failures
-- `file-creator` - Create files with proper structure
-- `git-workflow` - Handle git operations and PRs
-- `project-manager` - Track tasks and roadmaps
-- `context-fetcher` - Retrieve relevant documentation
-- `date-checker` - Determine current date
-- `document-blocking-issue` - Document critical blockers
-- `troubleshoot-with-history` - Debug with context history
-
-### Agent OS Standards
-Located in `.claude/.agent-os/`:
-- `standards/` - Code style guides (C#, JS, CSS, HTML), best practices
-- `instructions/` - Core workflows for analysis, specs, tasks, execution
-
-### Recommended Additional Folders
-Consider adding these to `.claude/` for better context:
-- `templates/` - File templates for common patterns
-- `snippets/` - Reusable code snippets
-- `workflows/` - Multi-step process definitions
-- `context/` - Project-specific context and decisions
+### Configuration Files
+- `global.json` - .NET SDK version specification
+- `package-lock.json` - Root npm dependencies
+- `test-formatting.sh` - Test formatting script
 
 ## Database
 
-- Development: SQLite with file-based storage
-- Connection string in appsettings: `Data Source=crud.db`
-- Migrations: `dotnet ef migrations add <name> -p src/Infrastructure -s src/Api`
-- Update database: `dotnet ef database update -p src/Infrastructure -s src/Api`
+- **Development**: SQLite with file-based storage
+- **Database Files**: Multiple SQLite databases for different environments
+  - `src/Api/CrudApp.db` - Main development database
+  - `src/Api/CrudAppDev.db` - Development database
+  - `src/Api/CrudAppDesignTime.db` - Design-time database
+  - `CrudTest_local.db` - Local test database
+- **Connection strings**: Configured in `appsettings.*.json` files
+- **Migrations**: `dotnet ef migrations add <name> -p src/Infrastructure -s src/Api`
+- **Update database**: `dotnet ef database update -p src/Infrastructure -s src/Api`
 
 ## Clean Architecture Rules
 
@@ -182,6 +208,7 @@ Consider adding these to `.claude/` for better context:
 5. Use MediatR for all business operations
 6. Repository pattern for data access
 7. DTOs for API contracts, separate from domain models
+
 ## Important Rules
 
 - **NEVER commit or push without explicit permission**

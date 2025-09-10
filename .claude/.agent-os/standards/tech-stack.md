@@ -2,7 +2,7 @@
 
 ## Context
 
-Global tech stack defaults for Agent OS projects, overridable in project-specific `.agent-os/product/tech-stack.md`.
+Global tech stack defaults for Agent OS projects, overridable in project-specific `.agents/.agent-os/product/tech-stack.md`.
 
 ## Backend (.NET)
 - App Framework: ASP.NET Core 8.0+

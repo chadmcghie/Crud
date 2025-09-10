@@ -13,7 +13,7 @@ encoding: UTF-8
 Follow these steps to mark your progress updates, create a recap, and deliver the final report to the user.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -102,7 +102,7 @@ Use the project-manager subagent to read the current spec's tasks.md file and ve
 
 ### Step 4: Roadmap Progress Update (conditional)
 
-Use the project-manager subagent to read @.agent-os/product/roadmap.md and mark roadmap items as complete with [x] ONLY IF the executed tasks have completed any roadmap item(s) and the spec completes that item.
+Use the project-manager subagent to read @.agents/.agent-os/product/roadmap.md and mark roadmap items as complete with [x] ONLY IF the executed tasks have completed any roadmap item(s) and the spec completes that item.
 
 <conditional_execution>
   <preliminary_check>
@@ -136,12 +136,12 @@ Use the project-manager subagent to read @.agent-os/product/roadmap.md and mark 
 
 ### Step 5: Create Recap Document
 
-Use the project-manager subagent to create a recap document in .agent-os/recaps/ folder that summarizes what was built for this spec.
+Use the project-manager subagent to create a recap document in .agents/.agent-os/recaps/ folder that summarizes what was built for this spec.
 
 <instructions>
   ACTION: Use project-manager subagent
   REQUEST: "Create recap document for current spec:
-            - Create file: .agent-os/recaps/[SPEC_FOLDER_NAME].md
+            - Create file: .agents/.agent-os/recaps/[SPEC_FOLDER_NAME].md
             - Use template format with completed features summary
             - Include context from spec-lite.md
             - Document: [SPEC_FOLDER_PATH]"
@@ -152,7 +152,7 @@ Use the project-manager subagent to create a recap document in .agent-os/recaps/
 <recap_template>
   # [yyyy-mm-dd] Recap: Feature Name
 
-  This recaps what was built for the spec documented at .agent-os/specs/[spec-folder-name]/spec.md.
+  This recaps what was built for the spec documented at .agents/.agent-os/specs/[spec-folder-name]/spec.md.
 
   ## Recap
 
@@ -164,7 +164,7 @@ Use the project-manager subagent to create a recap document in .agent-os/recaps/
 </recap_template>
 
 <file_creation>
-  <location>.agent-os/recaps/</location>
+  <location>.agents/.agent-os/recaps/</location>
   <naming>[SPEC_FOLDER_NAME].md</naming>
   <format>markdown with yaml frontmatter if needed</format>
 </file_creation>
@@ -245,5 +245,5 @@ Use the project-manager subagent to play a system sound to alert the user that t
 </process_flow>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>
