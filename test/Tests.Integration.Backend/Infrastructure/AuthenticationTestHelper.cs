@@ -21,7 +21,8 @@ public static class AuthenticationTestHelper
         var client = factory.CreateClient();
 
         // Use provided credentials or generate test ones
-        email ??= $"test-{Guid.NewGuid()}@example.com";
+        // Use a simpler email format to avoid potential validation issues in CI
+        email ??= $"test{DateTime.UtcNow.Ticks}@example.com";
         password ??= "Test123!@#";
 
         // If admin role is requested, we need to update the user's role BEFORE getting the token
