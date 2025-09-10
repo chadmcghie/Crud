@@ -91,12 +91,12 @@ public class CompressionPerformanceMiddleware
         // Typical compression ratios based on content type and encoding
         var baseRatio = contentType?.ToLower() switch
         {
-            var ct when ct != null && ct.Contains("json") => 75.0,
-            var ct when ct != null && ct.Contains("html") => 70.0,
-            var ct when ct != null && ct.Contains("css") => 80.0,
-            var ct when ct != null && ct.Contains("javascript") => 65.0,
-            var ct when ct != null && ct.Contains("xml") => 70.0,
-            var ct when ct != null && ct.Contains("text") => 60.0,
+            var ct when ct.Contains("json") => 75.0,
+            var ct when ct.Contains("html") => 70.0,
+            var ct when ct.Contains("css") => 80.0,
+            var ct when ct.Contains("javascript") => 65.0,
+            var ct when ct.Contains("xml") => 70.0,
+            var ct when ct.Contains("text") => 60.0,
             _ => 50.0
         };
 
