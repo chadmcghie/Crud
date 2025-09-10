@@ -1,9 +1,11 @@
 using Api.Dtos;
+using Api.Services;
 using App.Features.Walls;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Controllers;
 
@@ -11,10 +13,11 @@ namespace Api.Controllers;
 [Tags("Building")]
 [Route("api/[controller]")]
 [Authorize]
-public class WallsController(IMediator mediator, IMapper mapper) : ControllerBase
+public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = "UserOrAdmin")]
+    [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListWallsQuery(), ct);
@@ -23,6 +26,7 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "UserOrAdmin")]
+    [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await mediator.Send(new GetWallQuery(id), ct);
@@ -49,6 +53,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
             request.Orientation,
             request.Location
         ), ct);
+
+        // Invalidate collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", ct);
+
         return CreatedAtAction(nameof(Get), new { id = w.Id }, mapper.Map<WallResponse>(w));
     }
 
@@ -71,6 +79,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
             request.Orientation,
             request.Location
         ), ct);
+
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", id, ct);
+
         return NoContent();
     }
 
@@ -79,6 +91,10 @@ public class WallsController(IMediator mediator, IMapper mapper) : ControllerBas
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWallCommand(id), ct);
+
+        // Invalidate both entity and collection cache
+        await cacheInvalidation.InvalidateEntityCacheAsync("walls", id, ct);
+
         return NoContent();
     }
 }
