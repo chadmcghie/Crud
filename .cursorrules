@@ -88,9 +88,9 @@ Each project has its own `.cursorrules` file with specific guidelines:
 5. Run tests to ensure everything is working correctly
 
 ## Documentation
-- [Big Picture](docs/01-Getting%20Started/Big%20Picture.md) - High-level overview
-- [Architecture Guidelines](docs/Architecture%20Guidelines.md) - Design principles
-- [Testing Strategy](docs/05-Quality%20Control/Testing/1-Testing%20Strategy.md) - Testing approach
+- [Big Picture](docs/01-Getting-Started/Big-Picture.md) - High-level overview
+- [Architecture Guidelines](docs/02-Architecture/Architecture%20Guidelines.md) - Design principles
+- [Testing Strategy](docs/02-Architecture/Quality-Assurance/1-Testing%20Strategy.md) - Testing approach
 
 ## Contributing
 1. Follow the established architecture patterns
