@@ -65,7 +65,7 @@ Use the date-checker subagent to determine the current date in YYYYMMDD format f
 
 <instructions>
   ACTION: Save the Markdown summary in the following path:
-    `C:\Users\chadm\source\repos\Crud\docs\Misc\AI Discussions`
+    `docs/06-Archive/`
   NAMING CONVENTION: `claude-task-{BRIEF-TASK-DESCRIPTION}-{DATE}.md`
     - {BRIEF-TASK-DESCRIPTION}: kebab-case description of the conversation topic
     - {DATE}: The YYYYMMDD date provided by the date-checker subagent in step 3
