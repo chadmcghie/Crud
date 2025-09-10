@@ -68,8 +68,8 @@ export default defineConfig({
       url: 'http://localhost:4200',
       timeout: 120 * 1000, // 2 minutes for Angular compilation
       reuseExistingServer: !process.env.CI,
-      stdout: 'ignore',
-      stderr: 'ignore',
+      stdout: process.env.CI ? 'pipe' : 'ignore', // Show output in CI for debugging
+      stderr: process.env.CI ? 'pipe' : 'ignore', // Show errors in CI for debugging
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
