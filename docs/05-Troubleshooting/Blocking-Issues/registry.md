@@ -11,9 +11,9 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
 |---|---|---|---|---|---|---|
+| BI-2025-09-09-001 | 2025-09-09 | 2025-09-11 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally - race conditions in async test handling | Refactored from setTimeout delays to fakeAsync/tick for proper async testing - tests now pass consistently in CI |
 | BI-2025-09-11-002 | 2025-09-11 | 2025-09-11 | 2025-09-10-api-response-caching | functionality | ConditionalRequestMiddleware ETag comparison logic failures causing 6 tests to be skipped | Fixed HTTP header API usage, middleware pipeline registration, and test environment configuration - all 6 tests now pass |
 | BI-2025-09-09-002 | 2025-09-09 | 2025-09-09 | refactor-database-controller | test | Test delay anti-pattern in AuthInterceptor tests | Refactored to use fakeAsync/tick instead of setTimeout delays |
-| BI-2025-09-09-001 | 2025-09-09 | 2025-09-09 | redis-caching-layer | test | Password reset tests database isolation failure | Fixed DatabaseTestService to clean Users and PasswordResetTokens tables |
 | BI-2025-09-08-001 | 2025-09-08 | 2025-09-08 | redis-caching-layer | test | ICacheService DI registration missing in integration tests | Unified ICacheService interfaces between App and Infrastructure layers |
 | BI-2025-08-30-001 | 2025-08-30 | 2025-08-31 | test-server-optimization | test | Smoke test auth failure in CI - SQLite database path issues | Fixed TestDatabaseFactory to use current directory in CI, added 0.0.0.0 binding for Docker |
 | BI-2025-08-30-002 | 2025-08-30 | 2025-08-31 | test-server-optimization | test | E2E test timeouts and API connection failures | Fixed manual cleanup timeout, hardcoded URLs, and Docker networking issues |
@@ -22,6 +22,28 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-09-11-001 | 2025-09-11 | 2025-09-11 | controller-authorization-protection | test | Integration tests failing after authorization and middleware changes | Updated compression tests to use authenticated HTTP clients and proper test infrastructure |
 
 ## Common Patterns
+
+### CI Test Failures with Local Success
+**Pattern**: Tests pass locally but fail in CI environments due to timing/race conditions
+**Symptoms**: 
+- Tests consistently pass in local development environment
+- Same tests fail intermittently or consistently in CI
+- Error messages related to async operations, spies not being called, or timing issues
+- Occurs primarily with Angular/Jasmine tests using async operations
+
+**Root Cause**: CI environments have different execution timing than local development, causing race conditions in async tests
+
+**Solution**: 
+- Replace setTimeout delays with proper async testing utilities (fakeAsync/tick)
+- Use flush() to ensure all pending async operations complete
+- Implement deterministic time control instead of arbitrary delays
+- Validate fixes in actual CI environment, not just locally
+
+**Prevention**:
+- Always use proper async testing utilities instead of setTimeout in tests
+- Test async operations with deterministic time control
+- Validate test fixes in actual CI environment before marking as resolved
+- Document CI-specific test patterns and requirements
 
 ### Authorization Test Failures
 **Pattern**: Integration tests failing with 401 Unauthorized after controller authorization implementation
