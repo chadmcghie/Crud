@@ -22,7 +22,7 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.RowVersion)
             .HasColumnType("BLOB")
             .IsRequired(false);
-            // .IsConcurrencyToken(); // Disabled to allow updates without strict concurrency control
+        // .IsConcurrencyToken(); // Disabled to allow updates without strict concurrency control
 
         // Configure many-to-many relationship with Role
         builder.HasMany(p => p.Roles)
