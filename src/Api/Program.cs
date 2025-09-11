@@ -398,6 +398,7 @@ namespace Api
                 var outputCachingDisabled = app.Configuration.GetValue<bool>("OutputCaching:Disabled");
                 if (!outputCachingDisabled)
                 {
+                    app.UseMiddleware<Api.Middleware.ConditionalRequestMiddleware>(); // Must run before output cache
                     app.UseOutputCache();
                 }
 

@@ -26,7 +26,7 @@ public class CachingE2ETests : IntegrationTestBase
         _output = output;
     }
 
-    [Fact(Skip = "ConditionalRequestMiddleware implementation needs refinement - tracked in issue")]
+    [Fact] // Re-enabled after fixing conditional request middleware
     public async Task CompleteCachingWorkflow_ShouldPerformAsExpected()
     {
         await RunWithCleanDatabaseAsync(async () =>

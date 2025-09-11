@@ -189,9 +189,39 @@
       "reason": "Required for authorization compliance after controller protection implementation",
       "created": "2025-09-11 03:30",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-002",
+      "file": "src/Api/Middleware/ConditionalRequestMiddleware.cs",
+      "lines": [1, 175],
+      "hash": "e3cde4a",
+      "change_description": "Complete conditional request middleware implementation with ETag and Last-Modified support",
+      "reason": "Foundation for HTTP conditional requests functionality - needs debugging, not removal",
+      "created": "2025-09-11 12:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-002",
+      "file": "src/Api/Extensions/OutputCachingExtensions.cs",
+      "lines": [1, 148],
+      "hash": "e3cde4a",
+      "change_description": "Comprehensive output caching configuration and extension methods",
+      "reason": "Core caching infrastructure that works correctly and supports conditional requests",
+      "created": "2025-09-11 12:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-002",
+      "file": "test/Tests.Integration.Backend/OutputCaching/ConditionalRequestTests.cs",
+      "lines": [1, 200],
+      "hash": "e3cde4a",
+      "change_description": "Comprehensive test suite for conditional request functionality",
+      "reason": "Tests identify real ETag comparison bugs and must be maintained for quality assurance",
+      "created": "2025-09-11 12:00",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-11T03:30:00Z",
+  "last_updated": "2025-09-11T12:00:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

@@ -65,7 +65,7 @@ public class ConditionalRequestMiddleware
             var lastModified = GetLastModifiedFromResponse(context.Response) ?? DateTime.UtcNow;
 
             // Check If-None-Match header
-            var ifNoneMatch = request.Headers.IfNoneMatch;
+            var ifNoneMatch = context.Request.Headers["If-None-Match"];
             if (!StringValues.IsNullOrEmpty(ifNoneMatch) && CheckIfNoneMatch(ifNoneMatch, etag))
             {
                 _logger.LogDebug("Returning 304 Not Modified (ETag match)");
@@ -74,7 +74,7 @@ public class ConditionalRequestMiddleware
             }
 
             // Check If-Modified-Since header
-            var ifModifiedSince = request.Headers.IfModifiedSince;
+            var ifModifiedSince = context.Request.Headers["If-Modified-Since"];
             if (!StringValues.IsNullOrEmpty(ifModifiedSince) && CheckIfModifiedSince(ifModifiedSince, lastModified))
             {
                 _logger.LogDebug("Returning 304 Not Modified (Not modified since)");
