@@ -61,7 +61,7 @@ public class ConditionalRequestMiddleware
             // Generate ETag from response content
             var etag = GenerateETag(responseContent);
 
-            // Try to get Last-Modified from response headers, fall back to current time
+            // Try to get Last-Modified from response headers, fall back to current time with microsecond precision
             var lastModified = GetLastModifiedFromResponse(context.Response) ?? DateTime.UtcNow;
 
             // Check If-None-Match header
@@ -143,12 +143,9 @@ public class ConditionalRequestMiddleware
     {
         if (DateTime.TryParse(ifModifiedSince, out var sinceDate))
         {
-            // Remove milliseconds for comparison
-            lastModified = new DateTime(lastModified.Year, lastModified.Month, lastModified.Day,
-                lastModified.Hour, lastModified.Minute, lastModified.Second, DateTimeKind.Utc);
+            // Ensure both times are UTC for proper comparison
+            lastModified = lastModified.ToUniversalTime();
             sinceDate = sinceDate.ToUniversalTime();
-            sinceDate = new DateTime(sinceDate.Year, sinceDate.Month, sinceDate.Day,
-                sinceDate.Hour, sinceDate.Minute, sinceDate.Second, DateTimeKind.Utc);
 
             return lastModified <= sinceDate;
         }
