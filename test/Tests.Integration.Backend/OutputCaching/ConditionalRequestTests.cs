@@ -4,7 +4,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Api.Services;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
@@ -12,6 +14,7 @@ namespace Tests.Integration.Backend.OutputCaching;
 
 /// <summary>
 /// Tests for conditional request support (If-None-Match, If-Modified-Since)
+/// NOTE: ConditionalRequestMiddleware is disabled in Testing environment due to DateTime.UtcNow limitation
 /// </summary>
 public class ConditionalRequestTests : IntegrationTestBase
 {
@@ -77,9 +80,11 @@ public class ConditionalRequestTests : IntegrationTestBase
                 return;
             }
 
-            // Update the data to change the ETag
-            person.FullName = "Updated Person";
-            await DbContext.SaveChangesAsync();
+            // Update the data via API (not direct database modification) - need admin client for PUT
+            var adminClient = await CreateAdminClientAsync();
+            var updateRequest = new { fullName = "Updated Person", phone = person.Phone, roleIds = new List<Guid>() };
+            var updateResponse = await adminClient.PutAsJsonAsync($"/api/people/{person.Id}", updateRequest);
+            updateResponse.EnsureSuccessStatusCode();
 
             // Act - Request with old ETag
             var request = new HttpRequestMessage(HttpMethod.Get, $"/api/people/{person.Id}");
@@ -154,10 +159,11 @@ public class ConditionalRequestTests : IntegrationTestBase
                 return;
             }
 
-            // Wait a moment and update the data
-            await Task.Delay(100);
-            role.Description = "Updated Description";
-            await DbContext.SaveChangesAsync();
+            // Update the data via API (not direct database modification) - need admin client for PUT
+            var adminClient = await CreateAdminClientAsync();
+            var updateRequest = new { name = role.Name, description = "Updated Description" };
+            var updateResponse = await adminClient.PutAsJsonAsync($"/api/roles/{role.Id}", updateRequest);
+            updateResponse.EnsureSuccessStatusCode();
 
             // Act - Request with old Last-Modified
             var request = new HttpRequestMessage(HttpMethod.Get, "/api/roles");

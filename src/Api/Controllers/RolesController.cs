@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Api.Dtos;
 using Api.Services;
 using App.Abstractions;
@@ -7,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Net.Http.Headers;
 
 namespace Api.Controllers;
 
@@ -18,11 +21,46 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
 {
     [HttpGet]
     [Authorize(Policy = "UserOrAdmin")]
-    [OutputCache(PolicyName = "RolesPolicy")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
-        return Ok(mapper.Map<IEnumerable<RoleDto>>(items));
+        var responseDto = mapper.Map<IEnumerable<RoleDto>>(items);
+        
+        // Generate ETag and Last-Modified for conditional requests
+        var responseJson = System.Text.Json.JsonSerializer.Serialize(responseDto);
+        var etag = GenerateETag(responseJson);
+        
+        DateTime? lastModified = null;
+        if (items.Any())
+        {
+            lastModified = items.Max(r => r.UpdatedAt ?? r.CreatedAt);
+        }
+        
+        // Handle conditional requests
+        var requestHeaders = Request.GetTypedHeaders();
+        
+        // Check If-None-Match (ETag)
+        if (requestHeaders.IfNoneMatch?.Any(entityTag => entityTag.Tag == etag) == true)
+        {
+            return StatusCode(304); // Not Modified
+        }
+        
+        // Check If-Modified-Since (Last-Modified)
+        if (requestHeaders.IfModifiedSince.HasValue && 
+            lastModified.HasValue &&
+            lastModified.Value <= requestHeaders.IfModifiedSince.Value)
+        {
+            return StatusCode(304); // Not Modified
+        }
+        
+        // Set response headers
+        Response.Headers.ETag = etag;
+        if (lastModified.HasValue)
+        {
+            Response.Headers.LastModified = lastModified.Value.ToString("R");
+        }
+        
+        return Ok(responseDto);
     }
 
     [HttpGet("{id:guid}")]
@@ -33,6 +71,11 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
         var r = await mediator.Send(new GetRoleQuery(id), ct);
         if (r is null)
             return NotFound();
+            
+        // Set Last-Modified header based on entity timestamp
+        var lastModified = r.UpdatedAt ?? r.CreatedAt;
+        Response.Headers.LastModified = lastModified.ToString("R");
+        
         return Ok(mapper.Map<RoleDto>(r));
     }
 
@@ -70,5 +113,12 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
         await cacheInvalidation.InvalidateEntityCacheAsync("roles", id, ct);
 
         return NoContent();
+    }
+
+    private static string GenerateETag(string content)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(content));
+        return $"\"{Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_')}\"";
     }
 }

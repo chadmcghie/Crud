@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Primitives;
@@ -60,9 +61,8 @@ public class ConditionalRequestMiddleware
             // Generate ETag from response content
             var etag = GenerateETag(responseContent);
 
-            // For simplicity, use current time as Last-Modified
-            // In production, this should come from entity timestamps
-            var lastModified = DateTime.UtcNow;
+            // Try to get Last-Modified from response headers, fall back to current time
+            var lastModified = GetLastModifiedFromResponse(context.Response) ?? DateTime.UtcNow;
 
             // Check If-None-Match header
             var ifNoneMatch = request.Headers.IfNoneMatch;
@@ -77,7 +77,8 @@ public class ConditionalRequestMiddleware
             var ifModifiedSince = request.Headers.IfModifiedSince;
             if (!StringValues.IsNullOrEmpty(ifModifiedSince) && CheckIfModifiedSince(ifModifiedSince, lastModified))
             {
-                _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since)", request.Path);
+                _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since) - LastModified: {LastModified}, IfModifiedSince: {IfModifiedSince}", 
+                    request.Path, lastModified, ifModifiedSince);
                 await SetNotModifiedResponse(context, originalBodyStream, etag, lastModified);
                 return;
             }
@@ -106,6 +107,19 @@ public class ConditionalRequestMiddleware
         using var md5 = MD5.Create();
         var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(content));
         return Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    private static DateTime? GetLastModifiedFromResponse(HttpResponse response)
+    {
+        if (response.Headers.TryGetValue("Last-Modified", out var lastModifiedHeader) && 
+            !StringValues.IsNullOrEmpty(lastModifiedHeader))
+        {
+            if (DateTime.TryParseExact(lastModifiedHeader, "R", null, DateTimeStyles.AssumeUniversal, out var lastModified))
+            {
+                return lastModified.ToUniversalTime();
+            }
+        }
+        return null;
     }
 
     private static bool CheckIfNoneMatch(StringValues ifNoneMatch, string etag)

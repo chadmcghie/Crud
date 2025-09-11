@@ -25,4 +25,42 @@ public class ApplicationDbContext : DbContext
         // Apply all entity configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
+
+    public override int SaveChanges()
+    {
+        UpdateTimestamps();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void UpdateTimestamps()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified);
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is Person person)
+            {
+                person.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is Role role)
+            {
+                role.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is Wall wall)
+            {
+                wall.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is Window window)
+            {
+                window.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+    }
 }
