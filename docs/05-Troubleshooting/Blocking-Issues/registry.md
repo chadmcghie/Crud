@@ -6,6 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
+| BI-2025-09-11-003 | 2025-09-11 | controller-authorization-protection | functionality | RowVersion concurrency control 409 Conflict in PUT_People_Should_Update_Person_Roles test | high |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -42,7 +43,7 @@ Master registry of all blocking issues encountered in the project. This registry
 - Document authorization requirements in test setup guides
 
 ## Statistics
-- Total Issues: 10
-- Active: 0
+- Total Issues: 11
+- Active: 1
 - Resolved: 10
 - Average Resolution Time: ~3.5 hours
