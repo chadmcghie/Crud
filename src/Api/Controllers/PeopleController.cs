@@ -42,33 +42,27 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
         var p = await mediator.Send(new GetPersonQuery(id), ct);
         if (p is null)
             return NotFound();
-
-        // Generate ETag and Last-Modified for conditional requests
+            
         var responseDto = mapper.Map<PersonResponse>(p);
+        var lastModified = new DateTimeOffset(p.UpdatedAt ?? p.CreatedAt);
+        
+        // Generate ETag from response content
         var responseJson = System.Text.Json.JsonSerializer.Serialize(responseDto);
-        var etag = GenerateETag(responseJson);
-        var lastModified = p.UpdatedAt ?? p.CreatedAt;
-
-        // Handle conditional requests
+        var etagValue = GenerateETag(responseJson);
+        var etag = new EntityTagHeaderValue($"\"{etagValue}\"");
+        
+        // Set response headers for conditional requests
+        Response.GetTypedHeaders().ETag = etag;
+        Response.GetTypedHeaders().LastModified = lastModified;
+        
+        // Check if client has matching ETag or valid If-Modified-Since
         var requestHeaders = Request.GetTypedHeaders();
-
-        // Check If-None-Match (ETag)
-        if (requestHeaders.IfNoneMatch?.Any(entityTag => entityTag.Tag == etag) == true)
+        if (requestHeaders.IfNoneMatch?.Contains(etag) == true ||
+            (requestHeaders.IfModifiedSince.HasValue && lastModified <= requestHeaders.IfModifiedSince.Value))
         {
-            return StatusCode(304); // Not Modified
+            return StatusCode(304);
         }
-
-        // Check If-Modified-Since (Last-Modified)
-        if (requestHeaders.IfModifiedSince.HasValue &&
-            lastModified <= requestHeaders.IfModifiedSince.Value)
-        {
-            return StatusCode(304); // Not Modified
-        }
-
-        // Set response headers
-        Response.Headers.ETag = etag;
-        Response.Headers.LastModified = lastModified.ToString("R");
-
+        
         return Ok(responseDto);
     }
 
@@ -112,6 +106,6 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     {
         using var md5 = MD5.Create();
         var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(content));
-        return $"\"{Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_')}\"";
+        return Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 }
