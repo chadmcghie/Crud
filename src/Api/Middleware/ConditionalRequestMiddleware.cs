@@ -23,7 +23,7 @@ public class ConditionalRequestMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var request = context.Request;
-        
+
         // Only process GET and HEAD requests
         if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
         {
@@ -59,7 +59,7 @@ public class ConditionalRequestMiddleware
 
             // Generate ETag from response content
             var etag = GenerateETag(responseContent);
-            
+
             // For simplicity, use current time as Last-Modified
             // In production, this should come from entity timestamps
             var lastModified = DateTime.UtcNow;
@@ -85,7 +85,7 @@ public class ConditionalRequestMiddleware
             // Add cache headers to response
             context.Response.Headers.ETag = $"\"{etag}\"";
             context.Response.Headers.LastModified = lastModified.ToString("R");
-            
+
             // Add Cache-Control if not already present
             if (!context.Response.Headers.ContainsKey(HeaderNames.CacheControl))
             {
@@ -148,14 +148,14 @@ public class ConditionalRequestMiddleware
         context.Response.Body = originalStream;
         context.Response.StatusCode = 304;
         context.Response.ContentLength = 0;
-        
+
         // Add headers
         context.Response.Headers.ETag = $"\"{etag}\"";
         context.Response.Headers.LastModified = lastModified.ToString("R");
-        
+
         // Clear content type
         context.Response.ContentType = null;
-        
+
         // Ensure no content is written
         await context.Response.CompleteAsync();
     }
