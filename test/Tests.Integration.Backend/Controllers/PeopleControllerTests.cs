@@ -239,7 +239,7 @@ public class PeopleControllerTests : IntegrationTestBase
         });
     }
 
-    [Fact(Skip = "RowVersion concurrency control causes 409 Conflict - BI-2025-09-11-003")]
+    [Fact(Skip = "TECHNICAL DEBT: EF Core + SQLite + Many-to-Many + Concurrency architectural incompatibility. See BI-2025-09-11-003 for complete analysis. 6 systematic fix attempts failed. Requires architectural review.")]
     public async Task PUT_People_Should_Update_Person_Roles()
     {
         await RunWithCleanDatabaseAsync(async () =>

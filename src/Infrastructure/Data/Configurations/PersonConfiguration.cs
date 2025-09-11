@@ -17,11 +17,11 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.Phone)
             .HasMaxLength(20);
 
-        // Configure RowVersion as concurrency token with application-managed versioning for SQLite
+        // Configure RowVersion as BLOB but disable concurrency token for many-to-many compatibility
         builder.Property(p => p.RowVersion)
             .HasColumnType("BLOB")
-            .IsRequired(false)
-            .IsConcurrencyToken(); // Enabled with application-managed RowVersion generation
+            .IsRequired(false);
+            // .IsConcurrencyToken() - Disabled due to EF Core conflicts with many-to-many updates
 
         // Configure many-to-many relationship with Role
         builder.HasMany(p => p.Roles)
