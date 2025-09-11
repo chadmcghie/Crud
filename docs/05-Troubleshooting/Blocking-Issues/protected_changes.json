@@ -179,9 +179,19 @@
       "reason": "Prevents SQLite unique constraint violations in parallel test execution",
       "created": "2025-09-11 02:50",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "test/Tests.Integration.Backend/Compression/ResponseCompressionTests.cs",
+      "lines": [1, 150],
+      "hash": "pending-commit",
+      "change_description": "Updated compression tests to use authenticated HTTP clients and SqliteTestWebApplicationFactory",
+      "reason": "Required for authorization compliance after controller protection implementation",
+      "created": "2025-09-11 03:30",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-11T02:58:00Z",
+  "last_updated": "2025-09-11T03:30:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {
