@@ -55,7 +55,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
                 lastModified.Value.Hour, lastModified.Value.Minute, lastModified.Value.Second, DateTimeKind.Utc);
             var ifModifiedSinceSeconds = new DateTime(requestHeaders.IfModifiedSince.Value.Year, requestHeaders.IfModifiedSince.Value.Month, requestHeaders.IfModifiedSince.Value.Day,
                 requestHeaders.IfModifiedSince.Value.Hour, requestHeaders.IfModifiedSince.Value.Minute, requestHeaders.IfModifiedSince.Value.Second, DateTimeKind.Utc);
-                
+
             if (lastModifiedSeconds <= ifModifiedSinceSeconds)
             {
                 return StatusCode(304); // Not Modified
