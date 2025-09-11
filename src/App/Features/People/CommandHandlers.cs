@@ -1,14 +1,20 @@
 using App.Abstractions;
+using App.Services;
 using Domain.Entities;
 using MediatR;
 
 namespace App.Features.People;
 
-public class CreatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository) : IRequestHandler<CreatePersonCommand, Person>
+public class CreatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository, IRowVersionService rowVersionService) : IRequestHandler<CreatePersonCommand, Person>
 {
     public async Task<Person> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
     {
-        var person = new Person { FullName = request.FullName, Phone = request.Phone };
+        var person = new Person 
+        { 
+            FullName = request.FullName, 
+            Phone = request.Phone,
+            RowVersion = rowVersionService.GenerateInitialVersion()
+        };
 
         if (request.RoleIds != null)
         {
@@ -24,25 +30,38 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
     }
 }
 
-public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository) : IRequestHandler<UpdatePersonCommand>
+public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository, IRowVersionService rowVersionService) : IRequestHandler<UpdatePersonCommand>
 {
     public async Task Handle(UpdatePersonCommand request, CancellationToken cancellationToken)
     {
+        // Load existing person with current state for proper concurrency control
         var person = await personRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Person {request.Id} not found");
 
+        // Manual concurrency check - validate client's RowVersion against current entity
+        if (request.RowVersion != null && person.RowVersion != null)
+        {
+            if (!request.RowVersion.SequenceEqual(person.RowVersion))
+            {
+                throw new InvalidOperationException("The person was modified by another user. Please refresh and try again.");
+            }
+        }
+
+        // Update person properties
         person.FullName = request.FullName;
         person.Phone = request.Phone;
-        
-        // Set RowVersion from request for concurrency control
-        if (request.RowVersion != null)
-        {
-            person.RowVersion = request.RowVersion;
-        }
 
         if (request.RoleIds != null)
         {
-            person.Roles.Clear();
+            // For many-to-many relationships, EF Core requires explicit tracking of changes
+            // Remove existing roles first
+            var rolesToRemove = person.Roles.ToList();
+            foreach (var role in rolesToRemove)
+            {
+                person.Roles.Remove(role);
+            }
+            
+            // Add new roles
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
@@ -51,11 +70,9 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
             }
         }
 
-        // For proper optimistic concurrency control with Entity Framework:
-        // 1. Don't manually set RowVersion on the entity
-        // 2. EF will automatically handle concurrency checking based on the entity's current RowVersion
-        // 3. The RowVersion from the request is implicitly validated through EF's change tracking
-
+        // Generate new RowVersion before saving
+        person.RowVersion = rowVersionService.GenerateNewVersion();
+        
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }
