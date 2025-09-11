@@ -310,7 +310,7 @@ jobs:
       with:
         name: Frontend Unit Tests Summary
         path: src/Angular/test-results/*.xml
-        reporter: junit
+        reporter: java-junit
 
   backend-integration-tests:
     name: Backend Integration Tests
