@@ -6,7 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
-(No active issues)
+| BI-2025-09-11-001 | 2025-09-11 | controller-authorization-protection | test | Integration tests failing after authorization and middleware changes | high |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -23,7 +23,7 @@ Master registry of all blocking issues encountered in the project. This registry
 Document recurring issue patterns here as they emerge.
 
 ## Statistics
-- Total Issues: 8
-- Active: 0
+- Total Issues: 9
+- Active: 1
 - Resolved: 8
 - Average Resolution Time: ~4 hours
