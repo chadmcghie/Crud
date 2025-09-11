@@ -265,8 +265,8 @@ public class PeopleControllerTests : IntegrationTestBase
             var getCurrentResponse = await adminClient.GetAsync($"/api/people/{createdPerson!.Id}");
             var currentPerson = await ReadJsonAsync<PersonResponse>(getCurrentResponse);
 
-            // Update with different roles (without RowVersion for now to test basic functionality)
-            var updateRequest = TestDataBuilders.UpdatePersonRequest("Role Update Test", "666-666-6666", new[] { role2.Id, role3!.Id }, null);
+            // Update with different roles using the current RowVersion for concurrency control
+            var updateRequest = TestDataBuilders.UpdatePersonRequest("Role Update Test", "666-666-6666", new[] { role2.Id, role3!.Id }, currentPerson!.RowVersion);
 
             // Act
             var response = await adminClient.PutAsJsonAsync($"/api/people/{createdPerson!.Id}", updateRequest);

@@ -47,6 +47,10 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
+            // Set the updated timestamp
+            person.UpdatedAt = DateTime.UtcNow;
+            
+            // Use Update to mark the entity as modified - concurrency control via RowVersion is now enabled
             _context.People.Update(person);
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }

@@ -33,6 +33,12 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
 
         person.FullName = request.FullName;
         person.Phone = request.Phone;
+        
+        // Set RowVersion from request for concurrency control
+        if (request.RowVersion != null)
+        {
+            person.RowVersion = request.RowVersion;
+        }
 
         if (request.RoleIds != null)
         {
