@@ -112,12 +112,13 @@ public class ApiHealthTests : IntegrationTestBase
             // Arrange
             var tasks = new List<Task<HttpResponseMessage>>();
 
-            // Act - Send multiple concurrent requests
+            // Act - Send multiple concurrent requests with unique names
+            var uniquePrefix = Guid.NewGuid().ToString("N");
             for (int i = 0; i < 10; i++)
             {
                 var createRequest = new
                 {
-                    Name = $"Concurrent Role {i}",
+                    Name = $"ConcurrentRole_{uniquePrefix}_{i}",
                     Description = $"Role created in concurrent test {i}"
                 };
                 tasks.Add(AuthenticatedPostJsonAsync("/api/roles", createRequest));
@@ -142,8 +143,9 @@ public class ApiHealthTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange
-            // Create a role first
-            var roleResponse = await AuthenticatedPostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });
+            // Create a role first with unique name to avoid conflicts
+            var uniqueRoleName = $"TestRole_{Guid.NewGuid():N}";
+            var roleResponse = await AuthenticatedPostJsonAsync("/api/roles", new { Name = uniqueRoleName, Description = "Test" });
             roleResponse.EnsureSuccessStatusCode();
             var role = await ReadJsonAsync<RoleDto>(roleResponse);
             var roleId = role?.Id ?? Guid.Empty;

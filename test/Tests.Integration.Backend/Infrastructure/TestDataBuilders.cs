@@ -14,8 +14,10 @@ public static class TestDataBuilders
 
     public static CreateRoleRequest CreateRoleRequest(string? name = null, string? description = null)
     {
+        // Generate unique name with timestamp to avoid conflicts in parallel tests
+        var uniqueName = name ?? $"Role_{Guid.NewGuid():N}_{DateTime.UtcNow.Ticks}";
         return new CreateRoleRequest(
-            name ?? _fixture.Create<string>(),
+            uniqueName,
             description
         );
     }
