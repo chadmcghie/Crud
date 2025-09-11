@@ -48,10 +48,18 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
 
         // Check If-Modified-Since (Last-Modified)
         if (requestHeaders.IfModifiedSince.HasValue &&
-            lastModified.HasValue &&
-            lastModified.Value <= requestHeaders.IfModifiedSince.Value)
+            lastModified.HasValue)
         {
-            return StatusCode(304); // Not Modified
+            // Truncate both timestamps to second precision for proper HTTP date comparison
+            var lastModifiedSeconds = new DateTime(lastModified.Value.Year, lastModified.Value.Month, lastModified.Value.Day,
+                lastModified.Value.Hour, lastModified.Value.Minute, lastModified.Value.Second, DateTimeKind.Utc);
+            var ifModifiedSinceSeconds = new DateTime(requestHeaders.IfModifiedSince.Value.Year, requestHeaders.IfModifiedSince.Value.Month, requestHeaders.IfModifiedSince.Value.Day,
+                requestHeaders.IfModifiedSince.Value.Hour, requestHeaders.IfModifiedSince.Value.Minute, requestHeaders.IfModifiedSince.Value.Second, DateTimeKind.Utc);
+                
+            if (lastModifiedSeconds <= ifModifiedSinceSeconds)
+            {
+                return StatusCode(304); // Not Modified
+            }
         }
 
         // Set response headers
