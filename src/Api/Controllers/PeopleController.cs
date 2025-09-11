@@ -42,19 +42,19 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
         var p = await mediator.Send(new GetPersonQuery(id), ct);
         if (p is null)
             return NotFound();
-            
+
         var responseDto = mapper.Map<PersonResponse>(p);
         var lastModified = new DateTimeOffset(p.UpdatedAt ?? p.CreatedAt);
-        
+
         // Generate ETag from response content
         var responseJson = System.Text.Json.JsonSerializer.Serialize(responseDto);
         var etagValue = GenerateETag(responseJson);
         var etag = new EntityTagHeaderValue($"\"{etagValue}\"");
-        
+
         // Set response headers for conditional requests
         Response.GetTypedHeaders().ETag = etag;
         Response.GetTypedHeaders().LastModified = lastModified;
-        
+
         // Check if client has matching ETag or valid If-Modified-Since
         var requestHeaders = Request.GetTypedHeaders();
         if (requestHeaders.IfNoneMatch?.Contains(etag) == true ||
@@ -62,7 +62,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
         {
             return StatusCode(304);
         }
-        
+
         return Ok(responseDto);
     }
 

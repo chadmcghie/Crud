@@ -40,7 +40,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
         var requestHeaders = Request.GetTypedHeaders();
 
         // Check If-None-Match (ETag)
-        if (requestHeaders.IfNoneMatch?.Any(entityTag => 
+        if (requestHeaders.IfNoneMatch?.Any(entityTag =>
             entityTag.Tag == etag || entityTag.Tag == etag.Trim('"')) == true)
         {
             return StatusCode(304); // Not Modified
