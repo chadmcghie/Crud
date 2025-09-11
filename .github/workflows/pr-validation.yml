@@ -262,7 +262,7 @@ jobs:
       uses: dorny/test-reporter@v1
       if: always()
       with:
-        name: Backend Unit Tests
+        name: Backend Unit Tests Summary
         path: TestResults/*.trx
         reporter: dotnet-trx
 
@@ -364,7 +364,7 @@ jobs:
       uses: dorny/test-reporter@v1
       if: always()
       with:
-        name: Backend Integration Tests
+        name: Backend Integration Tests Summary
         path: TestResults/*.trx
         reporter: dotnet-trx
 
