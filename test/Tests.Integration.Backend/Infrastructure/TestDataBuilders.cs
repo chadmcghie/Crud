@@ -49,12 +49,14 @@ public static class TestDataBuilders
     public static UpdatePersonRequest UpdatePersonRequest(
         string? fullName = null,
         string? phone = null,
-        IEnumerable<Guid>? roleIds = null)
+        IEnumerable<Guid>? roleIds = null,
+        byte[]? rowVersion = null)
     {
         return new UpdatePersonRequest(
             fullName ?? _fixture.Create<string>(),
             phone,
-            roleIds ?? Array.Empty<Guid>()
+            roleIds ?? Array.Empty<Guid>(),
+            rowVersion
         );
     }
 

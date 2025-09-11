@@ -75,7 +75,7 @@ public class CacheInvalidationTests : IntegrationTestBase
             var listContent1 = await listResponse1.Content.ReadAsStringAsync();
 
             // Update the person (should invalidate both caches) - Use admin client
-            var updateRequest = new Api.Dtos.UpdatePersonRequest("Updated Name", "555-0200", null);
+            var updateRequest = new Api.Dtos.UpdatePersonRequest("Updated Name", "555-0200", null, null);
             var putResponse = await adminClient.PutAsJsonAsync($"/api/people/{personId}", updateRequest);
             putResponse.EnsureSuccessStatusCode();
 
