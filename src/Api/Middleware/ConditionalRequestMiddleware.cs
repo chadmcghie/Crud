@@ -77,7 +77,7 @@ public class ConditionalRequestMiddleware
             var ifModifiedSince = request.Headers.IfModifiedSince;
             if (!StringValues.IsNullOrEmpty(ifModifiedSince) && CheckIfModifiedSince(ifModifiedSince, lastModified))
             {
-                _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since) - LastModified: {LastModified}, IfModifiedSince: {IfModifiedSince}", 
+                _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since) - LastModified: {LastModified}, IfModifiedSince: {IfModifiedSince}",
                     request.Path, lastModified, ifModifiedSince);
                 await SetNotModifiedResponse(context, originalBodyStream, etag, lastModified);
                 return;
@@ -111,7 +111,7 @@ public class ConditionalRequestMiddleware
 
     private static DateTime? GetLastModifiedFromResponse(HttpResponse response)
     {
-        if (response.Headers.TryGetValue("Last-Modified", out var lastModifiedHeader) && 
+        if (response.Headers.TryGetValue("Last-Modified", out var lastModifiedHeader) &&
             !StringValues.IsNullOrEmpty(lastModifiedHeader))
         {
             if (DateTime.TryParseExact(lastModifiedHeader, "R", null, DateTimeStyles.AssumeUniversal, out var lastModified))

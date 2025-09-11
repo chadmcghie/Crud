@@ -25,41 +25,41 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
         var responseDto = mapper.Map<IEnumerable<RoleDto>>(items);
-        
+
         // Generate ETag and Last-Modified for conditional requests
         var responseJson = System.Text.Json.JsonSerializer.Serialize(responseDto);
         var etag = GenerateETag(responseJson);
-        
+
         DateTime? lastModified = null;
         if (items.Any())
         {
             lastModified = items.Max(r => r.UpdatedAt ?? r.CreatedAt);
         }
-        
+
         // Handle conditional requests
         var requestHeaders = Request.GetTypedHeaders();
-        
+
         // Check If-None-Match (ETag)
         if (requestHeaders.IfNoneMatch?.Any(entityTag => entityTag.Tag == etag) == true)
         {
             return StatusCode(304); // Not Modified
         }
-        
+
         // Check If-Modified-Since (Last-Modified)
-        if (requestHeaders.IfModifiedSince.HasValue && 
+        if (requestHeaders.IfModifiedSince.HasValue &&
             lastModified.HasValue &&
             lastModified.Value <= requestHeaders.IfModifiedSince.Value)
         {
             return StatusCode(304); // Not Modified
         }
-        
+
         // Set response headers
         Response.Headers.ETag = etag;
         if (lastModified.HasValue)
         {
             Response.Headers.LastModified = lastModified.Value.ToString("R");
         }
-        
+
         return Ok(responseDto);
     }
 
@@ -71,11 +71,11 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
         var r = await mediator.Send(new GetRoleQuery(id), ct);
         if (r is null)
             return NotFound();
-            
+
         // Set Last-Modified header based on entity timestamp
         var lastModified = r.UpdatedAt ?? r.CreatedAt;
         Response.Headers.LastModified = lastModified.ToString("R");
-        
+
         return Ok(mapper.Map<RoleDto>(r));
     }
 
