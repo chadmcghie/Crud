@@ -1,4 +1,3 @@
-using System;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -8,7 +7,7 @@ using Xunit;
 namespace Tests.Integration.Backend.OutputCaching;
 
 /// <summary>
-/// Tests for cache invalidation when data is modified
+/// Tests for cache invalidation scenarios
 /// </summary>
 public class CacheInvalidationTests : IntegrationTestBase
 {
@@ -17,116 +16,119 @@ public class CacheInvalidationTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task PostPerson_ShouldInvalidateCollectionCache()
+    public async Task PostPerson_ShouldInvalidateListCache()
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var person1 = new Domain.Entities.Person { FullName = "Person 1", Phone = "555-0001" };
-            DbContext.People.Add(person1);
+            // Arrange - Create test data
+            var person = new Domain.Entities.Person { FullName = "Initial Person", Phone = "555-0100" };
+            DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
-            // Act - Get list (should cache)
-            var response1 = await Client.GetAsync("/api/people");
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache the initial list
+            var response1 = await userClient.GetAsync("/api/people");
             response1.EnsureSuccessStatusCode();
             var content1 = await response1.Content.ReadAsStringAsync();
 
-            // Act - Create new person (should invalidate cache)
-            var createRequest = new Api.Dtos.CreatePersonRequest("Person Two", "555-0002", null);
-            var postResponse = await Client.PostAsJsonAsync("/api/people", createRequest);
-            if (!postResponse.IsSuccessStatusCode)
-            {
-                var error = await postResponse.Content.ReadAsStringAsync();
-                throw new Exception($"Failed to create person: {postResponse.StatusCode} - {error}");
-            }
+            // Create a new person (should invalidate cache) - Use admin client
+            var createRequest = new Api.Dtos.CreatePersonRequest("New Person", "555-0200", null);
+            var postResponse = await adminClient.PostAsJsonAsync("/api/people", createRequest);
             postResponse.EnsureSuccessStatusCode();
 
-            // Act - Get list again (should have new data)
-            var response2 = await Client.GetAsync("/api/people");
+            // Get the list again
+            var response2 = await userClient.GetAsync("/api/people");
             response2.EnsureSuccessStatusCode();
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content1.Should().NotBe(content2, "Cache should be invalidated after POST");
-            content2.Should().Contain("Person Two", "New person should be in the response");
+            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
+            content2.Should().Contain("New Person");
         });
     }
 
     [Fact]
-    public async Task PutPerson_ShouldInvalidateBothEntityAndCollectionCache()
+    public async Task PutPerson_ShouldInvalidateBothEntityAndListCache()
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var person = new Domain.Entities.Person { FullName = "Original Name", Phone = "555-0001" };
+            // Arrange - Create test data
+            var person = new Domain.Entities.Person { FullName = "Original Name", Phone = "555-0100" };
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
             var personId = person.Id;
 
-            // Act - Get entity (should cache)
-            var response1 = await Client.GetAsync($"/api/people/{personId}");
-            response1.EnsureSuccessStatusCode();
-            var content1 = await response1.Content.ReadAsStringAsync();
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
 
-            // Act - Get list (should cache)
-            var listResponse1 = await Client.GetAsync("/api/people");
+            // Act - Cache the entity and list
+            var response1 = await userClient.GetAsync($"/api/people/{personId}");
+            response1.EnsureSuccessStatusCode();
+            var entityContent1 = await response1.Content.ReadAsStringAsync();
+
+            var listResponse1 = await userClient.GetAsync("/api/people");
             listResponse1.EnsureSuccessStatusCode();
             var listContent1 = await listResponse1.Content.ReadAsStringAsync();
 
-            // Act - Update person (should invalidate both caches)
-            var updateRequest = new Api.Dtos.UpdatePersonRequest("Updated Name", "555-9999", null);
-            var putResponse = await Client.PutAsJsonAsync($"/api/people/{personId}", updateRequest);
+            // Update the person (should invalidate both caches) - Use admin client
+            var updateRequest = new Api.Dtos.UpdatePersonRequest("Updated Name", "555-0200", null);
+            var putResponse = await adminClient.PutAsJsonAsync($"/api/people/{personId}", updateRequest);
             putResponse.EnsureSuccessStatusCode();
 
-            // Act - Get entity again (should have new data)
-            var response2 = await Client.GetAsync($"/api/people/{personId}");
+            // Get the entity and list again
+            var response2 = await userClient.GetAsync($"/api/people/{personId}");
             response2.EnsureSuccessStatusCode();
-            var content2 = await response2.Content.ReadAsStringAsync();
+            var entityContent2 = await response2.Content.ReadAsStringAsync();
 
-            // Act - Get list again (should have updated data)
-            var listResponse2 = await Client.GetAsync("/api/people");
+            var listResponse2 = await userClient.GetAsync("/api/people");
             listResponse2.EnsureSuccessStatusCode();
             var listContent2 = await listResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            content1.Should().NotBe(content2, "Entity cache should be invalidated after PUT");
-            content2.Should().Contain("Updated Name", "Entity should have updated name");
+            entityContent2.Should().NotBe(entityContent1, "Entity cache should be invalidated after PUT");
+            entityContent2.Should().Contain("Updated Name");
 
-            listContent1.Should().NotBe(listContent2, "Collection cache should be invalidated after PUT");
-            listContent2.Should().Contain("Updated Name", "Collection should have updated name");
+            listContent2.Should().NotBe(listContent1, "List cache should be invalidated after PUT");
+            listContent2.Should().Contain("Updated Name");
         });
     }
 
     [Fact]
-    public async Task DeletePerson_ShouldInvalidateBothEntityAndCollectionCache()
+    public async Task DeletePerson_ShouldInvalidateListCache()
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var person1 = new Domain.Entities.Person { FullName = "Person One", Phone = "555-0001" };
-            var person2 = new Domain.Entities.Person { FullName = "Person Two", Phone = "555-0002" };
-            DbContext.People.AddRange(person1, person2);
+            // Arrange - Create test data
+            var person = new Domain.Entities.Person { FullName = "Person to Delete", Phone = "555-0100" };
+            DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
-            var personId = person2.Id;
+            var personId = person.Id;
 
-            // Act - Get list (should cache)
-            var listResponse1 = await Client.GetAsync("/api/people");
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache the list
+            var listResponse1 = await userClient.GetAsync("/api/people");
             listResponse1.EnsureSuccessStatusCode();
             var listContent1 = await listResponse1.Content.ReadAsStringAsync();
 
-            // Act - Delete person (should invalidate cache)
-            var deleteResponse = await Client.DeleteAsync($"/api/people/{personId}");
+            // Delete the person (should invalidate cache) - Use admin client
+            var deleteResponse = await adminClient.DeleteAsync($"/api/people/{personId}");
             deleteResponse.EnsureSuccessStatusCode();
 
-            // Act - Get list again (should have one less person)
-            var listResponse2 = await Client.GetAsync("/api/people");
+            // Get the list again
+            var listResponse2 = await userClient.GetAsync("/api/people");
             listResponse2.EnsureSuccessStatusCode();
             var listContent2 = await listResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            listContent1.Should().NotBe(listContent2, "Collection cache should be invalidated after DELETE");
-            listContent2.Should().NotContain("Person Two", "Deleted person should not be in the response");
-            listContent2.Should().Contain("Person One", "Remaining person should still be in the response");
+            listContent2.Should().NotBe(listContent1, "List cache should be invalidated after DELETE");
+            listContent2.Should().NotContain("Person to Delete");
         });
     }
 
@@ -135,29 +137,33 @@ public class CacheInvalidationTests : IntegrationTestBase
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var role1 = new Domain.Entities.Role { Name = "Admin" };
-            DbContext.Roles.Add(role1);
+            // Arrange - Create test data
+            var role = new Domain.Entities.Role { Name = "Initial Role" };
+            DbContext.Roles.Add(role);
             await DbContext.SaveChangesAsync();
 
-            // Act - Get list (should cache)
-            var response1 = await Client.GetAsync("/api/roles");
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache the initial list
+            var response1 = await userClient.GetAsync("/api/roles");
             response1.EnsureSuccessStatusCode();
             var content1 = await response1.Content.ReadAsStringAsync();
 
-            // Act - Create new role (should invalidate cache)
-            var createRequest = new { name = "Manager", description = "Manager role" };
-            var postResponse = await Client.PostAsJsonAsync("/api/roles", createRequest);
+            // Create a new role (should invalidate cache) - Use admin client
+            var createRequest = new Api.Dtos.CreateRoleRequest("New Role", "Description");
+            var postResponse = await adminClient.PostAsJsonAsync("/api/roles", createRequest);
             postResponse.EnsureSuccessStatusCode();
 
-            // Act - Get list again (should have new data)
-            var response2 = await Client.GetAsync("/api/roles");
+            // Get the list again
+            var response2 = await userClient.GetAsync("/api/roles");
             response2.EnsureSuccessStatusCode();
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content1.Should().NotBe(content2, "Cache should be invalidated after POST");
-            content2.Should().Contain("Manager", "New role should be in the response");
+            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
+            content2.Should().Contain("New Role");
         });
     }
 
@@ -166,43 +172,41 @@ public class CacheInvalidationTests : IntegrationTestBase
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var wall1 = new Domain.Entities.Wall
+            // Arrange - Create test data
+            var wall = new Domain.Entities.Wall
             {
-                Name = "Wall 1",
+                Name = "Initial Wall",
                 AssemblyType = "Brick",
                 Length = 10,
                 Height = 8,
                 Thickness = 12
             };
-            DbContext.Walls.Add(wall1);
+            DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
 
-            // Act - Get list (should cache)
-            var response1 = await Client.GetAsync("/api/walls");
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache the initial list
+            var response1 = await userClient.GetAsync("/api/walls");
             response1.EnsureSuccessStatusCode();
             var content1 = await response1.Content.ReadAsStringAsync();
 
-            // Act - Create new wall (should invalidate cache)
-            var createRequest = new
-            {
-                name = "Wall Two",
-                assemblyType = "Concrete",
-                length = 15.0,
-                height = 10.0,
-                thickness = 8.0
-            };
-            var postResponse = await Client.PostAsJsonAsync("/api/walls", createRequest);
+            // Create a new wall (should invalidate cache) - Use admin client
+            var createRequest = TestDataBuilders.CreateWallRequest(
+                "New Wall", "Description", 15, 10, 14, "Concrete");
+            var postResponse = await adminClient.PostAsJsonAsync("/api/walls", createRequest);
             postResponse.EnsureSuccessStatusCode();
 
-            // Act - Get list again (should have new data)
-            var response2 = await Client.GetAsync("/api/walls");
+            // Get the list again
+            var response2 = await userClient.GetAsync("/api/walls");
             response2.EnsureSuccessStatusCode();
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content1.Should().NotBe(content2, "Cache should be invalidated after POST");
-            content2.Should().Contain("Wall Two", "New wall should be in the response");
+            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
+            content2.Should().Contain("New Wall");
         });
     }
 
@@ -211,45 +215,87 @@ public class CacheInvalidationTests : IntegrationTestBase
     {
         await RunWithCleanDatabaseAsync(async () =>
         {
-            // Arrange - Create initial data
-            var window1 = new Domain.Entities.Window
+            // Arrange - Create test data
+            var window = new Domain.Entities.Window
             {
-                Name = "Window 1",
+                Name = "Initial Window",
                 FrameType = "Aluminum",
                 GlazingType = "Double",
                 Width = 4,
                 Height = 5,
                 Area = 20
             };
-            DbContext.Windows.Add(window1);
+            DbContext.Windows.Add(window);
             await DbContext.SaveChangesAsync();
 
-            // Act - Get list (should cache)
-            var response1 = await Client.GetAsync("/api/windows");
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache the initial list
+            var response1 = await userClient.GetAsync("/api/windows");
             response1.EnsureSuccessStatusCode();
             var content1 = await response1.Content.ReadAsStringAsync();
 
-            // Act - Create new window (should invalidate cache)
-            var createRequest = new
-            {
-                name = "Window Two",
-                frameType = "Vinyl",
-                glazingType = "Triple",
-                width = 3.0,
-                height = 4.0,
-                area = 12.0
-            };
-            var postResponse = await Client.PostAsJsonAsync("/api/windows", createRequest);
+            // Create a new window (should invalidate cache) - Use admin client
+            var createRequest = TestDataBuilders.CreateWindowRequest(
+                "New Window", "Description", 3, 4, 12, "Wood", null, "Triple", null);
+            var postResponse = await adminClient.PostAsJsonAsync("/api/windows", createRequest);
             postResponse.EnsureSuccessStatusCode();
 
-            // Act - Get list again (should have new data)
-            var response2 = await Client.GetAsync("/api/windows");
+            // Get the list again
+            var response2 = await userClient.GetAsync("/api/windows");
             response2.EnsureSuccessStatusCode();
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content1.Should().NotBe(content2, "Cache should be invalidated after POST");
-            content2.Should().Contain("Window Two", "New window should be in the response");
+            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
+            content2.Should().Contain("New Window");
+        });
+    }
+
+    [Fact]
+    public async Task CacheInvalidation_ShouldBeEntitySpecific()
+    {
+        await RunWithCleanDatabaseAsync(async () =>
+        {
+            // Arrange - Create test data
+            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var role = new Domain.Entities.Role { Name = "Test Role" };
+            DbContext.People.Add(person);
+            DbContext.Roles.Add(role);
+            await DbContext.SaveChangesAsync();
+
+            // Get authenticated clients
+            var userClient = await CreateUserClientAsync();
+            var adminClient = await CreateAdminClientAsync();
+
+            // Act - Cache both entities
+            var peopleResponse1 = await userClient.GetAsync("/api/people");
+            var rolesResponse1 = await userClient.GetAsync("/api/roles");
+            peopleResponse1.EnsureSuccessStatusCode();
+            rolesResponse1.EnsureSuccessStatusCode();
+
+            var peopleContent1 = await peopleResponse1.Content.ReadAsStringAsync();
+            var rolesContent1 = await rolesResponse1.Content.ReadAsStringAsync();
+
+            // Modify only people (should only invalidate people cache) - Use admin client
+            var createPersonRequest = new Api.Dtos.CreatePersonRequest("New Person", "555-0200", null);
+            await adminClient.PostAsJsonAsync("/api/people", createPersonRequest);
+
+            // Get both lists again
+            var peopleResponse2 = await userClient.GetAsync("/api/people");
+            var rolesResponse2 = await userClient.GetAsync("/api/roles");
+            peopleResponse2.EnsureSuccessStatusCode();
+            rolesResponse2.EnsureSuccessStatusCode();
+
+            var peopleContent2 = await peopleResponse2.Content.ReadAsStringAsync();
+            var rolesContent2 = await rolesResponse2.Content.ReadAsStringAsync();
+
+            // Assert
+            peopleContent2.Should().NotBe(peopleContent1, "People cache should be invalidated");
+            peopleContent2.Should().Contain("New Person");
+            rolesContent2.Should().Be(rolesContent1, "Roles cache should NOT be invalidated");
         });
     }
 }

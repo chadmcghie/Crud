@@ -22,7 +22,7 @@ The following features have been implemented:
 
 **Goal:** Implement comprehensive authentication and authorization
 **Success Criteria:** Secure API endpoints with JWT authentication and role-based access
-**Status:** ✅ 100% Complete - Backend and Frontend fully implemented including password reset
+**Status:** 🟡 95% Complete - Backend and Frontend implemented, Controller protection in progress
 
 ### Features
 
@@ -34,6 +34,7 @@ The following features have been implemented:
 - [x] Protected routes in Angular - Auth guards and route protection `S`
 - [x] Frontend token management - HTTP interceptors and token storage `S`
 - [x] Password reset functionality - Complete email-based reset flow (Frontend UI + Backend API) `M`
+- [ ] Controller authorization protection - Secure business endpoints with [Authorize] attributes `S`
 
 ### Backend Completed (✅)
 - Complete JWT token service with generation and validation
@@ -45,6 +46,11 @@ The following features have been implemented:
 - Comprehensive CQRS implementation with MediatR
 - Full test coverage (unit, integration, E2E)
 - **Password Reset API**: Forgot password, reset password, and token validation endpoints with secure email service integration
+
+### Backend Remaining (🟡 In Progress)
+- **Controller Authorization**: Add [Authorize] attributes to People, Roles, Walls, Windows controllers
+- **Role-Based Access Control**: Implement UserOrAdmin for read operations, AdminOnly for write operations
+- **Integration Test Updates**: Update tests to handle authentication requirements
 
 ### Frontend Completed (✅)
 - Authentication service for API communication with JWT handling

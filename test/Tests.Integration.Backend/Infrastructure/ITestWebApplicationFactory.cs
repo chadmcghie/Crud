@@ -32,4 +32,9 @@ public interface ITestWebApplicationFactory : IDisposable
     /// Gets the test log capture instance for debugging server-side errors (if available)
     /// </summary>
     TestLogCapture? LogCapture { get; }
+
+    /// <summary>
+    /// Sets a user's role for testing authorization scenarios
+    /// </summary>
+    Task SetUserRoleAsync(string email, string role);
 }

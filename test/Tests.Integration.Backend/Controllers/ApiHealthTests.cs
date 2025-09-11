@@ -17,7 +17,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Be_Responsive()
     {
         // Act
-        var response = await Client.GetAsync("/api/roles");
+        var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
         response.Should().NotBeNull();
@@ -28,7 +28,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Return_JSON_Content_Type()
     {
         // Act
-        var response = await Client.GetAsync("/api/roles");
+        var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
@@ -41,7 +41,7 @@ public class ApiHealthTests : IntegrationTestBase
         Client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
 
         // Act
-        var response = await Client.GetAsync("/api/roles");
+        var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -53,7 +53,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Handle_Invalid_Routes()
     {
         // Act
-        var response = await Client.GetAsync("/api/nonexistent");
+        var response = await AuthenticatedGetAsync("/api/nonexistent");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -63,7 +63,8 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task API_Should_Handle_Invalid_HTTP_Methods()
     {
         // Act
-        var response = await Client.PatchAsync("/api/roles", null);
+        var adminClient = await CreateAdminClientAsync();
+        var response = await adminClient.PatchAsync("/api/roles", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
@@ -76,7 +77,8 @@ public class ApiHealthTests : IntegrationTestBase
         var malformedJson = new StringContent("{ invalid json", System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Client.PostAsync("/api/roles", malformedJson);
+        var adminClient = await CreateAdminClientAsync();
+        var response = await adminClient.PostAsync("/api/roles", malformedJson);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -95,7 +97,7 @@ public class ApiHealthTests : IntegrationTestBase
         };
 
         // Act
-        var response = await PostJsonAsync("/api/roles", createRequest);
+        var response = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
 
         // Assert
         // Should either succeed or fail gracefully with appropriate status code
@@ -110,15 +112,16 @@ public class ApiHealthTests : IntegrationTestBase
             // Arrange
             var tasks = new List<Task<HttpResponseMessage>>();
 
-            // Act - Send multiple concurrent requests
+            // Act - Send multiple concurrent requests with unique names
+            var uniquePrefix = Guid.NewGuid().ToString("N");
             for (int i = 0; i < 10; i++)
             {
                 var createRequest = new
                 {
-                    Name = $"Concurrent Role {i}",
+                    Name = $"ConcurrentRole_{uniquePrefix}_{i}",
                     Description = $"Role created in concurrent test {i}"
                 };
-                tasks.Add(PostJsonAsync("/api/roles", createRequest));
+                tasks.Add(AuthenticatedPostJsonAsync("/api/roles", createRequest));
             }
 
             var responses = await Task.WhenAll(tasks);
@@ -128,7 +131,7 @@ public class ApiHealthTests : IntegrationTestBase
             responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
 
             // Verify all roles were created
-            var getResponse = await Client.GetAsync("/api/roles");
+            var getResponse = await AuthenticatedGetAsync("/api/roles");
             var roles = await ReadJsonAsync<List<object>>(getResponse);
             roles.Should().HaveCount(10);
         });
@@ -140,8 +143,9 @@ public class ApiHealthTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange
-            // Create a role first
-            var roleResponse = await PostJsonAsync("/api/roles", new { Name = "Test Role", Description = "Test" });
+            // Create a role first with unique name to avoid conflicts
+            var uniqueRoleName = $"TestRole_{Guid.NewGuid():N}";
+            var roleResponse = await AuthenticatedPostJsonAsync("/api/roles", new { Name = uniqueRoleName, Description = "Test" });
             roleResponse.EnsureSuccessStatusCode();
             var role = await ReadJsonAsync<RoleDto>(roleResponse);
             var roleId = role?.Id ?? Guid.Empty;
@@ -171,7 +175,7 @@ public class ApiHealthTests : IntegrationTestBase
                         Phone = $"555-{100 + index:D3}-{1000 + index:D4}",
                         RoleIds = new[] { roleId.ToString() }
                     };
-                    return await PostJsonAsync("/api/people", createRequest);
+                    return await AuthenticatedPostJsonAsync("/api/people", createRequest);
                 });
                 tasks.Add(task);
             }
@@ -198,7 +202,7 @@ public class ApiHealthTests : IntegrationTestBase
             successfulCreations.Should().BeGreaterThan(0, "At least some concurrent requests should succeed");
 
             // Verify data consistency - count should match successful creations
-            var getPeopleResponse = await Client.GetAsync("/api/people");
+            var getPeopleResponse = await AuthenticatedGetAsync("/api/people");
             var people = await ReadJsonAsync<List<object>>(getPeopleResponse);
             people.Should().HaveCount(successfulCreations, "Database should contain exactly the number of successfully created people");
         });
@@ -212,7 +216,7 @@ public class ApiHealthTests : IntegrationTestBase
     public async Task All_Controllers_Should_Be_Accessible(string endpoint)
     {
         // Act
-        var response = await Client.GetAsync(endpoint);
+        var response = await AuthenticatedGetAsync(endpoint);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -237,7 +241,7 @@ public class ApiHealthTests : IntegrationTestBase
         switch (method.ToUpper())
         {
             case "GET":
-                response = await Client.GetAsync(endpoint);
+                response = await AuthenticatedGetAsync(endpoint);
                 break;
             case "POST":
                 // Use minimal valid data for POST requests
@@ -249,7 +253,7 @@ public class ApiHealthTests : IntegrationTestBase
                     "/api/windows" => new { Name = "Test Window", Width = 1.0, Height = 1.5, Area = 1.5, FrameType = "Wood", GlazingType = "Single Pane" },
                     _ => new { }
                 };
-                response = await PostJsonAsync(endpoint, postData);
+                response = await AuthenticatedPostJsonAsync(endpoint, postData);
                 break;
             default:
                 throw new ArgumentException($"Unsupported HTTP method: {method}");

@@ -170,6 +170,18 @@ Complete git workflow (commit, push, PR)
 ```bash
 aos-git
 ```
+
+#### `aos-github-workflow`
+GitHub workflow best practices management
+```bash
+aos-github-workflow help          # Show help and best practices
+aos-github-workflow check         # Check current workflow status
+aos-github-workflow validate      # Validate PR-issue relationships
+aos-github-workflow fix-issue 177 # Fix improperly closed issue
+```
+- Ensures proper issue-PR workflow
+- Validates GitHub best practices
+- Fixes broken project board flows
 - Creates semantic commits
 - Pushes to feature branch
 - Creates pull request with template
@@ -261,6 +273,7 @@ Short aliases for frequently used commands:
 | `aose` | `aos-execute` | Execute tasks |
 | `aosr` | `aos-review` | Review changes |
 | `aosg` | `aos-git` | Git workflow |
+| `aosgh` | `aos-github-workflow` | GitHub workflow best practices |
 | `aosst` | `aos-status` | Show status |
 
 ## Environment Variables

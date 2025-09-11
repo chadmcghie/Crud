@@ -116,13 +116,16 @@
       "Read(//c/Users/chadm/source/repos/Crud/**)",
       "Bash(dotnet ef migrations add:*)",
       "WebFetch(domain:api.github.com)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
       "Bash(ls:*)",
       "Bash(dir:*)",
       "Bash(pwd)",
       "Bash(cd:*)",
       "Bash(node debug-parser.js)",
-      "Bash(.agents/.agent-os/status-aggregator.js)"
+      "Bash(.agents/.agent-os/status-aggregator.js)",
+      "Bash(gh run view:*)",
+      "Bash(gh run download:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",

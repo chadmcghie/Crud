@@ -9,16 +9,17 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
 namespace Tests.Integration.Backend.Compression;
 
-public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Program>>
+public class ResponseCompressionTests : IClassFixture<SqliteTestWebApplicationFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly SqliteTestWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public ResponseCompressionTests(WebApplicationFactory<Program> factory)
+    public ResponseCompressionTests(SqliteTestWebApplicationFactory factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
@@ -42,10 +43,11 @@ public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Prog
     public async Task ApiResponse_ShouldBeCompressed_WhenClientSupportsGzip()
     {
         // Arrange
-        _client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+        var authenticatedClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
+        authenticatedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
         // Act
-        var response = await _client.GetAsync("/api/people");
+        var response = await authenticatedClient.GetAsync("/api/people");
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
@@ -56,10 +58,11 @@ public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Prog
     public async Task ApiResponse_ShouldBeCompressed_WhenClientSupportsBrotli()
     {
         // Arrange
-        _client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
+        var authenticatedClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
+        authenticatedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
 
         // Act
-        var response = await _client.GetAsync("/api/people");
+        var response = await authenticatedClient.GetAsync("/api/people");
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
@@ -70,8 +73,8 @@ public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Prog
     public async Task CompressedResponse_ShouldHaveCompressionHeaders()
     {
         // Arrange
-        var uncompressedClient = _factory.CreateClient();
-        var compressedClient = _factory.CreateClient();
+        var uncompressedClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
+        var compressedClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
         compressedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
         // Act
@@ -106,7 +109,7 @@ public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Prog
     public async Task HttpsResponse_ShouldSupportCompression()
     {
         // Arrange
-        var httpsClient = _factory.CreateClient();
+        var httpsClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
         httpsClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
         // Act
@@ -121,11 +124,12 @@ public class ResponseCompressionTests : IClassFixture<WebApplicationFactory<Prog
     public async Task JsonResponse_ShouldBeCompressed()
     {
         // Arrange
-        _client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        var authenticatedClient = await AuthenticationTestHelper.CreateUserClientAsync(_factory);
+        authenticatedClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+        authenticatedClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         // Act
-        var response = await _client.GetAsync("/api/people");
+        var response = await authenticatedClient.GetAsync("/api/people");
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();

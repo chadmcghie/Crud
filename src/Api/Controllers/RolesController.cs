@@ -1,38 +1,87 @@
+using System.Security.Cryptography;
+using System.Text;
 using Api.Dtos;
 using Api.Services;
 using App.Abstractions;
 using App.Features.Roles;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Net.Http.Headers;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Tags("People")]
+[Tags("Roles")]
 [Route("api/[controller]")]
+[Authorize]
 public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
-    [OutputCache(PolicyName = "RolesPolicy")]
+    [Authorize(Policy = "UserOrAdmin")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
-        return Ok(mapper.Map<IEnumerable<RoleDto>>(items));
+        var responseDto = mapper.Map<IEnumerable<RoleDto>>(items);
+
+        // Generate ETag and Last-Modified for conditional requests
+        var responseJson = System.Text.Json.JsonSerializer.Serialize(responseDto);
+        var etag = GenerateETag(responseJson);
+
+        DateTime? lastModified = null;
+        if (items.Any())
+        {
+            lastModified = items.Max(r => r.UpdatedAt ?? r.CreatedAt);
+        }
+
+        // Handle conditional requests
+        var requestHeaders = Request.GetTypedHeaders();
+
+        // Check If-None-Match (ETag)
+        if (requestHeaders.IfNoneMatch?.Any(entityTag =>
+            entityTag.Tag == etag || entityTag.Tag == etag.Trim('"')) == true)
+        {
+            return StatusCode(304); // Not Modified
+        }
+
+        // Check If-Modified-Since (Last-Modified)
+        if (requestHeaders.IfModifiedSince.HasValue &&
+            lastModified.HasValue &&
+            lastModified.Value <= requestHeaders.IfModifiedSince.Value)
+        {
+            return StatusCode(304); // Not Modified
+        }
+
+        // Set response headers
+        Response.Headers.ETag = etag;
+        if (lastModified.HasValue)
+        {
+            Response.Headers.LastModified = lastModified.Value.ToString("R");
+        }
+
+        return Ok(responseDto);
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "UserOrAdmin")]
     [OutputCache(PolicyName = "RolesPolicy")]
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
         var r = await mediator.Send(new GetRoleQuery(id), ct);
         if (r is null)
             return NotFound();
+
+        // Set Last-Modified header based on entity timestamp
+        var lastModified = r.UpdatedAt ?? r.CreatedAt;
+        Response.Headers.LastModified = lastModified.ToString("R");
+
         return Ok(mapper.Map<RoleDto>(r));
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
@@ -44,6 +93,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
@@ -55,6 +105,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteRoleCommand(id), ct);
@@ -63,5 +114,12 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
         await cacheInvalidation.InvalidateEntityCacheAsync("roles", id, ct);
 
         return NoContent();
+    }
+
+    private static string GenerateETag(string content)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(content));
+        return $"\"{Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_')}\"";
     }
 }

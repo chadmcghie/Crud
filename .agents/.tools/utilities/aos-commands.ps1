@@ -487,6 +487,70 @@ function aos-update {
 
 # Define aliases
 Set-Alias -Name aos -Value aos-help
+# GitHub Workflow Best Practices Command
+function aos-github-workflow {
+  param(
+    [string]$Action = "help"
+  )
+  
+  if (-not (AOS-CheckProject)) { return }
+  
+  switch ($Action.ToLower()) {
+    "help" {
+      AOS-Print "GitHub Workflow Best Practices" "Cyan"
+      AOS-Print "==============================" "Cyan"
+      AOS-Print ""
+      AOS-Print "Commands:" "Yellow"
+      AOS-Print "  aos-github-workflow help          - Show this help"
+      AOS-Print "  aos-github-workflow check         - Check current workflow status"
+      AOS-Print "  aos-github-workflow fix-issue <#> - Fix improperly closed issue"
+      AOS-Print "  aos-github-workflow validate      - Validate PR-issue relationships"
+      AOS-Print ""
+      AOS-Print "Best Practices:" "Yellow"
+      AOS-Print "  • Never close issues directly when work is done"
+      AOS-Print "  • Reference issues in PRs with 'Closes #XXX'"
+      AOS-Print "  • Let GitHub close issues automatically when PR merges"
+      AOS-Print "  • This maintains proper project board flow"
+    }
+    
+    "check" {
+      AOS-Print "Checking GitHub workflow status..." "Yellow"
+      gh issue list --state open --limit 5
+      AOS-Print ""
+      AOS-Print "Recent PRs:" "Yellow"
+      gh pr list --state open --limit 5
+    }
+    
+    "validate" {
+      AOS-Print "Validating PR-issue relationships..." "Yellow"
+      $openPRs = gh pr list --state open --json number,title,body
+      foreach ($pr in $openPRs) {
+        if ($pr.body -match "Closes #(\d+)") {
+          AOS-Print "✅ PR #$($pr.number) properly references issue #$($matches[1])" "Green"
+        } else {
+          AOS-Print "⚠️  PR #$($pr.number) missing issue reference" "Yellow"
+        }
+      }
+    }
+    
+    default {
+      if ($Action.StartsWith("fix-issue")) {
+        $issueNumber = $Action.Split(" ")[1]
+        if ($issueNumber) {
+          AOS-Print "Fixing issue #$issueNumber workflow..." "Yellow"
+          gh issue reopen $issueNumber --comment "Reopening to properly close via PR workflow"
+          AOS-Print "Issue #$issueNumber reopened. Now reference it in your PR with 'Closes #$issueNumber'" "Green"
+        } else {
+          AOS-Print "Usage: aos-github-workflow fix-issue <number>" "Red"
+        }
+      } else {
+        AOS-Print "Unknown action: $Action" "Red"
+        AOS-Print "Run 'aos-github-workflow help' for available commands" "Yellow"
+      }
+    }
+  }
+}
+
 Set-Alias -Name aosi -Value aos-init
 Set-Alias -Name aoss -Value aos-spec
 Set-Alias -Name aost -Value aos-tasks
@@ -494,6 +558,7 @@ Set-Alias -Name aose -Value aos-execute
 Set-Alias -Name aosr -Value aos-review
 Set-Alias -Name aosg -Value aos-git
 Set-Alias -Name aosst -Value aos-status
+Set-Alias -Name aosgh -Value aos-github-workflow
 
 # Print success message
 AOS-Print "Agent OS commands loaded successfully!" "Green"

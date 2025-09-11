@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Infrastructure.Data;
@@ -204,6 +205,87 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Creates an authenticated client with a test user
+    /// </summary>
+    protected async Task<HttpClient> CreateAuthenticatedClientAsync(string role = "User")
+    {
+        return await AuthenticationTestHelper.CreateAuthenticatedClientAsync(Factory, role);
+    }
+
+    /// <summary>
+    /// Creates an authenticated client with admin privileges
+    /// </summary>
+    protected async Task<HttpClient> CreateAdminClientAsync()
+    {
+        return await AuthenticationTestHelper.CreateAdminClientAsync(Factory);
+    }
+
+    /// <summary>
+    /// Creates an authenticated client with regular user privileges
+    /// </summary>
+    protected async Task<HttpClient> CreateUserClientAsync()
+    {
+        return await AuthenticationTestHelper.CreateUserClientAsync(Factory);
+    }
+
+    /// <summary>
+    /// Adds authentication to the default client
+    /// </summary>
+    protected async Task AuthenticateClientAsync(string role = "User")
+    {
+        var token = await AuthenticationTestHelper.RegisterAndGetTokenAsync(Client);
+
+        if (role == "Admin")
+        {
+            // Need to get the email from the token or registration process
+            // For simplicity, we'll create a new admin user
+            var adminClient = await CreateAdminClientAsync();
+            Client.DefaultRequestHeaders.Authorization = adminClient.DefaultRequestHeaders.Authorization;
+        }
+        else
+        {
+            Client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
+    }
+
+    /// <summary>
+    /// Performs an authenticated POST request with admin privileges
+    /// </summary>
+    protected async Task<HttpResponseMessage> AuthenticatedPostJsonAsync<T>(string requestUri, T content)
+    {
+        var adminClient = await CreateAdminClientAsync();
+        return await adminClient.PostAsJsonAsync(requestUri, content);
+    }
+
+    /// <summary>
+    /// Performs an authenticated PUT request with admin privileges
+    /// </summary>
+    protected async Task<HttpResponseMessage> AuthenticatedPutJsonAsync<T>(string requestUri, T content)
+    {
+        var adminClient = await CreateAdminClientAsync();
+        return await adminClient.PutAsJsonAsync(requestUri, content);
+    }
+
+    /// <summary>
+    /// Performs an authenticated DELETE request with admin privileges
+    /// </summary>
+    protected async Task<HttpResponseMessage> AuthenticatedDeleteAsync(string requestUri)
+    {
+        var adminClient = await CreateAdminClientAsync();
+        return await adminClient.DeleteAsync(requestUri);
+    }
+
+    /// <summary>
+    /// Performs an authenticated GET request with user privileges
+    /// </summary>
+    protected async Task<HttpResponseMessage> AuthenticatedGetAsync(string requestUri)
+    {
+        var userClient = await CreateUserClientAsync();
+        return await userClient.GetAsync(requestUri);
     }
 
     public void Dispose()

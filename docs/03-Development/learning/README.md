@@ -6,6 +6,7 @@ This directory contains accumulated knowledge from resolved issues and common pa
 
 - `patterns.md` - Common issue-solution pairs organized by category
 - `memory-references.md` - References to important memory IDs for context
+- `github-actions-log-retrieval.md` - GitHub Actions knowledge (merged from knowledge folder)
 - `solutions/` - Detailed solution guides for complex issues (future)
 
 ## Purpose
@@ -28,32 +29,28 @@ The learning cache helps Agent OS:
 - Compilation optimizations
 - Dependency issues
 - Configuration problems
-- CI/CD solutions
 
-### Error Patterns
-- Common runtime errors
-- Framework-specific issues
-- Integration problems
-- Security vulnerabilities
+### CI/CD Patterns
+- GitHub Actions log retrieval
+- Workflow debugging
+- Pipeline optimization
+
+### Feature Patterns
+- Common implementation patterns
+- Architecture decisions
+- Reusable solutions
 
 ## Usage
 
-The learning cache is automatically consulted by:
-- `troubleshoot-with-history` agent - Checks for known solutions
-- `review-agent` - References common issues during reviews
-- `orchestrator` agent - Routes to appropriate solutions
+When encountering an issue:
+1. Search this directory for similar patterns
+2. Apply proven solutions
+3. Add new patterns when resolved
 
-## Updating
+## Contributing
 
-Patterns are added:
-1. **Manually** - When resolving new issues
-2. **Automatically** - From completed GitHub issues
-3. **Via agents** - During troubleshooting sessions
-
-## Search Capabilities
-
-Patterns can be searched by:
-- Category (testing, build, errors)
-- Tags (sqlite, angular, dotnet)
-- Error message matching
-- Solution keywords
+Add new patterns with:
+- Clear problem description
+- Solution steps
+- Code examples where applicable
+- Links to related documentation

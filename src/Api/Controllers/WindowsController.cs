@@ -3,6 +3,7 @@ using Api.Services;
 using App.Features.Windows;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
@@ -11,9 +12,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
+[Authorize]
 public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "UserOrAdmin")]
     [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
@@ -22,6 +25,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "UserOrAdmin")]
     [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
@@ -32,6 +36,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<WindowResponse>> Create([FromBody] CreateWindowRequest request, CancellationToken ct)
     {
         var w = await mediator.Send(new CreateWindowCommand(
@@ -65,6 +70,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWindowRequest request, CancellationToken ct)
     {
         try
@@ -91,8 +97,8 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
                 request.InstallationType,
                 request.OperationType,
                 request.HasScreens,
-            request.HasStormWindows
-        ), ct);
+                request.HasStormWindows
+            ), ct);
 
             // Invalidate both entity and collection cache
             await cacheInvalidation.InvalidateEntityCacheAsync("windows", id, ct);
@@ -106,6 +112,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWindowCommand(id), ct);

@@ -82,7 +82,8 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 ["Caching:UseRedis"] = "false",
                 ["Caching:UseLazyCache"] = "false",
                 ["Caching:UseComposite"] = "false",
-                ["Caching:DefaultExpirationMinutes"] = "5"
+                ["Caching:DefaultExpirationMinutes"] = "5",
+                ["OutputCaching:Disabled"] = "true"  // Disable output caching for conditional request tests
             };
 
             var configuration = new ConfigurationBuilder()
@@ -155,6 +156,24 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
         // Use the improved database reset logic with proper transaction handling
         await databaseService.ResetDatabaseAsync(_workerIndex);
+    }
+
+    public async Task SetUserRoleAsync(string email, string role)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // The Roles field stores comma-separated values
+        // For testing, we'll just set it to "User,Admin" if Admin is requested
+        var rolesValue = role == "Admin" ? "User,Admin" : "User";
+
+        // Use raw SQL to avoid EF issues with owned entities
+        var sql = @"
+            UPDATE Users 
+            SET Roles = @p0, UpdatedAt = @p1
+            WHERE Email = @p2";
+
+        await dbContext.Database.ExecuteSqlRawAsync(sql, rolesValue, DateTime.UtcNow, email);
     }
 
     protected override void Dispose(bool disposing)

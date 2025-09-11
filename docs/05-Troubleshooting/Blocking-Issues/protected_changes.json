@@ -139,9 +139,59 @@
       "reason": "Improves debugging when tests fail by providing clear error context",
       "created": "2025-09-09 23:15",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "test/Tests.Integration.Backend/OutputCaching/OutputCachingTests.cs",
+      "lines": [1, 200],
+      "hash": "c15400f",
+      "change_description": "Updated all GET requests to use authenticated HTTP clients",
+      "reason": "Required for authorization compliance after controller protection implementation",
+      "created": "2025-09-11 02:30",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "src/Api/Middleware/ConditionalRequestMiddleware.cs",
+      "lines": [1, 130],
+      "hash": "c15400f",
+      "change_description": "New middleware for proper ETag and 304 Not Modified response handling",
+      "reason": "Essential for conditional request support with output caching pipeline",
+      "created": "2025-09-11 02:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "src/Api/Program.cs",
+      "lines": [397, 398],
+      "hash": "c15400f",
+      "change_description": "Added ConditionalRequestMiddleware before UseOutputCache",
+      "reason": "Correct middleware pipeline order - conditional requests must run before output caching",
+      "created": "2025-09-11 02:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "test/Tests.Integration.Backend/Infrastructure/TestDataBuilders.cs",
+      "lines": [15, 23],
+      "hash": "78c9718",
+      "change_description": "Generate unique role names with GUID and timestamp",
+      "reason": "Prevents SQLite unique constraint violations in parallel test execution",
+      "created": "2025-09-11 02:50",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-11-001",
+      "file": "test/Tests.Integration.Backend/Compression/ResponseCompressionTests.cs",
+      "lines": [1, 150],
+      "hash": "pending-commit",
+      "change_description": "Updated compression tests to use authenticated HTTP clients and SqliteTestWebApplicationFactory",
+      "reason": "Required for authorization compliance after controller protection implementation",
+      "created": "2025-09-11 03:30",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-09T23:20:00Z",
+  "last_updated": "2025-09-11T03:30:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

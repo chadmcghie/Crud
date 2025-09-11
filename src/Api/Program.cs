@@ -394,8 +394,15 @@ namespace Api
                 app.UseAuthentication();
                 app.UseAuthorization();
 
-                // Add output caching middleware
-                app.UseOutputCache();
+                // Add output caching middleware (if not disabled)
+                var outputCachingDisabled = app.Configuration.GetValue<bool>("OutputCaching:Disabled");
+                if (!outputCachingDisabled)
+                {
+                    app.UseOutputCache();
+                }
+
+                // Note: Conditional request support (ETag/If-None-Match, Last-Modified/If-Modified-Since) 
+                // is handled automatically by ASP.NET Core when controllers set proper headers
 
                 // Note: Cache status and HTTP headers are handled within controllers
                 // to avoid conflicts with response streaming

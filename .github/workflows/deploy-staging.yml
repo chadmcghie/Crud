@@ -31,15 +31,15 @@ jobs:
           echo "✅ Proceeding with staging deployment"
         fi
         
-    - name: Check for dev artifacts
+    - name: Check for PR artifacts
       id: artifact-check
       run: |
         # This will be verified when we try to download the artifact
         echo "artifact-exists=true" >> $GITHUB_OUTPUT
-        echo "📦 Will attempt to download dev-artifact-${{ github.sha }}"
+        echo "📦 Will attempt to download pr-build-${{ github.sha }} or feature-build-${{ github.sha }}"
 
   staging-smoke-tests:
-    name: Staging Smoke Tests (Build Fresh Artifacts)
+    name: Staging Smoke Tests (Reuse PR Artifacts)
     runs-on: ubuntu-latest
     needs: check-commit
     if: needs.check-commit.outputs.should-deploy == 'true'
@@ -48,31 +48,42 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Download PR build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
+        
+    - name: Download feature build artifacts (fallback)
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+      continue-on-error: true
+        
+    - name: Verify artifacts and version
+      run: |
+        echo "📦 Verifying staging deployment artifacts..."
+        if [ -f "version.json" ]; then
+          echo "📋 Deploying version:"
+          cat version.json | jq .
+          VERSION=$(cat version.json | jq -r '.version')
+          if [ "$VERSION" != "${{ github.sha }}" ]; then
+            echo "❌ Version mismatch! Expected: ${{ github.sha }}, Found: $VERSION"
+            exit 1
+          fi
+          echo "✅ Version verified for staging deployment"
+        else
+          echo "❌ No version.json found in artifact - cannot proceed"
+          exit 1
+        fi
+        
+        echo "📁 Verifying build outputs:"
+        ls -la src/Api/bin/Release/net8.0/ || echo "⚠️ API build directory not found"
+        
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        
-    - name: Restore .NET dependencies
-      run: dotnet restore solutions/Crud.sln
-      
-    - name: Build solution for staging
-      run: |
-        echo "🏗️ Building solution for staging deployment..."
-        dotnet build solutions/Crud.sln --no-restore --configuration Release
-        
-    - name: Create versioned artifact for staging
-      run: |
-        echo "📦 Creating version info for staging deployment..."
-        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"staging\"}" > version.json
-        cat version.json
-        
-    - name: Verify build artifacts
-      run: |
-        echo "📁 Verifying build outputs for staging:"
-        ls -la src/Api/bin/Release/net8.0/ || echo "⚠️ API build directory not found"
-        echo "📋 Version info:"
-        cat version.json
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -97,16 +108,19 @@ jobs:
         npm run ng -- version
         echo "✅ Angular CLI verified"
         
-    # Copy appsettings files for the backend
-    - name: Copy appsettings to build output
+    # Appsettings should already be in artifacts from PR build
+    - name: Verify appsettings in artifacts
       run: |
-        echo "📁 Copying appsettings files to build output..."
+        echo "📁 Verifying appsettings files in artifacts..."
         if [ -f "src/Api/appsettings.json" ]; then
-          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
-          echo "✅ Appsettings files copied"
-          ls -la src/Api/bin/Release/net8.0/*.json
+          echo "✅ Appsettings files found in artifacts"
+          ls -la src/Api/appsettings*.json
+        elif [ -f "src/Api/bin/Release/net8.0/appsettings.json" ]; then
+          echo "✅ Appsettings files found in build output"
+          ls -la src/Api/bin/Release/net8.0/appsettings*.json
         else
-          echo "⚠️ No appsettings files found"
+          echo "⚠️ No appsettings files found - copying from checkout"
+          cp src/Api/appsettings*.json src/Api/bin/Release/net8.0/
         fi
         
     # Install E2E dependencies
@@ -121,7 +135,7 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: |
         echo "🚀 Running staging smoke tests only (targeting ~2 minutes)..."
-        echo "Using fresh build artifacts for staging environment"
+        echo "Using PR-validated artifacts (no rebuild)"
         npm run test:smoke  # Instead of full suite
       env:
         CI: true
@@ -141,7 +155,7 @@ jobs:
         retention-days: 7
 
   prepare-staging-artifacts:
-    name: Prepare Staging Deployment Artifacts (Build Fresh)
+    name: Prepare Staging Deployment Artifacts (Reuse PR Artifacts)
     runs-on: ubuntu-latest
     needs: staging-smoke-tests
     if: needs.staging-smoke-tests.result == 'success'
@@ -150,25 +164,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - name: Download PR build artifacts
+      uses: actions/download-artifact@v4
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+        name: pr-build-${{ github.sha }}
+      continue-on-error: true
         
+    - name: Download feature build artifacts (fallback)
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+      continue-on-error: true
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
-        
-    - name: Restore .NET dependencies
-      run: dotnet restore solutions/Crud.sln
-      
-    - name: Build backend for staging
-      run: |
-        echo "🏗️ Building backend for staging deployment..."
-        dotnet build solutions/Crud.sln --no-restore --configuration Release
         
     # Build Angular for staging config
     - name: Build frontend for staging
@@ -179,36 +192,38 @@ jobs:
         npm run build -- --configuration=staging
         echo "✅ Frontend built for staging configuration"
         
-    # Package backend binaries
+    # Package backend binaries (reusing PR artifacts)
     - name: Package backend for staging
       run: |
-        echo "📦 Packaging backend for staging deployment..."
-        # Verify the build output exists
+        echo "📦 Packaging backend using PR-validated artifacts (NO REBUILD)..."
+        # Verify the pre-built binaries exist
         if [ ! -d "src/Api/bin/Release/net8.0" ]; then
-          echo "❌ ERROR: Backend build output not found!"
+          echo "❌ ERROR: Pre-built backend artifacts not found!"
           echo "Expected: src/Api/bin/Release/net8.0/"
+          echo "Available:"
+          find . -name "*.dll" -path "*/Release/*" | head -10
           exit 1
         fi
         
-        # Package the backend
+        # Package the already-built backend
         mkdir -p ./staging-backend
         cp -r src/Api/bin/Release/net8.0/* ./staging-backend/
         
-        # Copy appsettings files
+        # Appsettings should already be in artifacts
         if [ -f "src/Api/appsettings.json" ]; then
           cp src/Api/appsettings*.json ./staging-backend/
           echo "✅ Appsettings files copied to staging package"
         fi
         
-        # Create version info for staging
+        # Update version info for staging environment
         echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"staging\"}" > ./staging-backend/version.json
-        echo "📋 Version info added:"
+        echo "📋 Version info updated for staging:"
         cat ./staging-backend/version.json
         
         cd ./staging-backend
         zip -r ../staging-api.zip .
         cd ..
-        echo "✅ Backend packaged for staging"
+        echo "✅ Backend packaged using PR artifacts WITHOUT rebuilding"
         
     - name: Package frontend
       run: |

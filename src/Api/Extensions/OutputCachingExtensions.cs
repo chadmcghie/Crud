@@ -20,6 +20,13 @@ public static class OutputCachingExtensions
 
         var cachingSettings = configuration.GetSection("Caching").Get<CachingSettings>() ?? new CachingSettings();
 
+        // Check if output caching is disabled (for testing)
+        var outputCachingDisabled = configuration.GetValue<bool>("OutputCaching:Disabled");
+        if (outputCachingDisabled)
+        {
+            return services; // Skip output caching configuration
+        }
+
         // Add output caching
         services.AddOutputCache(options =>
         {

@@ -76,11 +76,24 @@ public class RateLimitingMiddleware
         if (string.IsNullOrEmpty(input))
             return string.Empty;
 
-        // Remove newlines, carriage returns, and other control characters to prevent log injection
-        return input.Replace('\n', '_')
-                   .Replace('\r', '_')
-                   .Replace('\t', '_')
-                   .Trim();
+        // Prevent log injection attacks by removing control characters and limiting length
+        // This sanitization is critical for security - do not remove
+        var sanitized = input
+            .Replace('\n', '_')  // Newline
+            .Replace('\r', '_')  // Carriage return
+            .Replace('\t', '_')  // Tab
+            .Replace('\0', '_')  // Null character
+            .Replace('\x1B', '_') // Escape character
+            .Trim();
+
+        // Limit length to prevent excessive log entries
+        const int maxLength = 500;
+        if (sanitized.Length > maxLength)
+        {
+            sanitized = sanitized.Substring(0, maxLength) + "...[truncated]";
+        }
+
+        return sanitized;
     }
 }
 
