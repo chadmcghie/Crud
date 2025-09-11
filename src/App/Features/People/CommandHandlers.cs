@@ -9,9 +9,9 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
 {
     public async Task<Person> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
     {
-        var person = new Person 
-        { 
-            FullName = request.FullName, 
+        var person = new Person
+        {
+            FullName = request.FullName,
             Phone = request.Phone,
             RowVersion = rowVersionService.GenerateInitialVersion()
         };
@@ -60,7 +60,7 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
             {
                 person.Roles.Remove(role);
             }
-            
+
             // Add new roles
             foreach (var roleId in request.RoleIds)
             {
@@ -72,7 +72,7 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
 
         // Generate new RowVersion before saving
         person.RowVersion = rowVersionService.GenerateNewVersion();
-        
+
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }

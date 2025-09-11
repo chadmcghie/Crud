@@ -15,7 +15,7 @@ public class RowVersionService : IRowVersionService
     {
         return Guid.NewGuid().ToByteArray();
     }
-    
+
     /// <summary>
     /// Generates a new RowVersion for entity updates.
     /// Each call produces a unique version to detect concurrent modifications.

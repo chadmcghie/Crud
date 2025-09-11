@@ -11,7 +11,7 @@ public interface IRowVersionService
     /// </summary>
     /// <returns>A new byte array representing the initial version</returns>
     byte[] GenerateInitialVersion();
-    
+
     /// <summary>
     /// Generates a new RowVersion for entity updates.
     /// This should be called whenever an entity is modified to ensure concurrency control.
