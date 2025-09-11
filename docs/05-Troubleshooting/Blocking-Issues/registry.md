@@ -6,6 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
+| BI-2025-09-09-001 | 2025-09-09 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally - race conditions in async test handling | high |
 | BI-2025-09-11-003 | 2025-09-11 | controller-authorization-protection | functionality | RowVersion concurrency control 409 Conflict in PUT_People_Should_Update_Person_Roles test | high |
 
 ## Resolved Issues
@@ -13,7 +14,6 @@ Master registry of all blocking issues encountered in the project. This registry
 |---|---|---|---|---|---|---|
 | BI-2025-09-11-002 | 2025-09-11 | 2025-09-11 | 2025-09-10-api-response-caching | functionality | ConditionalRequestMiddleware ETag comparison logic failures causing 6 tests to be skipped | Fixed HTTP header API usage, middleware pipeline registration, and test environment configuration - all 6 tests now pass |
 | BI-2025-09-09-002 | 2025-09-09 | 2025-09-09 | refactor-database-controller | test | Test delay anti-pattern in AuthInterceptor tests | Refactored to use fakeAsync/tick instead of setTimeout delays |
-| BI-2025-09-09-001 | 2025-09-09 | 2025-09-09 | redis-caching-layer | test | Password reset tests database isolation failure | Fixed DatabaseTestService to clean Users and PasswordResetTokens tables |
 | BI-2025-09-08-001 | 2025-09-08 | 2025-09-08 | redis-caching-layer | test | ICacheService DI registration missing in integration tests | Unified ICacheService interfaces between App and Infrastructure layers |
 | BI-2025-08-30-001 | 2025-08-30 | 2025-08-31 | test-server-optimization | test | Smoke test auth failure in CI - SQLite database path issues | Fixed TestDatabaseFactory to use current directory in CI, added 0.0.0.0 binding for Docker |
 | BI-2025-08-30-002 | 2025-08-30 | 2025-08-31 | test-server-optimization | test | E2E test timeouts and API connection failures | Fixed manual cleanup timeout, hardcoded URLs, and Docker networking issues |
@@ -44,6 +44,6 @@ Master registry of all blocking issues encountered in the project. This registry
 
 ## Statistics
 - Total Issues: 11
-- Active: 1
-- Resolved: 10
+- Active: 2
+- Resolved: 9
 - Average Resolution Time: ~3.5 hours
