@@ -61,11 +61,11 @@ public class ConditionalRequestMiddleware
             // Generate ETag from response content
             var etag = GenerateETag(responseContent);
 
-            // Try to get Last-Modified from response headers, fall back to current time
+            // Try to get Last-Modified from response headers, fall back to current time with microsecond precision
             var lastModified = GetLastModifiedFromResponse(context.Response) ?? DateTime.UtcNow;
 
             // Check If-None-Match header
-            var ifNoneMatch = request.Headers.IfNoneMatch;
+            var ifNoneMatch = context.Request.Headers["If-None-Match"];
             if (!StringValues.IsNullOrEmpty(ifNoneMatch) && CheckIfNoneMatch(ifNoneMatch, etag))
             {
                 _logger.LogDebug("Returning 304 Not Modified (ETag match)");
@@ -74,7 +74,7 @@ public class ConditionalRequestMiddleware
             }
 
             // Check If-Modified-Since header
-            var ifModifiedSince = request.Headers.IfModifiedSince;
+            var ifModifiedSince = context.Request.Headers["If-Modified-Since"];
             if (!StringValues.IsNullOrEmpty(ifModifiedSince) && CheckIfModifiedSince(ifModifiedSince, lastModified))
             {
                 _logger.LogDebug("Returning 304 Not Modified (Not modified since)");
@@ -143,12 +143,9 @@ public class ConditionalRequestMiddleware
     {
         if (DateTime.TryParse(ifModifiedSince, out var sinceDate))
         {
-            // Remove milliseconds for comparison
-            lastModified = new DateTime(lastModified.Year, lastModified.Month, lastModified.Day,
-                lastModified.Hour, lastModified.Minute, lastModified.Second, DateTimeKind.Utc);
+            // Ensure both times are UTC for proper comparison
+            lastModified = lastModified.ToUniversalTime();
             sinceDate = sinceDate.ToUniversalTime();
-            sinceDate = new DateTime(sinceDate.Year, sinceDate.Month, sinceDate.Day,
-                sinceDate.Hour, sinceDate.Minute, sinceDate.Second, DateTimeKind.Utc);
 
             return lastModified <= sinceDate;
         }

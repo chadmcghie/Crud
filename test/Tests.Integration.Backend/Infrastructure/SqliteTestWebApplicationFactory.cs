@@ -83,7 +83,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 ["Caching:UseLazyCache"] = "false",
                 ["Caching:UseComposite"] = "false",
                 ["Caching:DefaultExpirationMinutes"] = "5",
-                ["OutputCaching:Disabled"] = "true"  // Disable output caching for conditional request tests
+                ["OutputCaching:Disabled"] = "false"  // Enable output caching for conditional request middleware testing
             };
 
             var configuration = new ConfigurationBuilder()

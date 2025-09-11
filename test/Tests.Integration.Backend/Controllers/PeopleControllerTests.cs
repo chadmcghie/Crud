@@ -239,7 +239,7 @@ public class PeopleControllerTests : IntegrationTestBase
         });
     }
 
-    [Fact(Skip = "Skipping due to concurrency conflict - RowVersion not implemented in UpdatePersonRequest")]
+    [Fact(Skip = "RowVersion concurrency control causes 409 Conflict - BI-2025-09-11-003")]
     public async Task PUT_People_Should_Update_Person_Roles()
     {
         await RunWithCleanDatabaseAsync(async () =>
@@ -261,8 +261,12 @@ public class PeopleControllerTests : IntegrationTestBase
             var createResponse = await adminClient.PostAsJsonAsync("/api/people", createRequest);
             var createdPerson = await ReadJsonAsync<PersonResponse>(createResponse);
 
-            // Update with different roles
-            var updateRequest = TestDataBuilders.UpdatePersonRequest("Role Update Test", "666-666-6666", new[] { role2.Id, role3!.Id });
+            // Get the person again to ensure we have the latest RowVersion
+            var getCurrentResponse = await adminClient.GetAsync($"/api/people/{createdPerson!.Id}");
+            var currentPerson = await ReadJsonAsync<PersonResponse>(getCurrentResponse);
+
+            // Update with different roles (without RowVersion for now to test basic functionality)
+            var updateRequest = TestDataBuilders.UpdatePersonRequest("Role Update Test", "666-666-6666", new[] { role2.Id, role3!.Id }, null);
 
             // Act
             var response = await adminClient.PutAsJsonAsync($"/api/people/{createdPerson!.Id}", updateRequest);
@@ -276,9 +280,9 @@ public class PeopleControllerTests : IntegrationTestBase
 
             updatedPerson.Should().NotBeNull();
             updatedPerson!.Roles.Should().HaveCount(2);
-            updatedPerson.Roles.Should().Contain(r => r.Name == "User");
-            updatedPerson.Roles.Should().Contain(r => r.Name == "Manager");
-            updatedPerson.Roles.Should().NotContain(r => r.Name == "Admin");
+            updatedPerson.Roles.Should().Contain(r => r.Name == "TestUser");
+            updatedPerson.Roles.Should().Contain(r => r.Name == "TestManager");
+            updatedPerson.Roles.Should().NotContain(r => r.Name == "TestAdmin");
         });
     }
 

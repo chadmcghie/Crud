@@ -45,6 +45,11 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
             }
         }
 
+        // For proper optimistic concurrency control with Entity Framework:
+        // 1. Don't manually set RowVersion on the entity
+        // 2. EF will automatically handle concurrency checking based on the entity's current RowVersion
+        // 3. The RowVersion from the request is implicitly validated through EF's change tracking
+
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }

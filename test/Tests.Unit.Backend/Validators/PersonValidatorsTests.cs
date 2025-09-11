@@ -98,7 +98,7 @@ public class PersonValidatorsTests
     public void UpdatePersonRequest_Should_Have_Same_Validation_Rules_As_Create()
     {
         // Arrange
-        var request = new UpdatePersonRequest("", "invalid-phone", new[] { Guid.Empty });
+        var request = new UpdatePersonRequest("", "invalid-phone", new[] { Guid.Empty }, null);
 
         // Act & Assert
         var result = _updateValidator.TestValidate(request);

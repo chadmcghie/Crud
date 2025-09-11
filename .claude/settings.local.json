@@ -125,7 +125,8 @@
       "Bash(.agents/.agent-os/status-aggregator.js)",
       "Bash(gh run view:*)",
       "Bash(gh run download:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",

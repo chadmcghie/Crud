@@ -82,7 +82,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonRequest request, CancellationToken ct)
     {
-        await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds), ct);
+        await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds, request.RowVersion), ct);
 
         // Invalidate both entity and collection cache
         await cacheInvalidation.InvalidateEntityCacheAsync("people", id, ct);
