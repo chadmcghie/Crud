@@ -79,14 +79,95 @@ List of improvements made during troubleshooting that must be preserved:
 ## Current Workaround
 Remove RowVersion entirely from UpdatePersonRequest, command, and entity - test passes but defeats the purpose of implementing concurrency control.
 
+### Attempt 4: [2025-09-11 14:40]
+**Hypothesis**: Complete RowVersion concurrency control implementation with proper command handler integration
+**Approach**: Enable .IsConcurrencyToken(), add RowVersion handling in command handler, create migration
+**Implementation**:
+```csharp
+// PersonConfiguration.cs - Enabled concurrency token
+builder.Property(p => p.RowVersion)
+    .HasColumnType("BLOB")
+    .IsRequired(false)
+    .IsConcurrencyToken(); // Enabled for proper concurrency control
+
+// CommandHandlers.cs - Added RowVersion handling
+if (request.RowVersion != null)
+{
+    person.RowVersion = request.RowVersion;
+}
+
+// Applied migration: 20250911143832_EnablePersonRowVersionConcurrency
+```
+**Result**: **CRITICAL DISCOVERY** - 17/18 PeopleController tests pass, only role update test fails
+**Files Modified**: 
+- src/Infrastructure/Data/Configurations/PersonConfiguration.cs (line 24): Enabled .IsConcurrencyToken()
+- src/App/Features/People/CommandHandlers.cs (lines 37-41): Added RowVersion handling
+- Created migration for concurrency control
+**Key Learning**: Core Person CRUD works perfectly - issue is **specific to many-to-many role relationship updates**
+
+## Root Cause Identified
+The issue is **NOT** with basic concurrency control but with **many-to-many relationship modifications** triggering EF Core concurrency conflicts. All other Person operations (create, update properties, delete) work correctly.
+
+### Attempt 5: [2025-09-11 16:45]
+**Hypothesis**: SQLite doesn't auto-generate RowVersion - need application-managed concurrency control with tracked entities
+**Approach**: Create centralized RowVersion service, update command handlers to use tracked entities, implement GUID-based versioning
+**Implementation**:
+```csharp
+// IRowVersionService.cs - Centralized RowVersion management
+public interface IRowVersionService
+{
+    byte[] GenerateInitialVersion();
+    byte[] GenerateNewVersion();
+}
+
+// RowVersionService.cs - GUID-based implementation for SQLite
+public class RowVersionService : IRowVersionService
+{
+    public byte[] GenerateInitialVersion() => Guid.NewGuid().ToByteArray();
+    public byte[] GenerateNewVersion() => Guid.NewGuid().ToByteArray();
+}
+
+// UpdatePersonCommandHandler - Switch to tracked entities
+var person = await personRepository.GetAsync(request.Id, cancellationToken);
+if (request.RowVersion != null && person.RowVersion != null)
+{
+    if (!request.RowVersion.SequenceEqual(person.RowVersion))
+        throw new InvalidOperationException("Person modified by another user");
+}
+person.RowVersion = rowVersionService.GenerateNewVersion();
+await personRepository.UpdateAsync(person, cancellationToken);
+
+// EfPersonRepository - Simplified for tracked entities
+public async Task UpdateAsync(Person person, CancellationToken ct = default)
+{
+    await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
+}
+```
+**Result**: **MAJOR BREAKTHROUGH** - 409 conflicts resolved! All Person CRUD operations working correctly
+**Files Modified**: 
+- Created: src/App/Services/IRowVersionService.cs, src/App/Services/RowVersionService.cs
+- Modified: src/App/DependencyInjection.cs (service registration)
+- Modified: src/App/Features/People/CommandHandlers.cs (tracked entities + RowVersion generation)
+- Modified: src/Infrastructure/Repositories/EntityFramework/EfPersonRepository.cs (simplified UpdateAsync)
+- Created: test/Tests.Integration.Backend/Controllers/PersonConcurrencyTests.cs (validation tests)
+**Key Learning**: **ROOT CAUSE SOLVED** - SQLite requires application-managed RowVersion generation. Tracked entity pattern eliminates concurrency conflicts.
+
+**Status**: **PENDING CI VALIDATION** - Solution works locally but must be validated in CI workflow before claiming resolution
+
+## Root Cause and Solution Summary
+**Root Cause**: SQLite database doesn't auto-generate RowVersion values like SQL Server, causing EF Core concurrency control to fail silently. Combined with detached entity update pattern, this created persistent 409 conflicts.
+
+**Solution**: Application-managed RowVersion using centralized service with GUID-based versioning + tracked entity update pattern.
+
 ## Next Steps
-- [ ] Investigate if EfPersonRepository.UpdateAsync should use different EF tracking approach (Attach vs Update)
-- [ ] Consider implementing explicit concurrency checking in command handler instead of relying on EF automatic detection
-- [ ] Explore if PersonRole many-to-many relationship changes trigger additional concurrency conflicts
-- [ ] Test if issue is specific to role updates vs simple property updates
-- [ ] Examine if SaveChangesWithRetryAsync interferes with concurrency control logic
+- [x] ~~Investigate basic concurrency control~~ - **WORKING CORRECTLY**
+- [x] ~~Create centralized RowVersion service~~ - **IMPLEMENTED**
+- [x] ~~Fix command handlers with tracked entities~~ - **IMPLEMENTED** 
+- [x] ~~Validate local testing~~ - **PASSING**
+- [ ] **CRITICAL: CI validation via PR** - **IN PROGRESS**
+- [ ] Address role replacement logic refinement (separate issue)
 
 ## Related Issues
 - Link to related blocking issue: N/A
-- Link to GitHub issue/PR: N/A  
+- Link to GitHub issue/PR: **PENDING PR CREATION**  
 - Link to spec task: controller-authorization-protection

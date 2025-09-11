@@ -1,4 +1,5 @@
 using App.Abstractions;
+using App.Services;
 using Domain.Entities;
 using Infrastructure.Data;
 using Infrastructure.Resilience;
@@ -9,10 +10,12 @@ namespace Infrastructure.Repositories.EntityFramework;
 public class EfPersonRepository : IPersonRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRowVersionService _rowVersionService;
 
-    public EfPersonRepository(ApplicationDbContext context)
+    public EfPersonRepository(ApplicationDbContext context, IRowVersionService rowVersionService)
     {
         _context = context;
+        _rowVersionService = rowVersionService;
     }
 
     public async Task<Person?> GetAsync(Guid id, CancellationToken ct = default)
@@ -47,7 +50,8 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
-            _context.People.Update(person);
+            // For tracked entities, EF automatically detects changes - no need to call Update()
+            // Concurrency control is handled at the command handler level with manual validation
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
         catch (DbUpdateConcurrencyException ex)
