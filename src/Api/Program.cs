@@ -394,6 +394,9 @@ namespace Api
                 app.UseAuthentication();
                 app.UseAuthorization();
 
+                // Add conditional request middleware BEFORE output caching
+                app.UseMiddleware<ConditionalRequestMiddleware>();
+
                 // Add output caching middleware
                 app.UseOutputCache();
 
