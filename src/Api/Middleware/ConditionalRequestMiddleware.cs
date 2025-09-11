@@ -68,7 +68,7 @@ public class ConditionalRequestMiddleware
             var ifNoneMatch = request.Headers.IfNoneMatch;
             if (!StringValues.IsNullOrEmpty(ifNoneMatch) && CheckIfNoneMatch(ifNoneMatch, etag))
             {
-                _logger.LogDebug("Returning 304 Not Modified for {Path} (ETag match)", request.Path);
+                _logger.LogDebug("Returning 304 Not Modified (ETag match)");
                 await SetNotModifiedResponse(context, originalBodyStream, etag, lastModified);
                 return;
             }
@@ -77,8 +77,7 @@ public class ConditionalRequestMiddleware
             var ifModifiedSince = request.Headers.IfModifiedSince;
             if (!StringValues.IsNullOrEmpty(ifModifiedSince) && CheckIfModifiedSince(ifModifiedSince, lastModified))
             {
-                _logger.LogDebug("Returning 304 Not Modified for {Path} (Not modified since) - LastModified: {LastModified}, IfModifiedSince: {IfModifiedSince}",
-                    request.Path, lastModified, ifModifiedSince);
+                _logger.LogDebug("Returning 304 Not Modified (Not modified since)");
                 await SetNotModifiedResponse(context, originalBodyStream, etag, lastModified);
                 return;
             }
