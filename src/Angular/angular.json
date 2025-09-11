@@ -124,21 +124,7 @@
             "styles": [
               "src/styles.scss"
             ],
-            "karmaConfig": {
-              "reporters": ["progress", "kjhtml", "coverage", "junit"],
-              "junitReporter": {
-                "outputDir": "test-results",
-                "outputFile": "test-results.xml",
-                "suite": "Angular Tests"
-              },
-              "coverageReporter": {
-                "dir": "coverage",
-                "reporters": [
-                  { "type": "html" },
-                  { "type": "text-summary" }
-                ]
-              }
-            }
+            "karmaConfig": "karma.conf.js"
           }
         },
         "lint": {

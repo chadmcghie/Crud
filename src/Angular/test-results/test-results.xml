@@ -1,0 +1,292 @@
+<?xml version="1.0"?>
+<testsuite name="Chrome Headless 140.0.0.0 (Mac OS 10.15.7)" package="Angular Tests" timestamp="2025-09-11T15:13:52" id="0" hostname="Mac" tests="267" errors="0" failures="0" time="0.276">
+  <properties>
+    <property name="browser.fullName" value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36"/>
+  </properties>
+  <testcase name="AuthGuard canActivateChild should redirect to login for child routes when not authenticated" time="0.004" classname=".AuthGuard canActivateChild"/>
+  <testcase name="AuthGuard canActivateChild should allow child access when user is authenticated" time="0.001" classname=".AuthGuard canActivateChild"/>
+  <testcase name="AuthGuard canActivateChild should redirect with return URL for child routes" time="0.001" classname=".AuthGuard canActivateChild"/>
+  <testcase name="AuthGuard canActivate should allow access when user is authenticated" time="0.001" classname=".AuthGuard canActivate"/>
+  <testcase name="AuthGuard canActivate should redirect to login when user is not authenticated" time="0" classname=".AuthGuard canActivate"/>
+  <testcase name="AuthGuard canActivate should check authentication status from service" time="0.001" classname=".AuthGuard canActivate"/>
+  <testcase name="AuthGuard canActivate should redirect to login with return URL when route has state" time="0" classname=".AuthGuard canActivate"/>
+  <testcase name="AuthGuard canLoad should handle empty segments array" time="0.001" classname=".AuthGuard canLoad"/>
+  <testcase name="AuthGuard canLoad should redirect to login when trying to load module without authentication" time="0" classname=".AuthGuard canLoad"/>
+  <testcase name="AuthGuard canLoad should redirect with return URL when loading route with segments" time="0.001" classname=".AuthGuard canLoad"/>
+  <testcase name="AuthGuard canLoad should allow module loading when user is authenticated" time="0" classname=".AuthGuard canLoad"/>
+  <testcase name="AuthGuard canMatch should allow route matching when user is authenticated" time="0.001" classname=".AuthGuard canMatch"/>
+  <testcase name="AuthGuard canMatch should redirect to login when route matching without authentication" time="0" classname=".AuthGuard canMatch"/>
+  <testcase name="AuthGuard canMatch should handle route with segments for matching" time="0" classname=".AuthGuard canMatch"/>
+  <testcase name="AuthGuard Edge Cases should handle authentication service returning undefined" time="0" classname=".AuthGuard Edge Cases"/>
+  <testcase name="AuthGuard Edge Cases should handle null user from service" time="0" classname=".AuthGuard Edge Cases"/>
+  <testcase name="AuthGuard Edge Cases should handle user with empty roles array" time="0.001" classname=".AuthGuard Edge Cases"/>
+  <testcase name="AuthGuard Edge Cases should handle user without roles property" time="0" classname=".AuthGuard Edge Cases"/>
+  <testcase name="AuthGuard should be created" time="0" classname=".AuthGuard"/>
+  <testcase name="ResetPasswordComponent should show error for invalid token" time="0.025" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should calculate password strength" time="0.008" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should show error message on failed password reset" time="0.003" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should validate password confirmation match" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should enable submit button when form is valid" time="0.003" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should handle network error gracefully" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should disable submit button when form is invalid" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should set loading state during submission" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should show password strength indicator" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should create" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should initialize form with password fields" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should show error if no token is provided" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should validate token on component initialization" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should toggle password visibility" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should extract token from query parameters" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should call authService.resetPassword on valid form submission" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should validate password requirements" time="0.001" classname=".ResetPasswordComponent"/>
+  <testcase name="ResetPasswordComponent should navigate to login on successful password reset" time="0.002" classname=".ResetPasswordComponent"/>
+  <testcase name="PeopleComponent should handle phone as null when empty" time="0.008" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should handle create person error" time="0.002" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should navigate to people list on cancel" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should reset form" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should initialize form with empty values" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should not submit invalid form" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should validate required fields" time="0.002" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should not toggle role with empty id" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should load roles on init" time="0.002" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should not submit when already submitting" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should handle update person error" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should handle roles loading error" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should create" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should create person successfully" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should update person successfully" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should populate form when editing person via route parameter" time="0.003" classname=".PeopleComponent"/>
+  <testcase name="PeopleComponent should toggle role selection" time="0.001" classname=".PeopleComponent"/>
+  <testcase name="ForgotPasswordComponent should validate email format" time="0.004" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should not submit when already loading" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should show success message on successful password reset request" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should initialize form with email control" time="0" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should call authService.forgotPassword on valid form submission" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should set loading state during submission" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should handle rate limiting error" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should clear form after successful submission" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should create" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should enable submit button when form is valid" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should disable submit button when form is invalid" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should show loading spinner when loading is true" time="0" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should handle network error gracefully" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should show error message on failed password reset request" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ForgotPasswordComponent should clear error message when form is modified" time="0.001" classname=".ForgotPasswordComponent"/>
+  <testcase name="ApiService People API should delete a person" time="0.001" classname=".ApiService People API"/>
+  <testcase name="ApiService People API should update a person" time="0.003" classname=".ApiService People API"/>
+  <testcase name="ApiService People API should create a person" time="0.001" classname=".ApiService People API"/>
+  <testcase name="ApiService People API should list people" time="0" classname=".ApiService People API"/>
+  <testcase name="ApiService Roles API should list roles" time="0" classname=".ApiService Roles API"/>
+  <testcase name="ApiService Roles API should create a role" time="0.001" classname=".ApiService Roles API"/>
+  <testcase name="ApiService Roles API should be created" time="0" classname=".ApiService Roles API"/>
+  <testcase name="ApiService Roles API should delete a role" time="0" classname=".ApiService Roles API"/>
+  <testcase name="ApiService Roles API should update a role" time="0.001" classname=".ApiService Roles API"/>
+  <testcase name="ApiService Error handling should handle HTTP errors for roles" time="0" classname=".ApiService Error handling"/>
+  <testcase name="ApiService Error handling should handle HTTP errors for people" time="0" classname=".ApiService Error handling"/>
+  <testcase name="AuthService token persistence should store tokens in localStorage when remember me is true" time="0.002" classname=".AuthService token persistence"/>
+  <testcase name="AuthService token persistence should store tokens in sessionStorage by default" time="0" classname=".AuthService token persistence"/>
+  <testcase name="AuthService login should send login request and store tokens" time="0.001" classname=".AuthService login"/>
+  <testcase name="AuthService login should update current user on successful login" time="0" classname=".AuthService login"/>
+  <testcase name="AuthService login should handle login error" time="0.001" classname=".AuthService login"/>
+  <testcase name="AuthService initialization should load user from stored token on service creation" time="0" classname=".AuthService initialization"/>
+  <testcase name="AuthService logout should clear tokens and reset user state" time="0" classname=".AuthService logout"/>
+  <testcase name="AuthService logout should send logout request to server" time="0" classname=".AuthService logout"/>
+  <testcase name="AuthService register should update current user on successful registration" time="0" classname=".AuthService register"/>
+  <testcase name="AuthService register should handle registration error" time="0.001" classname=".AuthService register"/>
+  <testcase name="AuthService register should send registration request and store tokens" time="0" classname=".AuthService register"/>
+  <testcase name="AuthService isAuthenticated should return false when access token does not exist" time="0" classname=".AuthService isAuthenticated"/>
+  <testcase name="AuthService isAuthenticated should return true when access token exists" time="0" classname=".AuthService isAuthenticated"/>
+  <testcase name="AuthService refreshToken should clear tokens and user on refresh failure" time="0" classname=".AuthService refreshToken"/>
+  <testcase name="AuthService refreshToken should refresh access token" time="0" classname=".AuthService refreshToken"/>
+  <testcase name="AuthService refreshToken should handle refresh token error" time="0" classname=".AuthService refreshToken"/>
+  <testcase name="AuthService should be created" time="0.001" classname=".AuthService"/>
+  <testcase name="AuthService hasRole should return true when user has the specified role" time="0" classname=".AuthService hasRole"/>
+  <testcase name="AuthService hasRole should return false when no user is logged in" time="0" classname=".AuthService hasRole"/>
+  <testcase name="AuthService hasRole should return false when user does not have the specified role" time="0" classname=".AuthService hasRole"/>
+  <testcase name="AuthService getAccessToken should return null when no token exists" time="0" classname=".AuthService getAccessToken"/>
+  <testcase name="AuthService getAccessToken should return stored access token" time="0" classname=".AuthService getAccessToken"/>
+  <testcase name="RolesListComponent should call onAddRole when clicking add button" time="0.004" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should load roles on init" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should have correct table headers" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should call onEditRole when clicking edit button" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should refresh roles list" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should create" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should call refresh when clicking refresh button" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should handle delete error gracefully" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should display roles in template" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should call onDeleteRole when clicking delete button" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should not delete role if not confirmed" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should navigate to roles form on add role" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should display empty state when no roles" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should navigate to roles form with edit parameters" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should display N/A for null descriptions" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should handle loading error gracefully" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should show empty state when no roles exist" time="0.001" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should delete role after confirmation" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesListComponent should show table when roles exist" time="0" classname=".RolesListComponent"/>
+  <testcase name="RolesComponent - Edit Mode should update role successfully" time="0.005" classname=".RolesComponent - Edit Mode"/>
+  <testcase name="RolesComponent - Edit Mode should display correct title for editing role" time="0" classname=".RolesComponent - Edit Mode"/>
+  <testcase name="RolesComponent - Edit Mode should display correct button text for editing role" time="0" classname=".RolesComponent - Edit Mode"/>
+  <testcase name="RolesComponent - Edit Mode should handle update role error" time="0.001" classname=".RolesComponent - Edit Mode"/>
+  <testcase name="RolesComponent - Edit Mode should populate form when editing role" time="0.001" classname=".RolesComponent - Edit Mode"/>
+  <testcase name="RegisterComponent should create" time="0.008" classname=".RegisterComponent"/>
+  <testcase name="RegisterComponent Form Validation should mark password as valid when meets requirements" time="0.002" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark password as invalid when empty" time="0.002" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark confirmPassword as invalid when empty" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark form as valid when all fields are valid" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark password as invalid when too short" time="0.002" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark form as valid when passwords match" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark email as valid with correct format" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark form as invalid when terms not accepted" time="0.005" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark form as invalid when passwords do not match" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark acceptTerms as invalid when not checked" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark email as invalid with incorrect format" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should mark email as invalid when empty" time="0.001" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Validation should initialize form with empty fields" time="0" classname=".RegisterComponent Form Validation"/>
+  <testcase name="RegisterComponent Form Submission should not submit when form is invalid" time="0.001" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should submit when form is valid" time="0.002" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should display generic error message when no specific error provided" time="0.002" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should clear messages when form is resubmitted" time="0.002" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should auto-login after successful registration" time="0.002" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should set loading to true when submitting" time="0.001" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should show success message after successful registration" time="0.002" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should navigate to home after auto-login" time="0.001" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Form Submission should display error message on registration failure" time="0.001" classname=".RegisterComponent Form Submission"/>
+  <testcase name="RegisterComponent Password Strength should calculate strong password strength" time="0.001" classname=".RegisterComponent Password Strength"/>
+  <testcase name="RegisterComponent Password Strength should calculate medium password strength" time="0.001" classname=".RegisterComponent Password Strength"/>
+  <testcase name="RegisterComponent Password Strength should calculate weak password strength" time="0.001" classname=".RegisterComponent Password Strength"/>
+  <testcase name="RegisterComponent Password Strength should return empty string for no password" time="0.001" classname=".RegisterComponent Password Strength"/>
+  <testcase name="RegisterComponent UI State should disable submit button when loading" time="0.002" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should enable submit button when form is valid" time="0.001" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should hide loading indicator when not loading" time="0.001" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should show loading indicator when loading" time="0.001" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should display success message when present" time="0.001" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should display error message when present" time="0.001" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent UI State should disable submit button when form is invalid" time="0" classname=".RegisterComponent UI State"/>
+  <testcase name="RegisterComponent Error Handling should get error message for invalid email format" time="0" classname=".RegisterComponent Error Handling"/>
+  <testcase name="RegisterComponent Error Handling should get error message for password mismatch" time="0.002" classname=".RegisterComponent Error Handling"/>
+  <testcase name="RegisterComponent Error Handling should get error message for required email" time="0.001" classname=".RegisterComponent Error Handling"/>
+  <testcase name="RegisterComponent Error Handling should get error message for required confirmPassword" time="0" classname=".RegisterComponent Error Handling"/>
+  <testcase name="RegisterComponent Error Handling should get error message for required password" time="0.001" classname=".RegisterComponent Error Handling"/>
+  <testcase name="RegisterComponent Error Handling should get error message for short password" time="0.001" classname=".RegisterComponent Error Handling"/>
+  <testcase name="AuthInterceptor Request Queuing should queue requests during token refresh" time="0.001" classname=".AuthInterceptor Request Queuing"/>
+  <testcase name="AuthInterceptor Request Queuing should release queued requests when refresh fails" time="0" classname=".AuthInterceptor Request Queuing"/>
+  <testcase name="AuthInterceptor Request Queuing should handle multiple concurrent 401 responses" time="0.001" classname=".AuthInterceptor Request Queuing"/>
+  <testcase name="AuthInterceptor should be created" time="0" classname=".AuthInterceptor"/>
+  <testcase name="AuthInterceptor Edge Cases should handle external API requests" time="0" classname=".AuthInterceptor Edge Cases"/>
+  <testcase name="AuthInterceptor Edge Cases should handle request with existing Authorization header" time="0.001" classname=".AuthInterceptor Edge Cases"/>
+  <testcase name="AuthInterceptor Edge Cases should handle network errors" time="0" classname=".AuthInterceptor Edge Cases"/>
+  <testcase name="AuthInterceptor Edge Cases should handle requests with query parameters" time="0" classname=".AuthInterceptor Edge Cases"/>
+  <testcase name="AuthInterceptor Edge Cases should handle POST requests with body" time="0.001" classname=".AuthInterceptor Edge Cases"/>
+  <testcase name="AuthInterceptor 401 Response Handling should handle 401 error and attempt token refresh" time="0" classname=".AuthInterceptor 401 Response Handling"/>
+  <testcase name="AuthInterceptor 401 Response Handling should pass through non-401 errors" time="0" classname=".AuthInterceptor 401 Response Handling"/>
+  <testcase name="AuthInterceptor 401 Response Handling should redirect to login when refresh token fails" time="0" classname=".AuthInterceptor 401 Response Handling"/>
+  <testcase name="AuthInterceptor 401 Response Handling should not attempt refresh for auth endpoints" time="0" classname=".AuthInterceptor 401 Response Handling"/>
+  <testcase name="AuthInterceptor Token Attachment should add Authorization header when token exists" time="0" classname=".AuthInterceptor Token Attachment"/>
+  <testcase name="AuthInterceptor Token Attachment should not add Authorization header for refresh endpoint" time="0" classname=".AuthInterceptor Token Attachment"/>
+  <testcase name="AuthInterceptor Token Attachment should not add Authorization header when token is null" time="0" classname=".AuthInterceptor Token Attachment"/>
+  <testcase name="AuthInterceptor Token Attachment should not add Authorization header for auth endpoints" time="0" classname=".AuthInterceptor Token Attachment"/>
+  <testcase name="AuthInterceptor Token Attachment should not add Authorization header for register endpoint" time="0.001" classname=".AuthInterceptor Token Attachment"/>
+  <testcase name="LoginComponent should create" time="0.005" classname=".LoginComponent"/>
+  <testcase name="LoginComponent Form Submission should display error message on login failure" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should display generic error message when no specific error provided" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should clear error message when form is resubmitted" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should set loading to true when submitting" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should set loading to false after successful login" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should navigate to return URL after successful login" time="0.002" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should navigate to default URL when no return URL specified" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should not submit when form is invalid" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent Form Submission should submit when form is valid" time="0.001" classname=".LoginComponent Form Submission"/>
+  <testcase name="LoginComponent UI State should disable submit button when form is invalid" time="0" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should disable submit button when loading" time="0.002" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should enable submit button when form is valid" time="0.001" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should hide loading indicator when not loading" time="0" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should show loading indicator when loading" time="0.001" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should not display error message when empty" time="0.001" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent UI State should display error message when present" time="0.004" classname=".LoginComponent UI State"/>
+  <testcase name="LoginComponent Error Handling should get error message for required password" time="0.001" classname=".LoginComponent Error Handling"/>
+  <testcase name="LoginComponent Error Handling should get error message for required email" time="0.001" classname=".LoginComponent Error Handling"/>
+  <testcase name="LoginComponent Error Handling should return empty string for valid email" time="0.001" classname=".LoginComponent Error Handling"/>
+  <testcase name="LoginComponent Error Handling should return empty string for valid password" time="0.001" classname=".LoginComponent Error Handling"/>
+  <testcase name="LoginComponent Error Handling should get error message for invalid email format" time="0.001" classname=".LoginComponent Error Handling"/>
+  <testcase name="LoginComponent Form Validation should mark email as invalid when empty" time="0.001" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should initialize form with empty fields" time="0" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark password as valid when not empty" time="0.001" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark password as invalid when empty" time="0.001" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark form as invalid when fields are empty" time="0.001" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark email as valid with correct format" time="0.001" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark email as invalid with incorrect format" time="0" classname=".LoginComponent Form Validation"/>
+  <testcase name="LoginComponent Form Validation should mark form as valid when all fields are valid" time="0.002" classname=".LoginComponent Form Validation"/>
+  <testcase name="RolesComponent - General Tests should display correct button text for new role" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should navigate to roles list on cancel" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should disable submit button when form is invalid" time="0" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should handle create role error" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should reset form" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should handle empty description as null" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should not submit invalid form" time="0" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should not submit when already submitting" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should validate required fields" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should create role successfully" time="0" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should prevent default form submission" time="0.001" classname=".RolesComponent - General Tests"/>
+  <testcase name="RolesComponent - General Tests should display correct title for new role" time="0" classname=".RolesComponent - General Tests"/>
+  <testcase name="PeopleListComponent should call refresh when clicking refresh button" time="0.004" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should display N/A for null phone numbers" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should display &quot;No roles assigned&quot; when person has no roles" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should display people in template" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should refresh people list" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should display empty state when no people" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should set loading state during API call" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should create" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should not delete person if not confirmed" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should handle loading error" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should handle delete error" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should load people on init" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should delete person after confirmation" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should navigate to people form with edit parameters" time="0.001" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should navigate to people form on add person" time="0" classname=".PeopleListComponent"/>
+  <testcase name="PeopleListComponent should call onAddPerson when clicking add button" time="0" classname=".PeopleListComponent"/>
+  <testcase name="RoleGuard canMatch should redirect to unauthorized when matching without role" time="0" classname=".RoleGuard canMatch"/>
+  <testcase name="RoleGuard canMatch should allow route matching when user has required role" time="0" classname=".RoleGuard canMatch"/>
+  <testcase name="RoleGuard canActivateChild should redirect to unauthorized for child routes when lacking role" time="0.001" classname=".RoleGuard canActivateChild"/>
+  <testcase name="RoleGuard canActivateChild should allow child access when user has required role" time="0" classname=".RoleGuard canActivateChild"/>
+  <testcase name="RoleGuard Edge Cases should handle route with roles in data property" time="0" classname=".RoleGuard Edge Cases"/>
+  <testcase name="RoleGuard Edge Cases should handle user with undefined roles" time="0" classname=".RoleGuard Edge Cases"/>
+  <testcase name="RoleGuard Edge Cases should handle missing data property in route" time="0.001" classname=".RoleGuard Edge Cases"/>
+  <testcase name="RoleGuard Edge Cases should handle user with null roles" time="0" classname=".RoleGuard Edge Cases"/>
+  <testcase name="RoleGuard Role Checking Logic should handle case-sensitive role names" time="0" classname=".RoleGuard Role Checking Logic"/>
+  <testcase name="RoleGuard Role Checking Logic should check multiple roles in order" time="0.001" classname=".RoleGuard Role Checking Logic"/>
+  <testcase name="RoleGuard Role Checking Logic should stop checking roles after finding a match" time="0" classname=".RoleGuard Role Checking Logic"/>
+  <testcase name="RoleGuard canLoad should redirect to unauthorized when loading module without role" time="0" classname=".RoleGuard canLoad"/>
+  <testcase name="RoleGuard canLoad should allow module loading when user has required role" time="0" classname=".RoleGuard canLoad"/>
+  <testcase name="RoleGuard canLoad should redirect to login when not authenticated for module loading" time="0.001" classname=".RoleGuard canLoad"/>
+  <testcase name="RoleGuard canActivate should redirect to unauthorized when user lacks required role" time="0" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard canActivate should redirect to login when user is not authenticated" time="0" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard canActivate should allow access when user has one of multiple required roles" time="0" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard canActivate should allow access when user has required role" time="0.001" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard canActivate should allow access when empty roles array is specified" time="0" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard canActivate should allow access when no roles are specified in route" time="0" classname=".RoleGuard canActivate"/>
+  <testcase name="RoleGuard should be created" time="0" classname=".RoleGuard"/>
+  <testcase name="RolesComponent should create" time="0.001" classname=".RolesComponent"/>
+  <testcase name="RolesComponent should initialize form with empty values" time="0.001" classname=".RolesComponent"/>
+  <testcase name="RolesComponent should reset form when editingRole changes to null" time="0.001" classname=".RolesComponent"/>
+  <testcase name="RolesComponent should create role successfully" time="0.001" classname=".RolesComponent"/>
+  <system-out>
+    <![CDATA[Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) ERROR: 'Login error:', HttpErrorResponse{headers: _HttpHeaders{headers: Map{}, normalizedNames: Map{}, lazyInit: undefined, lazyUpdate: null}, status: 401, statusText: 'Unauthorized', url: 'http://localhost:5172/api/auth/login', ok: false, type: undefined, redirected: undefined, name: 'HttpErrorResponse', message: 'Http failure response for http://localhost:5172/api/auth/login: 401 Unauthorized', error: Object{error: Object{message: ...}}}
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) LOG: 'Logout successful'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) LOG: 'Logout successful'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) ERROR: 'Registration error:', HttpErrorResponse{headers: _HttpHeaders{headers: Map{}, normalizedNames: Map{}, lazyInit: undefined, lazyUpdate: null}, status: 400, statusText: 'Bad Request', url: 'http://localhost:5172/api/auth/register', ok: false, type: undefined, redirected: undefined, name: 'HttpErrorResponse', message: 'Http failure response for http://localhost:5172/api/auth/register: 400 Bad Request', error: Object{error: Object{message: ...}}}
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) ERROR: 'Token refresh error:', HttpErrorResponse{headers: _HttpHeaders{headers: Map{}, normalizedNames: Map{}, lazyInit: undefined, lazyUpdate: null}, status: 401, statusText: 'Unauthorized', url: 'http://localhost:5172/api/auth/refresh', ok: false, type: undefined, redirected: undefined, name: 'HttpErrorResponse', message: 'Http failure response for http://localhost:5172/api/auth/refresh: 401 Unauthorized', error: Object{}}
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) WARN: 'Invalid token format'
+,Chrome Headless 140.0.0.0 (Mac OS 10.15.7) ERROR: 'Token refresh error:', HttpErrorResponse{headers: _HttpHeaders{headers: Map{}, normalizedNames: Map{}, lazyInit: undefined, lazyUpdate: null}, status: 401, statusText: 'Unauthorized', url: 'http://localhost:5172/api/auth/refresh', ok: false, type: undefined, redirected: undefined, name: 'HttpErrorResponse', message: 'Http failure response for http://localhost:5172/api/auth/refresh: 401 Unauthorized', error: Object{error: Object{message: ...}}}
+
+]]>
+  </system-out>
+  <system-err/>
+</testsuite>
