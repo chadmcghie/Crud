@@ -1,4 +1,5 @@
 using App.Abstractions;
+using App.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
@@ -232,6 +233,10 @@ public static class DependencyInjection
             // Default to in-memory cache
             services.AddSingleton<App.Interfaces.ICacheService, InMemoryCacheService>();
         }
+
+        // Register cache management and statistics services
+        services.AddSingleton<App.Interfaces.ICacheStatisticsService, Infrastructure.Services.Caching.CacheStatisticsService>();
+        services.AddScoped<App.Interfaces.ICacheManagementService, Infrastructure.Services.Caching.CacheManagementService>();
 
         return services;
     }
