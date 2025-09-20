@@ -249,21 +249,21 @@ jobs:
         ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     - name: Run Backend Unit Tests
-      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal" --results-directory TestResults/
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal"
       
     - name: Upload backend unit test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: backend-unit-tests-${{ github.sha }}
-        path: TestResults/
+        path: test/TestResults/
         
     - name: Publish backend unit test results
       uses: dorny/test-reporter@v1
       if: always()
       with:
         name: Backend Unit Tests Summary
-        path: TestResults/*.trx
+        path: test/TestResults/*.trx
         reporter: dotnet-trx
 
   frontend-unit-tests:
@@ -362,7 +362,7 @@ jobs:
         ls -la src/Api/bin/Release/net8.0/*.json || echo "No JSON files in output"
         
     - name: Run Backend Integration Tests with SQLite
-      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --results-directory TestResults/
+      run: dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed"
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
@@ -373,14 +373,14 @@ jobs:
       if: always()
       with:
         name: backend-integration-tests-${{ github.sha }}
-        path: TestResults/
+        path: test/TestResults/
         
     - name: Publish backend integration test results
       uses: dorny/test-reporter@v1
       if: always()
       with:
         name: Backend Integration Tests Summary
-        path: TestResults/*.trx
+        path: test/TestResults/*.trx
         reporter: dotnet-trx
 
   e2e-smoke-tests:

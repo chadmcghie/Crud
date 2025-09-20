@@ -42,6 +42,8 @@ Generated\ Files/
 
 # Prevent test results in root folder
 /TestResults/
+/test-artifacts/
+/test-artifacts-v2/
 
 # NUnit
 *.VisualState.xml
