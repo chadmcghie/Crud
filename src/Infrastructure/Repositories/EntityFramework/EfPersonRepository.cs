@@ -47,12 +47,16 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
-            _context.People.Update(person);
+            // For tracked entities, EF Core will automatically detect property changes
+            // Only call Update() if the entity is not being tracked to avoid concurrency conflicts
+            // with many-to-many relationship changes
+            var entry = _context.Entry(person);
+            if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+            {
+                _context.People.Update(person);
+            }
+
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            throw new InvalidOperationException("The person was modified by another user. Please refresh and try again.", ex);
         }
         catch (DbUpdateException ex)
         {
