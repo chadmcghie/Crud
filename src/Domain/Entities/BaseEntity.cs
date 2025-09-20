@@ -24,4 +24,12 @@ public abstract class BaseEntity
     {
         UpdatedAt = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// Allows setting Id for testing purposes. Should only be used in test scenarios.
+    /// </summary>
+    protected void SetId(Guid id)
+    {
+        Id = id;
+    }
 }

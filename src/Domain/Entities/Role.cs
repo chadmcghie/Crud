@@ -34,6 +34,15 @@ public class Role : BaseEntity
     {
     }
 
+    // Internal constructor for testing - allows setting Id for unit tests
+    internal Role(Guid id, string name, string? description = null)
+    {
+        SetId(id);
+        Name = name;
+        Description = description;
+        CreatedAt = DateTime.UtcNow;
+    }
+
     // Factory method for creating new Role
     public static Role Create(string name, string? description = null)
     {
@@ -42,6 +51,12 @@ public class Role : BaseEntity
             Name = name,
             Description = description
         };
+    }
+
+    // Factory method for testing with specific ID
+    internal static Role CreateForTesting(Guid id, string name, string? description = null)
+    {
+        return new Role(id, name, description);
     }
 
     // Domain methods for state changes

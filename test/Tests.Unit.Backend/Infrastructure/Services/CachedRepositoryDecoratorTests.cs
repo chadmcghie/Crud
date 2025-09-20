@@ -51,7 +51,7 @@ public class CachedRepositoryDecoratorTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var cachedRole = new Role { Id = id, Name = "Admin" };
+        var cachedRole = Role.CreateForTesting(id, "Admin");
         var cacheKey = $"role:{id}";
 
         _mockKeyGenerator
@@ -76,7 +76,7 @@ public class CachedRepositoryDecoratorTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var role = new Role { Id = id, Name = "Admin" };
+        var role = Role.CreateForTesting(id, "Admin");
         var cacheKey = $"role:{id}";
 
         _mockKeyGenerator
@@ -135,8 +135,8 @@ public class CachedRepositoryDecoratorTests
         // Arrange
         var roles = new List<Role>
         {
-            new() { Id = Guid.NewGuid(), Name = "Admin" },
-            new() { Id = Guid.NewGuid(), Name = "User" }
+            Role.CreateForTesting(Guid.NewGuid(), "Admin"),
+            Role.CreateForTesting(Guid.NewGuid(), "User")
         };
         var cacheKey = "role:list";
 
@@ -163,8 +163,8 @@ public class CachedRepositoryDecoratorTests
         // Arrange
         var roles = new List<Role>
         {
-            new() { Id = Guid.NewGuid(), Name = "Admin" },
-            new() { Id = Guid.NewGuid(), Name = "User" }
+            Role.CreateForTesting(Guid.NewGuid(), "Admin"),
+            Role.CreateForTesting(Guid.NewGuid(), "User")
         };
         var cacheKey = "role:list";
 
@@ -194,7 +194,7 @@ public class CachedRepositoryDecoratorTests
     public async Task AddAsync_ShouldCallRepositoryAndInvalidateListCache()
     {
         // Arrange
-        var role = new Role { Id = Guid.NewGuid(), Name = "Admin" };
+        var role = Role.CreateForTesting(Guid.NewGuid(), "Admin");
         var entityCacheKey = $"role:{role.Id}";
         var listCacheKey = "role:list";
 
@@ -223,7 +223,7 @@ public class CachedRepositoryDecoratorTests
     public async Task UpdateAsync_ShouldCallRepositoryAndInvalidateCaches()
     {
         // Arrange
-        var role = new Role { Id = Guid.NewGuid(), Name = "Admin" };
+        var role = Role.CreateForTesting(Guid.NewGuid(), "Admin");
         var entityCacheKey = $"role:{role.Id}";
         var listCacheKey = "role:list";
 
@@ -280,7 +280,7 @@ public class CachedRepositoryDecoratorTests
     {
         // Arrange
         var name = "Admin";
-        var role = new Role { Id = Guid.NewGuid(), Name = name };
+        var role = Role.CreateForTesting(Guid.NewGuid(), name);
         var cacheKey = $"role:name:{name}";
 
         _mockKeyGenerator
@@ -305,7 +305,7 @@ public class CachedRepositoryDecoratorTests
     {
         // Arrange
         var name = "Admin";
-        var role = new Role { Id = Guid.NewGuid(), Name = name };
+        var role = Role.CreateForTesting(Guid.NewGuid(), name);
         var cacheKey = $"role:name:{name}";
 
         _mockKeyGenerator
@@ -364,7 +364,7 @@ public class CachedRepositoryDecoratorTests
         // Arrange
         var id = Guid.NewGuid();
         var name = "Admin";
-        var role = new Role { Id = id, Name = name };
+        var role = Role.CreateForTesting(id, name);
         var entityCacheKey = $"role:{id}";
         var nameCacheKey = $"role:name:{name}";
 
@@ -401,7 +401,7 @@ public class CachedRepositoryDecoratorTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var role = new Role { Id = id, Name = "Admin" };
+        var role = Role.CreateForTesting(id, "Admin");
         var cacheKey = $"role:{id}";
 
         _mockKeyGenerator

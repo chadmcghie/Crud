@@ -48,20 +48,20 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             var roleRepository = Scope.ServiceProvider.GetRequiredService<IRepository<Role>>();
 
             // Create test data
-            var adminRole = new Role { Name = "Administrator", Description = "Full system access" };
-            var userRole = new Role { Name = "User", Description = "Limited access" };
+            var adminRole = Role.Create("Administrator", "Full system access");
+            var userRole = Role.Create("User", "Limited access");
 
             await roleRepository.AddAsync(adminRole);
             await roleRepository.AddAsync(userRole);
             await DbContext.SaveChangesAsync();
 
-            var adminPerson = new Person { FullName = "Admin User", Phone = "123-456-7890" };
-            adminPerson.Roles.Add(adminRole);
+            var adminPerson = Person.Create("Admin User", "123-456-7890");
+            adminPerson.AddRole(adminRole);
 
-            var regularPerson = new Person { FullName = "Regular User", Phone = "098-765-4321" };
-            regularPerson.Roles.Add(userRole);
+            var regularPerson = Person.Create("Regular User", "098-765-4321");
+            regularPerson.AddRole(userRole);
 
-            var noRolePerson = new Person { FullName = "No Role User", Phone = "555-666-7777" };
+            var noRolePerson = Person.Create("No Role User", "555-666-7777");
 
             await personRepository.AddAsync(adminPerson);
             await personRepository.AddAsync(regularPerson);
@@ -112,7 +112,7 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             var customPersonRepository = Scope.ServiceProvider.GetRequiredService<App.Abstractions.IPersonRepository>();
 
             // Act - Add via generic repository
-            var person = new Person { FullName = "Test Person", Phone = "111-222-3333" };
+            var person = Person.Create("Test Person", "111-222-3333");
             await genericPersonRepository.AddAsync(person);
             await DbContext.SaveChangesAsync();
 
@@ -125,7 +125,7 @@ public class GenericRepositoryIntegrationTests : IntegrationTestBase
             retrievedPerson.Phone.Should().Be("111-222-3333");
 
             // Act - Update via custom repository
-            retrievedPerson.Phone = "999-888-7777";
+            retrievedPerson.UpdatePhone("999-888-7777");
             await customPersonRepository.UpdateAsync(retrievedPerson);
 
             // Act - Retrieve via generic repository

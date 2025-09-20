@@ -34,15 +34,11 @@ public class PersonTestDataBuilder
 
     public Person Build()
     {
-        var person = new Person
-        {
-            FullName = _fullName,
-            Phone = _phone
-        };
+        var person = Person.Create(_fullName, _phone);
 
-        foreach (var role in _roles)
+        if (_roles.Any())
         {
-            person.Roles.Add(role);
+            person.UpdateRoles(_roles);
         }
 
         return person;
