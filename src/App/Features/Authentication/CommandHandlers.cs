@@ -1,9 +1,9 @@
 using App.Abstractions;
+using App.Validation;
 using Domain.Entities.Authentication;
 using Domain.Events;
 using Domain.Interfaces;
 using Domain.ValueObjects;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -328,7 +328,7 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, boo
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validation is now handled by FluentValidation pipeline behavior
+        // Validation is now handled by DataAnnotations validation pipeline behavior
 
         try
         {
@@ -380,7 +380,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validation is now handled by FluentValidation pipeline behavior
+        // Validation is now handled by DataAnnotations validation pipeline behavior
 
         try
         {
