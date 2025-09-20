@@ -45,13 +45,9 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entry in entries)
         {
-            if (entry.Entity is Person person)
+            if (entry.Entity is BaseEntity baseEntity)
             {
-                person.UpdatedAt = DateTime.UtcNow;
-            }
-            else if (entry.Entity is Role role)
-            {
-                role.UpdatedAt = DateTime.UtcNow;
+                baseEntity.UpdatedAt = DateTime.UtcNow;
             }
             else if (entry.Entity is Wall wall)
             {
