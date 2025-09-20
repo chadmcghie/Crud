@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using App.Validation;
 using MediatR;
 
 namespace App.Behaviors;
@@ -12,20 +13,20 @@ public class DataAnnotationsValidationBehavior<TRequest, TResponse> : IPipelineB
         CancellationToken cancellationToken)
     {
         // Perform DataAnnotations validation
-        var validationContext = new ValidationContext(request);
-        var validationResults = new List<ValidationResult>();
+        var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(request);
+        var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
         
         bool isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
         
         if (!isValid)
         {
             var errors = validationResults
-                .Select(vr => new FluentValidation.Results.ValidationFailure(
+                .Select(vr => new ValidationFailure(
                     vr.MemberNames.FirstOrDefault() ?? "Object", 
                     vr.ErrorMessage ?? "Validation failed"))
                 .ToList();
             
-            throw new FluentValidation.ValidationException(errors);
+            throw new App.Validation.ValidationException(errors);
         }
         
         return await next();

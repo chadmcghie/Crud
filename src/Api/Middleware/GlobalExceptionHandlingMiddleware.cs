@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using FluentValidation;
+using App.Validation;
 
 namespace Api.Middleware;
 
