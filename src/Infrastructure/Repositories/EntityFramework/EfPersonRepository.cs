@@ -55,7 +55,7 @@ public class EfPersonRepository : IPersonRepository
             {
                 _context.People.Update(person);
             }
-            
+
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
         catch (DbUpdateException ex)

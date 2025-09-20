@@ -8,9 +8,9 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
 {
     public async Task<Person> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
     {
-        var person = new Person 
-        { 
-            FullName = request.FullName, 
+        var person = new Person
+        {
+            FullName = request.FullName,
             Phone = request.Phone
         };
 
@@ -50,21 +50,21 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
                     ?? throw new ArgumentException($"Role {roleId} not found");
                 newRoles.Add(role);
             }
-            
+
             // Clear existing roles - this approach ensures proper EF Core change tracking
             var currentRoles = person.Roles.ToList();
             foreach (var currentRole in currentRoles)
             {
                 person.Roles.Remove(currentRole);
             }
-            
+
             // Add new roles
             foreach (var newRole in newRoles)
             {
                 person.Roles.Add(newRole);
             }
         }
-        
+
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }

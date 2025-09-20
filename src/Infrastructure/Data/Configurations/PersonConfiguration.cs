@@ -21,7 +21,7 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.RowVersion)
             .HasColumnType("BLOB")
             .IsRequired(false);
-            // .IsConcurrencyToken() - Disabled due to EF Core conflicts with many-to-many updates
+        // .IsConcurrencyToken() - Disabled due to EF Core conflicts with many-to-many updates
 
         // Configure many-to-many relationship with Role
         builder.HasMany(p => p.Roles)

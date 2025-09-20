@@ -13,7 +13,7 @@ public static class DependencyInjection
     {
         // Register example service demonstrating generic repository with specifications
         services.AddScoped<IPersonQueryService, PersonQueryService>();
-        
+
 
         // Register MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
