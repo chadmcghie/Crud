@@ -159,6 +159,9 @@ public class ConditionalRequestTests : IntegrationTestBase
                 return;
             }
 
+            // Wait 1 second to ensure update happens in a different second for HTTP date precision
+            await Task.Delay(1100);
+
             // Update the data via API (not direct database modification) - need admin client for PUT
             var adminClient = await CreateAdminClientAsync();
             var updateRequest = new { name = role.Name, description = "Updated Description" };

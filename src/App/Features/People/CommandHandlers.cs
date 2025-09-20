@@ -65,6 +65,7 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
             }
         }
 
+        person.UpdatedAt = DateTime.UtcNow;
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }
