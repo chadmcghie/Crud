@@ -8,10 +8,10 @@ public record CreatePersonRequest(
     [property: StringLength(200, ErrorMessage = "Full name cannot exceed 200 characters")]
     [property: FullNameFormat(ErrorMessage = "Full name contains invalid characters")]
     string FullName,
-    
+
     [property: PhoneFormat(ErrorMessage = "Phone number must be a valid format")]
     string? Phone,
-    
+
     [property: NoEmptyGuids(ErrorMessage = "All role IDs must be valid non-empty GUIDs")]
     IEnumerable<Guid>? RoleIds
 );
@@ -21,13 +21,13 @@ public record UpdatePersonRequest(
     [property: StringLength(200, ErrorMessage = "Full name cannot exceed 200 characters")]
     [property: FullNameFormat(ErrorMessage = "Full name contains invalid characters")]
     string FullName,
-    
+
     [property: PhoneFormat(ErrorMessage = "Phone number must be a valid format")]
     string? Phone,
-    
+
     [property: NoEmptyGuids(ErrorMessage = "All role IDs must be valid non-empty GUIDs")]
     IEnumerable<Guid>? RoleIds,
-    
+
     byte[]? RowVersion
 );
 

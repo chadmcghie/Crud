@@ -8,7 +8,7 @@ public record CreateRoleRequest(
     [property: StringLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
     [property: AllowedCharacters(@"^[a-zA-Z0-9\s\-_\.]+$", ErrorMessage = "Role name can only contain letters, numbers, spaces, hyphens, underscores, and periods")]
     string Name,
-    
+
     [property: StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
     string? Description
 );
@@ -18,7 +18,7 @@ public record UpdateRoleRequest(
     [property: StringLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
     [property: AllowedCharacters(@"^[a-zA-Z0-9\s\-_\.]+$", ErrorMessage = "Role name can only contain letters, numbers, spaces, hyphens, underscores, and periods")]
     string Name,
-    
+
     [property: StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
     string? Description
 );

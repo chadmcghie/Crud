@@ -25,7 +25,7 @@ public class AllowedCharactersAttribute : ValidationAttribute
         }
 
         var stringValue = value.ToString()!;
-        
+
         if (!_regex.IsMatch(stringValue))
         {
             return new ValidationResult(
@@ -78,7 +78,7 @@ public class PhoneFormatAttribute : ValidationAttribute
         }
 
         var phoneValue = value.ToString()!;
-        
+
         if (!PhoneRegex.IsMatch(phoneValue))
         {
             return new ValidationResult(
@@ -105,7 +105,7 @@ public class FullNameFormatAttribute : ValidationAttribute
         }
 
         var nameValue = value.ToString()!;
-        
+
         if (!NameRegex.IsMatch(nameValue))
         {
             return new ValidationResult(

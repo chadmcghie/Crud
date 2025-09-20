@@ -19,8 +19,8 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("Name") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name is required");
     }
 
@@ -35,8 +35,8 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("Name") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name cannot exceed 100 characters");
     }
 
@@ -71,8 +71,8 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("Name") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name can only contain letters, numbers, spaces, hyphens, underscores, and periods");
     }
 
@@ -87,8 +87,8 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("Description") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("Description") &&
             vr.ErrorMessage == "Description cannot exceed 500 characters");
     }
 

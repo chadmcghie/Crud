@@ -19,8 +19,8 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("FullName") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name is required");
     }
 
@@ -35,8 +35,8 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("FullName") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name cannot exceed 200 characters");
     }
 
@@ -70,8 +70,8 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("Phone") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("Phone") &&
             vr.ErrorMessage == "Phone number must be a valid format");
     }
 
@@ -86,8 +86,8 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("RoleIds") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("RoleIds") &&
             vr.ErrorMessage == "All role IDs must be valid non-empty GUIDs");
     }
 
@@ -115,8 +115,8 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr => 
-            vr.MemberNames.Contains("FullName") && 
+        validationResults.Should().ContainSingle(vr =>
+            vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name contains invalid characters");
     }
 

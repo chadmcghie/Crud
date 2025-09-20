@@ -15,20 +15,20 @@ public class DataAnnotationsValidationBehavior<TRequest, TResponse> : IPipelineB
         // Perform DataAnnotations validation
         var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(request);
         var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-        
+
         bool isValid = Validator.TryValidateObject(request, validationContext, validationResults, true);
-        
+
         if (!isValid)
         {
             var errors = validationResults
                 .Select(vr => new ValidationFailure(
-                    vr.MemberNames.FirstOrDefault() ?? "Object", 
+                    vr.MemberNames.FirstOrDefault() ?? "Object",
                     vr.ErrorMessage ?? "Validation failed"))
                 .ToList();
-            
+
             throw new App.Validation.ValidationException(errors);
         }
-        
+
         return await next();
     }
 }
