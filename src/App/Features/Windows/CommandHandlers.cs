@@ -8,30 +8,57 @@ public class CreateWindowCommandHandler(IWindowRepository windowRepository) : IR
 {
     public async Task<Window> Handle(CreateWindowCommand request, CancellationToken cancellationToken)
     {
-        var window = new Window
+        // Note: Area is now calculated from Width * Height, so we don't pass the Area parameter
+        var window = Window.Create(
+            request.Name,
+            request.Width,
+            request.Height,
+            request.FrameType,
+            request.GlazingType,
+            request.Description);
+
+        // Update additional properties using domain methods
+        if (request.FrameDetails != null)
         {
-            Name = request.Name,
-            Description = request.Description,
-            Width = request.Width,
-            Height = request.Height,
-            Area = request.Area,
-            FrameType = request.FrameType,
-            FrameDetails = request.FrameDetails,
-            GlazingType = request.GlazingType,
-            GlazingDetails = request.GlazingDetails,
-            UValue = request.UValue,
-            SolarHeatGainCoefficient = request.SolarHeatGainCoefficient,
-            VisibleTransmittance = request.VisibleTransmittance,
-            AirLeakage = request.AirLeakage,
-            EnergyStarRating = request.EnergyStarRating,
-            NFRCRating = request.NFRCRating,
-            Orientation = request.Orientation,
-            Location = request.Location,
-            InstallationType = request.InstallationType,
-            OperationType = request.OperationType,
-            HasScreens = request.HasScreens,
-            HasStormWindows = request.HasStormWindows
-        };
+            window.UpdateFrameProperties(request.FrameType, request.FrameDetails);
+        }
+
+        if (request.GlazingDetails != null)
+        {
+            window.UpdateGlazingProperties(request.GlazingType, request.GlazingDetails);
+        }
+
+        if (request.UValue.HasValue || request.SolarHeatGainCoefficient.HasValue ||
+            request.VisibleTransmittance.HasValue || request.AirLeakage.HasValue)
+        {
+            window.UpdateEnergyProperties(
+                request.UValue,
+                request.SolarHeatGainCoefficient,
+                request.VisibleTransmittance,
+                request.AirLeakage);
+        }
+
+        if (request.EnergyStarRating != null || request.NFRCRating != null)
+        {
+            window.UpdatePerformanceRatings(request.EnergyStarRating, request.NFRCRating);
+        }
+
+        if (request.Location != null || request.Orientation != null || request.InstallationType != null)
+        {
+            window.UpdateLocationAndOrientation(
+                request.Location,
+                request.Orientation,
+                request.InstallationType);
+        }
+
+        if (request.OperationType != null || request.HasScreens.HasValue || request.HasStormWindows.HasValue)
+        {
+            window.UpdateOperationalProperties(
+                request.OperationType,
+                request.HasScreens,
+                request.HasStormWindows);
+        }
+
         return await windowRepository.AddAsync(window, cancellationToken);
     }
 }
@@ -43,28 +70,26 @@ public class UpdateWindowCommandHandler(IWindowRepository windowRepository) : IR
         var window = await windowRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Window {request.Id} not found");
 
-        window.Name = request.Name;
-        window.Description = request.Description;
-        window.Width = request.Width;
-        window.Height = request.Height;
-        window.Area = request.Area;
-        window.FrameType = request.FrameType;
-        window.FrameDetails = request.FrameDetails;
-        window.GlazingType = request.GlazingType;
-        window.GlazingDetails = request.GlazingDetails;
-        window.UValue = request.UValue;
-        window.SolarHeatGainCoefficient = request.SolarHeatGainCoefficient;
-        window.VisibleTransmittance = request.VisibleTransmittance;
-        window.AirLeakage = request.AirLeakage;
-        window.EnergyStarRating = request.EnergyStarRating;
-        window.NFRCRating = request.NFRCRating;
-        window.Orientation = request.Orientation;
-        window.Location = request.Location;
-        window.InstallationType = request.InstallationType;
-        window.OperationType = request.OperationType;
-        window.HasScreens = request.HasScreens;
-        window.HasStormWindows = request.HasStormWindows;
-        window.UpdatedAt = DateTime.UtcNow;
+        // Update properties using domain methods
+        window.UpdateName(request.Name);
+        window.UpdateDescription(request.Description);
+        window.UpdateDimensions(request.Width, request.Height);
+        window.UpdateFrameProperties(request.FrameType, request.FrameDetails);
+        window.UpdateGlazingProperties(request.GlazingType, request.GlazingDetails);
+        window.UpdateEnergyProperties(
+            request.UValue,
+            request.SolarHeatGainCoefficient,
+            request.VisibleTransmittance,
+            request.AirLeakage);
+        window.UpdatePerformanceRatings(request.EnergyStarRating, request.NFRCRating);
+        window.UpdateLocationAndOrientation(
+            request.Location,
+            request.Orientation,
+            request.InstallationType);
+        window.UpdateOperationalProperties(
+            request.OperationType,
+            request.HasScreens,
+            request.HasStormWindows);
 
         await windowRepository.UpdateAsync(window, cancellationToken);
     }
