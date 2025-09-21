@@ -242,7 +242,7 @@ public static class DependencyInjection
             var logger = provider.GetRequiredService<ILogger<Infrastructure.Services.Caching.CacheStatisticsService>>();
             return new Infrastructure.Services.Caching.CacheStatisticsService(redis, logger);
         });
-        
+
         services.AddScoped<App.Interfaces.ICacheManagementService>(provider =>
         {
             var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();

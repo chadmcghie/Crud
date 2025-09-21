@@ -35,7 +35,7 @@ public class CacheManagementService : ICacheManagementService
             {
                 var database = _redis.GetDatabase();
                 var server = _redis.GetServer(_redis.GetEndPoints().First());
-                
+
                 // Use FLUSHDB to clear the current database
                 await server.FlushDatabaseAsync();
                 _logger.LogInformation("Successfully cleared Redis cache");
@@ -62,11 +62,11 @@ public class CacheManagementService : ICacheManagementService
             {
                 var database = _redis.GetDatabase();
                 var server = _redis.GetServer(_redis.GetEndPoints().First());
-                
+
                 // Use SCAN to find keys matching the pattern
                 var keys = server.Keys(pattern: pattern);
                 var keyArray = keys.ToArray();
-                
+
                 if (keyArray.Length > 0)
                 {
                     await database.KeyDeleteAsync(keyArray);
@@ -126,14 +126,14 @@ public class CacheManagementService : ICacheManagementService
             // This is a placeholder for cache warming logic
             // In a real implementation, this would preload frequently accessed data
             // For now, we'll just log that warming is requested
-            
+
             // Example warming operations could include:
             // - Preload all roles (small, frequently accessed)
             // - Preload most recently accessed people
             // - Preload configuration data
-            
+
             _logger.LogInformation("Cache warming completed - placeholder implementation");
-            
+
             await Task.CompletedTask;
         }
         catch (Exception ex)
@@ -153,7 +153,7 @@ public class CacheManagementService : ICacheManagementService
                 var result = await database.ExecuteAsync("DBSIZE");
                 return (long)result;
             }
-            
+
             return 0;
         }
         catch (Exception ex)
@@ -170,12 +170,12 @@ public class CacheManagementService : ICacheManagementService
             if (_redis?.IsConnected == true)
             {
                 var server = _redis.GetServer(_redis.GetEndPoints().First());
-                
+
                 // Use SCAN to safely iterate through keys
                 var keys = server.Keys(pattern: pattern).Take(limit);
                 return keys.Select(k => k.ToString());
             }
-            
+
             return Enumerable.Empty<string>();
         }
         catch (Exception ex)

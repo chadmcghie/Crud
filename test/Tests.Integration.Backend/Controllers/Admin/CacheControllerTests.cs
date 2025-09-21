@@ -36,10 +36,10 @@ public class CacheControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var stats = JsonSerializer.Deserialize<CacheStatsResponse>(content, JsonOptions);
-            
+
             stats.Should().NotBeNull();
             stats.HitRatio.Should().BeGreaterThanOrEqualTo(0);
             stats.TotalHits.Should().BeGreaterThanOrEqualTo(0);
@@ -71,10 +71,10 @@ public class CacheControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<CacheClearResponse>(content, JsonOptions);
-            
+
             result.Should().NotBeNull();
             result.Cleared.Should().BeTrue();
             result.Message.Should().NotBeNullOrEmpty();
@@ -156,10 +156,10 @@ public class CacheControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<CacheKeyListResponse>(content, JsonOptions);
-            
+
             result.Should().NotBeNull();
             result.Keys.Should().NotBeNull();
             result.TotalCount.Should().BeGreaterThanOrEqualTo(0);
@@ -190,10 +190,10 @@ public class CacheControllerTests : IntegrationTestBase
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<CacheClearResponse>(content, JsonOptions);
-            
+
             result.Should().NotBeNull();
             result.Cleared.Should().BeTrue();
             result.Message.Should().Contain("test:*");

@@ -1,8 +1,8 @@
+using System.Diagnostics;
 using Api.Dtos;
 using App.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
 namespace Api.Controllers.Admin;
 
@@ -37,7 +37,7 @@ public class CacheController : ControllerBase
         try
         {
             var stats = await _statisticsService.GetCurrentStatisticsAsync(cancellationToken);
-            
+
             var response = new CacheStatsResponse(
                 stats.HitRatio,
                 stats.TotalHits,
@@ -57,7 +57,7 @@ public class CacheController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving cache statistics");
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 new { Message = "Error retrieving cache statistics" });
         }
     }
@@ -73,9 +73,9 @@ public class CacheController : ControllerBase
         try
         {
             var keyCountBefore = await _managementService.GetKeyCountAsync(cancellationToken);
-            
+
             await _managementService.ClearAllAsync(cancellationToken);
-            
+
             var response = new CacheClearResponse(
                 true,
                 keyCountBefore,
@@ -83,7 +83,7 @@ public class CacheController : ControllerBase
             );
 
             _logger.LogInformation("All caches cleared by admin user. Keys removed: {KeysRemoved}", keyCountBefore);
-            
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -113,18 +113,18 @@ public class CacheController : ControllerBase
             // Get keys before clearing to count them
             var keysBefore = await _managementService.GetKeysAsync(pattern, int.MaxValue, cancellationToken);
             var keyCount = keysBefore.Count();
-            
+
             await _managementService.ClearByPatternAsync(pattern, cancellationToken);
-            
+
             var response = new CacheClearResponse(
                 true,
                 keyCount,
                 $"Cache cleared successfully for pattern: {pattern}"
             );
 
-            _logger.LogInformation("Cache cleared by pattern '{Pattern}' by admin user. Keys removed: {KeysRemoved}", 
+            _logger.LogInformation("Cache cleared by pattern '{Pattern}' by admin user. Keys removed: {KeysRemoved}",
                 pattern, keyCount);
-            
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -158,9 +158,9 @@ public class CacheController : ControllerBase
             }
 
             await _managementService.RemoveKeyAsync(key, cancellationToken);
-            
+
             _logger.LogInformation("Cache key '{Key}' removed by admin user", key);
-            
+
             return NoContent();
         }
         catch (Exception ex)
@@ -196,7 +196,7 @@ public class CacheController : ControllerBase
             }, cancellationToken);
 
             _logger.LogInformation("Cache warming initiated by admin user");
-            
+
             return Accepted(new { Message = "Cache warming initiated" });
         }
         catch (Exception ex)
@@ -214,15 +214,15 @@ public class CacheController : ControllerBase
     [ProducesResponseType(typeof(CacheKeyListResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetKeys(
-        [FromQuery] string pattern = "*", 
-        [FromQuery] int limit = 100, 
+        [FromQuery] string pattern = "*",
+        [FromQuery] int limit = 100,
         CancellationToken cancellationToken = default)
     {
         try
         {
             var keys = await _managementService.GetKeysAsync(pattern, limit, cancellationToken);
             var totalCount = await _managementService.GetKeyCountAsync(cancellationToken);
-            
+
             var response = new CacheKeyListResponse(
                 keys,
                 totalCount,

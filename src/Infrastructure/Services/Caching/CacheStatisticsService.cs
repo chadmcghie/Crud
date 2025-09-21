@@ -15,7 +15,7 @@ public class CacheStatisticsService : ICacheStatisticsService
     private readonly IConnectionMultiplexer? _redis;
     private readonly ILogger<CacheStatisticsService> _logger;
     private readonly DateTime _startTime;
-    
+
     // In-memory counters for tracking statistics
     private readonly ConcurrentDictionary<string, long> _hits = new();
     private readonly ConcurrentDictionary<string, long> _misses = new();
@@ -37,13 +37,13 @@ public class CacheStatisticsService : ICacheStatisticsService
             var totalHits = _hits.Values.Sum();
             var totalMisses = _misses.Values.Sum();
             var totalOperations = totalHits + totalMisses;
-            
+
             var hitRatio = totalOperations > 0 ? (double)totalHits / totalOperations : 0.0;
-            
+
             var redisConnected = false;
             var keyCount = 0L;
             var memoryUsageMB = 0.0;
-            
+
             if (_redis?.IsConnected == true)
             {
                 redisConnected = true;
@@ -51,10 +51,10 @@ public class CacheStatisticsService : ICacheStatisticsService
                 {
                     var database = _redis.GetDatabase();
                     var server = _redis.GetServer(_redis.GetEndPoints().First());
-                    
+
                     // Get key count (using DBSIZE for performance)
                     keyCount = (long)await database.ExecuteAsync("DBSIZE");
-                    
+
                     // Get memory usage - simplified for now
                     try
                     {
@@ -122,18 +122,18 @@ public class CacheStatisticsService : ICacheStatisticsService
     public void RecordOperation(string operationType, TimeSpan duration)
     {
         var durationMs = duration.TotalMilliseconds;
-        
+
         lock (_statsLock)
         {
             _operationTimes.Enqueue(durationMs);
-            
+
             // Keep only the last 1000 operation times to prevent memory growth
             while (_operationTimes.Count > 1000)
             {
                 _operationTimes.TryDequeue(out _);
             }
         }
-        
+
         _logger.LogDebug("Cache operation recorded: {OperationType} took {Duration}ms", operationType, durationMs);
     }
 
