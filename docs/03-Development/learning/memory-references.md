@@ -14,7 +14,7 @@
 - Infrastructure implements interfaces from App/Domain
 - Api orchestrates via dependency injection
 **Tags**: `architecture`, `clean-architecture`, `design`  
-**Date**: 2025-01-15
+**Date**: 2025-09-11
 
 ### E2E Testing Strategy
 **Memory ID**: `mem_e2e_serial_001`  
