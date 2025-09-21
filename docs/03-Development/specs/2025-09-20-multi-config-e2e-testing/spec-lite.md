@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Explore and implement a comprehensive strategy for running E2E tests across different application configurations (Testing, Development, Production) to eliminate current QA gaps where tests only validate Testing configuration. This discovery will establish security-safe approaches for production config validation while maintaining test reliability and developer experience, ensuring configuration-specific issues are caught before production deployment.

@@ -392,6 +392,13 @@ namespace Api
                 app.UseCors("AllowAngular");
                 app.UseRateLimiter();
                 app.UseAuthentication();
+
+                // E2E test auth bypass - only in Testing environment
+                if (app.Environment.EnvironmentName == "Testing")
+                {
+                    app.UseMiddleware<E2ETestAuthBypassMiddleware>();
+                }
+
                 app.UseAuthorization();
 
                 // Add output caching middleware (if not disabled)
