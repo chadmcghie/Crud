@@ -23,10 +23,10 @@ public class UpdateRoleCommandHandler(IRoleRepository roleRepository) : IRequest
     {
         var role = await roleRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Role {request.Id} not found");
-        
+
         role.UpdateName(request.Name);
         role.UpdateDescription(request.Description);
-        
+
         await roleRepository.UpdateAsync(role, cancellationToken);
     }
 }

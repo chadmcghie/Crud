@@ -190,7 +190,7 @@ namespace Domain.Entities
         public void UpdateName(string name)
         {
             Guard.Against.NullOrEmpty(name, nameof(name));
-            
+
             if (Name != name)
             {
                 Name = name;
@@ -238,7 +238,7 @@ namespace Domain.Entities
         public void UpdateAssemblyType(string assemblyType)
         {
             Guard.Against.NullOrEmpty(assemblyType, nameof(assemblyType));
-            
+
             if (AssemblyType != assemblyType)
             {
                 AssemblyType = assemblyType;

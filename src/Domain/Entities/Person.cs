@@ -54,7 +54,7 @@ namespace Domain.Entities
         public void UpdateFullName(string fullName)
         {
             Guard.Against.NullOrWhiteSpace(fullName, nameof(fullName));
-            
+
             if (FullName != fullName)
             {
                 FullName = fullName;
@@ -74,7 +74,7 @@ namespace Domain.Entities
         public void AddRole(Role role)
         {
             Guard.Against.Null(role, nameof(role));
-            
+
             if (_roles.Add(role))
             {
                 MarkAsUpdated();
@@ -84,7 +84,7 @@ namespace Domain.Entities
         public void RemoveRole(Role role)
         {
             Guard.Against.Null(role, nameof(role));
-            
+
             if (_roles.Remove(role))
             {
                 MarkAsUpdated();
@@ -103,9 +103,9 @@ namespace Domain.Entities
         public void UpdateRoles(IEnumerable<Role> newRoles)
         {
             Guard.Against.Null(newRoles, nameof(newRoles));
-            
+
             var newRoleSet = new HashSet<Role>(newRoles);
-            
+
             // Only update if roles actually changed
             if (!_roles.SetEquals(newRoleSet))
             {
@@ -121,7 +121,7 @@ namespace Domain.Entities
         private static void ValidatePhone(string phone)
         {
             Guard.Against.StringTooLong(phone, 20, nameof(phone));
-            
+
             // Basic phone validation - could be enhanced with more sophisticated rules
             if (phone.Length > 0 && !phone.All(c => char.IsDigit(c) || c == '-' || c == '(' || c == ')' || c == ' ' || c == '+'))
             {

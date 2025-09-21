@@ -63,7 +63,7 @@ public class Role : BaseEntity
     public void UpdateName(string name)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
-        
+
         if (Name != name)
         {
             Name = name;

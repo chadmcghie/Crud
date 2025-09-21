@@ -278,7 +278,7 @@ namespace Domain.Entities
         public void UpdateName(string name)
         {
             Guard.Against.NullOrEmpty(name, nameof(name));
-            
+
             if (Name != name)
             {
                 Name = name;
