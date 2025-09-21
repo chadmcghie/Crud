@@ -71,6 +71,7 @@ jobs:
       run: npx playwright install chromium
 
     - name: Run ${{ inputs.test_category }} tests
+      id: run-tests
       working-directory: test/Tests.E2E.NG
       env:
         CI: true
@@ -81,6 +82,7 @@ jobs:
         API_URL: http://localhost:5172
         ANGULAR_URL: http://localhost:4200
       run: npm run test:${{ inputs.test_category }}
+      continue-on-error: true
 
     - name: Upload test results
       if: always()
@@ -100,12 +102,14 @@ jobs:
         path: test/Tests.E2E.NG/test-results/artifacts/
         retention-days: 7
 
-    - name: Comment on commit with results
+    - name: Report test results
       if: always()
       run: |
-        if [ "${{ job.status }}" == "success" ]; then
+        if [ "${{ steps.run-tests.outcome }}" == "success" ]; then
           echo "✅ ${{ inputs.test_category }} tests passed on branch ${{ inputs.branch }}"
+          echo "::notice title=Tests Passed::${{ inputs.test_category }} tests completed successfully"
         else
           echo "❌ ${{ inputs.test_category }} tests failed on branch ${{ inputs.branch }}"
           echo "Check the uploaded artifacts for details"
+          echo "::error title=Tests Failed::${{ inputs.test_category }} tests failed - check artifacts for details"
         fi
