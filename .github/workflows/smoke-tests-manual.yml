@@ -1,0 +1,111 @@
+name: Manual Smoke Tests
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      branch:
+        description: 'Branch to test (default: dev)'
+        required: false
+        default: 'dev'
+        type: string
+      test_category:
+        description: 'Test category to run'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+        - smoke
+        - critical
+        - extended
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  manual-smoke-tests:
+    name: Manual Smoke Tests - ${{ inputs.test_category }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          src/Angular/package-lock.json
+          test/Tests.E2E.NG/package-lock.json
+
+    - name: Restore .NET dependencies
+      run: dotnet restore solutions/Crud.sln
+
+    - name: Build .NET solution
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
+
+    - name: Install Angular dependencies
+      working-directory: src/Angular
+      run: npm ci
+
+    - name: Build Angular application
+      working-directory: src/Angular
+      run: npm run build
+
+    - name: Install E2E test dependencies
+      working-directory: test/Tests.E2E.NG
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: test/Tests.E2E.NG
+      run: npx playwright install chromium
+
+    - name: Run ${{ inputs.test_category }} tests
+      working-directory: test/Tests.E2E.NG
+      env:
+        CI: true
+        TEST_CATEGORY: ${{ inputs.test_category }}
+        API_PORT: 5172
+        ANGULAR_PORT: 4200
+        DATABASE_PATH: test.db
+        API_URL: http://localhost:5172
+        ANGULAR_URL: http://localhost:4200
+      run: npm run test:${{ inputs.test_category }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.test_category }}-test-results-${{ github.run_number }}
+        path: |
+          test/Tests.E2E.NG/test-results/
+          test/Tests.E2E.NG/playwright-report/
+        retention-days: 7
+
+    - name: Upload test artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.test_category }}-test-artifacts-${{ github.run_number }}
+        path: test/Tests.E2E.NG/test-results/artifacts/
+        retention-days: 7
+
+    - name: Comment on commit with results
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ ${{ inputs.test_category }} tests passed on branch ${{ inputs.branch }}"
+        else
+          echo "❌ ${{ inputs.test_category }} tests failed on branch ${{ inputs.branch }}"
+          echo "Check the uploaded artifacts for details"
+        fi
