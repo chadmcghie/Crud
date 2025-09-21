@@ -9,7 +9,7 @@ test.describe('Full Workflow Integration Tests', () => {
 
   test.beforeEach(async ({ page, request }, testInfo) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(request, 0);
+    apiHelpers = new ApiHelpers(request, 0, process.env.API_URL || 'http://localhost:5172');
     
     // Force immediate cleanup for UI tests to ensure complete isolation
     await apiHelpers.cleanupAll(true);

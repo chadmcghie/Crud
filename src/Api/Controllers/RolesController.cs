@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Api.Attributes;
 using Api.Dtos;
 using Api.Services;
 using App.Abstractions;
@@ -7,6 +8,7 @@ using App.Features.Roles;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Net.Http.Headers;
@@ -16,11 +18,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Roles")]
 [Route("api/[controller]")]
-[Authorize]
+[ConditionalAuthorize]
 public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> List(CancellationToken ct)
     {
         var items = await mediator.Send(new ListRolesQuery(), ct);
@@ -73,7 +75,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "RolesPolicy")]
     public async Task<ActionResult<RoleDto>> Get(Guid id, CancellationToken ct)
     {
@@ -89,7 +91,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
@@ -101,7 +103,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
@@ -113,7 +115,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteRoleCommand(id), ct);

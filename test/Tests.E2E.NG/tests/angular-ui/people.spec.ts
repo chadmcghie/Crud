@@ -9,7 +9,7 @@ test.describe('People Management UI', () => {
 
   test.beforeEach(async ({ page, apiContext }) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, 0);
+    apiHelpers = new ApiHelpers(apiContext, 0, process.env.API_URL || 'http://localhost:5172');
     
     // Clean up any existing data and wait for completion
     if (apiHelpers) {

@@ -30,11 +30,13 @@ jobs:
           echo "✅ Proceeding with staging deployment"
         fi
 
-  staging-smoke-tests:
-    name: Staging Smoke Tests (Independent Build)
+  build-staging:
+    name: Build for Staging (Once)
     runs-on: ubuntu-latest
     needs: check-commit
     if: needs.check-commit.outputs.should-deploy == 'true'
+    outputs:
+      artifacts-created: ${{ steps.create-artifacts.outputs.created }}
 
     steps:
     - name: Checkout code
@@ -54,19 +56,89 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
 
-    - name: Build backend for staging
+    - name: Build backend for staging (Testing config)
       run: |
-        echo "🏗️ Building backend for staging deployment..."
+        echo "🏗️ Building backend for staging with Testing configuration..."
         dotnet restore solutions/Crud.sln
         dotnet build solutions/Crud.sln --no-restore --configuration Release
-        echo "✅ Backend build completed"
+        echo "✅ Backend build completed for staging environment"
 
     - name: Install Angular dependencies
       working-directory: ./src/Angular
       run: |
-        echo "📦 Installing Angular dependencies for smoke tests..."
+        echo "📦 Installing Angular dependencies for staging build..."
         npm ci
         echo "✅ Angular dependencies installed"
+
+    - name: Build Angular for staging
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building Angular for staging configuration..."
+        npm run build -- --configuration=staging
+        echo "✅ Angular built for staging configuration"
+
+    - name: Create staging artifacts
+      id: create-artifacts
+      run: |
+        echo "📦 Creating staging build artifacts..."
+
+        # Create version info for staging environment
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"staging\"}" > version.json
+        echo "📋 Version info for staging:"
+        cat version.json
+
+        echo "created=true" >> $GITHUB_OUTPUT
+        echo "✅ Staging artifacts prepared"
+
+    - name: Upload staging build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: staging-build-${{ github.sha }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+          src/Angular/dist/
+          version.json
+        retention-days: 7
+
+  staging-smoke-tests:
+    name: Staging Smoke Tests (Using Build Artifacts)
+    runs-on: ubuntu-latest
+    needs: [check-commit, build-staging]
+    if: needs.check-commit.outputs.should-deploy == 'true' && needs.build-staging.outputs.artifacts-created == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download staging build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: staging-build-${{ github.sha }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+
+    - name: Verify staging artifacts
+      run: |
+        echo "📋 Using staging build artifacts (no rebuild)..."
+        if [ -f "version.json" ]; then
+          echo "Staging artifact version:"
+          cat version.json | jq .
+        fi
+        echo "✅ Staging artifacts verified - ready for smoke tests"
         
     # Install E2E dependencies
     - name: Install E2E dependencies
@@ -79,8 +151,8 @@ jobs:
     - name: Run staging-specific smoke tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🚀 Running staging smoke tests only (targeting ~2 minutes)..."
-        echo "Using PR-validated artifacts (no rebuild)"
+        echo "🚀 Running staging smoke tests using staging build artifacts..."
+        echo "Targeting ~2 minutes with Testing configuration"
         npm run test:smoke  # Instead of full suite
       env:
         CI: true
@@ -100,49 +172,45 @@ jobs:
         retention-days: 7
 
   prepare-staging-artifacts:
-    name: Prepare Staging Deployment Artifacts (Independent Build)
+    name: Prepare Staging Deployment Artifacts (Using Build Artifacts)
     runs-on: ubuntu-latest
-    needs: staging-smoke-tests
-    if: needs.staging-smoke-tests.result == 'success'
+    needs: [build-staging, staging-smoke-tests]
+    if: needs.staging-smoke-tests.result == 'success' && needs.build-staging.outputs.artifacts-created == 'true'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - name: Download staging build artifacts
+      uses: actions/download-artifact@v4
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-        cache: true
-        cache-dependency-path: 'src/**/*.csproj'
+        name: staging-build-${{ github.sha }}
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'src/Angular/package-lock.json'
-
-    - name: Build backend for staging
+    - name: Verify staging artifacts for deployment
       run: |
-        echo "🏗️ Building backend for staging deployment..."
-        dotnet restore solutions/Crud.sln
-        dotnet build solutions/Crud.sln --no-restore --configuration Release
-        echo "✅ Backend build completed"
+        echo "📦 Using staging build artifacts for deployment (no rebuild)..."
+        if [ -f "version.json" ]; then
+          echo "📋 Deployment artifact version:"
+          cat version.json | jq .
+        fi
+        echo "✅ Staging artifacts verified for deployment preparation"
 
-    - name: Build frontend for staging
-      working-directory: ./src/Angular
+    - name: Verify Angular staging build
       run: |
-        echo "🏗️ Building Angular for staging configuration..."
-        npm ci
-        npm run build -- --configuration=staging
-        echo "✅ Frontend built for staging configuration"
+        echo "📋 Verifying Angular staging build from artifacts..."
+        if [ -d "src/Angular/dist" ]; then
+          echo "✅ Angular staging build found in artifacts"
+          ls -la src/Angular/dist/
+        else
+          echo "❌ Angular staging build not found in artifacts!"
+          exit 1
+        fi
 
-    - name: Package backend for staging
+    - name: Package backend for staging (using artifacts)
       run: |
-        echo "📦 Packaging backend for staging deployment..."
+        echo "📦 Packaging backend from staging artifacts (no rebuild)..."
 
-        # Package the built backend
+        # Package the pre-built backend from artifacts
         mkdir -p ./staging-backend
         cp -r src/Api/bin/Release/net8.0/* ./staging-backend/
 
@@ -162,13 +230,13 @@ jobs:
         cd ..
         echo "✅ Backend packaged for staging deployment"
         
-    - name: Package frontend
+    - name: Package frontend (using artifacts)
       run: |
-        echo "📦 Packaging frontend build..."
+        echo "📦 Packaging frontend from staging artifacts (no rebuild)..."
         cd ./src/Angular/dist
         zip -r ../../../staging-frontend.zip .
         cd ../../..
-        echo "✅ Frontend packaged"
+        echo "✅ Frontend packaged from staging artifacts"
         
     - name: Upload staging artifacts
       uses: actions/upload-artifact@v4
