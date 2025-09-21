@@ -1,7 +1,7 @@
 # Spec Requirements Document
 
 > Spec: Controller Authorization Protection
-> Created: 2025-01-15
+> Created: 2025-09-11
 > GitHub Issue: #177 - Auth Decorators on Controllers
 > Status: IN PROGRESS
 

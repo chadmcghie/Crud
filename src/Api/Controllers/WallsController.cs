@@ -1,3 +1,4 @@
+using Api.Attributes;
 using Api.Dtos;
 using Api.Services;
 using App.Features.Walls;
@@ -12,11 +13,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-[Authorize]
+[ConditionalAuthorize]
 public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<IEnumerable<WallResponse>>> List(CancellationToken ct)
     {
@@ -25,7 +26,7 @@ public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "WallsPolicy")]
     public async Task<ActionResult<WallResponse>> Get(Guid id, CancellationToken ct)
     {
@@ -36,7 +37,7 @@ public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<ActionResult<WallResponse>> Create([FromBody] CreateWallRequest request, CancellationToken ct)
     {
         var w = await mediator.Send(new CreateWallCommand(
@@ -61,7 +62,7 @@ public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWallRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateWallCommand(
@@ -87,7 +88,7 @@ public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWallCommand(id), ct);

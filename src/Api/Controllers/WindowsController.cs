@@ -1,3 +1,4 @@
+using Api.Attributes;
 using Api.Dtos;
 using Api.Services;
 using App.Features.Windows;
@@ -12,11 +13,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("Building")]
 [Route("api/[controller]")]
-[Authorize]
+[ConditionalAuthorize]
 public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<IEnumerable<WindowResponse>>> List(CancellationToken ct)
     {
@@ -25,7 +26,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "WindowsPolicy")]
     public async Task<ActionResult<WindowResponse>> Get(Guid id, CancellationToken ct)
     {
@@ -36,7 +37,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<ActionResult<WindowResponse>> Create([FromBody] CreateWindowRequest request, CancellationToken ct)
     {
         var w = await mediator.Send(new CreateWindowCommand(
@@ -70,7 +71,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWindowRequest request, CancellationToken ct)
     {
         try
@@ -112,7 +113,7 @@ public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheI
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteWindowCommand(id), ct);

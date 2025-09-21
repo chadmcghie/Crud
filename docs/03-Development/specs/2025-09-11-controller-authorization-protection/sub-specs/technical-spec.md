@@ -1,7 +1,7 @@
 # Technical Specification
 
 > Sub-Spec: Controller Authorization Protection - Technical Implementation
-> Created: 2025-01-15
+> Created: 2025-09-11
 > Parent Spec: Controller Authorization Protection
 
 ## Technical Overview
