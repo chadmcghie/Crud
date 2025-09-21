@@ -53,6 +53,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
                 return new AuthenticationResponse { Success = false, Error = "Email already exists" };
             }
 
+            // Password strength validation
+            if (!IsPasswordStrong(request.Password, out string passwordError))
+            {
+                return new AuthenticationResponse { Success = false, Error = passwordError };
+            }
+
             // Hash password
             var hashedPassword = _passwordHasher.HashPassword(request.Password);
             var passwordHash = new PasswordHash(hashedPassword);
@@ -99,6 +105,43 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
             _logger.LogError(ex, "Error during user registration");
             throw;
         }
+    }
+
+    private bool IsPasswordStrong(string password, out string error)
+    {
+        error = string.Empty;
+
+        if (password.Length < 8)
+        {
+            error = "Password must be at least 8 characters long";
+            return false;
+        }
+
+        if (!password.Any(char.IsUpper))
+        {
+            error = "Password must contain at least one uppercase letter";
+            return false;
+        }
+
+        if (!password.Any(char.IsLower))
+        {
+            error = "Password must contain at least one lowercase letter";
+            return false;
+        }
+
+        if (!password.Any(char.IsDigit))
+        {
+            error = "Password must contain at least one number";
+            return false;
+        }
+
+        if (!password.Any(ch => "!@#$%^&*()_+-=[]{}|;:,.<>?".Contains(ch)))
+        {
+            error = "Password must contain at least one special character";
+            return false;
+        }
+
+        return true;
     }
 }
 
