@@ -27,8 +27,8 @@ export const test = base.extend<ApiOnlyFixtures>({
     await context.dispose();
   },
 
-  apiHelpers: async ({ apiContext }, use) => {
-    const helpers = new ApiHelpers(apiContext, 0); // Single worker, always index 0
+  apiHelpers: async ({ apiContext, apiUrl }, use) => {
+    const helpers = new ApiHelpers(apiContext, 0, apiUrl); // Single worker, always index 0
     await use(helpers);
   },
 

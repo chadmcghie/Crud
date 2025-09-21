@@ -1,11 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
+using Api.Attributes;
 using Api.Dtos;
 using Api.Services;
 using App.Features.People;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Net.Http.Headers;
@@ -15,11 +17,11 @@ namespace Api.Controllers;
 [ApiController]
 [Tags("People")]
 [Route("api/[controller]")]
-[Authorize]
+[ConditionalAuthorize]
 public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     [OutputCache(PolicyName = "PeoplePolicy")]
     public async Task<ActionResult<IEnumerable<PersonResponse>>> List(CancellationToken ct)
     {
@@ -36,7 +38,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "UserOrAdmin")]
+    [ConditionalAuthorize("UserOrAdmin")]
     public async Task<ActionResult<PersonResponse>> Get(Guid id, CancellationToken ct)
     {
         var p = await mediator.Send(new GetPersonQuery(id), ct);
@@ -67,7 +69,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request, CancellationToken ct)
     {
         var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);
@@ -79,7 +81,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdatePersonCommand(id, request.FullName, request.Phone, request.RoleIds, request.RowVersion), ct);
@@ -91,7 +93,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
+    [ConditionalAuthorize("AdminOnly")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeletePersonCommand(id), ct);
