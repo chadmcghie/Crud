@@ -8,7 +8,7 @@ namespace Api.Attributes;
 /// Authorization attribute that conditionally applies authorization based on environment.
 /// Bypasses authorization in Testing environment for E2E tests.
 /// </summary>
-public class ConditionalAuthorizeAttribute : Attribute, IAuthorizationFilter
+public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilter
 {
     private readonly string? _policy;
 
@@ -17,11 +17,14 @@ public class ConditionalAuthorizeAttribute : Attribute, IAuthorizationFilter
         _policy = policy;
     }
 
-    public void OnAuthorization(AuthorizationFilterContext context)
+    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         if (context?.HttpContext?.RequestServices == null)
         {
-            context.Result = new UnauthorizedResult(); // Fail-safe: deny access if we can't determine context
+            if (context != null)
+            {
+                context.Result = new UnauthorizedResult(); // Fail-safe: deny access if we can't determine context
+            }
             return;
         }
 
@@ -30,7 +33,7 @@ public class ConditionalAuthorizeAttribute : Attribute, IAuthorizationFilter
             var environment = context.HttpContext.RequestServices
                 .GetRequiredService<IWebHostEnvironment>();
 
-            // Complete bypass for Testing environment - allow everything
+            // Only bypass authorization for E2E tests by checking environment variable
             if (environment.IsEnvironment("Testing"))
             {
                 // Additional safeguard: verify we're not in a production-like environment
@@ -44,8 +47,16 @@ public class ConditionalAuthorizeAttribute : Attribute, IAuthorizationFilter
                     return;
                 }
 
-                // Do nothing - allow the request to proceed
-                return;
+                // Check if authorization bypass is explicitly enabled for E2E tests
+                var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+
+                if (bypassAuth)
+                {
+                    // Do nothing - allow the request to proceed for E2E tests only
+                    return;
+                }
+
+                // For integration tests and other Testing scenarios, apply normal authorization
             }
 
             // In non-Testing environments, apply normal authorization
@@ -62,8 +73,8 @@ public class ConditionalAuthorizeAttribute : Attribute, IAuthorizationFilter
             // If a policy is specified, check it
             if (!string.IsNullOrEmpty(_policy))
             {
-                var authResult = authorizationService.AuthorizeAsync(
-                    context.HttpContext.User, _policy).Result;
+                var authResult = await authorizationService.AuthorizeAsync(
+                    context.HttpContext.User, _policy);
 
                 if (!authResult.Succeeded)
                 {

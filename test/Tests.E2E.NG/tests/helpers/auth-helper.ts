@@ -30,6 +30,10 @@ export class AuthHelper {
           Password: password,
           FirstName: 'Test',
           LastName: 'User'
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-E2E-Test': 'true'
         }
       });
 
@@ -51,6 +55,10 @@ export class AuthHelper {
           data: {
             Email: email,
             Password: password
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-E2E-Test': 'true'
           }
         });
 
@@ -76,7 +84,8 @@ export class AuthHelper {
     const token = await this.getAuthToken();
     return {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-E2E-Test': 'true'
     };
   }
 

@@ -263,20 +263,23 @@ namespace Api
                 {
                     var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
 
-                    if (isTestEnvironment)
+                    // Check if authorization bypass is explicitly enabled for E2E tests
+                    var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+
+                    if (isTestEnvironment && bypassAuth)
                     {
-                        // In Testing environment, bypass all authorization for E2E tests
+                        // In Testing environment with E2E bypass enabled, bypass all authorization for E2E tests
                         options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => true));
                         options.AddPolicy("UserOrAdmin", policy => policy.RequireAssertion(context => true));
 
-                        // Set fallback policy to allow all for Testing environment
+                        // Set fallback policy to allow all for E2E tests
                         options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
                             .RequireAssertion(context => true)
                             .Build();
                     }
                     else
                     {
-                        // Production authorization policies
+                        // Normal authorization policies for production and integration tests
                         options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
                         options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
                     }
