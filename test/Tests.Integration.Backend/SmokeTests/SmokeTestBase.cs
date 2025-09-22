@@ -27,48 +27,48 @@ public abstract class SmokeTestBase : IDisposable
               builder.UseEnvironment(environment);
               builder.ConfigureAppConfiguration((context, config) =>
           {
-                config.Sources.Clear();
+              config.Sources.Clear();
 
               // Environment-specific configuration
-                var settings = environment switch
-                {
-                    "Development" => new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Dev_{Guid.NewGuid():N}.db",
-                        ["DatabaseProvider"] = "SQLite",
-                        ["Logging:LogLevel:Default"] = "Information",
-                        ["Caching:UseRedis"] = "false",
-                        ["OutputCaching:Disabled"] = "false"
-                    },
-                    "Testing" => new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Test_{Guid.NewGuid():N}.db",
-                        ["DatabaseProvider"] = "SQLite",
-                        ["Logging:LogLevel:Default"] = "Warning",
-                        ["Caching:UseRedis"] = "false",
-                        ["OutputCaching:Disabled"] = "false"
-                    },
-                    "Production" => new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Prod_{Guid.NewGuid():N}.db",
-                        ["DatabaseProvider"] = "SQLite", // Using SQLite for smoke tests even in "Production" config
-                        ["Logging:LogLevel:Default"] = "Error",
-                        ["Caching:UseRedis"] = "false",
-                        ["OutputCaching:Disabled"] = "false"
-                    },
-                    _ => throw new ArgumentException($"Unsupported environment: {environment}")
-                };
+              var settings = environment switch
+              {
+                  "Development" => new Dictionary<string, string?>
+                  {
+                      ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Dev_{Guid.NewGuid():N}.db",
+                      ["DatabaseProvider"] = "SQLite",
+                      ["Logging:LogLevel:Default"] = "Information",
+                      ["Caching:UseRedis"] = "false",
+                      ["OutputCaching:Disabled"] = "false"
+                  },
+                  "Testing" => new Dictionary<string, string?>
+                  {
+                      ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Test_{Guid.NewGuid():N}.db",
+                      ["DatabaseProvider"] = "SQLite",
+                      ["Logging:LogLevel:Default"] = "Warning",
+                      ["Caching:UseRedis"] = "false",
+                      ["OutputCaching:Disabled"] = "false"
+                  },
+                  "Production" => new Dictionary<string, string?>
+                  {
+                      ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudSmoke_Prod_{Guid.NewGuid():N}.db",
+                      ["DatabaseProvider"] = "SQLite", // Using SQLite for smoke tests even in "Production" config
+                      ["Logging:LogLevel:Default"] = "Error",
+                      ["Caching:UseRedis"] = "false",
+                      ["OutputCaching:Disabled"] = "false"
+                  },
+                  _ => throw new ArgumentException($"Unsupported environment: {environment}")
+              };
 
-                config.AddInMemoryCollection(settings);
-            });
+              config.AddInMemoryCollection(settings);
+          });
 
               // Reduce logging noise in smoke tests
               builder.ConfigureLogging(logging =>
           {
-                logging.ClearProviders();
-                logging.AddConsole();
-                logging.SetMinimumLevel(LogLevel.Warning);
-            });
+              logging.ClearProviders();
+              logging.AddConsole();
+              logging.SetMinimumLevel(LogLevel.Warning);
+          });
           });
 
         _factories.Add(factory);

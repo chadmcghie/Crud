@@ -118,19 +118,19 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         {
             await Task.Run(() =>
         {
-              using var scope = factory.Services.CreateScope();
+            using var scope = factory.Services.CreateScope();
 
             // Verify health check service is registered
-              var healthCheckService = scope.ServiceProvider.GetService<HealthCheckService>();
-              healthCheckService.Should().NotBeNull(
-            $"HealthCheckService should be registered in {environment} environment");
+            var healthCheckService = scope.ServiceProvider.GetService<HealthCheckService>();
+            healthCheckService.Should().NotBeNull(
+          $"HealthCheckService should be registered in {environment} environment");
 
             // Verify health checks are configured
-              var healthCheckPublisher = scope.ServiceProvider.GetService<IHealthCheckPublisher>();
+            var healthCheckPublisher = scope.ServiceProvider.GetService<IHealthCheckPublisher>();
             // Publisher is optional, so we don't require it
 
-              _output.WriteLine($"Health check services verified in {environment} environment");
-          });
+            _output.WriteLine($"Health check services verified in {environment} environment");
+        });
 
         }, $"Health check service validation in {environment}");
 
