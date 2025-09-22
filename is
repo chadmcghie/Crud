@@ -1,0 +1,30 @@
+[1mdiff --git a/.github/workflows/codeql.yml b/.github/workflows/codeql.yml[m
+[1mindex 3029653..f8ace9f 100644[m
+[1m--- a/.github/workflows/codeql.yml[m
+[1m+++ b/.github/workflows/codeql.yml[m
+[36m@@ -2,11 +2,13 @@[m [mname: "CodeQL"[m
+ [m
+ on:[m
+   push:[m
+[31m-    branches: [ "main", "dev" ][m
+[31m-  pull_request:[m
+[31m-    branches: [ "main", "dev" ][m
+[31m-  schedule:[m
+[31m-    - cron: '36 5 * * 6'  # Weekly on Saturdays at 5:36 AM UTC[m
+[32m+[m[32m    branches:[m[41m [m
+[32m+[m[32m      - 'feature/**'[m
+[32m+[m[32m      - 'bugfix/**'[m
+[32m+[m[32m      - 'hotfix/**'[m
+[32m+[m[32m      - 'copilot/**'[m
+[32m+[m[32m      - 'main'[m
+[32m+[m[32m      - 'dev'[m
+ [m
+ # Cancel in-progress runs for the same PR/branch[m
+ concurrency:[m
+[36m@@ -67,4 +69,4 @@[m [mjobs:[m
+     - name: Perform CodeQL Analysis[m
+       uses: github/codeql-action/analyze@v3[m
+       with:[m
+[31m-        category: "/language:${{matrix.language}}"[m
+\ No newline at end of file[m
+[32m+[m[32m        category: "/language:${{matrix.language}}"[m
