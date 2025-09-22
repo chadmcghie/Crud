@@ -267,11 +267,6 @@ jobs:
         name: backend-integration-tests-${{ github.sha }}
         path: test/TestResults/
         
-    - name: Publish backend integration test results
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Backend Integration Tests Summary
         path: test/TestResults/*.trx
         reporter: dotnet-trx
 
