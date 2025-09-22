@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Main
 
 on:
   push:
@@ -16,8 +16,8 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  production-gate:
-    name: Production Deployment Gate
+  main-gate:
+    name: Main Deployment Gate
     runs-on: ubuntu-latest
     environment:
       name: production-approval
@@ -35,11 +35,11 @@ jobs:
         echo "Deployment to production environment has been approved." >> $GITHUB_STEP_SUMMARY
 
   full-test-suite:
-    name: Production Safety Gate (Minimal Checks)
+    name: Main Safety Gate (Minimal Checks)
     runs-on: ubuntu-latest
-    needs: production-gate
+    needs: main-gate
     if: |
-      needs.production-gate.outputs.approved == 'true' && 
+      needs.main-gate.outputs.approved == 'true' && 
       github.event.inputs.skip-tests != 'true'
     
     steps:
@@ -150,13 +150,13 @@ jobs:
           test/Tests.E2E.NG/test-results/
         retention-days: 1
 
-  prepare-production-artifacts:
-    name: Prepare Production Artifacts from PR Validation (No Rebuild)
+  prepare-main-artifacts:
+    name: Prepare Main Artifacts from PR Validation (No Rebuild)
     runs-on: ubuntu-latest
-    needs: [production-gate, full-test-suite]
+    needs: [main-gate, full-test-suite]
     if: |
       always() && 
-      needs.production-gate.outputs.approved == 'true' &&
+      needs.main-gate.outputs.approved == 'true' &&
       (needs.full-test-suite.result == 'success' || needs.full-test-suite.result == 'skipped')
     
     steps:
@@ -246,10 +246,10 @@ jobs:
           production-frontend-${{ github.sha }}.tar.gz
         retention-days: 1
 
-  deploy-production:
-    name: Deploy to Production
+  deploy-main:
+    name: Deploy to Main
     runs-on: ubuntu-latest
-    needs: prepare-production-artifacts
+    needs: prepare-main-artifacts
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -338,7 +338,7 @@ jobs:
   post-deployment:
     name: Post-Deployment Tasks
     runs-on: ubuntu-latest
-    needs: deploy-production
+    needs: deploy-main
     if: success()
     
     steps:
@@ -442,7 +442,7 @@ jobs:
   rollback-on-failure:
     name: Rollback on Failure
     runs-on: ubuntu-latest
-    needs: deploy-production
+    needs: deploy-main
     if: failure()
     environment:
       name: production
