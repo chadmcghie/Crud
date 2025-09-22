@@ -31,10 +31,10 @@ jobs:
       feature-workflow-success: ${{ steps.check.outputs.success }}
     
     steps:
-    - name: Check feature workflow status
+    - name: Wait for feature branch workflow to complete
       id: check
       run: |
-        echo "⏳ Checking if feature branch workflow has completed..."
+        echo "⏳ Waiting for feature branch workflow to complete..."
         
         # Get the source branch and SHA from the PR
         SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
@@ -43,17 +43,44 @@ jobs:
         echo "Source branch: $SOURCE_BRANCH"
         echo "Source SHA: $SOURCE_SHA"
         
-        # Check if the feature branch workflow has completed successfully
-        # We'll use the GitHub API to check the workflow runs
-        echo "Checking workflow runs for branch: $SOURCE_BRANCH"
+        # Wait for the feature branch workflow to complete
+        # We'll poll the GitHub API to check workflow status
+        MAX_ATTEMPTS=30
+        ATTEMPT=0
+        WAIT_SECONDS=30
         
-        # For now, we'll assume it completed successfully
-        # In a real implementation, you might want to check via GitHub API
-        # or use a different approach like checking for artifacts
-        echo "completed=true" >> $GITHUB_OUTPUT
-        echo "success=true" >> $GITHUB_OUTPUT
+        while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+          echo "Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS: Checking workflow status..."
+          
+          # Check if workflow has completed successfully
+          WORKFLOW_STATUS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/feature-branch.yml/runs?branch=$SOURCE_BRANCH&per_page=1" | \
+            jq -r '.workflow_runs[0].conclusion // "in_progress"')
+          
+          echo "Workflow status: $WORKFLOW_STATUS"
+          
+          if [ "$WORKFLOW_STATUS" = "success" ]; then
+            echo "✅ Feature branch workflow completed successfully!"
+            echo "completed=true" >> $GITHUB_OUTPUT
+            echo "success=true" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ "$WORKFLOW_STATUS" = "failure" ] || [ "$WORKFLOW_STATUS" = "cancelled" ]; then
+            echo "❌ Feature branch workflow failed or was cancelled: $WORKFLOW_STATUS"
+            echo "completed=true" >> $GITHUB_OUTPUT
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "⏳ Workflow still running or pending... waiting $WAIT_SECONDS seconds"
+            sleep $WAIT_SECONDS
+            ATTEMPT=$((ATTEMPT + 1))
+          fi
+        done
         
-        echo "✅ Feature workflow check completed"
+        echo "⏰ Timeout waiting for feature branch workflow to complete"
+        echo "completed=false" >> $GITHUB_OUTPUT
+        echo "success=false" >> $GITHUB_OUTPUT
+        exit 1
 
   # Single job for integration tests and smoke tests
   integration-and-smoke-tests:
