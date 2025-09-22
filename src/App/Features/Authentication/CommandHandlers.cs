@@ -111,7 +111,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
     {
         error = string.Empty;
 
-        if (password.Length < 8)
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
         {
             error = "Password must be at least 8 characters long";
             return false;
@@ -713,7 +713,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     {
         error = string.Empty;
 
-        if (password.Length < 8)
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
         {
             error = "Password must be at least 8 characters long";
             return false;

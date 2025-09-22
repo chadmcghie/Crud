@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Api.Dtos;
 using FluentAssertions;
 
@@ -123,7 +124,48 @@ public class DataAnnotationsRoleValidationTests
     {
         var validationContext = new ValidationContext(obj);
         var validationResults = new List<ValidationResult>();
-        Validator.TryValidateObject(obj, validationContext, validationResults, true);
+
+        // For records, we need to validate constructor parameters as well as properties
+        Validator.TryValidateObject(obj, validationContext, validationResults, validateAllProperties: true);
+
+        // Check constructor parameters for validation attributes (needed for records)
+        var objType = obj.GetType();
+        var constructors = objType.GetConstructors();
+        var properties = objType.GetProperties();
+
+        // Get the primary constructor (the one with the most parameters)
+        var primaryConstructor = constructors.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
+
+        if (primaryConstructor != null)
+        {
+            var parameters = primaryConstructor.GetParameters();
+
+            foreach (var parameter in parameters)
+            {
+                // Find the corresponding property
+                var correspondingProperty = properties.FirstOrDefault(p =>
+                    string.Equals(p.Name, parameter.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (correspondingProperty != null)
+                {
+                    var value = correspondingProperty.GetValue(obj);
+                    var paramValidationContext = new ValidationContext(obj) { MemberName = correspondingProperty.Name };
+
+                    // Get validation attributes from the constructor parameter
+                    var validationAttributes = parameter.GetCustomAttributes<ValidationAttribute>();
+
+                    foreach (var attribute in validationAttributes)
+                    {
+                        var result = attribute.GetValidationResult(value, paramValidationContext);
+                        if (result != null && result != ValidationResult.Success)
+                        {
+                            validationResults.Add(result);
+                        }
+                    }
+                }
+            }
+        }
+
         return validationResults;
     }
 }
