@@ -139,19 +139,16 @@ public class ConfigurationValidationTests : IClassFixture<SqliteTestWebApplicati
 
         // Act & Assert
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString;
-        Assert.NotBeNullOrWhiteSpace(
-            $"{environment} should have a valid DefaultConnection");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         var allowedHosts = configuration.GetValue<string>("AllowedHosts");
-        allowedHosts;
-        Assert.NotBeNullOrWhiteSpace(
-            $"{environment} should have AllowedHosts configured");
+        Assert.NotNull(allowedHosts);
+        Assert.NotEmpty(allowedHosts);
 
         var logLevel = configuration.GetValue<string>("Logging:LogLevel:Default");
-        logLevel;
-        Assert.NotBeNullOrWhiteSpace(
-            $"{environment} should have default log level configured");
+        Assert.NotNull(logLevel);
+        Assert.NotEmpty(logLevel);
     }
 
     #region Helper Methods

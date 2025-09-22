@@ -102,6 +102,10 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
         databaseProvider.Should().NotBeNullOrEmpty(
             $"DatabaseProvider should be configured in {environment} environment");
 
+        // Validate that the actual provider matches the expected provider for the environment
+        databaseProvider.Should().Be(expectedProvider,
+            $"DatabaseProvider in {environment} environment should be {expectedProvider}");
+
         // Validate connection string format matches the provider
         if (databaseProvider == "SQLite")
         {

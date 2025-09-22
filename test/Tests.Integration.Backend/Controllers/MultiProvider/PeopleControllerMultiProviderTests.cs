@@ -35,7 +35,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var people = await testInstance.ReadJsonAsync<List<PersonDto>>(response);
+            var people = await testInstance.ReadJsonAsync<List<PersonResponse>>(response);
             people.Should().NotBeNull();
             people.Should().BeEmpty($"Initial people list should be empty for {testInstance.ProviderName}");
         });
@@ -61,7 +61,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
             response.StatusCode.Should().Be(HttpStatusCode.Created,
                 $"Person creation should succeed for {testInstance.ProviderName}");
 
-            var createdPerson = await testInstance.ReadJsonAsync<PersonDto>(response);
+            var createdPerson = await testInstance.ReadJsonAsync<PersonResponse>(response);
             createdPerson.Should().NotBeNull();
             createdPerson!.Id.Should().NotBeEmpty();
             createdPerson.FullName.Should().Be(personName);
@@ -98,7 +98,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
             personResponse.StatusCode.Should().Be(HttpStatusCode.Created,
                 $"Person with role creation should succeed for {testInstance.ProviderName}");
 
-            var createdPerson = await testInstance.ReadJsonAsync<PersonDto>(personResponse);
+            var createdPerson = await testInstance.ReadJsonAsync<PersonResponse>(personResponse);
             createdPerson.Should().NotBeNull();
             createdPerson!.FullName.Should().Be(personName);
             createdPerson.Roles.Should().HaveCount(1);
@@ -172,7 +172,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
 
             // Verify both people exist
             var getAllResponse = await testInstance.AuthenticatedGetAsync("/api/people");
-            var allPeople = await testInstance.ReadJsonAsync<List<PersonDto>>(getAllResponse);
+            var allPeople = await testInstance.ReadJsonAsync<List<PersonResponse>>(getAllResponse);
             allPeople.Should().HaveCount(2);
             allPeople.Should().Contain(p => p.FullName == person1Name);
             allPeople.Should().Contain(p => p.FullName == person2Name);
