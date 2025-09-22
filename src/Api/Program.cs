@@ -6,7 +6,6 @@ using Api.Configuration;
 using Api.Extensions;
 using Api.Middleware;
 using App;
-using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -185,10 +184,6 @@ namespace Api
                               .AllowCredentials();
                     });
                 });
-
-                // Add FluentValidation validators
-                builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-                builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
 
                 // Add caching services
                 builder.Services.AddCachingServices(builder.Configuration);
