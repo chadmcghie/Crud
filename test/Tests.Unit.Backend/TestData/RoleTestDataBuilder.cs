@@ -21,11 +21,7 @@ public class RoleTestDataBuilder
 
     public Role Build()
     {
-        return new Role
-        {
-            Name = _name,
-            Description = _description
-        };
+        return Role.Create(_name, _description);
     }
 
     public static RoleTestDataBuilder Default() => new();

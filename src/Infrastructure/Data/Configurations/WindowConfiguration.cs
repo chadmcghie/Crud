@@ -23,8 +23,8 @@ public class WindowConfiguration : IEntityTypeConfiguration<Window>
         builder.Property(w => w.Height)
             .HasPrecision(10, 2);
 
-        builder.Property(w => w.Area)
-            .HasPrecision(10, 2);
+        // Area is a calculated property (Width * Height) - ignore from EF mapping
+        builder.Ignore(w => w.Area);
 
         builder.Property(w => w.FrameType)
             .IsRequired()

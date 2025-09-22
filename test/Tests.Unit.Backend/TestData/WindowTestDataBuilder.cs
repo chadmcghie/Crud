@@ -62,30 +62,21 @@ public class WindowTestDataBuilder
 
     public Window Build()
     {
-        return new Window
-        {
-            Name = _name,
-            Description = _description,
-            Width = _width,
-            Height = _height,
-            Area = _area,
-            FrameType = _frameType,
-            FrameDetails = _frameDetails,
-            GlazingType = _glazingType,
-            GlazingDetails = _glazingDetails,
-            UValue = _uValue,
-            SolarHeatGainCoefficient = _solarHeatGainCoefficient,
-            VisibleTransmittance = _visibleTransmittance,
-            AirLeakage = _airLeakage,
-            EnergyStarRating = _energyStarRating,
-            NFRCRating = _nfrcRating,
-            Orientation = _orientation,
-            Location = _location,
-            InstallationType = _installationType,
-            OperationType = _operationType,
-            HasScreens = _hasScreens,
-            HasStormWindows = _hasStormWindows
-        };
+        var window = Window.Create(_name, _width, _height, _frameType, _glazingType, _description);
+
+        // Set additional properties using domain methods
+        if (_frameDetails != null)
+            window.UpdateFrameProperties(_frameType, _frameDetails);
+
+        if (_glazingDetails != null)
+            window.UpdateGlazingProperties(_glazingType, _glazingDetails);
+
+        window.UpdateEnergyProperties(_uValue, _solarHeatGainCoefficient, _visibleTransmittance, _airLeakage);
+        window.UpdatePerformanceRatings(_energyStarRating, _nfrcRating);
+        window.UpdateLocationAndOrientation(_location, _orientation, _installationType);
+        window.UpdateOperationalProperties(_operationType, _hasScreens, _hasStormWindows);
+
+        return window;
     }
 
     public static WindowTestDataBuilder Default() => new();

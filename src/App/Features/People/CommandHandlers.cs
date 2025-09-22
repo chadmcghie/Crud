@@ -8,20 +8,18 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
 {
     public async Task<Person> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
     {
-        var person = new Person
-        {
-            FullName = request.FullName,
-            Phone = request.Phone
-        };
+        var person = Person.Create(request.FullName, request.Phone);
 
         if (request.RoleIds != null)
         {
+            var roles = new List<Role>();
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
                     ?? throw new ArgumentException($"Role {roleId} not found");
-                person.Roles.Add(role);
+                roles.Add(role);
             }
+            person.UpdateRoles(roles);
         }
 
         return await personRepository.AddAsync(person, cancellationToken);
@@ -36,9 +34,9 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
         var person = await personRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Person {request.Id} not found");
 
-        // Update person properties
-        person.FullName = request.FullName;
-        person.Phone = request.Phone;
+        // Update person properties using domain methods
+        person.UpdateFullName(request.FullName);
+        person.UpdatePhone(request.Phone);
 
         if (request.RoleIds != null)
         {
@@ -51,21 +49,10 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
                 newRoles.Add(role);
             }
 
-            // Clear existing roles - this approach ensures proper EF Core change tracking
-            var currentRoles = person.Roles.ToList();
-            foreach (var currentRole in currentRoles)
-            {
-                person.Roles.Remove(currentRole);
-            }
-
-            // Add new roles
-            foreach (var newRole in newRoles)
-            {
-                person.Roles.Add(newRole);
-            }
+            // Update roles using domain method
+            person.UpdateRoles(newRoles);
         }
 
-        person.UpdatedAt = DateTime.UtcNow;
         await personRepository.UpdateAsync(person, cancellationToken);
     }
 }

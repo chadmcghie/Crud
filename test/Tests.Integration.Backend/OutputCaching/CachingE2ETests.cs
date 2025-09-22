@@ -32,7 +32,7 @@ public class CachingE2ETests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "John Doe", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("John Doe", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -145,7 +145,7 @@ public class CachingE2ETests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -175,7 +175,7 @@ public class CachingE2ETests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -216,7 +216,7 @@ public class CachingE2ETests : IntegrationTestBase
             // Arrange - Create test data
             for (int i = 0; i < 10; i++)
             {
-                var role = new Domain.Entities.Role { Name = $"Role{i}", Description = $"Description{i}" };
+                var role = Domain.Entities.Role.Create($"Role{i}", $"Description{i}");
                 DbContext.Roles.Add(role);
             }
             await DbContext.SaveChangesAsync();
@@ -259,15 +259,8 @@ public class CachingE2ETests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var role = new Domain.Entities.Role { Name = "Test Role" };
-            var wall = new Domain.Entities.Wall
-            {
-                Name = "Test Wall",
-                AssemblyType = "Brick",
-                Length = 10,
-                Height = 8,
-                Thickness = 12
-            };
+            var role = Domain.Entities.Role.Create("Test Role");
+            var wall = Domain.Entities.Wall.Create("Test Wall", 10, 8, 12, "Brick");
             DbContext.Roles.Add(role);
             DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
@@ -310,7 +303,7 @@ public class CachingE2ETests : IntegrationTestBase
             // Arrange - Create test data
             for (int i = 0; i < 5; i++)
             {
-                var person = new Domain.Entities.Person { FullName = $"Person{i}", Phone = $"555-010{i}" };
+                var person = Domain.Entities.Person.Create($"Person{i}", $"555-010{i}");
                 DbContext.People.Add(person);
             }
             await DbContext.SaveChangesAsync();

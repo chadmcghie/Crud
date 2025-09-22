@@ -9,7 +9,7 @@ test.describe('Application Navigation and Layout', () => {
   test.beforeEach(async ({ page, apiContext, cleanDatabase }) => {
     // cleanDatabase fixture handles database cleanup automatically
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, 0); // Serial execution - single worker
+    apiHelpers = new ApiHelpers(apiContext, 0, process.env.API_URL || 'http://localhost:5172'); // Serial execution - single worker
     
     console.log(`🧪 Starting test - database automatically cleaned`);
   });

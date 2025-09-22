@@ -27,7 +27,6 @@ public class EfWindowRepository : IWindowRepository
 
     public async Task<Window> AddAsync(Window window, CancellationToken ct = default)
     {
-        window.CreatedAt = DateTime.UtcNow;
         _context.Windows.Add(window);
         await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         return window;

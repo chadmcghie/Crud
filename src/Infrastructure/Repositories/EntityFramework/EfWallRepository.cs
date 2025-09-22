@@ -27,7 +27,6 @@ public class EfWallRepository : IWallRepository
 
     public async Task<Wall> AddAsync(Wall wall, CancellationToken ct = default)
     {
-        wall.CreatedAt = DateTime.UtcNow;
         _context.Walls.Add(wall);
         await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         return wall;

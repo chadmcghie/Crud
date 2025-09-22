@@ -37,7 +37,7 @@ public class EfRepositoryTests : IDisposable
     public async Task AddAsync_ShouldAddPersonSuccessfully()
     {
         // Arrange
-        var person = new Person { FullName = "John Doe", Phone = "123-456-7890" };
+        var person = Person.Create("John Doe", "123-456-7890");
 
         // Act
         var result = await _personRepository.AddAsync(person);
@@ -53,7 +53,7 @@ public class EfRepositoryTests : IDisposable
     public async Task GetByIdAsync_ShouldReturnPersonById()
     {
         // Arrange
-        var person = new Person { FullName = "Jane Doe", Phone = "987-654-3210" };
+        var person = Person.Create("Jane Doe", "987-654-3210");
         await _personRepository.AddAsync(person);
         await _context.SaveChangesAsync();
 
@@ -70,11 +70,11 @@ public class EfRepositoryTests : IDisposable
     public async Task FirstOrDefaultAsync_WithSpecification_ShouldReturnMatchingPerson()
     {
         // Arrange
-        var role = new Role { Name = "Admin", Description = "Administrator" };
+        var role = Role.Create("Admin", "Administrator");
         await _roleRepository.AddAsync(role);
 
-        var person = new Person { FullName = "Admin User", Phone = "111-222-3333" };
-        person.Roles.Add(role);
+        var person = Person.Create("Admin User", "111-222-3333");
+        person.AddRole(role);
         await _personRepository.AddAsync(person);
         await _context.SaveChangesAsync();
 
@@ -94,7 +94,7 @@ public class EfRepositoryTests : IDisposable
     public async Task FirstOrDefaultAsync_WithPersonByNameSpec_ShouldReturnMatchingPerson()
     {
         // Arrange
-        var person = new Person { FullName = "Test User", Phone = "444-555-6666" };
+        var person = Person.Create("Test User", "444-555-6666");
         await _personRepository.AddAsync(person);
         await _context.SaveChangesAsync();
 
@@ -112,11 +112,11 @@ public class EfRepositoryTests : IDisposable
     public async Task FirstOrDefaultAsync_WithPersonByIdWithRolesSpec_ShouldIncludeRoles()
     {
         // Arrange
-        var role = new Role { Name = "User", Description = "Regular User" };
+        var role = Role.Create("User", "Regular User");
         await _roleRepository.AddAsync(role);
 
-        var person = new Person { FullName = "User With Role", Phone = "777-888-9999" };
-        person.Roles.Add(role);
+        var person = Person.Create("User With Role", "777-888-9999");
+        person.AddRole(role);
         await _personRepository.AddAsync(person);
         await _context.SaveChangesAsync();
 
@@ -136,8 +136,8 @@ public class EfRepositoryTests : IDisposable
     public async Task ListAsync_ShouldReturnAllPersons()
     {
         // Arrange
-        var person1 = new Person { FullName = "Person One", Phone = "111-111-1111" };
-        var person2 = new Person { FullName = "Person Two", Phone = "222-222-2222" };
+        var person1 = Person.Create("Person One", "111-111-1111");
+        var person2 = Person.Create("Person Two", "222-222-2222");
 
         await _personRepository.AddAsync(person1);
         await _personRepository.AddAsync(person2);
@@ -156,8 +156,8 @@ public class EfRepositoryTests : IDisposable
     public async Task CountAsync_ShouldReturnCorrectCount()
     {
         // Arrange
-        var person1 = new Person { FullName = "Person A", Phone = "000-111-2222" };
-        var person2 = new Person { FullName = "Person B", Phone = "000-333-4444" };
+        var person1 = Person.Create("Person A", "000-111-2222");
+        var person2 = Person.Create("Person B", "000-333-4444");
 
         await _personRepository.AddAsync(person1);
         await _personRepository.AddAsync(person2);
