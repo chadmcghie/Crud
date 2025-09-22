@@ -1,16 +1,15 @@
 using Ardalis.GuardClauses;
+using Domain.Exceptions;
 
 namespace Domain.Entities
 {
-    public class Window
+    public class Window : BaseEntity
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-
         private string _name = string.Empty;
         public string Name
         {
             get => _name;
-            set
+            private set
             {
                 _name = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 200, nameof(value));
@@ -21,7 +20,7 @@ namespace Domain.Entities
         public string? Description
         {
             get => _description;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -32,16 +31,39 @@ namespace Domain.Entities
         }
 
         // Geometry properties
-        public double Width { get; set; } // in feet
-        public double Height { get; set; } // in feet
-        public double Area { get; set; } // in square feet (calculated or specified)
+        private double _width;
+        public double Width
+        {
+            get => _width;
+            private set
+            {
+                if (value <= 0)
+                    throw new DomainException("Window width must be greater than zero");
+                _width = value;
+            }
+        }
+
+        private double _height;
+        public double Height
+        {
+            get => _height;
+            private set
+            {
+                if (value <= 0)
+                    throw new DomainException("Window height must be greater than zero");
+                _height = value;
+            }
+        }
+
+        // Area is calculated from width and height
+        public double Area => Width * Height;
 
         // Frame properties
         private string _frameType = string.Empty;
         public string FrameType
         {
             get => _frameType;
-            set
+            private set
             {
                 _frameType = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -52,7 +74,7 @@ namespace Domain.Entities
         public string? FrameDetails
         {
             get => _frameDetails;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -67,7 +89,7 @@ namespace Domain.Entities
         public string GlazingType
         {
             get => _glazingType;
-            set
+            private set
             {
                 _glazingType = Guard.Against.NullOrEmpty(value, nameof(value));
                 Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -78,7 +100,7 @@ namespace Domain.Entities
         public string? GlazingDetails
         {
             get => _glazingDetails;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -89,17 +111,60 @@ namespace Domain.Entities
         }
 
         // Energy modeling properties
-        public double? UValue { get; set; } // Thermal transmittance (BTU/hr·ft²·°F)
-        public double? SolarHeatGainCoefficient { get; set; } // SHGC (0-1)
-        public double? VisibleTransmittance { get; set; } // VT (0-1)
-        public double? AirLeakage { get; set; } // cfm/ft² at 75 Pa
+        private double? _uValue;
+        public double? UValue
+        {
+            get => _uValue;
+            private set
+            {
+                if (value.HasValue && value.Value < 0)
+                    throw new DomainException("U-Value cannot be negative");
+                _uValue = value;
+            }
+        }
+
+        private double? _solarHeatGainCoefficient;
+        public double? SolarHeatGainCoefficient
+        {
+            get => _solarHeatGainCoefficient;
+            private set
+            {
+                if (value.HasValue && (value.Value < 0 || value.Value > 1))
+                    throw new DomainException("Solar Heat Gain Coefficient must be between 0 and 1");
+                _solarHeatGainCoefficient = value;
+            }
+        }
+
+        private double? _visibleTransmittance;
+        public double? VisibleTransmittance
+        {
+            get => _visibleTransmittance;
+            private set
+            {
+                if (value.HasValue && (value.Value < 0 || value.Value > 1))
+                    throw new DomainException("Visible Transmittance must be between 0 and 1");
+                _visibleTransmittance = value;
+            }
+        }
+
+        private double? _airLeakage;
+        public double? AirLeakage
+        {
+            get => _airLeakage;
+            private set
+            {
+                if (value.HasValue && value.Value < 0)
+                    throw new DomainException("Air Leakage cannot be negative");
+                _airLeakage = value;
+            }
+        }
 
         // Performance ratings
         private string? _energyStarRating;
         public string? EnergyStarRating
         {
             get => _energyStarRating;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -113,7 +178,7 @@ namespace Domain.Entities
         public string? NFRCRating
         {
             get => _nfrcRating;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -128,7 +193,7 @@ namespace Domain.Entities
         public string? Orientation
         {
             get => _orientation;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -142,7 +207,7 @@ namespace Domain.Entities
         public string? Location
         {
             get => _location;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -156,7 +221,7 @@ namespace Domain.Entities
         public string? InstallationType
         {
             get => _installationType;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -171,7 +236,7 @@ namespace Domain.Entities
         public string? OperationType
         {
             get => _operationType;
-            set
+            private set
             {
                 if (value != null)
                 {
@@ -181,11 +246,241 @@ namespace Domain.Entities
             }
         }
 
-        public bool? HasScreens { get; set; }
-        public bool? HasStormWindows { get; set; }
+        public bool? HasScreens { get; private set; }
+        public bool? HasStormWindows { get; private set; }
 
-        // Metadata
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
+        // EF Core constructor
+        private Window()
+        {
+        }
+
+        // Factory method for creating new Window
+        public static Window Create(
+            string name,
+            double width,
+            double height,
+            string frameType,
+            string glazingType,
+            string? description = null)
+        {
+            return new Window
+            {
+                Name = name,
+                Width = width,
+                Height = height,
+                FrameType = frameType,
+                GlazingType = glazingType,
+                Description = description
+            };
+        }
+
+        // Domain methods for state changes
+        public void UpdateName(string name)
+        {
+            Guard.Against.NullOrEmpty(name, nameof(name));
+
+            if (Name != name)
+            {
+                Name = name;
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateDescription(string? description)
+        {
+            if (Description != description)
+            {
+                Description = description;
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateDimensions(double width, double height)
+        {
+            var changed = false;
+
+            if (Width != width)
+            {
+                Width = width;
+                changed = true;
+            }
+
+            if (Height != height)
+            {
+                Height = height;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateFrameProperties(string frameType, string? frameDetails)
+        {
+            var changed = false;
+
+            if (FrameType != frameType)
+            {
+                FrameType = frameType;
+                changed = true;
+            }
+
+            if (FrameDetails != frameDetails)
+            {
+                FrameDetails = frameDetails;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateGlazingProperties(string glazingType, string? glazingDetails)
+        {
+            var changed = false;
+
+            if (GlazingType != glazingType)
+            {
+                GlazingType = glazingType;
+                changed = true;
+            }
+
+            if (GlazingDetails != glazingDetails)
+            {
+                GlazingDetails = glazingDetails;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateEnergyProperties(
+            double? uValue,
+            double? solarHeatGainCoefficient,
+            double? visibleTransmittance,
+            double? airLeakage)
+        {
+            var changed = false;
+
+            if (UValue != uValue)
+            {
+                UValue = uValue;
+                changed = true;
+            }
+
+            if (SolarHeatGainCoefficient != solarHeatGainCoefficient)
+            {
+                SolarHeatGainCoefficient = solarHeatGainCoefficient;
+                changed = true;
+            }
+
+            if (VisibleTransmittance != visibleTransmittance)
+            {
+                VisibleTransmittance = visibleTransmittance;
+                changed = true;
+            }
+
+            if (AirLeakage != airLeakage)
+            {
+                AirLeakage = airLeakage;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdatePerformanceRatings(string? energyStarRating, string? nfrcRating)
+        {
+            var changed = false;
+
+            if (EnergyStarRating != energyStarRating)
+            {
+                EnergyStarRating = energyStarRating;
+                changed = true;
+            }
+
+            if (NFRCRating != nfrcRating)
+            {
+                NFRCRating = nfrcRating;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateLocationAndOrientation(
+            string? location,
+            string? orientation,
+            string? installationType)
+        {
+            var changed = false;
+
+            if (Location != location)
+            {
+                Location = location;
+                changed = true;
+            }
+
+            if (Orientation != orientation)
+            {
+                Orientation = orientation;
+                changed = true;
+            }
+
+            if (InstallationType != installationType)
+            {
+                InstallationType = installationType;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
+
+        public void UpdateOperationalProperties(
+            string? operationType,
+            bool? hasScreens,
+            bool? hasStormWindows)
+        {
+            var changed = false;
+
+            if (OperationType != operationType)
+            {
+                OperationType = operationType;
+                changed = true;
+            }
+
+            if (HasScreens != hasScreens)
+            {
+                HasScreens = hasScreens;
+                changed = true;
+            }
+
+            if (HasStormWindows != hasStormWindows)
+            {
+                HasStormWindows = hasStormWindows;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                MarkAsUpdated();
+            }
+        }
     }
 }

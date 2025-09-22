@@ -8,21 +8,35 @@ public class CreateWallCommandHandler(IWallRepository wallRepository) : IRequest
 {
     public async Task<Wall> Handle(CreateWallCommand request, CancellationToken cancellationToken)
     {
-        var wall = new Wall
+        var wall = Wall.Create(
+            request.Name,
+            request.Length,
+            request.Height,
+            request.Thickness,
+            request.AssemblyType,
+            request.Description);
+
+        // Update additional properties using domain methods
+        if (request.AssemblyDetails != null)
         {
-            Name = request.Name,
-            Description = request.Description,
-            Length = request.Length,
-            Height = request.Height,
-            Thickness = request.Thickness,
-            AssemblyType = request.AssemblyType,
-            AssemblyDetails = request.AssemblyDetails,
-            RValue = request.RValue,
-            UValue = request.UValue,
-            MaterialLayers = request.MaterialLayers,
-            Orientation = request.Orientation,
-            Location = request.Location
-        };
+            wall.UpdateAssemblyDetails(request.AssemblyDetails);
+        }
+
+        if (request.RValue.HasValue || request.UValue.HasValue)
+        {
+            wall.UpdateEnergyProperties(request.RValue, request.UValue);
+        }
+
+        if (request.MaterialLayers != null)
+        {
+            wall.UpdateMaterialLayers(request.MaterialLayers);
+        }
+
+        if (request.Location != null || request.Orientation != null)
+        {
+            wall.UpdateLocationAndOrientation(request.Location, request.Orientation);
+        }
+
         return await wallRepository.AddAsync(wall, cancellationToken);
     }
 }
@@ -34,19 +48,15 @@ public class UpdateWallCommandHandler(IWallRepository wallRepository) : IRequest
         var wall = await wallRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Wall {request.Id} not found");
 
-        wall.Name = request.Name;
-        wall.Description = request.Description;
-        wall.Length = request.Length;
-        wall.Height = request.Height;
-        wall.Thickness = request.Thickness;
-        wall.AssemblyType = request.AssemblyType;
-        wall.AssemblyDetails = request.AssemblyDetails;
-        wall.RValue = request.RValue;
-        wall.UValue = request.UValue;
-        wall.MaterialLayers = request.MaterialLayers;
-        wall.Orientation = request.Orientation;
-        wall.Location = request.Location;
-        wall.UpdatedAt = DateTime.UtcNow;
+        // Update properties using domain methods
+        wall.UpdateName(request.Name);
+        wall.UpdateDescription(request.Description);
+        wall.UpdateDimensions(request.Length, request.Height, request.Thickness);
+        wall.UpdateAssemblyType(request.AssemblyType);
+        wall.UpdateAssemblyDetails(request.AssemblyDetails);
+        wall.UpdateEnergyProperties(request.RValue, request.UValue);
+        wall.UpdateMaterialLayers(request.MaterialLayers);
+        wall.UpdateLocationAndOrientation(request.Location, request.Orientation);
 
         await wallRepository.UpdateAsync(wall, cancellationToken);
     }

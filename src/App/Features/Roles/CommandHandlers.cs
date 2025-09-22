@@ -13,7 +13,7 @@ public class CreateRoleCommandHandler(IRoleRepository roleRepository) : IRequest
         if (existing is not null)
             return existing;
 
-        return await roleRepository.AddAsync(new Role { Name = request.Name, Description = request.Description }, cancellationToken);
+        return await roleRepository.AddAsync(Role.Create(request.Name, request.Description), cancellationToken);
     }
 }
 
@@ -23,9 +23,10 @@ public class UpdateRoleCommandHandler(IRoleRepository roleRepository) : IRequest
     {
         var role = await roleRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Role {request.Id} not found");
-        role.Name = request.Name;
-        role.Description = request.Description;
-        role.UpdatedAt = DateTime.UtcNow;
+
+        role.UpdateName(request.Name);
+        role.UpdateDescription(request.Description);
+
         await roleRepository.UpdateAsync(role, cancellationToken);
     }
 }

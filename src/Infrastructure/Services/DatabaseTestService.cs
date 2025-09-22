@@ -401,9 +401,9 @@ public class DatabaseTestService : IDatabaseTestService
         {
             var roles = new[]
             {
-                new Domain.Entities.Role { Name = "Administrator", Description = "System administrator with full access" },
-                new Domain.Entities.Role { Name = "User", Description = "Standard user with limited access" },
-                new Domain.Entities.Role { Name = "Guest", Description = "Guest user with read-only access" }
+                Domain.Entities.Role.Create("Administrator", "System administrator with full access"),
+                Domain.Entities.Role.Create("User", "Standard user with limited access"),
+                Domain.Entities.Role.Create("Guest", "Guest user with read-only access")
             };
 
             _context.Roles.AddRange(roles);
@@ -417,8 +417,8 @@ public class DatabaseTestService : IDatabaseTestService
         {
             var people = new[]
             {
-                new Domain.Entities.Person { FullName = "John Doe" },
-                new Domain.Entities.Person { FullName = "Jane Smith" }
+                Domain.Entities.Person.Create("John Doe"),
+                Domain.Entities.Person.Create("Jane Smith")
             };
 
             _context.People.AddRange(people);

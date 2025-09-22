@@ -22,7 +22,7 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -48,8 +48,8 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var role1 = new Domain.Entities.Role { Name = "Admin" };
-            var role2 = new Domain.Entities.Role { Name = "User" };
+            var role1 = Domain.Entities.Role.Create("Admin");
+            var role2 = Domain.Entities.Role.Create("User");
             DbContext.Roles.AddRange(role1, role2);
             await DbContext.SaveChangesAsync();
 
@@ -75,14 +75,7 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var wall = new Domain.Entities.Wall
-            {
-                Name = "Test Wall",
-                AssemblyType = "Brick",
-                Length = 10,
-                Height = 8,
-                Thickness = 12
-            };
+            var wall = Domain.Entities.Wall.Create("Test Wall", 10, 8, 12, "Brick");
             DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
 
@@ -108,15 +101,7 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var window = new Domain.Entities.Window
-            {
-                Name = "Test Window",
-                FrameType = "Aluminum",
-                GlazingType = "Double",
-                Width = 4,
-                Height = 5,
-                Area = 20
-            };
+            var window = Domain.Entities.Window.Create("Test Window", 4, 5, "Aluminum", "Double");
             DbContext.Windows.Add(window);
             await DbContext.SaveChangesAsync();
 
@@ -142,7 +127,7 @@ public class OutputCachingTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
