@@ -33,21 +33,21 @@
   - [x] 3.7 Verify query caching tests pass (fixed MediatR 13 compilation issues)
 
 
-- [ ] 4. API Response Caching (Issue: #94)
-  - [ ] 4.1 Write tests for output caching middleware
-  - [ ] 4.2 Configure output caching in Program.cs
-  - [ ] 4.3 Add OutputCache attributes to GET endpoints
-  - [ ] 4.4 Implement cache invalidation on mutation endpoints
-  - [ ] 4.5 Add cache headers (X-Cache, ETag, Cache-Control)
-  - [ ] 4.6 Configure vary-by parameters for query strings
-  - [ ] 4.7 Verify API caching tests pass
+- [x] 4. API Response Caching (Issue: #94) - COMPLETED IN SEPARATE SPEC
+  - [x] 4.1 Write tests for output caching middleware
+  - [x] 4.2 Configure output caching in Program.cs
+  - [x] 4.3 Add OutputCache attributes to GET endpoints
+  - [x] 4.4 Implement cache invalidation on mutation endpoints
+  - [x] 4.5 Add cache headers (X-Cache, ETag, Cache-Control)
+  - [x] 4.6 Configure vary-by parameters for query strings
+  - [x] 4.7 Verify API caching tests pass
 
-- [ ] 5. Cache Management & Monitoring (Issue: #95)
-  - [ ] 5.1 Write tests for cache management endpoints
-  - [ ] 5.2 Create CacheController with stats, clear, and health endpoints
-  - [ ] 5.3 Implement cache statistics collection service
-  - [ ] 5.4 Add cache health checks for Redis connectivity
-  - [ ] 5.5 Configure Serilog integration for cache metrics
-  - [ ] 5.6 Add authorization policies for management endpoints
-  - [ ] 5.7 Create E2E tests for complete caching workflow
-  - [ ] 5.8 Verify all tests pass and metrics are accurate
+- [x] 5. Cache Management & Monitoring (Issue: #95)
+  - [x] 5.1 Write tests for cache management endpoints
+  - [x] 5.2 Create CacheController with stats, clear, and health endpoints
+  - [x] 5.3 Implement cache statistics collection service
+  - [x] 5.4 Add cache health checks for Redis connectivity
+  - [x] 5.5 Configure Serilog integration for cache metrics
+  - [x] 5.6 Add authorization policies for management endpoints
+  - [x] 5.7 Create E2E tests for complete caching workflow
+  - [x] 5.8 Verify all tests pass and metrics are accurate

@@ -9,44 +9,44 @@
 ### Phase 1: Controller Authorization Implementation
 
 #### Task 1.1: Secure PeopleController
-- [ ] Add `[Authorize]` attribute to PeopleController class
-- [ ] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints
-- [ ] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints
-- [ ] Test authorization with different user roles
-- [ ] Update integration tests for PeopleController
+- [x] Add `[Authorize]` attribute to PeopleController class (implemented as [ConditionalAuthorize])
+- [x] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints (implemented as [ConditionalAuthorize("UserOrAdmin")])
+- [x] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints (implemented as [ConditionalAuthorize("AdminOnly")])
+- [x] Test authorization with different user roles
+- [x] Update integration tests for PeopleController
 
 **Estimated Time**: 30 minutes
 **Priority**: High
 **Dependencies**: None
 
 #### Task 1.2: Secure RolesController
-- [ ] Add `[Authorize]` attribute to RolesController class
-- [ ] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints
-- [ ] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints
-- [ ] Test authorization with different user roles
-- [ ] Update integration tests for RolesController
+- [x] Add `[Authorize]` attribute to RolesController class (implemented as [ConditionalAuthorize])
+- [x] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints (implemented as [ConditionalAuthorize("UserOrAdmin")])
+- [x] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints (implemented as [ConditionalAuthorize("AdminOnly")])
+- [x] Test authorization with different user roles
+- [x] Update integration tests for RolesController
 
 **Estimated Time**: 30 minutes
 **Priority**: High
 **Dependencies**: None
 
 #### Task 1.3: Secure WallsController
-- [ ] Add `[Authorize]` attribute to WallsController class
-- [ ] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints
-- [ ] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints
-- [ ] Test authorization with different user roles
-- [ ] Update integration tests for WallsController
+- [x] Add `[Authorize]` attribute to WallsController class (implemented as [ConditionalAuthorize])
+- [x] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints (implemented as [ConditionalAuthorize("UserOrAdmin")])
+- [x] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints (implemented as [ConditionalAuthorize("AdminOnly")])
+- [x] Test authorization with different user roles
+- [x] Update integration tests for WallsController
 
 **Estimated Time**: 30 minutes
 **Priority**: High
 **Dependencies**: None
 
 #### Task 1.4: Secure WindowsController
-- [ ] Add `[Authorize]` attribute to WindowsController class
-- [ ] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints
-- [ ] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints
-- [ ] Test authorization with different user roles
-- [ ] Update integration tests for WindowsController
+- [x] Add `[Authorize]` attribute to WindowsController class (implemented as [ConditionalAuthorize])
+- [x] Add `[Authorize(Policy = "UserOrAdmin")]` to GET endpoints (implemented as [ConditionalAuthorize("UserOrAdmin")])
+- [x] Add `[Authorize(Policy = "AdminOnly")]` to POST, PUT, DELETE endpoints (implemented as [ConditionalAuthorize("AdminOnly")])
+- [x] Test authorization with different user roles
+- [x] Update integration tests for WindowsController
 
 **Estimated Time**: 30 minutes
 **Priority**: High
@@ -55,23 +55,23 @@
 ### Phase 2: Testing and Validation
 
 #### Task 2.1: Update Integration Tests
-- [ ] Update PeopleController integration tests to include authentication
-- [ ] Update RolesController integration tests to include authentication
-- [ ] Update WallsController integration tests to include authentication
-- [ ] Update WindowsController integration tests to include authentication
-- [ ] Add tests for unauthorized access scenarios (401/403)
-- [ ] Add tests for role-based access control (User vs Admin)
+- [x] Update PeopleController integration tests to include authentication
+- [x] Update RolesController integration tests to include authentication
+- [x] Update WallsController integration tests to include authentication
+- [x] Update WindowsController integration tests to include authentication
+- [x] Add tests for unauthorized access scenarios (401/403)
+- [x] Add tests for role-based access control (User vs Admin)
 
 **Estimated Time**: 2 hours
 **Priority**: High
 **Dependencies**: Phase 1 completion
 
 #### Task 2.2: End-to-End Testing
-- [ ] Test complete authentication flow with protected endpoints
-- [ ] Verify Angular frontend works with protected API
-- [ ] Test token refresh with protected endpoints
-- [ ] Verify error handling for expired tokens
-- [ ] Test role-based UI behavior
+- [x] Test complete authentication flow with protected endpoints
+- [x] Verify Angular frontend works with protected API
+- [x] Test token refresh with protected endpoints
+- [x] Verify error handling for expired tokens
+- [x] Test role-based UI behavior
 
 **Estimated Time**: 1 hour
 **Priority**: Medium
@@ -80,20 +80,20 @@
 ### Phase 3: Documentation and Cleanup
 
 #### Task 3.1: Update API Documentation
-- [ ] Update Swagger configuration to show authentication requirements
-- [ ] Update API documentation to reflect protected endpoints
-- [ ] Add authentication examples to API documentation
-- [ ] Update OpenAPI specification
+- [x] Update Swagger configuration to show authentication requirements
+- [x] Update API documentation to reflect protected endpoints
+- [x] Add authentication examples to API documentation
+- [x] Update OpenAPI specification
 
 **Estimated Time**: 30 minutes
 **Priority**: Medium
 **Dependencies**: Phase 2 completion
 
 #### Task 3.2: Update Project Documentation
-- [ ] Update Critical Issues Summary to reflect completion
-- [ ] Update roadmap to correct authentication status
-- [ ] Update README with authentication requirements
-- [ ] Create completion summary document
+- [x] Update Critical Issues Summary to reflect completion
+- [x] Update roadmap to correct authentication status
+- [x] Update README with authentication requirements
+- [x] Create completion summary document
 
 **Estimated Time**: 30 minutes
 **Priority**: Medium
@@ -143,13 +143,13 @@
 
 ## Success Criteria
 
-- [ ] All business controllers require authentication
-- [ ] Role-based access control is enforced
-- [ ] Integration tests pass with authentication
-- [ ] End-to-end tests pass
-- [ ] API documentation is updated
-- [ ] Project documentation reflects completion
-- [ ] No breaking changes to existing functionality
+- [x] All business controllers require authentication
+- [x] Role-based access control is enforced
+- [x] Integration tests pass with authentication
+- [x] End-to-end tests pass
+- [x] API documentation is updated
+- [x] Project documentation reflects completion
+- [x] No breaking changes to existing functionality
 
 ## Estimated Total Time
 
