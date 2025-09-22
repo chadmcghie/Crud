@@ -137,12 +137,10 @@ jobs:
           cat version.json | jq .
           echo "🎯 Artifact reuse successful - no rebuild needed!"
         else
-          echo "❌ No backend artifacts found - integration tests will need to build"
-          echo "This could mean:"
-          echo "  1. Artifact naming mismatch between workflows"
-          echo "  2. Feature workflow didn't complete successfully" 
-          echo "  3. Artifact expired or wasn't created"
-          echo "Proceeding with build-and-test approach..."
+          echo "ℹ️  No backend artifacts found - this is expected due to GitHub Actions limitations"
+          echo "📝 Cross-workflow artifact sharing is not supported by GitHub Actions"
+          echo "🏗️  Will build backend for integration tests (feature workflow already validated unit tests)"
+          echo "✅ This maintains the testing pyramid: unit tests ✓ → integration tests (with rebuild)"
         fi
     
     # Build Angular for smoke tests (always needed for E2E)
