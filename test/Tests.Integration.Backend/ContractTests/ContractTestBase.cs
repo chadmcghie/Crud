@@ -163,11 +163,13 @@ public abstract class ContractTestBase : IDisposable
     /// <summary>
     /// Runs contract validation across all environments and ensures consistency
     /// </summary>
+#pragma warning disable IDE0060 // Remove unused parameter
     protected async Task<Dictionary<string, T>> ValidateContractAcrossEnvironments<T>(
       string endpoint,
       Func<HttpClient, Task<HttpResponseMessage>> requestAction,
       HttpStatusCode expectedStatusCode,
       string? expectedContentType = "application/json") where T : class
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         var results = new Dictionary<string, T>();
 

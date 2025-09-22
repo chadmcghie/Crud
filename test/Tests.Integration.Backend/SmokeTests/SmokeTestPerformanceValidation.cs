@@ -93,7 +93,11 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         GeneratePerformanceReport(performanceResults);
     }
 
-    private async Task<TimeSpan> MeasurePerformanceCategory(string categoryName, string environment, Func<Task> testAction)
+    private async Task<TimeSpan> MeasurePerformanceCategory(string categoryName,
+#pragma warning disable IDE0060 // Remove unused parameter
+        string environment,
+#pragma warning restore IDE0060 // Remove unused parameter
+        Func<Task> testAction)
     {
         var stopwatch = Stopwatch.StartNew();
 
