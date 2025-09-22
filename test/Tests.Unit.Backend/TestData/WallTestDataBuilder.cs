@@ -52,21 +52,17 @@ public class WallTestDataBuilder
 
     public Wall Build()
     {
-        return new Wall
-        {
-            Name = _name,
-            Description = _description,
-            Length = _length,
-            Height = _height,
-            Thickness = _thickness,
-            AssemblyType = _assemblyType,
-            AssemblyDetails = _assemblyDetails,
-            RValue = _rValue,
-            UValue = _uValue,
-            MaterialLayers = _materialLayers,
-            Orientation = _orientation,
-            Location = _location
-        };
+        var wall = Wall.Create(_name, _length, _height, _thickness, _assemblyType, _description);
+
+        // Set additional properties using domain methods
+        if (_assemblyDetails != null)
+            wall.UpdateAssemblyDetails(_assemblyDetails);
+
+        wall.UpdateEnergyProperties(_rValue, _uValue);
+        wall.UpdateMaterialLayers(_materialLayers);
+        wall.UpdateLocationAndOrientation(_location, _orientation);
+
+        return wall;
     }
 
     public static WallTestDataBuilder Default() => new();

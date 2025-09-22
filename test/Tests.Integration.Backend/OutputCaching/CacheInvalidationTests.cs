@@ -21,7 +21,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Initial Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Initial Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -56,7 +56,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Original Name", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Original Name", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
             var personId = person.Id;
@@ -103,7 +103,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Person to Delete", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Person to Delete", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
             var personId = person.Id;
@@ -138,7 +138,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var role = new Domain.Entities.Role { Name = "Initial Role" };
+            var role = Domain.Entities.Role.Create("Initial Role");
             DbContext.Roles.Add(role);
             await DbContext.SaveChangesAsync();
 
@@ -173,14 +173,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var wall = new Domain.Entities.Wall
-            {
-                Name = "Initial Wall",
-                AssemblyType = "Brick",
-                Length = 10,
-                Height = 8,
-                Thickness = 12
-            };
+            var wall = Domain.Entities.Wall.Create("Initial Wall", 10, 8, 12, "Brick");
             DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
 
@@ -216,15 +209,7 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var window = new Domain.Entities.Window
-            {
-                Name = "Initial Window",
-                FrameType = "Aluminum",
-                GlazingType = "Double",
-                Width = 4,
-                Height = 5,
-                Area = 20
-            };
+            var window = Domain.Entities.Window.Create("Initial Window", 4, 5, "Aluminum", "Double");
             DbContext.Windows.Add(window);
             await DbContext.SaveChangesAsync();
 
@@ -260,8 +245,8 @@ public class CacheInvalidationTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
-            var role = new Domain.Entities.Role { Name = "Test Role" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
+            var role = Domain.Entities.Role.Create("Test Role");
             DbContext.People.Add(person);
             DbContext.Roles.Add(role);
             await DbContext.SaveChangesAsync();

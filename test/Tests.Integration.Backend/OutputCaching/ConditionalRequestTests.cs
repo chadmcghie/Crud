@@ -28,7 +28,7 @@ public class ConditionalRequestTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -64,7 +64,7 @@ public class ConditionalRequestTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -107,7 +107,7 @@ public class ConditionalRequestTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var person = new Domain.Entities.Person { FullName = "Test Person", Phone = "555-0100" };
+            var person = Domain.Entities.Person.Create("Test Person", "555-0100");
             DbContext.People.Add(person);
             await DbContext.SaveChangesAsync();
 
@@ -143,7 +143,7 @@ public class ConditionalRequestTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var role = new Domain.Entities.Role { Name = "Test Role", Description = "Test Description" };
+            var role = Domain.Entities.Role.Create("Test Role", "Test Description");
             DbContext.Roles.Add(role);
             await DbContext.SaveChangesAsync();
 
@@ -189,14 +189,7 @@ public class ConditionalRequestTests : IntegrationTestBase
         await RunWithCleanDatabaseAsync(async () =>
         {
             // Arrange - Create test data
-            var wall = new Domain.Entities.Wall
-            {
-                Name = "Test Wall",
-                AssemblyType = "Brick",
-                Length = 10,
-                Height = 8,
-                Thickness = 12
-            };
+            var wall = Domain.Entities.Wall.Create("Test Wall", 10, 8, 12, "Brick");
             DbContext.Walls.Add(wall);
             await DbContext.SaveChangesAsync();
 
