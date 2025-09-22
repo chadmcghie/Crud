@@ -89,15 +89,15 @@ jobs:
     - name: Summary
       if: always()
       run: |
-        echo "## 🏗️ Feature Branch Build & Validation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "## 🏗️ Feature Branch Build & Unit Testing Complete" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Progressive Testing Strategy**: Build artifacts created for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Progressive Testing Strategy**: Unit tests completed at feature level for immediate feedback" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### What was completed:" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Backend build (ONCE for entire pipeline)" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Build artifacts created: \`feature-build-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Backend unit tests" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Frontend linting and unit tests" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Backend unit tests (immediate feedback)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Frontend linting and unit tests (immediate feedback)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Artifact Reuse Strategy:" >> $GITHUB_STEP_SUMMARY
         echo "- **Build artifacts** will be reused by PR validation (no rebuild)" \
@@ -108,9 +108,9 @@ jobs:
           >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Next steps:" >> $GITHUB_STEP_SUMMARY
-        echo "- Create PR to \`dev\`: Reuse artifacts + integration tests" \
+        echo "- Create PR to \`dev\`: Integration tests only (unit tests already completed)" \
           >> $GITHUB_STEP_SUMMARY
         echo "- After merge to \`dev\`: E2E smoke tests run during staging deployment" \
           >> $GITHUB_STEP_SUMMARY
-        echo "- PR to \`main\`: Reuse artifacts + E2E smoke tests + production safety checks" \
+        echo "- PR to \`main\`: Integration tests + production safety checks" \
           >> $GITHUB_STEP_SUMMARY
