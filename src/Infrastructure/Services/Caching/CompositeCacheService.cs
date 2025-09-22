@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
+using Infrastructure.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Caching;
@@ -36,7 +37,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Primary cache failed for key: {Key}, falling back to secondary cache", key);
+            _logger.LogWarning(ex, "Primary cache failed for key: {Key}, falling back to secondary cache", LogSanitizer.SanitizeKey(key));
         }
 
         // Fallback to secondary cache
@@ -46,7 +47,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Both primary and fallback caches failed for key: {Key}", key);
+            _logger.LogError(ex, "Both primary and fallback caches failed for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -64,7 +65,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to set value in primary cache for key: {Key}", key);
+                _logger.LogWarning(ex, "Failed to set value in primary cache for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
         }, cancellationToken));
 
@@ -77,7 +78,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to set value in fallback cache for key: {Key}", key);
+                _logger.LogError(ex, "Failed to set value in fallback cache for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
         }, cancellationToken));
 
@@ -97,7 +98,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove value from primary cache for key: {Key}", key);
+                _logger.LogWarning(ex, "Failed to remove value from primary cache for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
         }, cancellationToken));
 
@@ -110,7 +111,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove value from fallback cache for key: {Key}", key);
+                _logger.LogWarning(ex, "Failed to remove value from fallback cache for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
         }, cancellationToken));
 
@@ -128,7 +129,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Primary cache failed checking existence for key: {Key}", key);
+            _logger.LogWarning(ex, "Primary cache failed checking existence for key: {Key}", LogSanitizer.SanitizeKey(key));
         }
 
         try
@@ -137,7 +138,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Both primary and fallback caches failed checking existence for key: {Key}", key);
+            _logger.LogError(ex, "Both primary and fallback caches failed checking existence for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -179,7 +180,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove by pattern from primary cache: {Pattern}", pattern);
+                _logger.LogWarning(ex, "Failed to remove by pattern from primary cache: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             }
         }, cancellationToken));
 
@@ -192,7 +193,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove by pattern from fallback cache: {Pattern}", pattern);
+                _logger.LogWarning(ex, "Failed to remove by pattern from fallback cache: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             }
         }, cancellationToken));
 

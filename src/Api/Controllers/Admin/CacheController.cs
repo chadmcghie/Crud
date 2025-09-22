@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Api.Dtos;
 using App.Interfaces;
+using Infrastructure.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -123,15 +124,15 @@ public class CacheController : ControllerBase
             );
 
             _logger.LogInformation("Cache cleared by pattern '{Pattern}' by admin user. Keys removed: {KeysRemoved}",
-                pattern, keyCount);
+                LogSanitizer.SanitizePattern(pattern), keyCount);
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache by pattern: {Pattern}", pattern);
+            _logger.LogError(ex, "Error clearing cache by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Message = $"Error clearing cache by pattern: {pattern}" });
+                new { Message = $"Error clearing cache by pattern: {LogSanitizer.SanitizePattern(pattern)}" });
         }
     }
 
@@ -159,15 +160,15 @@ public class CacheController : ControllerBase
 
             await _managementService.RemoveKeyAsync(key, cancellationToken);
 
-            _logger.LogInformation("Cache key '{Key}' removed by admin user", key);
+            _logger.LogInformation("Cache key '{Key}' removed by admin user", LogSanitizer.SanitizeKey(key));
 
             return NoContent();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cache key: {Key}", key);
+            _logger.LogError(ex, "Error removing cache key: {Key}", LogSanitizer.SanitizeKey(key));
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Message = $"Error removing cache key: {key}" });
+                new { Message = $"Error removing cache key: {LogSanitizer.SanitizeKey(key)}" });
         }
     }
 
@@ -233,7 +234,7 @@ public class CacheController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving cache keys with pattern: {Pattern}", pattern);
+            _logger.LogError(ex, "Error retrieving cache keys with pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { Message = "Error retrieving cache keys" });
         }

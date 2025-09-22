@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
+using Infrastructure.Utilities;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -37,16 +38,16 @@ public class RedisCacheService : ICacheService
 
             if (!value.HasValue)
             {
-                _logger.LogDebug("Cache miss for key: {Key}", key);
+                _logger.LogDebug("Cache miss for key: {Key}", LogSanitizer.SanitizeKey(key));
                 return null;
             }
 
-            _logger.LogDebug("Cache hit for key: {Key}", key);
+            _logger.LogDebug("Cache hit for key: {Key}", LogSanitizer.SanitizeKey(key));
             return JsonSerializer.Deserialize<T>(value!, _jsonOptions);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting value from Redis for key: {Key}", key);
+            _logger.LogError(ex, "Error getting value from Redis for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -59,11 +60,11 @@ public class RedisCacheService : ICacheService
             var expiry = GetExpiry(options);
 
             await _database.StringSetAsync(key, serialized, expiry);
-            _logger.LogDebug("Set cache value for key: {Key} with expiry: {Expiry}", key, expiry);
+            _logger.LogDebug("Set cache value for key: {Key} with expiry: {Expiry}", LogSanitizer.SanitizeKey(key), expiry);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting value in Redis for key: {Key}", key);
+            _logger.LogError(ex, "Error setting value in Redis for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -73,11 +74,11 @@ public class RedisCacheService : ICacheService
         try
         {
             await _database.KeyDeleteAsync(key);
-            _logger.LogDebug("Removed cache value for key: {Key}", key);
+            _logger.LogDebug("Removed cache value for key: {Key}", LogSanitizer.SanitizeKey(key));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing value from Redis for key: {Key}", key);
+            _logger.LogError(ex, "Error removing value from Redis for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -90,7 +91,7 @@ public class RedisCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking existence in Redis for key: {Key}", key);
+            _logger.LogError(ex, "Error checking existence in Redis for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -119,7 +120,7 @@ public class RedisCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", key);
+            _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -143,13 +144,13 @@ public class RedisCacheService : ICacheService
                 if (keys.Any())
                 {
                     await _database.KeyDeleteAsync(keys.ToArray());
-                    _logger.LogDebug("Removed {Count} keys matching pattern: {Pattern}", keys.Count, pattern);
+                    _logger.LogDebug("Removed {Count} keys matching pattern: {Pattern}", keys.Count, LogSanitizer.SanitizePattern(pattern));
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing keys by pattern: {Pattern}", pattern);
+            _logger.LogError(ex, "Error removing keys by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             throw;
         }
     }

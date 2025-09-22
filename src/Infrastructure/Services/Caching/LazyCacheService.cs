@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
+using Infrastructure.Utilities;
 using LazyCache;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -32,18 +33,18 @@ public class LazyCacheService : ICacheService
 
             if (result == null)
             {
-                _logger.LogDebug("Cache miss for key: {Key}", key);
+                _logger.LogDebug("Cache miss for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
             else
             {
-                _logger.LogDebug("Cache hit for key: {Key}", key);
+                _logger.LogDebug("Cache hit for key: {Key}", LogSanitizer.SanitizeKey(key));
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting value from LazyCache for key: {Key}", key);
+            _logger.LogError(ex, "Error getting value from LazyCache for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -54,12 +55,12 @@ public class LazyCacheService : ICacheService
         {
             var memoryCacheOptions = ConvertToMemoryCacheOptions(options);
             _cache.Add(key, value, memoryCacheOptions);
-            _logger.LogDebug("Set cache value for key: {Key}", key);
+            _logger.LogDebug("Set cache value for key: {Key}", LogSanitizer.SanitizeKey(key));
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting value in LazyCache for key: {Key}", key);
+            _logger.LogError(ex, "Error setting value in LazyCache for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -69,12 +70,12 @@ public class LazyCacheService : ICacheService
         try
         {
             _cache.Remove(key);
-            _logger.LogDebug("Removed cache value for key: {Key}", key);
+            _logger.LogDebug("Removed cache value for key: {Key}", LogSanitizer.SanitizeKey(key));
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing value from LazyCache for key: {Key}", key);
+            _logger.LogError(ex, "Error removing value from LazyCache for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -88,7 +89,7 @@ public class LazyCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking existence in LazyCache for key: {Key}", key);
+            _logger.LogError(ex, "Error checking existence in LazyCache for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -112,12 +113,12 @@ public class LazyCacheService : ICacheService
                     return await factory(cancellationToken);
                 });
 
-            _logger.LogDebug("GetOrSet completed for key: {Key}", key);
+            _logger.LogDebug("GetOrSet completed for key: {Key}", LogSanitizer.SanitizeKey(key));
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", key);
+            _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", LogSanitizer.SanitizeKey(key));
             throw;
         }
     }
@@ -129,12 +130,12 @@ public class LazyCacheService : ICacheService
             // LazyCache doesn't have built-in pattern removal
             // This is a limitation compared to Redis
             // In production, you might want to track keys separately or use a different strategy
-            _logger.LogWarning("RemoveByPatternAsync is not fully supported by LazyCache. Pattern: {Pattern}", pattern);
+            _logger.LogWarning("RemoveByPatternAsync is not fully supported by LazyCache. Pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing keys by pattern: {Pattern}", pattern);
+            _logger.LogError(ex, "Error removing keys by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
             throw;
         }
     }
