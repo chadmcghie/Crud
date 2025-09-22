@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Exceptions;
 using Tests.Unit.Backend.TestData;
 
 namespace Tests.Unit.Backend.Domain;
@@ -70,25 +71,24 @@ public class WallTests
 
             // Assert
             wall.Description.Should().Be("Test wall description");
-            wall.UpdatedAt.Should().BeNull();
+            // UpdatedAt should have a value because the domain method was called to set additional properties
+            wall.UpdatedAt.Should().NotBeNull();
         }
 
         [Theory]
         [InlineData(0.0)]
         [InlineData(-1.0)]
-        public void WithInvalidDimensions_ShouldStillCreateWall_ValidationHandledByDataAnnotations(double invalidValue)
+        public void WithInvalidDimensions_ShouldThrowDomainException(double invalidValue)
         {
-            // Note: Entity creation doesn't enforce business rule validation
-            // This test documents current behavior
+            // The domain entity now enforces business rules and should throw for invalid dimensions
 
-            // Arrange & Act
-            var wall = WallTestDataBuilder.Default()
+            // Arrange & Act & Assert
+            var act = () => WallTestDataBuilder.Default()
                 .WithDimensions(invalidValue, 9.0, 6.0)
                 .Build();
 
-            // Assert
-            wall.Should().NotBeNull();
-            wall.Length.Should().Be(invalidValue);
+            act.Should().Throw<DomainException>()
+                .WithMessage("*must be greater than zero");
         }
     }
 }

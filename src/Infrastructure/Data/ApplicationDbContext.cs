@@ -49,14 +49,6 @@ public class ApplicationDbContext : DbContext
             {
                 baseEntity.UpdatedAt = DateTime.UtcNow;
             }
-            else if (entry.Entity is Wall wall)
-            {
-                wall.UpdatedAt = DateTime.UtcNow;
-            }
-            else if (entry.Entity is Window window)
-            {
-                window.UpdatedAt = DateTime.UtcNow;
-            }
         }
     }
 }
