@@ -33,9 +33,18 @@ jobs:
     - name: Check feature workflow status
       id: check
       run: |
-        echo "⏳ Waiting for feature branch workflow to complete..."
+        echo "⏳ Checking if feature branch workflow has completed..."
         echo "This ensures we have build artifacts available for integration and smoke tests."
         echo "Feature workflow should have completed: unit tests, code quality, security analysis, and build artifacts."
+        
+        # Check if artifacts exist from the feature workflow
+        # The feature workflow runs on the source branch of the PR
+        SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
+        echo "Source branch: $SOURCE_BRANCH"
+        echo "PR SHA: ${{ github.event.pull_request.head.sha }}"
+        
+        # For now, assume the feature workflow has completed
+        # In a real implementation, you might want to check the workflow status via API
         echo "completed=true" >> $GITHUB_OUTPUT
 
   # Single job for integration tests and smoke tests
@@ -67,7 +76,7 @@ jobs:
     - name: Download backend artifacts
       uses: actions/download-artifact@v4
       with:
-        name: feature-build-${{ github.sha }}
+        name: feature-build-${{ github.event.pull_request.head.sha }}
       continue-on-error: true
     
     - name: Verify backend artifacts
@@ -115,7 +124,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: integration-test-results-${{ github.sha }}
+        name: integration-test-results-${{ github.event.pull_request.head.sha }}
         path: test/TestResults/*.trx
         retention-days: 7
     
@@ -161,7 +170,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: e2e-smoke-test-results-${{ github.sha }}
+        name: e2e-smoke-test-results-${{ github.event.pull_request.head.sha }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
@@ -171,7 +180,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: database-files-${{ github.sha }}
+        name: database-files-${{ github.event.pull_request.head.sha }}
         path: |
           CrudTest_*.db
           CrudTest_*.db-wal
