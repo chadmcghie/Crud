@@ -16,6 +16,7 @@ concurrency:
 permissions:
   contents: read
   checks: write
+  actions: read    # For downloading artifacts from feature workflow
 
 env:
   DOTNET_VERSION: '8.0.x'
