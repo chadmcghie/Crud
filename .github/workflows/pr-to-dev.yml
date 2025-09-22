@@ -22,73 +22,49 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Wait for feature branch workflow to complete
-  wait-for-feature-workflow:
-    name: Wait for Feature Workflow
+  # Check if feature workflow completed successfully
+  check-feature-workflow:
+    name: Check Feature Workflow Status
     runs-on: ubuntu-latest
     outputs:
-      feature-workflow-completed: ${{ steps.check.outputs.completed }}
       feature-workflow-success: ${{ steps.check.outputs.success }}
     
     steps:
-    - name: Wait for feature branch workflow to complete
+    - name: Check feature workflow status
       id: check
       run: |
-        echo "⏳ Waiting for feature branch workflow to complete..."
+        echo "🔍 Checking if feature branch workflow completed successfully..."
         
-        # Get the source branch and SHA from the PR
         SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
         SOURCE_SHA="${{ github.event.pull_request.head.sha }}"
         
         echo "Source branch: $SOURCE_BRANCH"
         echo "Source SHA: $SOURCE_SHA"
         
-        # Wait for the feature branch workflow to complete
-        # We'll poll the GitHub API to check workflow status
-        MAX_ATTEMPTS=30
-        ATTEMPT=0
-        WAIT_SECONDS=30
+        # Check the latest workflow run for this branch
+        WORKFLOW_STATUS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/feature-branch.yml/runs?branch=$SOURCE_BRANCH&per_page=1" | \
+          jq -r '.workflow_runs[0].conclusion // "not_found"')
         
-        while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-          echo "Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS: Checking workflow status..."
-          
-          # Check if workflow has completed successfully
-          WORKFLOW_STATUS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/feature-branch.yml/runs?branch=$SOURCE_BRANCH&per_page=1" | \
-            jq -r '.workflow_runs[0].conclusion // "in_progress"')
-          
-          echo "Workflow status: $WORKFLOW_STATUS"
-          
-          if [ "$WORKFLOW_STATUS" = "success" ]; then
-            echo "✅ Feature branch workflow completed successfully!"
-            echo "completed=true" >> $GITHUB_OUTPUT
-            echo "success=true" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ "$WORKFLOW_STATUS" = "failure" ] || [ "$WORKFLOW_STATUS" = "cancelled" ]; then
-            echo "❌ Feature branch workflow failed or was cancelled: $WORKFLOW_STATUS"
-            echo "completed=true" >> $GITHUB_OUTPUT
-            echo "success=false" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "⏳ Workflow still running or pending... waiting $WAIT_SECONDS seconds"
-            sleep $WAIT_SECONDS
-            ATTEMPT=$((ATTEMPT + 1))
-          fi
-        done
+        echo "Latest feature workflow status: $WORKFLOW_STATUS"
         
-        echo "⏰ Timeout waiting for feature branch workflow to complete"
-        echo "completed=false" >> $GITHUB_OUTPUT
-        echo "success=false" >> $GITHUB_OUTPUT
-        exit 1
+        if [ "$WORKFLOW_STATUS" = "success" ]; then
+          echo "✅ Feature branch workflow completed successfully!"
+          echo "success=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Feature branch workflow not successful: $WORKFLOW_STATUS"
+          echo "success=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
 
-  # Single job for integration tests and smoke tests
+  # Integration tests and smoke tests - only runs if Feature Branch workflow succeeded
   integration-and-smoke-tests:
     name: Integration & Smoke Tests
     runs-on: ubuntu-latest
-    needs: wait-for-feature-workflow
+    needs: check-feature-workflow
     # Only run if the feature workflow completed successfully
-    if: needs.wait-for-feature-workflow.outputs.feature-workflow-success == 'true'
+    if: needs.check-feature-workflow.outputs.feature-workflow-success == 'true'
     timeout-minutes: 30
     
     steps:
@@ -236,7 +212,7 @@ jobs:
   pr-to-dev-summary:
     name: PR to Dev Summary
     runs-on: ubuntu-latest
-    needs: [wait-for-feature-workflow, integration-and-smoke-tests]
+    needs: [check-feature-workflow, integration-and-smoke-tests]
     if: always()
     
     steps:
@@ -251,8 +227,8 @@ jobs:
         echo "| Test Suite | Status | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
         
-        # Feature workflow status
-        FEATURE_STATUS="${{ needs.wait-for-feature-workflow.result == 'success' && '✅ Success' || (needs.wait-for-feature-workflow.result == 'failure' && '❌ Failed') || (needs.wait-for-feature-workflow.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        # Feature workflow status (from check job)
+        FEATURE_STATUS="${{ needs.check-feature-workflow.result == 'success' && '✅ Success' || (needs.check-feature-workflow.result == 'failure' && '❌ Failed') || (needs.check-feature-workflow.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
         echo "| Feature Workflow | $FEATURE_STATUS | Unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
         
         # Integration and smoke tests status
@@ -275,7 +251,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Overall status check
-        if [ "${{ needs.wait-for-feature-workflow.result }}" == "success" ] && \
+        if [ "${{ needs.check-feature-workflow.result }}" == "success" ] && \
            [ "${{ needs.integration-and-smoke-tests.result }}" == "success" ]; then
           echo "### ✅ All Dev PR Validation Complete - Ready for Merge" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -290,7 +266,7 @@ jobs:
           echo "Please review the failed tests above and fix any issues before merging to dev." >> $GITHUB_STEP_SUMMARY
           
           # Exit with error to fail the workflow
-          if [ "${{ needs.wait-for-feature-workflow.result }}" != "success" ] || \
+          if [ "${{ needs.check-feature-workflow.result }}" != "success" ] || \
              [ "${{ needs.integration-and-smoke-tests.result }}" != "success" ]; then
             exit 1
           fi
