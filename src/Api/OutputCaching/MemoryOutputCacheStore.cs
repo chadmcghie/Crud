@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Infrastructure.Utilities;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -61,7 +62,7 @@ public class MemoryOutputCacheStore : IOutputCacheStore
             }
         }
 
-        _logger.LogDebug("Memory output cache set for key: {Key} with expiration: {Expiration}", key, validFor);
+        _logger.LogDebug("Memory output cache set for key: {Key} with expiration: {Expiration}", LogSanitizer.SanitizeKey(key), validFor);
         return ValueTask.CompletedTask;
     }
 
@@ -74,7 +75,7 @@ public class MemoryOutputCacheStore : IOutputCacheStore
                 _cache.Remove(key);
             }
 
-            _logger.LogDebug("Evicted {Count} cache entries for tag: {Tag}", keys.Count, tag);
+            _logger.LogDebug("Evicted {Count} cache entries for tag: {Tag}", keys.Count, LogSanitizer.Sanitize(tag));
         }
 
         return ValueTask.CompletedTask;

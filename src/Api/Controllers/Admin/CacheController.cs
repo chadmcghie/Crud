@@ -120,7 +120,7 @@ public class CacheController : ControllerBase
             var response = new CacheClearResponse(
                 true,
                 keyCount,
-                $"Cache cleared successfully for pattern: {pattern}"
+                $"Cache cleared successfully for pattern: {LogSanitizer.SanitizePattern(pattern)}"
             );
 
             _logger.LogInformation("Cache cleared by pattern '{Pattern}' by admin user. Keys removed: {KeysRemoved}",
@@ -155,7 +155,7 @@ public class CacheController : ControllerBase
             var exists = await _managementService.KeyExistsAsync(key, cancellationToken);
             if (!exists)
             {
-                return NotFound(new { Message = $"Key '{key}' not found" });
+                return NotFound(new { Message = $"Key '{LogSanitizer.SanitizeKey(key)}' not found" });
             }
 
             await _managementService.RemoveKeyAsync(key, cancellationToken);
