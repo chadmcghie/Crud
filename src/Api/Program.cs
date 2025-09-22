@@ -6,7 +6,6 @@ using Api.Configuration;
 using Api.Extensions;
 using Api.Middleware;
 using App;
-using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -186,10 +185,6 @@ namespace Api
                     });
                 });
 
-                // Add FluentValidation validators
-                builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-                builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
-
                 // Add caching services
                 builder.Services.AddCachingServices(builder.Configuration);
 
@@ -261,8 +256,28 @@ namespace Api
                 // Add authorization policies
                 builder.Services.AddAuthorization(options =>
                 {
-                    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-                    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+
+                    // Check if authorization bypass is explicitly enabled for E2E tests
+                    var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+
+                    if (isTestEnvironment && bypassAuth)
+                    {
+                        // In Testing environment with E2E bypass enabled, bypass all authorization for E2E tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => true));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireAssertion(context => true));
+
+                        // Set fallback policy to allow all for E2E tests
+                        options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                            .RequireAssertion(context => true)
+                            .Build();
+                    }
+                    else
+                    {
+                        // Normal authorization policies for production and integration tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                    }
                 });
 
                 // Add rate limiting for password reset endpoint

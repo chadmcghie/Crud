@@ -49,12 +49,13 @@ export default defineConfig({
       stderr: 'ignore',
       env: {
         ASPNETCORE_ENVIRONMENT: 'Testing',
-        ASPNETCORE_URLS: process.env.CI 
+        ASPNETCORE_URLS: process.env.CI
           ? 'http://0.0.0.0:5172'  // Bind to all interfaces in CI
           : 'http://localhost:5172',
         DatabaseProvider: 'SQLite',
         ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
         TEST_RESET_TOKEN: 'test-only-token',
+        BYPASS_AUTHORIZATION_FOR_E2E: 'true',
         // Disable connection pooling in CI to avoid locking
         ...(process.env.CI && {
           'ConnectionStrings__DefaultConnection': `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;`

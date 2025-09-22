@@ -40,7 +40,7 @@ public static class TestDataBuilders
         IEnumerable<Guid>? roleIds = null)
     {
         return new CreatePersonRequest(
-            fullName ?? _fixture.Create<string>(),
+            fullName ?? $"John Doe {Guid.NewGuid().ToString()[..8]}",
             phone,
             roleIds ?? Array.Empty<Guid>()
         );
@@ -53,7 +53,7 @@ public static class TestDataBuilders
         byte[]? rowVersion = null)
     {
         return new UpdatePersonRequest(
-            fullName ?? _fixture.Create<string>(),
+            fullName ?? $"Jane Smith {Guid.NewGuid().ToString()[..8]}",
             phone,
             roleIds ?? Array.Empty<Guid>(),
             rowVersion

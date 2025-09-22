@@ -1,6 +1,7 @@
 // API helper functions for E2E tests with Polly-inspired resilience patterns
 import { APIRequestContext } from '@playwright/test';
 import { TestRole, TestPerson, TestWall } from './test-data';
+import { AuthHelper } from './auth-helper';
 
 interface RetryOptions {
   maxRetries: number;
@@ -74,18 +75,23 @@ export class ApiHelpers {
   private circuitBreaker: CircuitBreaker;
   private workerId: string;
   private testId: string;
+  private authHelper: AuthHelper;
 
-  constructor(private request: APIRequestContext, workerIndex?: number) {
+  constructor(private request: APIRequestContext, workerIndex?: number, apiUrl?: string) {
     this.circuitBreaker = new CircuitBreaker({
       failureThreshold: 3,
       resetTimeoutMs: 10000, // 10 seconds
       monitoringPeriodMs: 30000 // 30 seconds
     });
-    
+
     // Use worker ID for better test isolation - accept it as parameter from test info
     this.workerId = workerIndex !== undefined ? workerIndex.toString() : '0';
     // Add test-scoped ID to prevent cross-test interference - use high precision timestamp
     this.testId = `T${Date.now()}_${process.hrtime.bigint().toString(36).substr(-6)}`;
+
+    // Initialize authentication helper
+    const baseApiUrl = apiUrl || process.env.API_URL || 'http://localhost:5172';
+    this.authHelper = new AuthHelper(request, baseApiUrl);
   }
 
 
@@ -189,8 +195,10 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.post('/api/roles', {
-        data: roleData
+        data: roleData,
+        headers
       });
       if (!response.ok()) {
         const errorText = await response.text();
@@ -202,7 +210,8 @@ export class ApiHelpers {
 
   async getRoles(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('/api/roles');
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get('/api/roles', { headers });
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get roles: ${response.status()} ${errorText}`);
@@ -213,7 +222,8 @@ export class ApiHelpers {
 
   async getRole(id: string): Promise<any> {
     return this.retryOperation(async () => {
-      const response = await this.request.get(`/api/roles/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get(`/api/roles/${id}`, { headers });
       if (!response.ok()) {
         throw new Error(`Failed to get role: ${response.status()}`);
       }
@@ -223,8 +233,10 @@ export class ApiHelpers {
 
   async updateRole(id: string, role: TestRole): Promise<void> {
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.put(`/api/roles/${id}`, {
-        data: role
+        data: role,
+        headers
       });
       if (!response.ok()) {
         throw new Error(`Failed to update role: ${response.status()}`);
@@ -234,7 +246,8 @@ export class ApiHelpers {
 
   async deleteRole(id: string): Promise<void> {
     return this.retryOperation(async () => {
-      const response = await this.request.delete(`/api/roles/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.delete(`/api/roles/${id}`, { headers });
       if (!response.ok() && response.status() !== 404) {
         throw new Error(`Failed to delete role: ${response.status()}`);
       }
@@ -256,8 +269,10 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.post('/api/people', {
-        data: personData
+        data: personData,
+        headers
       });
       if (!response.ok()) {
         const errorText = await response.text();
@@ -269,7 +284,8 @@ export class ApiHelpers {
 
   async getPeople(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('/api/people');
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get('/api/people', { headers });
       if (!response.ok()) {
         const errorText = await response.text();
         throw new Error(`Failed to get people: ${response.status()} ${errorText}`);
@@ -280,7 +296,8 @@ export class ApiHelpers {
 
   async getPerson(id: string): Promise<any> {
     return this.retryOperation(async () => {
-      const response = await this.request.get(`/api/people/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get(`/api/people/${id}`, { headers });
       if (!response.ok()) {
         throw new Error(`Failed to get person: ${response.status()}`);
       }
@@ -290,8 +307,10 @@ export class ApiHelpers {
 
   async updatePerson(id: string, person: TestPerson): Promise<void> {
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.put(`/api/people/${id}`, {
-        data: person
+        data: person,
+        headers
       });
       if (!response.ok()) {
         throw new Error(`Failed to update person: ${response.status()}`);
@@ -301,7 +320,8 @@ export class ApiHelpers {
 
   async deletePerson(id: string): Promise<void> {
     return this.retryOperation(async () => {
-      const response = await this.request.delete(`/api/people/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.delete(`/api/people/${id}`, { headers });
       if (!response.ok() && response.status() !== 404) {
         throw new Error(`Failed to delete person: ${response.status()}`);
       }
@@ -323,8 +343,10 @@ export class ApiHelpers {
     };
 
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.post('/api/walls', {
-        data: uniqueWall
+        data: uniqueWall,
+        headers
       });
       if (!response.ok()) {
         const errorText = await response.text();
@@ -336,7 +358,8 @@ export class ApiHelpers {
 
   async getWalls(): Promise<any[]> {
     return this.retryOperation(async () => {
-      const response = await this.request.get('/api/walls');
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get('/api/walls', { headers });
       if (!response.ok()) {
         throw new Error(`Failed to get walls: ${response.status()}`);
       }
@@ -346,7 +369,8 @@ export class ApiHelpers {
 
   async getWall(id: string): Promise<any> {
     return this.retryOperation(async () => {
-      const response = await this.request.get(`/api/walls/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.get(`/api/walls/${id}`, { headers });
       if (!response.ok()) {
         throw new Error(`Failed to get wall: ${response.status()}`);
       }
@@ -356,8 +380,10 @@ export class ApiHelpers {
 
   async updateWall(id: string, wall: TestWall): Promise<void> {
     return this.retryOperation(async () => {
+      const headers = await this.authHelper.getAuthHeaders();
       const response = await this.request.put(`/api/walls/${id}`, {
-        data: wall
+        data: wall,
+        headers
       });
       if (!response.ok()) {
         throw new Error(`Failed to update wall: ${response.status()}`);
@@ -367,7 +393,8 @@ export class ApiHelpers {
 
   async deleteWall(id: string): Promise<void> {
     return this.retryOperation(async () => {
-      const response = await this.request.delete(`/api/walls/${id}`);
+      const headers = await this.authHelper.getAuthHeaders();
+      const response = await this.request.delete(`/api/walls/${id}`, { headers });
       if (!response.ok() && response.status() !== 404) {
         throw new Error(`Failed to delete wall: ${response.status()}`);
       }

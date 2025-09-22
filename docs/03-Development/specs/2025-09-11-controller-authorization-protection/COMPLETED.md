@@ -2,7 +2,7 @@
 
 ## Controller Authorization Protection
 **Status:** ✅ COMPLETED  
-**Completed Date:** 2025-01-15  
+**Completed Date:** 2025-09-11  
 **Parent Issue:** #177 - Auth Decorators on Controllers
 
 ## Implementation Summary
@@ -40,9 +40,9 @@
 **Documentation:**
 - `docs/03-Development/product/roadmap.md` - Updated authentication status
 - `docs/04-Quality-Control/2025-09-10-critical-issues-summary.md` - Marked issue resolved
-- `docs/03-Development/specs/2025-01-15-controller-authorization-protection/spec.md` - New spec
-- `docs/03-Development/specs/2025-01-15-controller-authorization-protection/sub-specs/technical-spec.md` - Technical details
-- `docs/03-Development/specs/2025-01-15-controller-authorization-protection/tasks.md` - Task breakdown
+- `docs/03-Development/specs/2025-09-11-controller-authorization-protection/spec.md` - New spec
+- `docs/03-Development/specs/2025-09-11-controller-authorization-protection/sub-specs/technical-spec.md` - Technical details
+- `docs/03-Development/specs/2025-09-11-controller-authorization-protection/tasks.md` - Task breakdown
 
 ### 🔗 Integration Points
 
