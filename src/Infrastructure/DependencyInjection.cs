@@ -1,4 +1,5 @@
 using App.Abstractions;
+using App.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
@@ -232,6 +233,23 @@ public static class DependencyInjection
             // Default to in-memory cache
             services.AddSingleton<App.Interfaces.ICacheService, InMemoryCacheService>();
         }
+
+        // Register cache management and statistics services
+        // Note: These services work with or without Redis - IConnectionMultiplexer is optional
+        services.AddSingleton<App.Interfaces.ICacheStatisticsService>(provider =>
+        {
+            var redis = provider.GetService<IConnectionMultiplexer>(); // Optional dependency
+            var logger = provider.GetRequiredService<ILogger<Infrastructure.Services.Caching.CacheStatisticsService>>();
+            return new Infrastructure.Services.Caching.CacheStatisticsService(redis, logger);
+        });
+
+        services.AddScoped<App.Interfaces.ICacheManagementService>(provider =>
+        {
+            var cacheService = provider.GetRequiredService<App.Interfaces.ICacheService>();
+            var redis = provider.GetService<IConnectionMultiplexer>(); // Optional dependency
+            var logger = provider.GetRequiredService<ILogger<Infrastructure.Services.Caching.CacheManagementService>>();
+            return new Infrastructure.Services.Caching.CacheManagementService(cacheService, redis, logger);
+        });
 
         return services;
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
+using Infrastructure.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -26,16 +27,16 @@ public class InMemoryCacheService : ICacheService
         {
             if (_memoryCache.TryGetValue(key, out T? value))
             {
-                _logger.LogDebug("Cache hit for key: {Key}", key);
+                _logger.LogDebug("Cache hit");
                 return Task.FromResult(value);
             }
 
-            _logger.LogDebug("Cache miss for key: {Key}", key);
+            _logger.LogDebug("Cache miss");
             return Task.FromResult<T?>(null);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting value from MemoryCache for key: {Key}", key);
+            _logger.LogError(ex, "Error getting value from MemoryCache");
             throw;
         }
     }
@@ -46,12 +47,12 @@ public class InMemoryCacheService : ICacheService
         {
             var memoryCacheOptions = ConvertToMemoryCacheOptions(options);
             _memoryCache.Set(key, value, memoryCacheOptions);
-            _logger.LogDebug("Set cache value for key: {Key}", key);
+            _logger.LogDebug("Set cache value");
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting value in MemoryCache for key: {Key}", key);
+            _logger.LogError(ex, "Error setting value in MemoryCache");
             throw;
         }
     }
@@ -61,12 +62,12 @@ public class InMemoryCacheService : ICacheService
         try
         {
             _memoryCache.Remove(key);
-            _logger.LogDebug("Removed cache value for key: {Key}", key);
+            _logger.LogDebug("Removed cache value");
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing value from MemoryCache for key: {Key}", key);
+            _logger.LogError(ex, "Error removing value from MemoryCache");
             throw;
         }
     }
@@ -79,7 +80,7 @@ public class InMemoryCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking existence in MemoryCache for key: {Key}", key);
+            _logger.LogError(ex, "Error checking existence in MemoryCache");
             throw;
         }
     }
@@ -107,7 +108,7 @@ public class InMemoryCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", key);
+            _logger.LogError(ex, "Error in GetOrSetAsync");
             throw;
         }
     }
@@ -116,7 +117,7 @@ public class InMemoryCacheService : ICacheService
     {
         // MemoryCache doesn't support pattern-based removal natively
         // This is a limitation - in production, you might track keys separately
-        _logger.LogWarning("RemoveByPatternAsync is not supported by InMemoryCacheService. Pattern: {Pattern}", pattern);
+        _logger.LogWarning("RemoveByPatternAsync is not supported by InMemoryCacheService");
         await Task.CompletedTask;
     }
 

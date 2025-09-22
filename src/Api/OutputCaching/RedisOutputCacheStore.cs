@@ -1,4 +1,5 @@
 using System.Buffers;
+using Infrastructure.Utilities;
 using Microsoft.AspNetCore.OutputCaching;
 using StackExchange.Redis;
 
@@ -62,11 +63,11 @@ public class RedisOutputCacheStore : IOutputCacheStore
                 }
             }
 
-            _logger.LogDebug("Output cache set for key: {Key} with expiration: {Expiration}", key, validFor);
+            _logger.LogDebug("Output cache set with expiration: {Expiration}", validFor);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting output cache value in Redis for key: {Key}", key);
+            _logger.LogError(ex, "Error setting output cache value in Redis");
             // Don't throw - allow request to continue without caching
         }
     }
@@ -84,7 +85,7 @@ public class RedisOutputCacheStore : IOutputCacheStore
                 await _database.KeyDeleteAsync(keysToDelete);
                 await _database.KeyDeleteAsync(tagKey);
 
-                _logger.LogDebug("Evicted {Count} cache entries for tag: {Tag}", keys.Length, tag);
+                _logger.LogDebug("Evicted {Count} cache entries", keys.Length);
             }
         }
         catch (Exception ex)
