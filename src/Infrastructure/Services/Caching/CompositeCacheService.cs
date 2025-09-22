@@ -37,7 +37,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Primary cache failed for key: {Key}, falling back to secondary cache", LogSanitizer.SanitizeKey(key));
+            _logger.LogWarning(ex, "Primary cache failed, falling back to secondary cache");
         }
 
         // Fallback to secondary cache
@@ -47,7 +47,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Both primary and fallback caches failed for key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogError(ex, "Both primary and fallback caches failed");
             throw;
         }
     }
@@ -65,7 +65,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to set value in primary cache for key: {Key}", LogSanitizer.SanitizeKey(key));
+                _logger.LogWarning(ex, "Failed to set value in primary cache");
             }
         }, cancellationToken));
 
@@ -78,7 +78,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to set value in fallback cache for key: {Key}", LogSanitizer.SanitizeKey(key));
+                _logger.LogError(ex, "Failed to set value in fallback cache");
             }
         }, cancellationToken));
 
@@ -98,7 +98,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove value from primary cache for key: {Key}", LogSanitizer.SanitizeKey(key));
+                _logger.LogWarning(ex, "Failed to remove value from primary cache");
             }
         }, cancellationToken));
 
@@ -111,7 +111,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove value from fallback cache for key: {Key}", LogSanitizer.SanitizeKey(key));
+                _logger.LogWarning(ex, "Failed to remove value from fallback cache");
             }
         }, cancellationToken));
 
@@ -129,7 +129,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Primary cache failed checking existence for key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogWarning(ex, "Primary cache failed checking existence");
         }
 
         try
@@ -138,7 +138,7 @@ public class CompositeCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Both primary and fallback caches failed checking existence for key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogError(ex, "Both primary and fallback caches failed checking existence");
             throw;
         }
     }
@@ -180,7 +180,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove by pattern from primary cache: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+                _logger.LogWarning(ex, "Failed to remove by pattern from primary cache");
             }
         }, cancellationToken));
 
@@ -193,7 +193,7 @@ public class CompositeCacheService : ICacheService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to remove by pattern from fallback cache: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+                _logger.LogWarning(ex, "Failed to remove by pattern from fallback cache");
             }
         }, cancellationToken));
 

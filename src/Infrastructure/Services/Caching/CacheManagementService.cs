@@ -57,7 +57,7 @@ public class CacheManagementService : ICacheManagementService
     {
         try
         {
-            _logger.LogInformation("Starting cache clear by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+            _logger.LogInformation("Starting cache clear by pattern");
 
             if (_redis?.IsConnected == true)
             {
@@ -71,11 +71,11 @@ public class CacheManagementService : ICacheManagementService
                 if (keyArray.Length > 0)
                 {
                     await database.KeyDeleteAsync(keyArray);
-                    _logger.LogInformation("Cleared {Count} keys matching pattern {Pattern}", keyArray.Length, LogSanitizer.SanitizePattern(pattern));
+                    _logger.LogInformation("Cleared {Count} keys matching pattern", keyArray.Length);
                 }
                 else
                 {
-                    _logger.LogInformation("No keys found matching pattern {Pattern}", LogSanitizer.SanitizePattern(pattern));
+                    _logger.LogInformation("No keys found matching pattern");
                 }
             }
             else
@@ -85,7 +85,7 @@ public class CacheManagementService : ICacheManagementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+            _logger.LogError(ex, "Error clearing cache by pattern");
             throw;
         }
     }
@@ -94,13 +94,13 @@ public class CacheManagementService : ICacheManagementService
     {
         try
         {
-            _logger.LogInformation("Removing cache key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogInformation("Removing cache key");
             await _cacheService.RemoveAsync(key, cancellationToken);
-            _logger.LogInformation("Successfully removed cache key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogInformation("Successfully removed cache key");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cache key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogError(ex, "Error removing cache key");
             throw;
         }
     }
@@ -113,7 +113,7 @@ public class CacheManagementService : ICacheManagementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking if cache key exists: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogError(ex, "Error checking if cache key exists");
             throw;
         }
     }
@@ -181,7 +181,7 @@ public class CacheManagementService : ICacheManagementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting cache keys with pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+            _logger.LogError(ex, "Error getting cache keys with pattern");
             throw;
         }
     }

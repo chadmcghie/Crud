@@ -123,14 +123,13 @@ public class CacheController : ControllerBase
                 $"Cache cleared successfully for pattern: {LogSanitizer.SanitizePattern(pattern)}"
             );
 
-            _logger.LogInformation("Cache cleared by pattern '{Pattern}' by admin user. Keys removed: {KeysRemoved}",
-                LogSanitizer.SanitizePattern(pattern), keyCount);
+            _logger.LogInformation("Cache cleared by pattern by admin user. Keys removed: {KeysRemoved}", keyCount);
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache by pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+            _logger.LogError(ex, "Error clearing cache by pattern");
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { Message = $"Error clearing cache by pattern: {LogSanitizer.SanitizePattern(pattern)}" });
         }
@@ -160,13 +159,13 @@ public class CacheController : ControllerBase
 
             await _managementService.RemoveKeyAsync(key, cancellationToken);
 
-            _logger.LogInformation("Cache key '{Key}' removed by admin user", LogSanitizer.SanitizeKey(key));
+            _logger.LogInformation("Cache key removed by admin user");
 
             return NoContent();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cache key: {Key}", LogSanitizer.SanitizeKey(key));
+            _logger.LogError(ex, "Error removing cache key");
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { Message = $"Error removing cache key: {LogSanitizer.SanitizeKey(key)}" });
         }
@@ -234,7 +233,7 @@ public class CacheController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving cache keys with pattern: {Pattern}", LogSanitizer.SanitizePattern(pattern));
+            _logger.LogError(ex, "Error retrieving cache keys with pattern");
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { Message = "Error retrieving cache keys" });
         }
