@@ -118,12 +118,22 @@ jobs:
         fi
 
   # ====================================
-  # PHASE 2: BUILD & UNIT TESTS (CLEAN CODE BUILT)
+  # PHASE 2: BUILD, CODEQL & ARTIFACT CREATION (CLEAN CODE BUILT)
   # ====================================
-  build-and-unit-tests:
-    name: Build & Unit Tests
+  build-codeql-artifacts:
+    name: Build, CodeQL & Create Artifacts
     runs-on: ubuntu-latest
     needs: code-quality
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp', 'javascript' ]
     
     steps:
     - name: Checkout code (with formatting changes)
@@ -147,14 +157,37 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
         
-    # Build the cleaned/formatted code - this is the ONLY build
+    # Initialize CodeQL before build so it can observe compilation
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        
+    # Build the cleaned/formatted code - CodeQL observes this build
     - name: Restore .NET dependencies
+      if: matrix.language == 'csharp'
       run: dotnet restore solutions/Crud.sln
       
     - name: Build backend (clean code, single build)
+      if: matrix.language == 'csharp'
       run: dotnet build solutions/Crud.sln --no-restore --configuration Release
       
+    - name: Build Angular app
+      if: matrix.language == 'javascript'
+      run: |
+        cd src/Angular
+        npm ci
+        npm run build
+      
+    # Perform CodeQL analysis on the build we just did
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+      
+    # Create artifacts only once (on the csharp matrix job)
     - name: Create versioned artifact for downstream reuse
+      if: matrix.language == 'csharp'
       run: |
         echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
         echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
@@ -162,12 +195,14 @@ jobs:
         echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"feature-branch-complete\",\"includesFormatting\":\"true\"}" > version.json
         
     - name: Verify appsettings files exist
+      if: matrix.language == 'csharp'
       run: |
         echo "📁 Verifying appsettings files before artifact upload:"
         ls -la src/Api/appsettings*.json
         echo "✅ All appsettings files found"
       
     - name: Upload build artifacts for reuse in PRs
+      if: matrix.language == 'csharp'
       uses: actions/upload-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
@@ -177,13 +212,52 @@ jobs:
           src/Api/appsettings*.json
           version.json
         retention-days: 7  # Shorter retention for feature artifacts
+
+  # ====================================
+  # PHASE 3: PARALLEL TESTING (using artifacts)
+  # ====================================
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: build-codeql-artifacts
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
       
     - name: Run backend unit tests
       run: |
         echo "🧪 Running backend unit tests on clean, formatted code..."
         dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
+
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    needs: build-codeql-artifacts
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       
-    # Frontend unit tests
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
     - name: Install Angular dependencies
       working-directory: ./src/Angular
       run: npm ci
@@ -193,76 +267,12 @@ jobs:
       run: npm run test -- --watch=false --browsers=ChromeHeadless
 
   # ====================================
-  # PHASE 3: SECURITY ANALYSIS (CodeQL on clean, built code)
-  # ====================================
-  security-analysis:
-    name: Security Analysis (CodeQL)
-    runs-on: ubuntu-latest
-    needs: build-and-unit-tests
-    timeout-minutes: 45
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp', 'javascript' ]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    # Download build artifacts from build-and-unit-tests
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: feature-build-${{ github.sha }}
-
-    - name: Verify artifacts for CodeQL
-      run: |
-        if [ -f "version.json" ]; then
-          echo "✅ Using pre-built artifacts for CodeQL analysis (includes formatting changes)"
-          cat version.json | jq .
-        else
-          echo "❌ No build artifacts found - CodeQL needs a build"
-          exit 1
-        fi
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-
-    # Only setup tools, don't build (artifacts already exist from clean build)
-    - name: Setup .NET (for CodeQL tools only)
-      if: matrix.language == 'csharp'
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-
-    - name: Setup Node.js (for CodeQL tools only)
-      if: matrix.language == 'javascript'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    # Skip build steps - use pre-built artifacts from clean, formatted code
-    # The build artifacts from build-and-unit-tests are already available
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
-
-  # ====================================
   # PHASE 4: SUMMARY & NOTIFICATION
   # ====================================
   feature-branch-summary:
     name: Feature Branch Analysis Summary
     runs-on: ubuntu-latest
-    needs: [code-quality, build-and-unit-tests, security-analysis]
+    needs: [code-quality, build-codeql-artifacts, backend-unit-tests, frontend-unit-tests]
     if: always()
     
     steps:
@@ -270,7 +280,7 @@ jobs:
       run: |
         echo "## 🚀 Feature Branch Complete Analysis Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Smart Build Strategy**: Code quality first, then single build with clean code" >> $GITHUB_STEP_SUMMARY
+        echo "**Integrated Build Strategy**: Code quality → Build + CodeQL + Artifacts → Parallel testing" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         echo "### Analysis Results" >> $GITHUB_STEP_SUMMARY
@@ -281,27 +291,32 @@ jobs:
         QUALITY_STATUS="${{ needs.code-quality.result == 'success' && '✅ Success' || (needs.code-quality.result == 'failure' && '❌ Failed') || (needs.code-quality.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
         echo "| Code Quality & Linting | $QUALITY_STATUS | Auto-formatting and linting |" >> $GITHUB_STEP_SUMMARY
         
-        # Build and validation status
-        BUILD_STATUS="${{ needs.build-and-unit-tests.result == 'success' && '✅ Success' || (needs.build-and-unit-tests.result == 'failure' && '❌ Failed') || (needs.build-and-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
-        echo "| Build & Unit Tests | $BUILD_STATUS | Single build with clean, formatted code |" >> $GITHUB_STEP_SUMMARY
+        # Build, CodeQL and artifacts status
+        BUILD_STATUS="${{ needs.build-codeql-artifacts.result == 'success' && '✅ Success' || (needs.build-codeql-artifacts.result == 'failure' && '❌ Failed') || (needs.build-codeql-artifacts.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Build + CodeQL + Artifacts | $BUILD_STATUS | Single build with CodeQL analysis and artifact creation |" >> $GITHUB_STEP_SUMMARY
         
-        # Security analysis status
-        SECURITY_STATUS="${{ needs.security-analysis.result == 'success' && '✅ Success' || (needs.security-analysis.result == 'failure' && '❌ Failed') || (needs.security-analysis.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
-        echo "| Security Analysis (CodeQL) | $SECURITY_STATUS | C# and JavaScript analysis |" >> $GITHUB_STEP_SUMMARY
+        # Backend tests status
+        BACKEND_STATUS="${{ needs.backend-unit-tests.result == 'success' && '✅ Success' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Backend Unit Tests | $BACKEND_STATUS | C# unit tests (parallel, uses artifacts) |" >> $GITHUB_STEP_SUMMARY
+        
+        # Frontend tests status
+        FRONTEND_STATUS="${{ needs.frontend-unit-tests.result == 'success' && '✅ Success' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Frontend Unit Tests | $FRONTEND_STATUS | Angular unit tests (parallel) |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        echo "### Smart Build Strategy Benefits" >> $GITHUB_STEP_SUMMARY
+        echo "### Integrated Build Strategy Benefits" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ **Code Quality First**: Formatting changes are part of the build" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ **Single Build**: Only one compilation with clean, formatted code" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Clean Analysis**: Security analysis runs on properly formatted code" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **No Conditional Rebuilds**: Linear workflow, no complex dependencies" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Artifact Efficiency**: Build artifacts include all formatting changes" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **CodeQL Integration**: Security analysis observes the actual build process" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Parallel Testing**: Backend and frontend tests run simultaneously using artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Maximum Efficiency**: No rebuilds, CodeQL sees real compilation" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Overall status check
         if [ "${{ needs.code-quality.result }}" == "success" ] && \
-           [ "${{ needs.build-and-unit-tests.result }}" == "success" ] && \
-           [ "${{ needs.security-analysis.result }}" == "success" ]; then
+           [ "${{ needs.build-codeql-artifacts.result }}" == "success" ] && \
+           [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
+           [ "${{ needs.frontend-unit-tests.result }}" == "success" ]; then
           echo "### ✅ All Analysis Complete - Ready for PR" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
@@ -315,8 +330,9 @@ jobs:
           
           # Exit with error to fail the workflow
           if [ "${{ needs.code-quality.result }}" != "success" ] || \
-             [ "${{ needs.build-and-unit-tests.result }}" != "success" ] || \
-             [ "${{ needs.security-analysis.result }}" != "success" ]; then
+             [ "${{ needs.build-codeql-artifacts.result }}" != "success" ] || \
+             [ "${{ needs.backend-unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.frontend-unit-tests.result }}" != "success" ]; then
             exit 1
           fi
         fi
