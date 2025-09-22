@@ -90,6 +90,16 @@ jobs:
         cache-dependency-path: 'src/Angular/package-lock.json'
     
     # Download backend artifacts from feature workflow
+    # Debug SHA values to ensure artifact naming consistency
+    - name: Debug workflow context
+      run: |
+        echo "🔍 Debugging workflow context for artifact download..."
+        echo "Feature workflow head SHA: ${{ github.event.workflow_run.head_sha }}"
+        echo "Current context SHA: ${{ github.sha }}"
+        echo "Feature branch: ${{ github.event.workflow_run.head_branch }}"
+        echo "Looking for artifact: feature-build-${{ github.event.workflow_run.head_sha }}"
+        echo "Feature workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+    
     - name: Download backend artifacts
       uses: actions/download-artifact@v4
       with:
@@ -102,8 +112,14 @@ jobs:
           echo "✅ Backend artifacts found from feature workflow"
           echo "📋 Artifact version:"
           cat version.json | jq .
+          echo "🎯 Artifact reuse successful - no rebuild needed!"
         else
           echo "❌ No backend artifacts found - integration tests will need to build"
+          echo "This could mean:"
+          echo "  1. Artifact naming mismatch between workflows"
+          echo "  2. Feature workflow didn't complete successfully" 
+          echo "  3. Artifact expired or wasn't created"
+          echo "Proceeding with build-and-test approach..."
         fi
     
     # Build Angular for smoke tests (always needed for E2E)
