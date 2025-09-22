@@ -13,6 +13,7 @@ namespace Tests.Integration.Backend.Configuration;
 /// Validates configuration loading, service resolution, and environment-specific settings
 /// without creating new branches - using existing dev=Development, staging=Testing, main=Production mapping
 /// </summary>
+[Collection("Integration")]
 public class ConfigurationValidationTests : IClassFixture<SqliteTestWebApplicationFactory>
 {
     private readonly SqliteTestWebApplicationFactory _factory;
