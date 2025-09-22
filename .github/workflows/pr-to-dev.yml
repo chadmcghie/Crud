@@ -3,9 +3,9 @@ name: PR to Dev - Integration & Smoke Tests
 # This workflow handles integration testing and smoke tests for PRs to dev branch
 # Unit tests are skipped here since they're already run at the feature level
 on:
-  workflow_run:
-    workflows: ["Feature Branch"]
-    types: [completed]
+  pull_request:
+    branches: [dev]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 # Cancel in-progress runs for the same PR/branch
@@ -22,53 +22,75 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Check if this workflow should run (only for PRs to dev)
-  check-pr-to-dev:
-    name: Check if PR to Dev Exists
+  # Wait for feature branch workflow to complete successfully
+  wait-for-feature-workflow:
+    name: Wait for Feature Workflow
     runs-on: ubuntu-latest
     outputs:
-      should-run: ${{ steps.check.outputs.should-run }}
-      pr-number: ${{ steps.check.outputs.pr-number }}
-      source-branch: ${{ steps.check.outputs.source-branch }}
+      should-run: ${{ steps.wait.outputs.should-run }}
+      feature-sha: ${{ steps.wait.outputs.feature-sha }}
     
     steps:
-    - name: Check if there's a PR to dev for this feature branch
-      id: check
+    - name: Wait for feature branch workflow to complete successfully
+      id: wait
       run: |
-        echo "🔍 Checking if there's a PR to dev for the completed feature workflow..."
+        echo "🔍 Waiting for feature branch workflow to complete successfully..."
+        echo "PR: #${{ github.event.pull_request.number }}"
+        echo "Source branch: ${{ github.head_ref }}"
+        echo "Target branch: ${{ github.base_ref }}"
+        echo "Head SHA: ${{ github.event.pull_request.head.sha }}"
         
-        FEATURE_BRANCH="${{ github.event.workflow_run.head_branch }}"
-        FEATURE_SHA="${{ github.event.workflow_run.head_sha }}"
+        # Wait for feature workflow to complete for this SHA
+        FEATURE_SHA="${{ github.event.pull_request.head.sha }}"
+        MAX_WAIT=600  # 10 minutes
+        WAIT_INTERVAL=30  # 30 seconds
+        ELAPSED=0
         
-        echo "Feature branch: $FEATURE_BRANCH"
-        echo "Feature SHA: $FEATURE_SHA"
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          echo "⏳ Checking feature workflow status for SHA: $FEATURE_SHA (${ELAPSED}s elapsed)"
+          
+          # Get workflow runs for the feature branch workflow
+          WORKFLOW_RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/feature-branch.yml/runs?head_sha=$FEATURE_SHA&per_page=5")
+          
+          # Check if we have a completed run
+          COMPLETED_RUN=$(echo "$WORKFLOW_RUNS" | jq -r '.workflow_runs[] | select(.conclusion != null) | select(.conclusion == "success") | .id' | head -1)
+          
+          if [ "$COMPLETED_RUN" != "" ] && [ "$COMPLETED_RUN" != "null" ]; then
+            echo "✅ Feature workflow completed successfully: Run ID $COMPLETED_RUN"
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            echo "feature-sha=$FEATURE_SHA" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if we have a failed run
+          FAILED_RUN=$(echo "$WORKFLOW_RUNS" | jq -r '.workflow_runs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | .id' | head -1)
+          
+          if [ "$FAILED_RUN" != "" ] && [ "$FAILED_RUN" != "null" ]; then
+            echo "❌ Feature workflow failed or was cancelled: Run ID $FAILED_RUN"
+            echo "🚫 Skipping integration tests - feature workflow must pass first"
+            echo "should-run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "⏳ Feature workflow still in progress, waiting ${WAIT_INTERVAL}s..."
+          sleep $WAIT_INTERVAL
+          ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+        done
         
-        # Check if there's an open PR from this branch to dev
-        PR_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:$FEATURE_BRANCH&base=dev&state=open")
-        
-        PR_COUNT=$(echo "$PR_RESPONSE" | jq '. | length')
-        echo "Found $PR_COUNT open PR(s) from $FEATURE_BRANCH to dev"
-        
-        if [ "$PR_COUNT" -gt 0 ]; then
-          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number')
-          echo "✅ Found PR #$PR_NUMBER from $FEATURE_BRANCH to dev"
-          echo "should-run=true" >> $GITHUB_OUTPUT
-          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "source-branch=$FEATURE_BRANCH" >> $GITHUB_OUTPUT
-        else
-          echo "⏭️ No open PR from $FEATURE_BRANCH to dev - skipping integration tests"
-          echo "should-run=false" >> $GITHUB_OUTPUT
-        fi
+        echo "⏰ Timeout waiting for feature workflow - proceeding with caution"
+        echo "⚠️  This may mean the feature workflow is taking longer than expected"
+        echo "should-run=true" >> $GITHUB_OUTPUT
+        echo "feature-sha=$FEATURE_SHA" >> $GITHUB_OUTPUT
 
-  # Integration tests and smoke tests - only runs if there's a PR to dev
+  # Integration tests and smoke tests - only runs if feature workflow succeeded
   integration-and-smoke-tests:
     name: Integration & Smoke Tests
     runs-on: ubuntu-latest
-    needs: check-pr-to-dev
-    # Only run if there's a PR to dev and the feature workflow succeeded
-    if: needs.check-pr-to-dev.outputs.should-run == 'true' && github.event.workflow_run.conclusion == 'success'
+    needs: wait-for-feature-workflow
+    # Only run if feature workflow completed successfully
+    if: needs.wait-for-feature-workflow.outputs.should-run == 'true'
     timeout-minutes: 30
     
     steps:
@@ -94,16 +116,17 @@ jobs:
     - name: Debug workflow context
       run: |
         echo "🔍 Debugging workflow context for artifact download..."
-        echo "Feature workflow head SHA: ${{ github.event.workflow_run.head_sha }}"
+        echo "PR head SHA: ${{ github.event.pull_request.head.sha }}"
         echo "Current context SHA: ${{ github.sha }}"
-        echo "Feature branch: ${{ github.event.workflow_run.head_branch }}"
-        echo "Looking for artifact: feature-build-${{ github.event.workflow_run.head_sha }}"
-        echo "Feature workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+        echo "PR source branch: ${{ github.head_ref }}"
+        echo "PR target branch: ${{ github.base_ref }}"
+        echo "Feature SHA from wait job: ${{ needs.wait-for-feature-workflow.outputs.feature-sha }}"
+        echo "Looking for artifact: feature-build-${{ needs.wait-for-feature-workflow.outputs.feature-sha }}"
     
     - name: Download backend artifacts
       uses: actions/download-artifact@v4
       with:
-        name: feature-build-${{ github.event.workflow_run.head_sha }}
+        name: feature-build-${{ needs.wait-for-feature-workflow.outputs.feature-sha }}
       continue-on-error: true
     
     - name: Verify backend artifacts
@@ -232,7 +255,7 @@ jobs:
   pr-to-dev-summary:
     name: PR to Dev Summary
     runs-on: ubuntu-latest
-    needs: [check-pr-to-dev, integration-and-smoke-tests]
+    needs: [wait-for-feature-workflow, integration-and-smoke-tests]
     if: always()
     
     steps:
@@ -247,8 +270,8 @@ jobs:
         echo "| Test Suite | Status | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
         
-        # Feature workflow status (from workflow_run trigger)
-        FEATURE_STATUS="${{ github.event.workflow_run.conclusion == 'success' && '✅ Success' || (github.event.workflow_run.conclusion == 'failure' && '❌ Failed') || (github.event.workflow_run.conclusion == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        # Feature workflow status (from wait job)
+        FEATURE_STATUS="${{ needs.wait-for-feature-workflow.outputs.should-run == 'true' && '✅ Success' || '❌ Failed' }}"
         echo "| Feature Workflow | $FEATURE_STATUS | Unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
         
         # Integration and smoke tests status
@@ -271,7 +294,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Overall status check
-        if [ "${{ github.event.workflow_run.conclusion }}" == "success" ] && \
+        if [ "${{ needs.wait-for-feature-workflow.outputs.should-run }}" == "true" ] && \
            [ "${{ needs.integration-and-smoke-tests.result }}" == "success" ]; then
           echo "### ✅ All Dev PR Validation Complete - Ready for Merge" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -286,7 +309,7 @@ jobs:
           echo "Please review the failed tests above and fix any issues before merging to dev." >> $GITHUB_STEP_SUMMARY
           
           # Exit with error to fail the workflow
-          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ] || \
+          if [ "${{ needs.wait-for-feature-workflow.outputs.should-run }}" != "true" ] || \
              [ "${{ needs.integration-and-smoke-tests.result }}" != "success" ]; then
             exit 1
           fi
