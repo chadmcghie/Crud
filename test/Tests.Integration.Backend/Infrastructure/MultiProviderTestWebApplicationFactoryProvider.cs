@@ -24,11 +24,21 @@ public static class MultiProviderTestWebApplicationFactoryProvider
 
     /// <summary>
     /// Gets all supported database providers for comprehensive testing
+    /// Excludes SQL Server in CI environments where LocalDB is not available
     /// </summary>
     /// <returns>An enumerable of all supported providers</returns>
     public static IEnumerable<DatabaseProvider> GetAllProviders()
     {
-        return Enum.GetValues<DatabaseProvider>();
+        var allProviders = Enum.GetValues<DatabaseProvider>();
+
+        // Skip SQL Server in CI environments where LocalDB is not supported
+        var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
+        if (isCI)
+        {
+            return allProviders.Where(p => p != DatabaseProvider.SqlServer);
+        }
+
+        return allProviders;
     }
 
     /// <summary>
