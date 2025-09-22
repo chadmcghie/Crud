@@ -87,7 +87,7 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
     [InlineData("Development", "SQLite")]  // dev branch = Development = SQLite
     [InlineData("Testing", "SQLite")]      // staging branch = Testing = SQLite
     [InlineData("Production", "SQLite")]   // main branch = Production = could be SQLite or SqlServer
-    public void DatabaseProviderEnvironmentVariable_ShouldAlign_WithBranchMapping(string environment, string expectedProvider)
+    public void DatabaseProviderEnvironmentVariable_ShouldAlign_WithBranchMapping(string environment)
     {
         // Arrange
         using var factory = CreateFactoryForEnvironment(environment);

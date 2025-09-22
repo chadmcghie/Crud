@@ -1,10 +1,10 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
-using System.Text.Json;
 
 namespace Tests.Integration.Backend.Configuration;
 
@@ -139,15 +139,18 @@ public class ConfigurationValidationTests : IClassFixture<SqliteTestWebApplicati
 
         // Act & Assert
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString; Assert.NotBeNullOrWhiteSpace(
+        connectionString;
+        Assert.NotBeNullOrWhiteSpace(
             $"{environment} should have a valid DefaultConnection");
 
         var allowedHosts = configuration.GetValue<string>("AllowedHosts");
-        allowedHosts; Assert.NotBeNullOrWhiteSpace(
+        allowedHosts;
+        Assert.NotBeNullOrWhiteSpace(
             $"{environment} should have AllowedHosts configured");
 
         var logLevel = configuration.GetValue<string>("Logging:LogLevel:Default");
-        logLevel; Assert.NotBeNullOrWhiteSpace(
+        logLevel;
+        Assert.NotBeNullOrWhiteSpace(
             $"{environment} should have default log level configured");
     }
 

@@ -210,8 +210,10 @@ public class ProviderPerformanceTests : IDisposable
                 $"ComplexPerson_{provider}_{i}",
                 $"+123456789{i:D2}");
             // Assign roles to people (some people have multiple roles)
-            if (i % 3 == 0) person.AddRole(roles[0]);
-            if (i % 5 == 0) person.AddRole(roles[1]);
+            if (i % 3 == 0)
+                person.AddRole(roles[0]);
+            if (i % 5 == 0)
+                person.AddRole(roles[1]);
             return person;
         }).ToList();
         context.People.AddRange(people);

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using Api.Dtos;
-using Tests.Integration.Backend.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
 

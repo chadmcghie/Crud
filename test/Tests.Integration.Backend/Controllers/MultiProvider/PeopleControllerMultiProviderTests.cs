@@ -1,7 +1,7 @@
 using System.Net;
 using Api.Dtos;
-using Tests.Integration.Backend.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
 
