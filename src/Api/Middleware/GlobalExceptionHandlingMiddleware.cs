@@ -25,7 +25,7 @@ public class GlobalExceptionHandlingMiddleware
         try
         {
             await _next(context);
-            
+
             // Handle 404 responses for non-existent endpoints
             if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
             {

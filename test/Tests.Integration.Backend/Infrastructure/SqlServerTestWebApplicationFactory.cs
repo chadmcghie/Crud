@@ -189,7 +189,7 @@ public class SqlServerTestWebApplicationFactory : WebApplicationFactory<Api.Prog
             }
 
             await dbContext.SaveChangesAsync();
-            
+
             // Clear change tracker to ensure fresh data on next load
             dbContext.ChangeTracker.Clear();
         }

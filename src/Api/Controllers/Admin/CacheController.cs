@@ -177,7 +177,7 @@ public class CacheController : ControllerBase
     [HttpPost("warm")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> WarmCaches(CancellationToken cancellationToken)
+    public Task<IActionResult> WarmCaches(CancellationToken cancellationToken)
     {
         try
         {
@@ -197,13 +197,13 @@ public class CacheController : ControllerBase
 
             _logger.LogInformation("Cache warming initiated by admin user");
 
-            return Accepted(new { Message = "Cache warming initiated" });
+            return Task.FromResult<IActionResult>(Accepted(new { Message = "Cache warming initiated" }));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error initiating cache warming");
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Message = "Error initiating cache warming" });
+            return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status500InternalServerError,
+                new { Message = "Error initiating cache warming" }));
         }
     }
 

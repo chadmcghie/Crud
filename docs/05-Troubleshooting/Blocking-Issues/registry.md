@@ -9,11 +9,11 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-09-23-003 | 2025-09-23 | troubleshoot/integration-test-blockers | test | Logging configuration contract violations | medium |
 | BI-2025-09-23-005 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Playwright config error | medium |
 | BI-2025-09-23-006 | 2025-09-23 | troubleshoot/integration-test-blockers | test | EF InMemory transaction configuration | medium |
-| BI-2025-09-23-007 | 2025-09-23 | troubleshoot/integration-test-blockers | build | Build warnings non-blocking | low |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
 |---|---|---|---|---|---|---|
+| BI-2025-09-23-007 | 2025-09-23 | 2025-09-23 | integration-test-troubleshooting | build | Build warnings non-blocking code quality issues | Fixed all core application build warnings by removing unnecessary async keywords, adding null safety operators, and replacing BuildServiceProvider with proper DI health checks - improved code quality without functional impact |
 | BI-2025-09-23-002 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | configuration | Configuration Validation Failures - Missing AllowedHosts configuration causing security validation tests to fail | Added AllowedHosts to environment-specific appsettings files and test infrastructure in-memory configuration - test infrastructure cleared all config sources requiring explicit AllowedHosts provisioning |
 | BI-2025-09-23-004 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | API Response JSON Deserialization Failures - multi-provider tests failing with authorization errors manifesting as JSON deserialization issues | Added BYPASS_AUTHORIZATION_FOR_E2E environment variable to all three test factories - authorization failures were causing empty responses that tests tried to deserialize as JSON |
 | BI-2025-09-23-008 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Test TypeError: Cannot Convert Undefined or Null to Object - E2E tests failing with authorization issues | Created testing launch profile and updated Playwright config to use Testing environment with proper authorization bypass |
@@ -92,6 +92,30 @@ Master registry of all blocking issues encountered in the project. This registry
 - Design logging configuration to be environment-aware
 - Document logging framework choices and test compatibility requirements
 
+### Build Warning Accumulation in Core Application Code
+**Pattern**: Core application code accumulates build warnings for async patterns, nullable references, and dependency injection anti-patterns
+**Symptoms**:
+- CS1998 warnings for async methods without await operators
+- CS8602 warnings for potential null reference dereferences
+- ASP0000 warnings for BuildServiceProvider usage in application code
+- Warnings appear during every build but don't block functionality
+
+**Root Cause**: Code evolution without maintaining strict compiler warning standards - async keywords added unnecessarily, nullable reference safety not followed, and quick service provider access used instead of proper DI
+
+**Solution**:
+- Remove async keyword from methods that don't await, use Task.FromResult for returns
+- Add null-conditional operators (?) for nullable reference safety
+- Replace BuildServiceProvider with proper dependency injection patterns
+- Create dedicated health check classes instead of inline service resolution
+- Maintain code formatting with dotnet format
+
+**Prevention**:
+- Configure compiler warnings as errors in CI to prevent accumulation
+- Include nullable reference type checking in code reviews
+- Follow async/await patterns strictly - only use async when actually awaiting
+- Design startup code to use dependency injection rather than service provider access
+- Regular code quality reviews to address technical debt before it accumulates
+
 ## Technical Debt
 Technical debt items requiring strategic planning and architectural changes are tracked separately in Quality Control.
 **Registry**: `docs/04-Quality-Control/Technical-Debt/registry.md`
@@ -103,7 +127,7 @@ Technical debt items requiring strategic planning and architectural changes are 
 ## Statistics
 - Total Issues: 16
 - Active: 3
-- Resolved: 15
+- Resolved: 16
 - Technical Debt: 1 (reclassified from active - see technical debt registry)
 - Average Resolution Time: ~2 hours
 

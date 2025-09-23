@@ -40,7 +40,7 @@ public class HealthController : ControllerBase
         {
             // Test database connectivity
             var canConnectToDatabase = await TestDatabaseConnectivity();
-            
+
             if (canConnectToDatabase)
             {
                 return Content("Healthy", "text/plain");
