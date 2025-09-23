@@ -359,6 +359,86 @@
       "reason": "Ensures consistent Error level logging for Production environment in both .NET and Serilog",
       "created": "2025-09-23 20:15",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-008",
+      "file": "src/Api/Properties/launchSettings.json",
+      "lines": [32, 42],
+      "hash": "pending-commit",
+      "change_description": "Added testing launch profile with Testing environment and authorization bypass",
+      "reason": "Required for E2E test authorization bypass - E2E tests need dedicated launch profile for proper Testing environment",
+      "created": "2025-09-23 18:55",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-008",
+      "file": "test/Tests.E2E.NG/playwright.config.ts",
+      "lines": [43, 43],
+      "hash": "pending-commit",
+      "change_description": "Updated webServer command to use testing launch profile instead of http",
+      "reason": "Required for E2E test authorization bypass - ensures Testing environment with proper authorization bypass",
+      "created": "2025-09-23 18:55",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-004",
+      "file": "test/Tests.Integration.Backend/Infrastructure/SqliteTestWebApplicationFactory.cs",
+      "lines": [133, 133],
+      "hash": "pending-commit",
+      "change_description": "Added BYPASS_AUTHORIZATION_FOR_E2E environment variable for integration tests",
+      "reason": "Required for multi-provider test authorization bypass - ConditionalAuthorizeAttribute needs both Testing environment and environment variable",
+      "created": "2025-09-23 19:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-004",
+      "file": "test/Tests.Integration.Backend/Infrastructure/InMemoryTestWebApplicationFactory.cs",
+      "lines": [109, 109],
+      "hash": "pending-commit",
+      "change_description": "Added BYPASS_AUTHORIZATION_FOR_E2E environment variable for integration tests",
+      "reason": "Required for multi-provider test authorization bypass - ConditionalAuthorizeAttribute needs both Testing environment and environment variable",
+      "created": "2025-09-23 19:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-004",
+      "file": "test/Tests.Integration.Backend/Infrastructure/SqlServerTestWebApplicationFactory.cs",
+      "lines": [112, 112],
+      "hash": "pending-commit",
+      "change_description": "Added BYPASS_AUTHORIZATION_FOR_E2E environment variable for integration tests",
+      "reason": "Required for multi-provider test authorization bypass - ConditionalAuthorizeAttribute needs both Testing environment and environment variable",
+      "created": "2025-09-23 19:45",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-002",
+      "file": "src/Api/appsettings.Development.json",
+      "lines": [12, 12],
+      "hash": "pending-commit",
+      "change_description": "Added AllowedHosts configuration for Development environment",
+      "reason": "Required for complete environment-specific AllowedHosts configuration and security validation test compliance",
+      "created": "2025-09-23 19:50",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-002",
+      "file": "src/Api/appsettings.Testing.json",
+      "lines": [15, 15],
+      "hash": "pending-commit",
+      "change_description": "Added AllowedHosts configuration for Testing environment",
+      "reason": "Required for complete environment-specific AllowedHosts configuration and security validation test compliance",
+      "created": "2025-09-23 19:50",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-002",
+      "file": "test/Tests.Integration.Backend/Configuration/ConfigurationErrorHandlingTests.cs",
+      "lines": [356, 356],
+      "hash": "pending-commit",
+      "change_description": "Added AllowedHosts to test in-memory configuration",
+      "reason": "Required for configuration validation test infrastructure - test clears all config sources and requires explicit AllowedHosts provisioning",
+      "created": "2025-09-23 19:50",
+      "do_not_modify": true
     }
   ],
   "last_updated": "2025-09-23T20:15:00Z",
