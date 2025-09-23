@@ -18,6 +18,9 @@ public static class AuthenticationTestHelper
         string? email = null,
         string? password = null)
     {
+        // Ensure database is created before attempting authentication operations
+        factory.EnsureDatabaseCreated();
+        
         var client = factory.CreateClient();
 
         // Use provided credentials or generate unique ones for parallel test execution
@@ -56,7 +59,8 @@ public static class AuthenticationTestHelper
             // Update the user's role in the database
             await factory.SetUserRoleAsync(email, "Admin");
 
-            // Now login to get a fresh token with the admin role
+            // CRITICAL: Login again to get a fresh JWT token with the updated roles
+            // The previous token only contains the default "User" role
             var loginCommand = new LoginCommand
             {
                 Email = email,

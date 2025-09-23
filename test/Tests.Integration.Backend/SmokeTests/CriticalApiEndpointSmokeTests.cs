@@ -103,7 +103,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
             getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
             // Test POST (create) with minimal data
-            var createRequest = new { Name = $"SmokeTestRole_{environment}_{Guid.NewGuid():N[..8]}" };
+            var createRequest = new { Name = $"SmokeTestRole_{environment}_{Guid.NewGuid().ToString("N")[..8]}" };
             var postResponse = await authenticatedClient.PostAsJsonAsync("/api/roles", createRequest);
 
             // Should either succeed or return validation error

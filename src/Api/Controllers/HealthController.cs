@@ -10,7 +10,8 @@ namespace Api.Controllers;
 /// Provides environment-specific health information for smoke testing
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("health")]
+[Produces("application/json")]
 public class HealthController : ControllerBase
 {
     private readonly HealthCheckService _healthCheckService;

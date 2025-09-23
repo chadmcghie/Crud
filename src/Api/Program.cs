@@ -374,7 +374,21 @@ namespace Api
                     });
                 });
 
-                builder.Services.AddHealthChecks();
+                builder.Services.AddHealthChecks()
+                    .AddCheck("database", () =>
+                    {
+                        try
+                        {
+                            using var scope = builder.Services.BuildServiceProvider().CreateScope();
+                            var dbContext = scope.ServiceProvider.GetRequiredService<Infrastructure.Data.ApplicationDbContext>();
+                            dbContext.Database.CanConnect();
+                            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Database connection is healthy");
+                        }
+                        catch (Exception ex)
+                        {
+                            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Database connection failed", ex);
+                        }
+                    });
 
                 builder.Services.AddAutoMapper(
                     cfg => { },

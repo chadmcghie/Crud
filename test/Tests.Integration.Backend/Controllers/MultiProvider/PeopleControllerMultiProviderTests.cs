@@ -11,12 +11,11 @@ namespace Tests.Integration.Backend.Controllers.MultiProvider;
 /// Multi-provider integration tests for PeopleController
 /// Verifies that people management with relationships works consistently across all database providers
 /// </summary>
-public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBase
+public class PeopleControllerMultiProviderTests
 {
     private readonly ITestOutputHelper _output;
 
-    public PeopleControllerMultiProviderTests(DatabaseProvider provider, ITestOutputHelper output)
-        : base(provider)
+    public PeopleControllerMultiProviderTests(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -25,7 +24,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
     [MemberData(nameof(GetAllProviders))]
     public async Task GET_People_Should_Return_Empty_List_Initially_AcrossAllProviders(DatabaseProvider provider)
     {
-        using var testInstance = new PeopleControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing GET people with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -45,7 +44,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
     [MemberData(nameof(GetAllProviders))]
     public async Task POST_People_Should_Create_Person_AcrossAllProviders(DatabaseProvider provider)
     {
-        using var testInstance = new PeopleControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing POST person creation with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -73,7 +72,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
     [MemberData(nameof(GetAllProviders))]
     public async Task POST_People_With_Roles_Should_Handle_Relationships_AcrossAllProviders(DatabaseProvider provider)
     {
-        using var testInstance = new PeopleControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing person-role relationships with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -112,7 +111,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
     public async Task DELETE_Role_With_People_Should_Handle_Constraints_ForConstraintProviders(DatabaseProvider provider)
     {
         // This test only runs on providers that enforce foreign key constraints
-        using var testInstance = new PeopleControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing FK constraint handling with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -149,7 +148,7 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
     public async Task Create_Multiple_People_Should_Support_Transactions_ForTransactionProviders(DatabaseProvider provider)
     {
         // This test only runs on providers that support transactions
-        using var testInstance = new PeopleControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing transaction support with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -187,4 +186,12 @@ public class PeopleControllerMultiProviderTests : MultiProviderIntegrationTestBa
 
     public static IEnumerable<object[]> GetTransactionProviders()
         => MultiProviderTestWebApplicationFactoryProvider.GetProvidersWithFeaturesAsTestData(requiresTransactions: true);
+
+    /// <summary>
+    /// Simple wrapper to instantiate the MultiProviderIntegrationTestBase for each provider
+    /// </summary>
+    private class TestProviderInstance : MultiProviderIntegrationTestBase
+    {
+        public TestProviderInstance(DatabaseProvider provider) : base(provider) { }
+    }
 }

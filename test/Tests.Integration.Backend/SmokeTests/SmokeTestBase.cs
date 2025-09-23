@@ -29,8 +29,24 @@ public abstract class SmokeTestBase : IDisposable
           {
               config.Sources.Clear();
 
-              // Environment-specific configuration
-              var settings = environment switch
+              // CRITICAL FIX: Load appsettings files first to get JWT and other configurations
+              // Find the API project directory
+              var currentDirectory = Directory.GetCurrentDirectory();
+              var repoRoot = currentDirectory;
+              while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+              {
+                  repoRoot = Directory.GetParent(repoRoot)!.FullName;
+              }
+              var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+              // Load base configuration files (includes JWT settings)
+              config.SetBasePath(apiConfigPath);
+              config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+              config.AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+              config.AddEnvironmentVariables();
+
+              // Override with test-specific settings (these will override appsettings values)
+              var testOverrides = environment switch
               {
                   "Development" => new Dictionary<string, string?>
                   {
@@ -59,7 +75,8 @@ public abstract class SmokeTestBase : IDisposable
                   _ => throw new ArgumentException($"Unsupported environment: {environment}")
               };
 
-              config.AddInMemoryCollection(settings);
+              // Add test overrides AFTER appsettings to ensure they take precedence
+              config.AddInMemoryCollection(testOverrides);
           });
 
               // Reduce logging noise in smoke tests

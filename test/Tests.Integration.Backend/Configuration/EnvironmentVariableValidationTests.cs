@@ -305,21 +305,35 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
                     // Clear existing configuration
                     config.Sources.Clear();
 
+                    // CRITICAL FIX: Load appsettings files with proper path resolution
+                    // Find the API project directory dynamically
+                    var currentDirectory = Directory.GetCurrentDirectory();
+                    var repoRoot = currentDirectory;
+                    while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+                    {
+                        repoRoot = Directory.GetParent(repoRoot)!.FullName;
+                    }
+                    var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
                     // Add configuration in the same order as the main application
-                    config.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "src", "Api"));
+                    config.SetBasePath(apiConfigPath);
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile($"appsettings.{environment}.json", optional: false, reloadOnChange: true);
                     config.AddEnvironmentVariables();
 
-                    // Override with test-specific settings for database isolation
+                    // Add environment-specific overrides including ASPNETCORE_ENVIRONMENT
+                    var environmentOverrides = new Dictionary<string, string?>
+                    {
+                        ["ASPNETCORE_ENVIRONMENT"] = environment
+                    };
+
                     if (environment == "Testing")
                     {
                         var testConnectionString = $"Data Source=CrudTest_EnvVar_{Guid.NewGuid()}.db";
-                        config.AddInMemoryCollection(new Dictionary<string, string?>
-                        {
-                            ["ConnectionStrings:DefaultConnection"] = testConnectionString
-                        });
+                        environmentOverrides["ConnectionStrings:DefaultConnection"] = testConnectionString;
                     }
+
+                    config.AddInMemoryCollection(environmentOverrides);
                 });
             });
     }

@@ -279,7 +279,23 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
                     // Clear existing configuration
                     config.Sources.Clear();
 
-                    // Add minimal test configuration
+                    // CRITICAL FIX: Load appsettings files first to get JWT and other configurations
+                    // Find the API project directory
+                    var currentDirectory = Directory.GetCurrentDirectory();
+                    var repoRoot = currentDirectory;
+                    while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+                    {
+                        repoRoot = Directory.GetParent(repoRoot)!.FullName;
+                    }
+                    var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+                    // Load base configuration files (includes JWT settings)
+                    config.SetBasePath(apiConfigPath);
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                    config.AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true);
+                    config.AddEnvironmentVariables();
+
+                    // Add health check test-specific overrides AFTER appsettings
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudTest_Health_{environment}_{Guid.NewGuid()}.db",

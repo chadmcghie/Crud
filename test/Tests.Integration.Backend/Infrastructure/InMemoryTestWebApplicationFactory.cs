@@ -148,7 +148,7 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
         if (user != null)
         {
             // Add Admin role if requested (User role is already added by default)
@@ -158,6 +158,9 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
             }
 
             await dbContext.SaveChangesAsync();
+            
+            // Clear change tracker to ensure fresh data on next load
+            dbContext.ChangeTracker.Clear();
         }
     }
 }

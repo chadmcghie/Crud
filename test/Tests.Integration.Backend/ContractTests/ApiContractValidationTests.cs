@@ -298,7 +298,7 @@ public class ContractTestFactoryAdapter : ITestWebApplicationFactory
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
         if (user != null && role == "Admin")
         {
             user.AddRole("Admin");

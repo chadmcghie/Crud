@@ -25,6 +25,12 @@ public class GlobalExceptionHandlingMiddleware
         try
         {
             await _next(context);
+            
+            // Handle 404 responses for non-existent endpoints
+            if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
+            {
+                await Handle404Async(context);
+            }
         }
         catch (Exception ex)
         {
@@ -91,6 +97,28 @@ public class GlobalExceptionHandlingMiddleware
         };
 
         context.Response.StatusCode = (int)response.Status;
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+    }
+
+    private async Task Handle404Async(HttpContext context)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = 404;
+
+        var response = new ErrorResponse
+        {
+            Status = HttpStatusCode.NotFound,
+            Title = "Endpoint Not Found",
+            Detail = _environment.IsDevelopment() || _environment.EnvironmentName == "Testing"
+                ? $"The endpoint '{context.Request.Path}' was not found. Available endpoints: /api/people, /api/roles, /api/walls, /api/windows, /health"
+                : "The requested endpoint was not found"
+        };
 
         var options = new JsonSerializerOptions
         {

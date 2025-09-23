@@ -12,12 +12,11 @@ namespace Tests.Integration.Backend.Controllers.MultiProvider;
 /// Multi-provider integration tests for RolesController
 /// Verifies that role management works consistently across all database providers
 /// </summary>
-public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBase
+public class RolesControllerMultiProviderTests
 {
     private readonly ITestOutputHelper _output;
 
-    public RolesControllerMultiProviderTests(DatabaseProvider provider, ITestOutputHelper output)
-        : base(provider)
+    public RolesControllerMultiProviderTests(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -27,7 +26,7 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
     public async Task GET_Roles_Should_Return_Empty_List_Initially_AcrossAllProviders(DatabaseProvider provider)
     {
         // Arrange
-        using var testInstance = new RolesControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing GET roles with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -48,7 +47,7 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
     public async Task POST_Roles_Should_Create_Role_And_Return_201_AcrossAllProviders(DatabaseProvider provider)
     {
         // Arrange
-        using var testInstance = new RolesControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing POST role creation with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -81,7 +80,7 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
     public async Task PUT_Roles_Should_Update_Existing_Role_AcrossAllProviders(DatabaseProvider provider)
     {
         // Arrange
-        using var testInstance = new RolesControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing PUT role update with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -116,7 +115,7 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
     public async Task DELETE_Roles_Should_Remove_Role_AcrossAllProviders(DatabaseProvider provider)
     {
         // Arrange
-        using var testInstance = new RolesControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing DELETE role with {testInstance.ProviderName} provider");
 
         await testInstance.RunWithCleanDatabaseAsync(async () =>
@@ -146,7 +145,7 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
     public async Task Role_Data_Should_Persist_Between_Requests_ForPersistentProviders(DatabaseProvider provider)
     {
         // This test only runs on providers that support persistence (SQLite, SQL Server)
-        using var testInstance = new RolesControllerMultiProviderTests(provider, _output);
+        using var testInstance = new TestProviderInstance(provider);
         _output.WriteLine($"Testing data persistence with {testInstance.ProviderName} provider");
 
         var roleName = testInstance.CreateProviderSpecificTestData("PersistentRole");
@@ -172,4 +171,12 @@ public class RolesControllerMultiProviderTests : MultiProviderIntegrationTestBas
 
     public static IEnumerable<object[]> GetPersistenceProviders()
         => MultiProviderTestWebApplicationFactoryProvider.GetProvidersWithFeaturesAsTestData(requiresPersistence: true);
+
+    /// <summary>
+    /// Simple wrapper to instantiate the MultiProviderIntegrationTestBase for each provider
+    /// </summary>
+    private class TestProviderInstance : MultiProviderIntegrationTestBase
+    {
+        public TestProviderInstance(DatabaseProvider provider) : base(provider) { }
+    }
 }

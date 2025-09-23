@@ -169,12 +169,21 @@ public class SqlServerTestWebApplicationFactory : WebApplicationFactory<Api.Prog
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        // Use parameterized query to avoid SQL injection and handle SQL Server specifics
-        var rolesValue = role == "Admin" ? "User,Admin" : "User";
+        // Use EF Core entity approach instead of raw SQL to leverage the value comparer fix
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
+        if (user != null)
+        {
+            // Add the requested role using the domain method
+            if (role == "Admin")
+            {
+                user.AddRole("Admin");
+            }
 
-        await dbContext.Database.ExecuteSqlRawAsync(
-            "UPDATE Users SET Roles = {0}, UpdatedAt = {1} WHERE Email = {2}",
-            rolesValue, DateTime.UtcNow, email);
+            await dbContext.SaveChangesAsync();
+            
+            // Clear change tracker to ensure fresh data on next load
+            dbContext.ChangeTracker.Clear();
+        }
     }
 
     protected override void Dispose(bool disposing)
