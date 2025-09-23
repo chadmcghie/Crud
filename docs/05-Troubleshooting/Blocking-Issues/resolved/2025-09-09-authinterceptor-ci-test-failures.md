@@ -1,10 +1,10 @@
 ---
 id: BI-2025-09-09-001
-status: active
+status: resolved
 category: test
 severity: high
 created: 2025-09-09 21:20
-resolved: 
+resolved: 2025-09-11 14:47
 spec: refactor-database-controller
 task: Fix CI test failures
 ---

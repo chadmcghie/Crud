@@ -138,12 +138,13 @@ export default defineConfig({
     /* Timeouts */
     actionTimeout: 10000,
     navigationTimeout: 30000,
-    
-    expect: {
-      timeout: process.env.CI ? 10000 : 5000,
-    },
   },
-  
+
+  /* Expect configuration */
+  expect: {
+    timeout: process.env.CI ? 10000 : 5000,
+  },
+
   /* Browser configuration */
   projects: [
     {

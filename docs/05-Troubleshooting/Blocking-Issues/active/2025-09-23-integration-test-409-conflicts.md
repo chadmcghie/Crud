@@ -6,7 +6,7 @@ severity: high
 created: 2025-09-23 01:15
 resolved: 
 spec: troubleshoot-integration-test-blockers
-task: Fix 60 failing integration tests with HTTP 409 Conflict errors
+task: Fix remaining integration tests - reduced from 77→37→28, now seeing 403 Forbidden and JSON deserialization errors
 ---
 
 # Integration Test HTTP 409 Conflict Authentication Failures
