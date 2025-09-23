@@ -30,7 +30,7 @@ public class SmokeTestFactoryAdapter : ITestWebApplicationFactory
         // Ensure database is created with fresh schema for smoke tests
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
+
         // Force recreation to ensure we have the latest schema
         dbContext.Database.EnsureDeleted();
         dbContext.Database.EnsureCreated();

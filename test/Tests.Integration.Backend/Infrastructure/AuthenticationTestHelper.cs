@@ -20,7 +20,7 @@ public static class AuthenticationTestHelper
     {
         // Ensure database is created before attempting authentication operations
         factory.EnsureDatabaseCreated();
-        
+
         var client = factory.CreateClient();
 
         // Use provided credentials or generate unique ones for parallel test execution
@@ -42,7 +42,7 @@ public static class AuthenticationTestHelper
             };
 
             var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
-            
+
             // Handle the case where user already exists (409 Conflict)
             // In parallel test execution, multiple tests might try to register the same user
             if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -91,7 +91,7 @@ public static class AuthenticationTestHelper
             };
 
             var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
-            
+
             // Handle the case where user already exists (409 Conflict)
             // In parallel test execution, multiple tests might try to register the same user
             if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -106,7 +106,7 @@ public static class AuthenticationTestHelper
             }
 
             TokenResponse? tokenResponse = null;
-            
+
             // If registration was successful, get token from registration response
             if (registerResponse.IsSuccessStatusCode)
             {

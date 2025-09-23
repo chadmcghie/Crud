@@ -114,7 +114,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     private async Task EnsureAuthenticatedAsync()
     {
         if (Client.DefaultRequestHeaders.Authorization != null)
-return;
+            return;
 
         // Use the same authentication pattern as smoke tests which works correctly
         var guidPart = Guid.NewGuid().ToString("N")[..8];
@@ -131,7 +131,7 @@ return;
         };
 
         var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
-        
+
         // Handle the case where user already exists (409 Conflict)
         if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
