@@ -63,15 +63,10 @@ public class DatabaseTestService : IDatabaseTestService
         {
             var connectionString = _context.Database.GetConnectionString();
 
-            // In CI/Docker environments, use file deletion for much better performance
-            if (Environment.GetEnvironmentVariable("CI") == "true" &&
-                !string.IsNullOrEmpty(connectionString))
-            {
-                await ResetByFileDeletionAsync(workerIndex, seedData);
-                return;
-            }
-
-            // Use EF Core cleanup for SQLite compatibility
+            // TEMPORARY FIX: Always use EF Core cleanup for better reliability in CI
+            // The file deletion method has SQLite locking issues in GitHub Actions
+            // TODO: Investigate and fix file deletion method for better performance
+            _logger.LogInformation("Using EF Core cleanup method for reliable database reset in CI");
             await ResetWithEfCoreAsync(workerIndex, seedData);
         }
         catch (Exception ex)
@@ -399,15 +394,17 @@ public class DatabaseTestService : IDatabaseTestService
     {
         if (!await _context.Roles.AnyAsync())
         {
+            // Generate unique role names to avoid conflicts in parallel test execution
+            var uniqueSuffix = $"{Guid.NewGuid():N}_{DateTime.UtcNow.Ticks}";
             var roles = new[]
             {
-                Domain.Entities.Role.Create("Administrator", "System administrator with full access"),
-                Domain.Entities.Role.Create("User", "Standard user with limited access"),
-                Domain.Entities.Role.Create("Guest", "Guest user with read-only access")
+                Domain.Entities.Role.Create($"Administrator_{uniqueSuffix}", "System administrator with full access"),
+                Domain.Entities.Role.Create($"User_{uniqueSuffix}", "Standard user with limited access"),
+                Domain.Entities.Role.Create($"Guest_{uniqueSuffix}", "Guest user with read-only access")
             };
 
             _context.Roles.AddRange(roles);
-            _logger.LogDebug("Added {Count} seed roles", roles.Length);
+            _logger.LogDebug("Added {Count} seed roles with unique names", roles.Length);
         }
     }
 

@@ -247,10 +247,10 @@ public class PeopleControllerTests : IntegrationTestBase
             // Arrange
             var adminClient = await CreateAdminClientAsync();
 
-            // Create roles with unique names to avoid conflicts
-            var role1Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestAdmin", "Test Administrator"));
-            var role2Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestUser", "Test Regular user"));
-            var role3Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest("TestManager", "Test Manager"));
+            // Create roles with unique names to avoid conflicts (let TestDataBuilders generate unique names)
+            var role1Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest(null, "Test Administrator"));
+            var role2Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest(null, "Test Regular user"));
+            var role3Response = await adminClient.PostAsJsonAsync("/api/roles", TestDataBuilders.CreateRoleRequest(null, "Test Manager"));
 
             var role1 = await ReadJsonAsync<RoleDto>(role1Response);
             var role2 = await ReadJsonAsync<RoleDto>(role2Response);

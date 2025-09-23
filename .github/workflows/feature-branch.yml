@@ -192,7 +192,11 @@ jobs:
         echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
         echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
         # Package with version info for artifact traceability
-        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"feature-branch-complete\",\"includesFormatting\":\"true\"}" > version.json
+        echo "🏗️ Creating artifact with comprehensive version info..."
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"feature-branch-complete\",\"includesFormatting\":\"true\",\"artifactName\":\"feature-build-${{ github.sha }}\",\"triggerEvent\":\"${{ github.event_name }}\"}" > version.json
+        echo "📋 Artifact version info:"
+        cat version.json | jq .
+        echo "🎯 Artifact will be named: feature-build-${{ github.sha }}"
         
     - name: Verify appsettings files exist
       if: matrix.language == 'csharp'
