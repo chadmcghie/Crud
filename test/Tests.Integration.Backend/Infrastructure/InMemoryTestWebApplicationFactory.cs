@@ -69,7 +69,13 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
                 ["Caching:UseLazyCache"] = "false",
                 ["Caching:UseComposite"] = "false",
                 ["Caching:DefaultExpirationMinutes"] = "5",
-                ["OutputCaching:Disabled"] = "false"
+                ["OutputCaching:Disabled"] = "false",
+                // Add JWT configuration for authentication tests
+                ["Jwt:Secret"] = "TestSecretKey123456789TestSecretKey123456789", // Minimum 32 chars
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:AccessTokenExpirationMinutes"] = "60",
+                ["Jwt:RefreshTokenExpirationDays"] = "7"
             };
 
             var configuration = new ConfigurationBuilder()
