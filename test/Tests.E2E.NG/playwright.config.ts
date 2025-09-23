@@ -63,6 +63,7 @@ export default defineConfig({
         // Testing-specific features
         TEST_RESET_TOKEN: 'test-only-token',
         BYPASS_AUTHORIZATION_FOR_E2E: 'true',
+        E2E_TEST_MODE: 'true',
 
         // Testing environment logging (minimal for performance)
         Logging__LogLevel__Default: 'Warning',
