@@ -7,6 +7,22 @@ on:
     branches: [dev]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
+    inputs:
+      skip_feature_wait:
+        description: 'Skip waiting for feature workflow (manual override)'
+        required: false
+        default: 'false'
+        type: boolean
+      run_integration_tests:
+        description: 'Force run integration tests even if feature workflow failed'
+        required: false
+        default: 'false'
+        type: boolean
+      skip_integration_tests:
+        description: 'Skip integration tests (run smoke tests only)'
+        required: false
+        default: 'false'
+        type: boolean
 
 # Cancel in-progress runs for the same PR/branch
 concurrency:
@@ -24,19 +40,64 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Wait for feature branch workflow to complete successfully
+  # Wait for feature branch workflow to complete successfully (or skip if manually overridden)
   wait-for-feature-workflow:
     name: Wait for Feature Workflow
     runs-on: ubuntu-latest
     outputs:
       should-run: ${{ steps.wait.outputs.should-run }}
       feature-sha: ${{ steps.wait.outputs.feature-sha }}
+      manual-override: ${{ steps.wait.outputs.manual-override }}
     
     steps:
+    - name: Check for manual override
+      id: check-override
+      run: |
+        if [ "${{ github.event.inputs.skip_feature_wait }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE: Skipping feature workflow wait"
+          echo "⚠️  This bypasses the normal dependency chain - use with caution"
+          echo "skip-wait=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip-wait=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check if source branch is a feature branch
+      id: check-branch
+      run: |
+        SOURCE_BRANCH="${{ github.head_ref }}"
+        echo "Source branch: $SOURCE_BRANCH"
+        
+        if [[ "$SOURCE_BRANCH" =~ ^(feature|bugfix|hotfix|copilot)/ ]]; then
+          echo "✅ Source branch '$SOURCE_BRANCH' should have a feature workflow"
+          echo "is-feature-branch=true" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️  Source branch '$SOURCE_BRANCH' is not a feature branch - skipping feature workflow wait"
+          echo "📝 Non-feature branches (main, dev, etc.) don't trigger feature workflows"
+          echo "is-feature-branch=false" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Wait for feature branch workflow to complete successfully
       id: wait
       run: |
+        if [ "${{ steps.check-override.outputs.skip-wait }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE ACTIVE - Skipping feature workflow wait"
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "feature-sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "manual-override=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ "${{ steps.check-branch.outputs.is-feature-branch }}" == "false" ]; then
+          echo "✅ Non-feature branch detected - proceeding without feature workflow wait"
+          echo "📝 Source: ${{ github.head_ref }} → Target: ${{ github.base_ref }}"
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "feature-sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "manual-override=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
         echo "🔍 Waiting for feature branch workflow to complete successfully..."
+        echo "manual-override=false" >> $GITHUB_OUTPUT
         echo "PR: #${{ github.event.pull_request.number }}"
         echo "Source branch: ${{ github.head_ref }}"
         echo "Target branch: ${{ github.base_ref }}"
@@ -86,13 +147,13 @@ jobs:
         echo "should-run=true" >> $GITHUB_OUTPUT
         echo "feature-sha=$FEATURE_SHA" >> $GITHUB_OUTPUT
 
-  # Integration tests and smoke tests - only runs if feature workflow succeeded
+  # Integration tests and smoke tests - only runs if feature workflow succeeded (or manual override)
   integration-and-smoke-tests:
     name: Integration & Smoke Tests
     runs-on: ubuntu-latest
     needs: wait-for-feature-workflow
-    # Only run if feature workflow completed successfully
-    if: needs.wait-for-feature-workflow.outputs.should-run == 'true'
+    # Run if feature workflow completed successfully OR manual override is active
+    if: needs.wait-for-feature-workflow.outputs.should-run == 'true' || github.event.inputs.run_integration_tests == 'true'
     timeout-minutes: 30
     
     steps:
@@ -164,12 +225,23 @@ jobs:
         npm run build
         echo "✅ Angular built for smoke tests"
     
-    # Run backend integration tests with fresh build
+    # Run backend integration tests with fresh build (unless manually skipped)
     - name: Run backend integration tests
+      if: github.event.inputs.skip_integration_tests != 'true'
       run: |
+        if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE ACTIVE - Running integration tests without feature workflow validation"
+          echo "⚠️  Use caution: feature workflow dependency check was bypassed"
+        fi
         echo "🧪 Running backend integration tests with fresh build..."
         echo "This ensures test isolation and validates the current PR changes"
         dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=integration-test-results.trx" --logger "console;verbosity=detailed"
+    
+    - name: Skip integration tests (manual override)
+      if: github.event.inputs.skip_integration_tests == 'true'
+      run: |
+        echo "🚨 MANUAL OVERRIDE: Skipping integration tests"
+        echo "⚠️  Integration tests were manually skipped - only smoke tests will run"
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
@@ -262,6 +334,38 @@ jobs:
       run: |
         echo "## 🚀 PR to Dev - Integration & Smoke Test Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Show branch info and any overrides
+        echo "### 📋 Branch Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Source**: \`${{ github.head_ref }}\` → **Target**: \`${{ github.base_ref }}\`" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if source branch matches feature patterns
+        SOURCE_BRANCH="${{ github.head_ref }}"
+        if [[ "$SOURCE_BRANCH" =~ ^(feature|bugfix|hotfix|copilot)/ ]]; then
+          echo "- **Branch Type**: Feature branch (waited for feature workflow)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Branch Type**: Non-feature branch (skipped feature workflow wait)" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Show manual override warnings if applicable
+        if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ] || \
+           [ "${{ github.event.inputs.run_integration_tests }}" == "true" ] || \
+           [ "${{ github.event.inputs.skip_integration_tests }}" == "true" ]; then
+          echo "### 🚨 Manual Override Active" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️  **Warning**: Manual overrides were used in this workflow run" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ]; then
+            echo "- Feature workflow wait was manually bypassed" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event.inputs.run_integration_tests }}" == "true" ]; then
+            echo "- Integration tests were forced to run despite feature workflow status" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event.inputs.skip_integration_tests }}" == "true" ]; then
+            echo "- Integration tests were manually skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         echo "**Progressive Testing Strategy**: Integration tests + smoke tests for dev branch validation" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
