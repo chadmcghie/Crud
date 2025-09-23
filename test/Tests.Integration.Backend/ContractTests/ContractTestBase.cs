@@ -87,12 +87,14 @@ public abstract class ContractTestBase : IDisposable
               config.AddInMemoryCollection(contractTestOverrides);
           });
 
+              // Set environment variable to signal Program.cs to skip Serilog
+              Environment.SetEnvironmentVariable("DISABLE_SERILOG_FOR_TESTS", "true");
+
               // Configure logging based on environment for contract tests
               builder.ConfigureLogging(logging =>
           {
               logging.ClearProviders();
-              logging.AddConsole();
-              
+
               // Set minimum level based on environment
               var minLevel = environment switch
               {
@@ -101,7 +103,15 @@ public abstract class ContractTestBase : IDisposable
                   "Production" => LogLevel.Error,
                   _ => LogLevel.Warning
               };
-              logging.SetMinimumLevel(minLevel);
+
+              // Set global minimum level to Debug to let everything through
+              logging.SetMinimumLevel(LogLevel.Debug);
+
+              // Add console provider
+              logging.AddConsole();
+
+              // Set the filter to the environment-specific minimum level
+              logging.AddFilter((category, level) => level >= minLevel);
           });
           });
 
