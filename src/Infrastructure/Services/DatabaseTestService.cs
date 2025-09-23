@@ -63,15 +63,10 @@ public class DatabaseTestService : IDatabaseTestService
         {
             var connectionString = _context.Database.GetConnectionString();
 
-            // In CI/Docker environments, use file deletion for much better performance
-            if (Environment.GetEnvironmentVariable("CI") == "true" &&
-                !string.IsNullOrEmpty(connectionString))
-            {
-                await ResetByFileDeletionAsync(workerIndex, seedData);
-                return;
-            }
-
-            // Use EF Core cleanup for SQLite compatibility
+            // TEMPORARY FIX: Always use EF Core cleanup for better reliability in CI
+            // The file deletion method has SQLite locking issues in GitHub Actions
+            // TODO: Investigate and fix file deletion method for better performance
+            _logger.LogInformation("Using EF Core cleanup method for reliable database reset in CI");
             await ResetWithEfCoreAsync(workerIndex, seedData);
         }
         catch (Exception ex)
