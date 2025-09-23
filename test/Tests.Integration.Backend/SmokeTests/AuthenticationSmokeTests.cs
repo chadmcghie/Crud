@@ -31,7 +31,7 @@ public class AuthenticationSmokeTests : SmokeTestBase
 
         var registerRequest = new RegisterUserCommand
         {
-            Email = $"smoketest_{environment}_{Guid.NewGuid():N[..8]}@example.com",
+            Email = $"smoketest_{environment}_{Guid.NewGuid():N}@example.com",
             Password = "SmokeTest123!",
             FirstName = "Smoke",
             LastName = "Test"
