@@ -60,6 +60,8 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
             {
                 options.UseInMemoryDatabase(_databaseName);
                 options.EnableSensitiveDataLogging();
+                options.ConfigureWarnings(warnings =>
+                    warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
             });
 
             // Register cache services for integration tests (same as SQLite factory)

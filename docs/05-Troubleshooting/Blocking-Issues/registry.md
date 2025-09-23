@@ -7,7 +7,6 @@ Master registry of all blocking issues encountered in the project. This registry
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
 | BI-2025-09-23-003 | 2025-09-23 | troubleshoot/integration-test-blockers | test | Logging configuration contract violations | medium |
-| BI-2025-09-23-005 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Playwright config error | medium |
 | BI-2025-09-23-006 | 2025-09-23 | troubleshoot/integration-test-blockers | test | EF InMemory transaction configuration | medium |
 
 ## Resolved Issues
@@ -16,6 +15,7 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-09-23-007 | 2025-09-23 | 2025-09-23 | integration-test-troubleshooting | build | Build warnings non-blocking code quality issues | Fixed all core application build warnings by removing unnecessary async keywords, adding null safety operators, and replacing BuildServiceProvider with proper DI health checks - improved code quality without functional impact |
 | BI-2025-09-23-002 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | configuration | Configuration Validation Failures - Missing AllowedHosts configuration causing security validation tests to fail | Added AllowedHosts to environment-specific appsettings files and test infrastructure in-memory configuration - test infrastructure cleared all config sources requiring explicit AllowedHosts provisioning |
 | BI-2025-09-23-004 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | API Response JSON Deserialization Failures - multi-provider tests failing with authorization errors manifesting as JSON deserialization issues | Added BYPASS_AUTHORIZATION_FOR_E2E environment variable to all three test factories - authorization failures were causing empty responses that tests tried to deserialize as JSON |
+| BI-2025-09-23-005 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | Entity Framework InMemory Transaction Configuration Issue - test expecting warning but receiving exception when using transactions with InMemory provider | Configured InMemory provider to suppress TransactionIgnoredWarning using ConfigureWarnings method in both integration and unit test factories |
 | BI-2025-09-23-008 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Test TypeError: Cannot Convert Undefined or Null to Object - E2E tests failing with authorization issues | Created testing launch profile and updated Playwright config to use Testing environment with proper authorization bypass |
 | BI-2025-09-22-001 | 2025-09-22 | 2025-09-23 | 2025-09-20-multi-config-e2e-testing | build | Test reporting workflow misalignment - integration tests show under feature branch instead of PR validation | Updated PR workflow test reporting labels and section headers to clarify test ownership and eliminate developer confusion |
 | BI-2025-09-23-001 | 2025-09-23 | 2025-09-23 | troubleshoot-integration-test-blockers | test | Integration test HTTP 409 Conflict authentication failures - 60 tests failing due to JWT configuration missing in test factories | Added consistent JWT configuration across all test web application factories - InMemory and SqlServer factories were missing JWT config causing JwtTokenService failures |
@@ -116,6 +116,25 @@ Master registry of all blocking issues encountered in the project. This registry
 - Design startup code to use dependency injection rather than service provider access
 - Regular code quality reviews to address technical debt before it accumulates
 
+### Entity Framework InMemory Provider Transaction Warnings
+**Pattern**: Test failures when using Entity Framework InMemory provider with transaction operations
+**Symptoms**:
+- `System.InvalidOperationException: An error was generated for warning 'Microsoft.EntityFrameworkCore.Database.Transaction.TransactionIgnoredWarning': Transactions are not supported by the in-memory store`
+- Tests expecting warnings but receiving exceptions when calling `BeginTransactionAsync()` with InMemory provider
+- Error suggests using ConfigureWarnings method to suppress warning
+
+**Root Cause**: Entity Framework InMemory provider by default throws exceptions instead of warnings when transaction operations are attempted, but tests may expect to be able to call transaction methods without exceptions
+
+**Solution**:
+- Add `ConfigureWarnings` with `Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)` to DbContext configuration
+- Apply to both integration test factories and unit test setups that use InMemory provider
+- Use the correct namespace: `Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId`
+
+**Prevention**:
+- When setting up InMemory provider for testing, always consider transaction behavior requirements
+- Include ConfigureWarnings setup if transaction-related functionality will be tested
+- Document InMemory provider limitations in test infrastructure setup guides
+
 ## Technical Debt
 Technical debt items requiring strategic planning and architectural changes are tracked separately in Quality Control.
 **Registry**: `docs/04-Quality-Control/Technical-Debt/registry.md`
@@ -126,7 +145,7 @@ Technical debt items requiring strategic planning and architectural changes are 
 
 ## Statistics
 - Total Issues: 16
-- Active: 3
+- Active: 2
 - Resolved: 16
 - Technical Debt: 1 (reclassified from active - see technical debt registry)
 - Average Resolution Time: ~2 hours
