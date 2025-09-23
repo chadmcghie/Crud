@@ -299,9 +299,69 @@
       "reason": "Essential for clear CI/CD transparency and developer experience - prevents confusion about test ownership",
       "created": "2025-09-23 14:30",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "src/Api/Program.cs",
+      "lines": [90, 96],
+      "hash": "pending-commit",
+      "change_description": "Added environment variable check to conditionally disable Serilog during contract tests",
+      "reason": "Essential for test infrastructure - allows contract tests to use .NET logging instead of Serilog",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "test/Tests.Integration.Backend/ContractTests/ContractTestBase.cs",
+      "lines": [89, 115],
+      "hash": "pending-commit",
+      "change_description": "Added environment variable setting and proper .NET logging configuration for contract tests",
+      "reason": "Required for logging configuration contract tests to work with .NET logging instead of Serilog",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "src/Api/appsettings.json",
+      "lines": [2, 10],
+      "hash": "pending-commit",
+      "change_description": "Added standard .NET Logging configuration section alongside Serilog",
+      "reason": "Provides fallback logging configuration when Serilog is disabled during tests",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "src/Api/appsettings.Development.json",
+      "lines": [2, 18],
+      "hash": "pending-commit",
+      "change_description": "Added .NET Logging configuration and aligned Serilog MinimumLevel to Information",
+      "reason": "Ensures consistent Information level logging for Development environment in both .NET and Serilog",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "src/Api/appsettings.Testing.json",
+      "lines": [2, 21],
+      "hash": "pending-commit",
+      "change_description": "Added .NET Logging configuration and aligned Serilog MinimumLevel to Warning",
+      "reason": "Ensures consistent Warning level logging for Testing environment in both .NET and Serilog",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-003",
+      "file": "src/Api/appsettings.Production.json",
+      "lines": [2, 17],
+      "hash": "pending-commit",
+      "change_description": "Added .NET Logging configuration and aligned Serilog MinimumLevel to Error",
+      "reason": "Ensures consistent Error level logging for Production environment in both .NET and Serilog",
+      "created": "2025-09-23 20:15",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-23T14:30:00Z",
+  "last_updated": "2025-09-23T20:15:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

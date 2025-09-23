@@ -22,6 +22,7 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-08-31-001 | 2025-08-31 | 2025-09-05 | test-server-optimization | test | E2E tests failing in CI - Docker networking issues | Resolved by using correct playwright.config.webserver.ts configuration with Playwright's built-in webServer feature |
 | BI-2025-09-08-001 | 2025-09-08 | 2025-09-08 | N/A | build | MediatR 13 RequestHandlerDelegate compilation errors in tests | Fixed by adding CancellationToken parameter to test delegate lambdas |
 | BI-2025-09-11-001 | 2025-09-11 | 2025-09-11 | controller-authorization-protection | test | Integration tests failing after authorization and middleware changes | Updated compression tests to use authenticated HTTP clients and proper test infrastructure |
+| BI-2025-09-23-003 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | configuration | Logging configuration contract violations - test environment logging level mismatches | Fixed Serilog vs .NET logging integration conflict by adding environment variable to disable Serilog during contract tests |
 
 ## Common Patterns
 
@@ -66,6 +67,25 @@ Master registry of all blocking issues encountered in the project. This registry
 - Use consistent test infrastructure across all integration test classes
 - Document authorization requirements in test setup guides
 
+### Logging Framework Conflicts in Tests
+**Pattern**: Test failures due to logging framework conflicts between production configuration (Serilog) and test expectations (.NET logging)
+**Symptoms**:
+- Tests fail with `ILogger.IsEnabled()` returning unexpected values
+- Contract tests expecting specific logging levels but getting different behavior
+- Debug output shows SerilogLoggerFactory being used instead of standard .NET logging
+
+**Root Cause**: Application uses `builder.Host.UseSerilog()` which completely replaces .NET logging infrastructure, but tests expect standard .NET logging behavior
+
+**Solution**:
+- Use environment variables to conditionally disable Serilog during specific tests
+- Modify Program.cs to check for test environment signals
+- Ensure test infrastructure can override production logging configuration
+
+**Prevention**:
+- When implementing logging framework changes, consider impact on test infrastructure
+- Design logging configuration to be environment-aware
+- Document logging framework choices and test compatibility requirements
+
 ## Technical Debt
 Technical debt items requiring strategic planning and architectural changes are tracked separately in Quality Control.
 **Registry**: `docs/04-Quality-Control/Technical-Debt/registry.md`
@@ -75,9 +95,9 @@ Technical debt items requiring strategic planning and architectural changes are 
 | BI-2025-09-11-003 | ARCHITECTURAL | MEDIUM | RowVersion concurrency control EF Core + SQLite compatibility issue |
 
 ## Statistics
-- Total Issues: 12
+- Total Issues: 13
 - Active: 0
-- Resolved: 11
+- Resolved: 12
 - Technical Debt: 1 (reclassified from active - see technical debt registry)
 - Average Resolution Time: ~3 hours
 

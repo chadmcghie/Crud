@@ -97,10 +97,14 @@
 - **CI Strategy**: Run smoke tests in PR validation (~22 tests), full suite nightly
 - **Note**: 174 tests is excessive for E2E. Most suites run 10-50 tests. Consider reducing.  
 
-**Examples**  
-- User logs in (Angular UI) → token retrieved → secured API call succeeds.  
-- Submit inspection in UI → appears in database → accessible via API.  
-- Regression test: CRUD flows continue to work after refactor.  
+**Examples**
+- User logs in (Angular UI) → token retrieved → secured API call succeeds.
+- Submit inspection in UI → appears in database → accessible via API.
+- Regression test: CRUD flows continue to work after refactor.
+- Configuration contract tests: Logging levels behave correctly per environment.
+
+**Logging Configuration Testing**
+Configuration contract tests validate environment-specific logging behavior. These tests require special handling because the application uses Serilog which replaces .NET logging infrastructure. Contract tests use an environment variable (`DISABLE_SERILOG_FOR_TESTS=true`) to conditionally disable Serilog and enable standard .NET logging for proper `ILogger.IsEnabled()` validation.  
 
 [Back to Top ^](#test-plan-for-crudapp)
 
