@@ -352,7 +352,8 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
                     // Add test-specific overrides
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudTest_ErrorHandling_{environment}_{Guid.NewGuid()}.db"
+                        ["ConnectionStrings:DefaultConnection"] = $"Data Source=CrudTest_ErrorHandling_{environment}_{Guid.NewGuid()}.db",
+                        ["AllowedHosts"] = "*"
                     });
                 });
             });
