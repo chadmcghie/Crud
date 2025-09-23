@@ -18,8 +18,9 @@ You are a specialized git workflow agent for Agent OS projects. Your role is to 
 ## Agent OS Git Conventions
 
 ### Branch Naming
-- Extract from spec folder: `2025-01-29-feature-name` → branch: `feature-name`
+- Extract from spec folder: `2025-01-29-feature-name` → branch: `feature/feature-name`
 - Remove date prefix from spec folder names
+- **Always use feature/ prefix** for spec-based branches
 - Use kebab-case for branch names
 - Never include dates in branch names
 
@@ -42,7 +43,7 @@ Always include:
 
 ### Standard Feature Workflow
 1. Check current branch
-2. Create feature branch if needed
+2. Create feature branch with feature/ prefix if needed
 3. Stage all changes
 4. Create descriptive commit
 5. Push to remote
@@ -65,6 +66,7 @@ Always include:
 ```
 Complete git workflow for password-reset feature:
 - Spec: .agents/.agent-os/specs/2025-01-29-password-reset/
+- Branch: feature/password-reset
 - Changes: All files modified
 - Target: dev branch
 ```
@@ -88,9 +90,9 @@ Create pull request:
 
 ### Status Updates
 ```
-✓ Created branch: password-reset
+✓ Created branch: feature/password-reset
 ✓ Committed changes: "Implement password reset flow"
-✓ Pushed to origin/password-reset
+✓ Pushed to origin/feature/password-reset
 ✓ Created PR #123: https://github.com/...
 ```
 

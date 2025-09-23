@@ -48,18 +48,34 @@ export default defineConfig({
       stdout: 'ignore',
       stderr: 'ignore',
       env: {
+        // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
         ASPNETCORE_URLS: process.env.CI
           ? 'http://0.0.0.0:5172'  // Bind to all interfaces in CI
           : 'http://localhost:5172',
+
+        // Testing-optimized database configuration
         DatabaseProvider: 'SQLite',
-        ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
+        ConnectionStrings__DefaultConnection: process.env.CI
+          ? `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;`
+          : `Data Source=${databasePath}`,
+
+        // Testing-specific features
         TEST_RESET_TOKEN: 'test-only-token',
         BYPASS_AUTHORIZATION_FOR_E2E: 'true',
-        // Disable connection pooling in CI to avoid locking
-        ...(process.env.CI && {
-          'ConnectionStrings__DefaultConnection': `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;`
-        })
+
+        // Testing environment logging (minimal for performance)
+        Logging__LogLevel__Default: 'Warning',
+        Logging__LogLevel__Microsoft: 'Warning',
+        Logging__LogLevel__System: 'Warning',
+
+        // Testing-specific feature flags
+        OutputCaching__Disabled: 'false',
+        Caching__UseRedis: 'false',
+
+        // Performance optimizations for Testing
+        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: '1',
+        DOTNET_RUNNING_IN_CONTAINER: 'false'
       },
     },
     {

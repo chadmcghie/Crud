@@ -6,6 +6,7 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
+| BI-2025-09-22-001 | 2025-09-22 | 2025-09-20-multi-config-e2e-testing | build | Test reporting workflow misalignment - integration tests show under feature branch instead of PR validation | medium |
 | BI-2025-09-11-003 | 2025-09-11 | controller-authorization-protection | functionality | RowVersion concurrency control 409 Conflict in PUT_People_Should_Update_Person_Roles test | high |
 
 ## Resolved Issues
@@ -65,7 +66,7 @@ Master registry of all blocking issues encountered in the project. This registry
 - Document authorization requirements in test setup guides
 
 ## Statistics
-- Total Issues: 11
-- Active: 1
+- Total Issues: 12
+- Active: 2
 - Resolved: 10
 - Average Resolution Time: ~3.5 hours
