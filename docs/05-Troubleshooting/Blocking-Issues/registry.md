@@ -92,6 +92,30 @@ Master registry of all blocking issues encountered in the project. This registry
 - Design logging configuration to be environment-aware
 - Document logging framework choices and test compatibility requirements
 
+### Build Warning Accumulation in Core Application Code
+**Pattern**: Core application code accumulates build warnings for async patterns, nullable references, and dependency injection anti-patterns
+**Symptoms**:
+- CS1998 warnings for async methods without await operators
+- CS8602 warnings for potential null reference dereferences
+- ASP0000 warnings for BuildServiceProvider usage in application code
+- Warnings appear during every build but don't block functionality
+
+**Root Cause**: Code evolution without maintaining strict compiler warning standards - async keywords added unnecessarily, nullable reference safety not followed, and quick service provider access used instead of proper DI
+
+**Solution**:
+- Remove async keyword from methods that don't await, use Task.FromResult for returns
+- Add null-conditional operators (?) for nullable reference safety
+- Replace BuildServiceProvider with proper dependency injection patterns
+- Create dedicated health check classes instead of inline service resolution
+- Maintain code formatting with dotnet format
+
+**Prevention**:
+- Configure compiler warnings as errors in CI to prevent accumulation
+- Include nullable reference type checking in code reviews
+- Follow async/await patterns strictly - only use async when actually awaiting
+- Design startup code to use dependency injection rather than service provider access
+- Regular code quality reviews to address technical debt before it accumulates
+
 ### Entity Framework InMemory Provider Transaction Warnings
 **Pattern**: Test failures when using Entity Framework InMemory provider with transaction operations
 **Symptoms**:
