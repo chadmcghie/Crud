@@ -233,3 +233,4 @@ npm run test:extended    # Extended test suite
 - Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
 - No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
+- NEVER REBASE!!! NO EXCEPTIONS!!!
