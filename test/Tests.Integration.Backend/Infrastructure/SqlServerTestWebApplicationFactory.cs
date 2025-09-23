@@ -108,8 +108,8 @@ public class SqlServerTestWebApplicationFactory : WebApplicationFactory<Api.Prog
 
         builder.UseEnvironment("Testing");
 
-        // Set authorization bypass for integration tests
-        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E", "true");
+        // Integration tests should test normal authorization behavior
+        // E2E tests will set their own authorization bypass
     }
 
     public TestLogCapture? LogCapture => _logCapture;
