@@ -6,11 +6,12 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
-| BI-2025-09-22-001 | 2025-09-22 | 2025-09-20-multi-config-e2e-testing | build | Test reporting workflow misalignment - integration tests show under feature branch instead of PR validation | medium |
+| *No active blocking issues* | | | | | |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
 |---|---|---|---|---|---|---|
+| BI-2025-09-22-001 | 2025-09-22 | 2025-09-23 | 2025-09-20-multi-config-e2e-testing | build | Test reporting workflow misalignment - integration tests show under feature branch instead of PR validation | Updated PR workflow test reporting labels and section headers to clarify test ownership and eliminate developer confusion |
 | BI-2025-09-23-001 | 2025-09-23 | 2025-09-23 | troubleshoot-integration-test-blockers | test | Integration test HTTP 409 Conflict authentication failures - 60 tests failing due to JWT configuration missing in test factories | Added consistent JWT configuration across all test web application factories - InMemory and SqlServer factories were missing JWT config causing JwtTokenService failures |
 | BI-2025-09-09-001 | 2025-09-09 | 2025-09-11 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally - race conditions in async test handling | Refactored from setTimeout delays to fakeAsync/tick for proper async testing - tests now pass consistently in CI |
 | BI-2025-09-11-002 | 2025-09-11 | 2025-09-11 | 2025-09-10-api-response-caching | functionality | ConditionalRequestMiddleware ETag comparison logic failures causing 6 tests to be skipped | Fixed HTTP header API usage, middleware pipeline registration, and test environment configuration - all 6 tests now pass |
@@ -75,8 +76,8 @@ Technical debt items requiring strategic planning and architectural changes are 
 
 ## Statistics
 - Total Issues: 12
-- Active: 1 (process improvement)
-- Resolved: 10
+- Active: 0
+- Resolved: 11
 - Technical Debt: 1 (reclassified from active - see technical debt registry)
 - Average Resolution Time: ~3 hours
 
