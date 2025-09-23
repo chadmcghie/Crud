@@ -128,7 +128,8 @@
       "Bash(gh run list:*)",
       "Bash(gh pr view:*)",
       "Bash(CI=true ASPNETCORE_ENVIRONMENT=Testing dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --filter \"FullyQualifiedName~GetRequest_WithIfModifiedSince_ShouldReturn200_WhenModified\" --no-build --configuration Release --logger \"console;verbosity=minimal\")",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(dotnet nuget list:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",
