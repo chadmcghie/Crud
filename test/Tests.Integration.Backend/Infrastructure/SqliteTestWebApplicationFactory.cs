@@ -14,7 +14,7 @@ namespace Tests.Integration.Backend.Infrastructure;
 /// SQLite-based implementation of test web application factory
 /// Uses file-based SQLite databases for fast, isolated testing
 /// </summary>
-public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program>, ITestWebApplicationFactory
+public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program>, IMultiProviderTestWebApplicationFactory
 {
     private static readonly object _lockObject = new object();
     private static bool _databaseInitialized = false;
@@ -23,6 +23,12 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     private string? _databasePath;
     private string? _connectionString;
     private TestLogCapture? _logCapture;
+
+    public DatabaseProvider Provider => DatabaseProvider.SQLite;
+    public string ProviderName => "SQLite";
+    public bool SupportsTransactions => true; // SQLite supports transactions with some limitations
+    public bool SupportsForeignKeys => true; // SQLite supports FK constraints when enabled
+    public bool SupportsPersistence => true; // SQLite persists data to file
 
     public SqliteTestWebApplicationFactory()
     {

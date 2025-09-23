@@ -269,9 +269,29 @@
       "reason": "Domain entity needs concurrency control foundation for optimistic concurrency implementation",
       "created": "2025-09-11 07:15",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-22-001",
+      "file": "test/Tests.Integration.Backend/Configuration/ConfigurationValidationTests.cs",
+      "lines": [1, 164],
+      "hash": "c662cd6",
+      "change_description": "Working multi-environment configuration validation tests",
+      "reason": "These tests actually validate real application behavior and provide multi-environment testing value",
+      "created": "2025-09-22 12:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-22-001",
+      "file": "test/Tests.Integration.Backend/Configuration/MultiEnvironmentSmokeTests.cs",
+      "lines": [1, 95],
+      "hash": "c662cd6",
+      "change_description": "Working multi-environment smoke tests for API validation",
+      "reason": "These tests validate health checks, authentication, and basic API functionality across environments",
+      "created": "2025-09-22 12:00",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-11T17:30:00Z",
+  "last_updated": "2025-09-22T12:00:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {

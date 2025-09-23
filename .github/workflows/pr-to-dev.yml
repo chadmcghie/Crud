@@ -1,0 +1,277 @@
+name: PR to Dev - Integration & Smoke Tests
+
+# This workflow handles integration testing and smoke tests for PRs to dev branch
+# Unit tests are skipped here since they're already run at the feature level
+on:
+  workflow_run:
+    workflows: ["Feature Branch"]
+    types: [completed]
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Check if this workflow should run (only for PRs to dev)
+  check-pr-to-dev:
+    name: Check if PR to Dev Exists
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+      pr-number: ${{ steps.check.outputs.pr-number }}
+      source-branch: ${{ steps.check.outputs.source-branch }}
+    
+    steps:
+    - name: Check if there's a PR to dev for this feature branch
+      id: check
+      run: |
+        echo "🔍 Checking if there's a PR to dev for the completed feature workflow..."
+        
+        FEATURE_BRANCH="${{ github.event.workflow_run.head_branch }}"
+        FEATURE_SHA="${{ github.event.workflow_run.head_sha }}"
+        
+        echo "Feature branch: $FEATURE_BRANCH"
+        echo "Feature SHA: $FEATURE_SHA"
+        
+        # Check if there's an open PR from this branch to dev
+        PR_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:$FEATURE_BRANCH&base=dev&state=open")
+        
+        PR_COUNT=$(echo "$PR_RESPONSE" | jq '. | length')
+        echo "Found $PR_COUNT open PR(s) from $FEATURE_BRANCH to dev"
+        
+        if [ "$PR_COUNT" -gt 0 ]; then
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number')
+          echo "✅ Found PR #$PR_NUMBER from $FEATURE_BRANCH to dev"
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "source-branch=$FEATURE_BRANCH" >> $GITHUB_OUTPUT
+        else
+          echo "⏭️ No open PR from $FEATURE_BRANCH to dev - skipping integration tests"
+          echo "should-run=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Integration tests and smoke tests - only runs if there's a PR to dev
+  integration-and-smoke-tests:
+    name: Integration & Smoke Tests
+    runs-on: ubuntu-latest
+    needs: check-pr-to-dev
+    # Only run if there's a PR to dev and the feature workflow succeeded
+    if: needs.check-pr-to-dev.outputs.should-run == 'true' && github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+    
+    # Download backend artifacts from feature workflow
+    - name: Download backend artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.event.workflow_run.head_sha }}
+      continue-on-error: true
+    
+    - name: Verify backend artifacts
+      run: |
+        if [ -f "version.json" ]; then
+          echo "✅ Backend artifacts found from feature workflow"
+          echo "📋 Artifact version:"
+          cat version.json | jq .
+        else
+          echo "❌ No backend artifacts found - integration tests will need to build"
+        fi
+    
+    # Build Angular for smoke tests (always needed for E2E)
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for smoke tests..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+    
+    - name: Build Angular for smoke tests
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building Angular for smoke tests..."
+        npm run build
+        echo "✅ Angular built for smoke tests"
+    
+    # Run backend integration tests (using artifacts if available)
+    - name: Run backend integration tests
+      run: |
+        echo "🧪 Running backend integration tests..."
+        if [ -f "version.json" ]; then
+          echo "Using pre-built artifacts from feature workflow"
+          dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=integration-test-results.trx" --logger "console;verbosity=detailed"
+        else
+          echo "Building and running integration tests (no artifacts available)"
+          dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --configuration Release --logger "trx;LogFileName=integration-test-results.trx" --logger "console;verbosity=detailed"
+        fi
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+      timeout-minutes: 15
+      
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results-${{ github.event.pull_request.head.sha }}
+        path: test/TestResults/*.trx
+        retention-days: 7
+    
+    # Run E2E smoke tests
+    - name: Install E2E test dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "📦 Installing E2E test dependencies..."
+        npm ci
+        echo "✅ E2E dependencies installed"
+        
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🎭 Installing Playwright browsers..."
+        npx playwright install --with-deps chromium
+        echo "✅ Playwright browsers installed"
+        
+    - name: Set execute permissions for API binary
+      run: |
+        if [ -f "./src/Api/bin/Release/net8.0/Api" ]; then
+          chmod +x ./src/Api/bin/Release/net8.0/Api
+          echo "✅ Execute permissions set for API binary"
+        else
+          echo "⚠️ API binary not found - smoke tests may need to build backend"
+        fi
+        
+    - name: Run E2E smoke tests
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🚀 Running E2E smoke tests for dev PR validation..."
+        echo "Tagged with @smoke - should complete in 2-5 minutes"
+        npm run test:smoke
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        # Unique database per test run to avoid locking
+        TEST_RUN_ID: pr-dev-${{ github.run_id }}-${{ github.run_number }}
+        
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-smoke-test-results-${{ github.event.pull_request.head.sha }}
+        path: |
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+        retention-days: 7
+          
+    - name: Upload database files (for debugging)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: database-files-${{ github.event.pull_request.head.sha }}
+        path: |
+          CrudTest_*.db
+          CrudTest_*.db-wal
+          CrudTest_*.db-shm
+        retention-days: 1
+          
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "🧹 Cleaning up test databases..."
+        # Remove test database files created during this run
+        rm -f CrudTest_*.db CrudTest_*.db-wal CrudTest_*.db-shm 2>/dev/null || true
+        echo "✅ Cleanup complete"
+
+  # Comprehensive summary with test results
+  pr-to-dev-summary:
+    name: PR to Dev Summary
+    runs-on: ubuntu-latest
+    needs: [check-pr-to-dev, integration-and-smoke-tests]
+    if: always()
+    
+    steps:
+    - name: Create comprehensive summary
+      run: |
+        echo "## 🚀 PR to Dev - Integration & Smoke Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Progressive Testing Strategy**: Integration tests + smoke tests for dev branch validation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Feature workflow status (from workflow_run trigger)
+        FEATURE_STATUS="${{ github.event.workflow_run.conclusion == 'success' && '✅ Success' || (github.event.workflow_run.conclusion == 'failure' && '❌ Failed') || (github.event.workflow_run.conclusion == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Feature Workflow | $FEATURE_STATUS | Unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
+        
+        # Integration and smoke tests status
+        INTEGRATION_STATUS="${{ needs.integration-and-smoke-tests.result == 'success' && '✅ Success' || (needs.integration-and-smoke-tests.result == 'failure' && '❌ Failed') || (needs.integration-and-smoke-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Integration & Smoke Tests | $INTEGRATION_STATUS | Backend integration + E2E smoke tests |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Test Pyramid Progress" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Unit Tests**: Completed at feature level (immediate feedback)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Integration Tests**: Backend component integration validation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Smoke Tests**: Critical user flow validation (2-5 minutes)" >> $GITHUB_STEP_SUMMARY
+        echo "- ⏳ **E2E Tests**: Full test suite runs during staging deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Efficiency Benefits" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Artifact Reuse**: Uses backend artifacts from feature workflow" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Single Job**: Integration and smoke tests in one efficient job" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Progressive Testing**: Each stage adds appropriate validation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Fast Feedback**: Smoke tests complete in 2-5 minutes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall status check
+        if [ "${{ github.event.workflow_run.conclusion }}" == "success" ] && \
+           [ "${{ needs.integration-and-smoke-tests.result }}" == "success" ]; then
+          echo "### ✅ All Dev PR Validation Complete - Ready for Merge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Merge PR to \`dev\` branch" >> $GITHUB_STEP_SUMMARY
+          echo "2. Staging deployment will trigger automatically" >> $GITHUB_STEP_SUMMARY
+          echo "3. Full E2E test suite will run during staging deployment" >> $GITHUB_STEP_SUMMARY
+          echo "4. After staging validation, create PR from \`dev\` → \`main\` for production" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Some Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the failed tests above and fix any issues before merging to dev." >> $GITHUB_STEP_SUMMARY
+          
+          # Exit with error to fail the workflow
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ] || \
+             [ "${{ needs.integration-and-smoke-tests.result }}" != "success" ]; then
+            exit 1
+          fi
+        fi
