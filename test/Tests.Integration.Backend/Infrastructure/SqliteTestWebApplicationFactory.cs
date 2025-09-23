@@ -128,6 +128,9 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         });
 
         builder.UseEnvironment("Testing");
+
+        // Set authorization bypass for integration tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E", "true");
     }
 
     /// <summary>
