@@ -439,9 +439,29 @@
       "reason": "Required for configuration validation test infrastructure - test clears all config sources and requires explicit AllowedHosts provisioning",
       "created": "2025-09-23 19:50",
       "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-005",
+      "file": "test/Tests.Integration.Backend/Infrastructure/InMemoryTestWebApplicationFactory.cs",
+      "lines": [63, 64],
+      "hash": "pending-commit",
+      "change_description": "Added ConfigureWarnings to suppress InMemoryEventId.TransactionIgnoredWarning",
+      "reason": "Required for InMemory provider transaction handling tests - allows test to verify transaction behavior without exceptions",
+      "created": "2025-09-23 15:15",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-23-005",
+      "file": "test/Tests.Unit.Backend/Infrastructure/EfRepositoryTests.cs",
+      "lines": [29, 30],
+      "hash": "pending-commit",
+      "change_description": "Added ConfigureWarnings to suppress InMemoryEventId.TransactionIgnoredWarning",
+      "reason": "Required for unit test InMemory provider consistency - ensures transaction-related operations don't throw exceptions",
+      "created": "2025-09-23 15:15",
+      "do_not_modify": true
     }
   ],
-  "last_updated": "2025-09-23T20:15:00Z",
+  "last_updated": "2025-09-23T15:20:00Z",
   "version": "1.0.0",
   "description": "Registry of code changes that must not be rolled back during troubleshooting",
   "schema": {
