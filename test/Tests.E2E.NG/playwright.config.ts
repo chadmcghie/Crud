@@ -40,7 +40,7 @@ export default defineConfig({
   webServer: [
     {
       // API Server configuration
-      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile http',
+      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
       cwd: process.cwd(),
       url: 'http://localhost:5172/health',
       timeout: 60 * 1000, // 60 seconds to start
