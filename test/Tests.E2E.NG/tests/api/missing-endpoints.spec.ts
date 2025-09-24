@@ -21,9 +21,9 @@ test.describe('@smoke Walls API Coverage', () => {
     const wallData = {
       name: faker.commerce.productName(),
       description: faker.lorem.sentence(),
-      width: faker.number.float({ min: 1, max: 50, precision: 0.1 }),
-      height: faker.number.float({ min: 1, max: 20, precision: 0.1 }),
-      thickness: faker.number.float({ min: 0.1, max: 2, precision: 0.1 }),
+      width: faker.number.float({ min: 1, max: 50, fractionDigits: 1 }),
+      height: faker.number.float({ min: 1, max: 20, fractionDigits: 1 }),
+      thickness: faker.number.float({ min: 0.1, max: 2, fractionDigits: 1 }),
       assemblyType: faker.helpers.arrayElement(['Drywall', 'Concrete', 'Wood', 'Steel'])
     };
 
@@ -109,9 +109,9 @@ test.describe('@smoke Windows API Coverage', () => {
     const windowData = {
       name: faker.commerce.productName(),
       description: faker.lorem.sentence(),
-      width: faker.number.float({ min: 1, max: 10, precision: 0.1 }),
-      height: faker.number.float({ min: 1, max: 8, precision: 0.1 }),
-      sillHeight: faker.number.float({ min: 24, max: 48, precision: 0.1 }),
+      width: faker.number.float({ min: 1, max: 10, fractionDigits: 1 }),
+      height: faker.number.float({ min: 1, max: 8, fractionDigits: 1 }),
+      sillHeight: faker.number.float({ min: 24, max: 48, fractionDigits: 1 }),
       frameType: faker.helpers.arrayElement(['Wood', 'Aluminum', 'Vinyl', 'Steel'])
     };
 
@@ -216,7 +216,7 @@ test.describe('@extended Bulk Operations Testing', () => {
   test('@extended Should handle multiple people creation', async ({ page, apiUrl }) => {
     const people = Array.from({ length: 3 }, () => ({
       fullName: faker.person.fullName(),
-      phone: faker.phone.number('+1-###-###-####')
+      phone: faker.phone.number({ style: 'national' })
     }));
 
     const createdIds: string[] = [];

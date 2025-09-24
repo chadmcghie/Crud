@@ -12,7 +12,7 @@ test.describe('@critical Complete Person Management Journey', () => {
   test('@critical User can create, view, edit, and delete a person', async ({ page, baseURL, apiUrl }) => {
     const testUser = {
       fullName: faker.person.fullName(),
-      phone: faker.phone.number('+1-###-###-####')
+      phone: faker.phone.number({ style: 'national' })
     };
 
     // Navigate to application
@@ -76,7 +76,7 @@ test.describe('@critical Complete Person Management Journey', () => {
   test('@critical User can assign roles to a person', async ({ page, baseURL, apiUrl }) => {
     const testUser = {
       fullName: faker.person.fullName(),
-      phone: faker.phone.number('+1-###-###-####')
+      phone: faker.phone.number({ style: 'national' })
     };
 
     // First, create a role via API for assignment

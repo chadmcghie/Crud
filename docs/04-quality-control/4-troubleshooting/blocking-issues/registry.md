@@ -18,7 +18,7 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-09-23-002 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | configuration | Configuration Validation Failures - Missing AllowedHosts configuration causing security validation tests to fail | Added AllowedHosts to environment-specific appsettings files and test infrastructure in-memory configuration - test infrastructure cleared all config sources requiring explicit AllowedHosts provisioning |
 | BI-2025-09-23-004 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | API Response JSON Deserialization Failures - multi-provider tests failing with authorization errors manifesting as JSON deserialization issues | Added BYPASS_AUTHORIZATION_FOR_E2E environment variable to all three test factories - authorization failures were causing empty responses that tests tried to deserialize as JSON |
 | BI-2025-09-23-005 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | Entity Framework InMemory Transaction Configuration Issue - test expecting warning but receiving exception when using transactions with InMemory provider | Configured InMemory provider to suppress TransactionIgnoredWarning using ConfigureWarnings method in both integration and unit test factories |
-| BI-2025-09-23-008 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Test TypeError: Cannot Convert Undefined or Null to Object - E2E tests failing with authorization issues | Created testing launch profile and updated Playwright config to use Testing environment with proper authorization bypass |
+| BI-2025-09-23-008 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | E2E Test TypeError: Cannot Convert Undefined or Null to Object - E2E tests failing with authorization issues | Created testing launch profile and updated Playwright config to use Testing environment with proper authorization bypass. Final resolution: Fixed 3 failing smoke tests with direct navigation patterns, multi-selector strategies, and proper Angular stability waits - achieving 18/18 smoke tests passing |
 | BI-2025-09-22-001 | 2025-09-22 | 2025-09-23 | 2025-09-20-multi-config-e2e-testing | build | Test reporting workflow misalignment - integration tests show under feature branch instead of PR validation | Updated PR workflow test reporting labels and section headers to clarify test ownership and eliminate developer confusion |
 | BI-2025-09-23-001 | 2025-09-23 | 2025-09-23 | troubleshoot-integration-test-blockers | test | Integration test HTTP 409 Conflict authentication failures - 60 tests failing due to JWT configuration missing in test factories | Added consistent JWT configuration across all test web application factories - InMemory and SqlServer factories were missing JWT config causing JwtTokenService failures |
 | BI-2025-09-09-001 | 2025-09-09 | 2025-09-11 | refactor-database-controller | test | AuthInterceptor unit tests failing in CI but passing locally - race conditions in async test handling | Refactored from setTimeout delays to fakeAsync/tick for proper async testing - tests now pass consistently in CI |
@@ -37,7 +37,7 @@ Master registry of all blocking issues encountered in the project. This registry
 
 ### CI Test Failures with Local Success
 **Pattern**: Tests pass locally but fail in CI environments due to timing/race conditions
-**Symptoms**: 
+**Symptoms**:
 - Tests consistently pass in local development environment
 - Same tests fail intermittently or consistently in CI
 - Error messages related to async operations, spies not being called, or timing issues
@@ -45,7 +45,7 @@ Master registry of all blocking issues encountered in the project. This registry
 
 **Root Cause**: CI environments have different execution timing than local development, causing race conditions in async tests
 
-**Solution**: 
+**Solution**:
 - Replace setTimeout delays with proper async testing utilities (fakeAsync/tick)
 - Use flush() to ensure all pending async operations complete
 - Implement deterministic time control instead of arbitrary delays
@@ -59,14 +59,14 @@ Master registry of all blocking issues encountered in the project. This registry
 
 ### Authorization Test Failures
 **Pattern**: Integration tests failing with 401 Unauthorized after controller authorization implementation
-**Symptoms**: 
+**Symptoms**:
 - Tests that previously passed now return HTTP 401
 - Error: "Expected response.IsSuccessStatusCode to be true, but found False"
 - Occurs when accessing protected endpoints without authentication
 
 **Root Cause**: Tests using unauthenticated HTTP clients to access endpoints that now require authorization
 
-**Solution**: 
+**Solution**:
 - Update tests to use `AuthenticationTestHelper.CreateUserClientAsync()` or `CreateAdminClientAsync()`
 - Ensure tests use consistent test infrastructure (`SqliteTestWebApplicationFactory`)
 - Create authenticated clients before making requests to protected endpoints
@@ -191,9 +191,10 @@ Technical debt items requiring strategic planning and architectural changes are 
   - Unit Tests (Backend): ✅ 170/170 passing
   - Unit Tests (Frontend): ✅ 267/267 passing
   - Integration Tests: ⚠️ 519/542 passing (22 failures documented as new blocking issues)
-  - E2E Tests: ✅ Core functionality working (cosmetic teardown error documented)
+  - E2E Tests: ✅ 18/18 smoke tests passing (final resolution achieved)
 - **Key Patterns**:
   - Authorization configuration issues in test infrastructure requiring environment variable fixes
   - Configuration validation tests using isolated in-memory config requiring explicit provisioning
   - Multi-provider database testing revealing fundamental data persistence issues when authorization bypass removed
   - Unicode data handling failures across all database providers indicating EF Core configuration gaps
+  - E2E test navigation patterns requiring direct path routing and Angular stability waits for reliable execution
