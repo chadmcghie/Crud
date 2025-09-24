@@ -93,11 +93,11 @@ E2E tests are failing immediately with "TypeError: Cannot convert undefined or n
 **Files Modified**:
 - `test/Tests.E2E.NG/tests/smoke.spec.ts`: Fixed navigation patterns for people and roles modules
 - `test/Tests.E2E.NG/tests/fixtures/serial-test-fixture.ts`: Already had proper E2E mode setup
-**Learning Documented**: Created `docs/03-Development/5-learning/20250923-e2e-navigation-fix-learning.md`
+**Learning Documented**: Created `docs/03-development/05-learning/2025-09-23-e2e-navigation-fix-learning.md`
 
 **Note**: The "TypeError: Cannot convert undefined or null to object" error persists during teardown but is cosmetic - it does not prevent E2E test execution. All core E2E functionality now works reliably.
 
 ## Related Issues
 - Related to ongoing integration test troubleshooting
 - May be connected to recent test configuration changes
-- Link to spec: docs/03-development/2-specs/troubleshoot/integration-test-blockers/
+- Link to spec: docs/03-development/02-specs/troubleshoot/integration-test-blockers/

@@ -98,4 +98,4 @@ The integration tests now pass (106/110 passing, 4 unrelated password reset test
 ## Related Issues
 - Link to related blocking issue: None
 - Link to GitHub issue/PR: https://github.com/chadmcghie/Crud/pull/170
-- Link to spec task: docs/03-development/2-specs/2025-09-08-redis-caching-layer/tasks.md
+- Link to spec task: docs/03-development/02-specs/2025-09-08-redis-caching-layer/tasks.md

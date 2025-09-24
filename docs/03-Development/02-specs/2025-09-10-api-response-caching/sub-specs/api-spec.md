@@ -1,6 +1,6 @@
 # API Specification
 
-This is the API specification for the spec detailed in @docs/03-development/2-specs/2025-09-10-api-response-caching/spec.md
+This is the API specification for the spec detailed in @docs/03-development/02-specs/2025-09-10-api-response-caching/spec.md
 
 ## HTTP Response Headers
 

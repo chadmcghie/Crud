@@ -155,4 +155,4 @@ Add integration tests that verify middleware execution order and environment con
 ## Related Issues
 - Link to related blocking issue: None currently
 - Link to GitHub issue/PR: https://github.com/chadmcghie/Crud/pull/188/checks?check_run_id=50110815903
-- Link to spec task: docs/03-development/2-specs/2025-09-10-api-response-caching/
+- Link to spec task: docs/03-development/02-specs/2025-09-10-api-response-caching/

@@ -13,6 +13,6 @@
 | - | - | - | - |
 
 ## Cross-References
-- **Quality Control Reviews**: [../2-reviews/](../2-reviews/)
-- **Testing Strategy**: [../1-testing-strategy/](../1-testing-strategy/)
-- **Troubleshooting**: [../3-troubleshooting/](../3-troubleshooting/)
+- **Quality Control Reviews**: [../02-reviews/](../02-reviews/)
+- **Testing Strategy**: [../01-testing-strategy/](../01-testing-strategy/)
+- **Troubleshooting**: [../03-troubleshooting/](../03-troubleshooting/)

@@ -498,7 +498,7 @@ For complex or recurring problems:
 /troubleshoot-issues [blocking issue reference]
 ```
 
-See [Troubleshooting Agents Design](../../04-Quality-Control/3-troubleshooting/troubleshooting-guides/troubleshooting-agents-design.md) for detailed information.
+See [Troubleshooting Agents Design](../../04-Quality-Control/03-troubleshooting/troubleshooting-guides/troubleshooting-agents-design.md) for detailed information.
 
 ## Getting Help
 

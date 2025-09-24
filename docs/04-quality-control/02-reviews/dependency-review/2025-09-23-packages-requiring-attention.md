@@ -39,7 +39,7 @@ Out of the 40+ packages analyzed across all .NET and npm projects, **1 package**
    - **Custom validation** using `IValidator<T>` + MediatR pipeline behaviors
 
 **Context**: 
-Based on project documentation in `docs/08-archive/2-historical-discussions/Architecture Discussion.txt`, the project owner has previously expressed concern about FluentValidation's licensing model, noting it has "an annoying license" compared to other alternatives.
+Based on project documentation in `docs/08-archive/02-historical-discussions/Architecture Discussion.txt`, the project owner has previously expressed concern about FluentValidation's licensing model, noting it has "an annoying license" compared to other alternatives.
 
 ## Completely Free Packages (Verified)
 

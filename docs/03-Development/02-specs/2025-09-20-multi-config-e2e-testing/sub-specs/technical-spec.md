@@ -1,6 +1,6 @@
 # Technical Specification
 
-This is the technical specification for the spec detailed in @docs/03-development/2-specs/2025-09-20-multi-config-e2e-testing/spec.md
+This is the technical specification for the spec detailed in @docs/03-development/02-specs/2025-09-20-multi-config-e2e-testing/spec.md
 
 ## Technical Requirements
 

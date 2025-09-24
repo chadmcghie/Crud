@@ -300,8 +300,8 @@ if (bypassAuth && isE2ETest) {
 ## Related Documentation
 
 - [ADR-001: Serial E2E Testing Strategy](../../02-Architecture/Decisions/2025-08-28-adr-001-serial-e2e-testing.md)
-- [Serial Testing Guide](../../04-Quality-Control/1-testing-strategy/serial-testing-guide.md)
-- [Testing Strategy](../../04-Quality-Control/1-testing-strategy/01-testing-strategy.md)
+- [Serial Testing Guide](../../04-Quality-Control/01-testing-strategy/serial-testing-guide.md)
+- [Testing Strategy](../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md)
 
 ---
 

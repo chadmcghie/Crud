@@ -40,9 +40,9 @@
 **Documentation:**
 - `docs/03-Development/product/roadmap.md` - Updated authentication status
 - `docs/04-Quality-Control/2025-09-10-critical-issues-summary.md` - Marked issue resolved
-- `docs/03-development/2-specs/2025-09-11-controller-authorization-protection/spec.md` - New spec
-- `docs/03-development/2-specs/2025-09-11-controller-authorization-protection/sub-specs/technical-spec.md` - Technical details
-- `docs/03-development/2-specs/2025-09-11-controller-authorization-protection/tasks.md` - Task breakdown
+- `docs/03-development/02-specs/2025-09-11-controller-authorization-protection/spec.md` - New spec
+- `docs/03-development/02-specs/2025-09-11-controller-authorization-protection/sub-specs/technical-spec.md` - Technical details
+- `docs/03-development/02-specs/2025-09-11-controller-authorization-protection/tasks.md` - Task breakdown
 
 ### 🔗 Integration Points
 

@@ -106,4 +106,4 @@ When adding new test workflows or modifying existing ones, always consider how t
 ## Related Issues
 - Link to related blocking issue: None yet
 - Link to GitHub PR: #215 (multi-config E2E testing implementation)
-- Link to spec task: docs/03-development/2-specs/2025-09-20-multi-config-e2e-testing/
+- Link to spec task: docs/03-development/02-specs/2025-09-20-multi-config-e2e-testing/

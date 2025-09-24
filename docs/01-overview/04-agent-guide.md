@@ -177,7 +177,7 @@ This guide outlines the preferred utilization of AI agents in the Crud project d
 - **Maintain architectural standards**
 
 ### Documentation
-- **Keep specifications updated** in docs/03-development/2-specs/
+- **Keep specifications updated** in docs/03-development/02-specs/
 - **Document blocking issues** properly in docs/05-Troubleshooting/Blocking-Issues/
 - **Create recaps** for completed work
 - **Update roadmaps** consistently

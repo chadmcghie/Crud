@@ -56,5 +56,5 @@
 
 ## Cross-References
 - **Architecture Decisions**: [../../02-Architecture/Decisions/registry.md](../../02-Architecture/Decisions/registry.md)
-- **Product Roadmap**: [../1-product/roadmap.md](../1-product/roadmap.md)
-- **Testing Strategy**: [../../04-Quality-Control/1-testing-strategy/01-testing-strategy.md](../../04-Quality-Control/1-testing-strategy/01-testing-strategy.md)
+- **Product Roadmap**: [../01-product/roadmap.md](../01-product/roadmap.md)
+- **Testing Strategy**: [../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md](../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md)
