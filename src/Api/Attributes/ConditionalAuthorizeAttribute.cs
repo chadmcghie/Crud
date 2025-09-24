@@ -19,7 +19,7 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        Console.WriteLine($"DEBUG: ConditionalAuthorizeAttribute called for {context?.HttpContext?.Request?.Path}");
+        Console.WriteLine($"DEBUG: ConditionalAuthorizeAttribute called for {context?.HttpContext?.Request?.Path} with policy: {_policy}");
 
         if (context?.HttpContext?.RequestServices == null)
         {
@@ -98,21 +98,33 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
             // Check if user is authenticated
             if (context.HttpContext.User?.Identity?.IsAuthenticated != true)
             {
+                Console.WriteLine("DEBUG: User is not authenticated - returning Unauthorized");
                 context.Result = new UnauthorizedResult();
                 return;
             }
 
+            Console.WriteLine($"DEBUG: User is authenticated: {context.HttpContext.User?.Identity?.Name}");
+
             // If a policy is specified, check it
             if (!string.IsNullOrEmpty(_policy))
             {
+                Console.WriteLine($"DEBUG: Checking policy: {_policy}");
                 var authResult = await authorizationService.AuthorizeAsync(
                     context.HttpContext.User, _policy);
 
+                Console.WriteLine($"DEBUG: Policy {_policy} result: {authResult.Succeeded}");
                 if (!authResult.Succeeded)
                 {
+                    Console.WriteLine($"DEBUG: Policy {_policy} failed. Failure reasons:");
+                    foreach (var failure in authResult.Failure?.FailureReasons ?? new AuthorizationFailureReason[0])
+                    {
+                        Console.WriteLine($"  - {failure.Message}");
+                    }
+                    Console.WriteLine($"DEBUG: User roles: [{string.Join(", ", context.HttpContext.User.FindAll("role")?.Select(c => c.Value) ?? new string[0])}]");
                     context.Result = new ForbidResult();
                     return;
                 }
+                Console.WriteLine($"DEBUG: Policy {_policy} succeeded - allowing access");
             }
         }
         catch (Exception)

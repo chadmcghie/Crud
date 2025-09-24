@@ -35,12 +35,9 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
 
         try
         {
-            // Validate required fields
-            if (string.IsNullOrWhiteSpace(request.FirstName))
-                return new AuthenticationResponse { Success = false, Error = "First name is required" };
-
-            if (string.IsNullOrWhiteSpace(request.LastName))
-                return new AuthenticationResponse { Success = false, Error = "Last name is required" };
+            // Set default values for optional fields
+            var firstName = string.IsNullOrWhiteSpace(request.FirstName) ? "User" : request.FirstName.Trim();
+            var lastName = string.IsNullOrWhiteSpace(request.LastName) ? "" : request.LastName.Trim();
 
             // Create email value object (will throw if invalid)
             var email = new Email(request.Email);
@@ -64,7 +61,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
             var passwordHash = new PasswordHash(hashedPassword);
 
             // Create new user
-            var user = User.Create(email, passwordHash, request.FirstName, request.LastName);
+            var user = User.Create(email, passwordHash, firstName, lastName);
 
             // Generate tokens
             var accessToken = _jwtTokenService.GenerateAccessToken(user);
@@ -821,6 +818,86 @@ public class ValidateResetTokenQueryHandler : IRequestHandler<ValidateResetToken
                 IsUsed = false,
                 ExpiresAt = null
             };
+        }
+    }
+}
+
+public class AddUserRoleCommandHandler : IRequestHandler<AddUserRoleCommand, bool>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<AddUserRoleCommandHandler> _logger;
+
+    public AddUserRoleCommandHandler(
+        IUserRepository userRepository,
+        ILogger<AddUserRoleCommandHandler> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
+    public async Task<bool> Handle(AddUserRoleCommand request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found: {UserId}", request.UserId);
+                return false;
+            }
+
+            user.AddRole(request.Role);
+            await _userRepository.UpdateAsync(user, cancellationToken);
+
+            _logger.LogInformation("Added role {Role} to user {UserId}", request.Role, request.UserId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add role {Role} to user {UserId}", request.Role, request.UserId);
+            return false;
+        }
+    }
+}
+
+public class PromoteUserToAdminCommandHandler : IRequestHandler<PromoteUserToAdminCommand, AuthenticationResponse>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<PromoteUserToAdminCommandHandler> _logger;
+
+    public PromoteUserToAdminCommandHandler(
+        IUserRepository userRepository,
+        ILogger<PromoteUserToAdminCommandHandler> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
+    public async Task<AuthenticationResponse> Handle(PromoteUserToAdminCommand request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for admin promotion: {UserId}", request.UserId);
+                return new AuthenticationResponse { Success = false, Error = "User not found" };
+            }
+
+            // Add admin role if not already present
+            if (!user.Roles.Contains("admin"))
+            {
+                user.AddRole("admin");
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                _logger.LogInformation("User {UserId} promoted to admin", request.UserId);
+            }
+
+            return new AuthenticationResponse { Success = true };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to promote user {UserId} to admin", request.UserId);
+            return new AuthenticationResponse { Success = false, Error = "Failed to promote user to admin" };
         }
     }
 }

@@ -69,6 +69,29 @@ public class ValidateResetTokenResponse
     public DateTime? ExpiresAt { get; set; }
 }
 
+public class AddUserRoleCommand : IRequest<bool>
+{
+    public Guid UserId { get; set; }
+    public string Role { get; set; } = string.Empty;
+
+    public AddUserRoleCommand(Guid userId, string role)
+    {
+        UserId = userId;
+        Role = role;
+    }
+}
+
+public class PromoteUserToAdminCommand : IRequest<AuthenticationResponse>
+{
+    public Guid UserId { get; set; }
+
+    public PromoteUserToAdminCommand(string userId)
+    {
+        if (Guid.TryParse(userId, out var id))
+            UserId = id;
+    }
+}
+
 public class AuthenticationResponse
 {
     public bool Success { get; set; }
