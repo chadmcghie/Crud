@@ -9,8 +9,8 @@
     <IsTestProject>true</IsTestProject>
     
     <!-- Configure test results to go to test folder -->
-    <VSTestResultsDirectory>..\TestResults</VSTestResultsDirectory>
-    <TestResultsDirectory>..\TestResults</TestResultsDirectory>
+    <VSTestResultsDirectory>..\..\test\TestResults</VSTestResultsDirectory>
+    <TestResultsDirectory>..\..\test\TestResults</TestResultsDirectory>
   </PropertyGroup>
 
   <ItemGroup>

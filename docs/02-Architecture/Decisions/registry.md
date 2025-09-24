@@ -51,4 +51,4 @@
 
 ## Cross-References
 - **Architecture Guidelines**: [../1-architecture-guidelines.md](../1-architecture-guidelines.md)
-- **Testing Strategy**: [../../04-Quality-Control/1-testing-strategy/registry.md](../../04-Quality-Control/1-testing-strategy/registry.md)
+- **Testing Strategy**: [../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md](../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md)

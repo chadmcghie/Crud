@@ -229,7 +229,7 @@ npm run test:extended    # Extended test suite
 
 - API ports: 5172 (HTTP), 7268 (HTTPS)
 - Angular port: 4200
-- E2E test fix discussion: @"docs/08-archive/4-task-summaries/claude-task-e2e-test-serial-execution-fix-20250828.md"
+- E2E test fix discussion: @"docs/08-archive/04-task-summaries/2025-08-28-claude-task-e2e-test-serial-execution-fix.md"
 - Serial testing decision: @docs/02-Architecture/Decisions/0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
 - No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.

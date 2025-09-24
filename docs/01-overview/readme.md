@@ -4,9 +4,9 @@ Welcome to the Crud project! This section contains everything you need to get up
 
 ## Quick Start
 
-1. **Setup Guide**: [Playwright E2E Tests Setup Guide](SETUP-GUIDE.md)
-2. **Big Picture**: [Project Overview](Big-Picture.md)
-3. **Agent Utilization**: [How to use AI agents for development](../03-Development/Agent-Utilization-Guide.md)
+1. **Big Picture**: [Project Overview](01-big-picture.md)
+2. **Why CRUD**: [Why this project exists](02-why-crud.md)
+3. **Agent Guide**: [How to use AI agents for development](04-agent-guide.md)
 
 ## Prerequisites
 
@@ -17,14 +17,16 @@ Welcome to the Crud project! This section contains everything you need to get up
 
 ## Next Steps
 
-1. Follow the [Setup Guide](SETUP-GUIDE.md) to get your development environment ready
-2. Review the [Big Picture](Big-Picture.md) to understand the project architecture
-3. Read the [Agent Utilization Guide](../03-Development/Agent-Utilization-Guide.md) to learn how to use AI agents effectively
+1. Review the [Big Picture](01-big-picture.md) to understand the project architecture
+2. Read the [Why CRUD](02-why-crud.md) to understand the project's purpose
+3. Check the [Agent Guide](04-agent-guide.md) to learn how to use AI agents effectively
 
 ## Project Structure
 
 - **02-Architecture/**: System architecture and design decisions
 - **03-Development/**: Development workflows, specs, and project management
-- **04-Quality-Control/**: Code, architecture, and design review processes
-- **05-Troubleshooting/**: Problem resolution and blocking issues
-- **06-Archive/**: Historical and deprecated content
+- **04-Quality-Control/**: Testing strategy, reviews, troubleshooting, and technical debt management
+- **05-environment/**: Development and testing environment setup
+- **06-devops/**: Development workflow and deployment processes
+- **07-tooling/**: Agent OS tuning and tooling configuration
+- **08-archive/**: Historical and deprecated content

@@ -6,7 +6,7 @@ This recaps the updates made to Agent OS and Claude agent instructions to use th
 
 Successfully updated 12 agent instruction files to use the new documentation folder structure under `docs/` instead of `.agents/.agent-os/`. The changes ensure that all agent-created content (specs, tasks, blocking issues, recaps, and product documentation) will now be properly organized in the centralized documentation folders. Key updates include:
 
-- **Spec creation** now targets `docs/03-development/2-specs/`
+- **Spec creation** now targets `docs/03-development/02-specs/`
 - **Blocking issues** now go to `docs/05-Troubleshooting/Blocking-Issues/`
 - **Recaps** are created in `docs/03-Development/recaps/`
 - **Product files** are managed in `docs/03-Development/product/`
@@ -35,7 +35,7 @@ The agent instructions previously created all documentation within the `.agents/
 
 | Content Type | Old Path | New Path |
 |-------------|----------|----------|
-| Specs | `.agents/.agent-os/specs/` | `docs/03-development/2-specs/` |
+| Specs | `.agents/.agent-os/specs/` | `docs/03-development/02-specs/` |
 | Blocking Issues (Active) | `.agents/.agent-os/blocking-issues/active/` | `docs/05-Troubleshooting/Blocking-Issues/active/` |
 | Blocking Issues (Resolved) | `.agents/.agent-os/blocking-issues/resolved/` | `docs/05-Troubleshooting/Blocking-Issues/resolved/` |
 | Blocking Issues Registry | `.agents/.agent-os/blocking-issues/registry.md` | `docs/05-Troubleshooting/Blocking-Issues/registry.md` |
