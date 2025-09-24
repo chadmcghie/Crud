@@ -116,6 +116,6 @@ Test Run 3: Reset database (1s) → Run tests
 Which approach best balances security, performance, and maintainability while working within our constraints?
 
 ## References
-- [ADR-001: Serial E2E Testing](../Decisions/0001-Serial-E2E-Testing.md)
-- [E2E Testing Strategy](./E2E-Testing.md)
-- [Database Configuration](../Database-Configuration.md)
+- [ADR-001: Serial E2E Testing](../../02-Architecture/Decisions/2025-08-28-adr-001-serial-e2e-testing.md)
+- [E2E Testing Strategy](./04-e2e-testing.md)
+- [Database Configuration](../../02-Architecture/04-database-configuration.md)

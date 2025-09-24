@@ -4,9 +4,9 @@
 
 | ID | Date | Type | Title | Status | Impact |
 |----|------|------|-------|--------|--------|
-| DC-001 | 2025-08-27 | Pattern | [MediatR CQRS Pattern](./2025-08-27-DC-001-mediatr-cqrs-pattern.md) | ✅ Implemented | High |
-| DC-002 | 2025-08-27 | Package | [Polly Improvements](./2025-08-27-DC-002-polly-improvements.md) | ✅ Implemented | Medium |
-| DC-003 | 2025-08-27 | Guideline | [Command Handler Checklist](./2025-08-27-DC-003-command-handler-checklist.md) | ✅ Active | Medium |
+| DC-001 | 2025-08-27 | Pattern | [MediatR CQRS Pattern](./2025-08-27-mediatr-cqrs-pattern.md) | ✅ Implemented | High |
+| DC-002 | 2025-08-27 | Package | [Polly Improvements](./2025-08-27-polly-improvements.md) | ✅ Implemented | Medium |
+| DC-003 | 2025-08-27 | Guideline | [Command Handler Checklist](./2025-08-27-command-handler-checklist.md) | ✅ Active | Medium |
 
 ## Choice Categories
 
@@ -57,4 +57,4 @@
 ## Cross-References
 - **Architecture Decisions**: [../../02-Architecture/Decisions/registry.md](../../02-Architecture/Decisions/registry.md)
 - **Product Roadmap**: [../1-product/roadmap.md](../1-product/roadmap.md)
-- **Testing Strategy**: [../../04-Quality-Control/1-testing-strategy/registry.md](../../04-Quality-Control/1-testing-strategy/registry.md)
+- **Testing Strategy**: [../../04-Quality-Control/1-testing-strategy/01-testing-strategy.md](../../04-Quality-Control/1-testing-strategy/01-testing-strategy.md)

@@ -15,4 +15,4 @@
 ## Cross-References
 - **Quality Control Reviews**: [../2-reviews/](../2-reviews/)
 - **Testing Strategy**: [../1-testing-strategy/](../1-testing-strategy/)
-- **Troubleshooting**: [../4-troubleshooting/](../4-troubleshooting/)
+- **Troubleshooting**: [../3-troubleshooting/](../3-troubleshooting/)

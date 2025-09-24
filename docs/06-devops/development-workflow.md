@@ -91,7 +91,7 @@ This project leverages AI agents to streamline development workflow. We recommen
 | Git Operations | Claude `git-workflow` | PR creation and management |
 | Troubleshooting | Claude `troubleshoot-with-history` | Systematic problem solving |
 
-See [Agent Utilization Guide](../Agent-Utilization-Guide.md) for complete documentation.
+See [Agent Utilization Guide](../01-overview/04-agent-guide.md) for complete documentation.
 
 ## Development Cycle
 
@@ -448,7 +448,7 @@ gh run list
 - `git-workflow` - Git operations automation
 - `troubleshoot-with-history` - Systematic problem solving
 
-See [Agent Utilization Guide](../Agent-Utilization-Guide.md) for detailed usage.
+See [Agent Utilization Guide](../01-overview/04-agent-guide.md) for detailed usage.
 
 ## Troubleshooting
 
@@ -498,11 +498,11 @@ For complex or recurring problems:
 /troubleshoot-issues [blocking issue reference]
 ```
 
-See [Troubleshooting Agents Design](../../05-Troubleshooting/Troubleshooting-Guides/troubleshooting-agents-design.md) for detailed information.
+See [Troubleshooting Agents Design](../../04-Quality-Control/3-troubleshooting/troubleshooting-guides/troubleshooting-agents-design.md) for detailed information.
 
 ## Getting Help
 
-- **Agent Utilization**: Check [Agent Utilization Guide](../Agent-Utilization-Guide.md)
+- **Agent Utilization**: Check [Agent Utilization Guide](../01-overview/04-agent-guide.md)
 - **Systematic Problem Solving**: Use `troubleshoot-with-history` agent
 - **Documentation**: Check `/docs` folder
 - **Team Chat**: Use Slack/Teams channel

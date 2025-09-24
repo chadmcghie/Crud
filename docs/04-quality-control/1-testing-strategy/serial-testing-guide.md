@@ -247,6 +247,6 @@ When migrating existing tests to serial:
 
 ## More Information
 
-- [Architecture Decision Record](../Decisions/0001-Serial-E2E-Testing.md)
-- [Testing Strategy](./Testing-Strategy.md)
-- [Serial Test Optimization Plan](./SERIAL-TEST-OPTIMIZATION-PLAN.md)
+- [Architecture Decision Record](../../02-Architecture/Decisions/2025-08-28-adr-001-serial-e2e-testing.md)
+- [Testing Strategy](./01-testing-strategy.md)
+- [Serial Test Optimization Plan](./serial-test-optimization-plan.md)

@@ -218,6 +218,6 @@ dotnet dev-certs https --trust
 ## Next Steps
 
 After successful setup:
-1. **Understand the Architecture** → [02-architecture/1-architecture-guidelines.md](../02-architecture/1-architecture-guidelines.md)
-2. **Review Testing Setup** → [2-testing-setup.md](./2-testing-setup.md)
-3. **Learn Development Workflow** → [03-development/6-workflows/development-workflow.md](../03-development/6-workflows/development-workflow.md)
+1. **Understand the Architecture** → [02-architecture/01-architecture-guidelines.md](../02-architecture/01-architecture-guidelines.md)
+2. **Review Testing Setup** → [02-testing-setup.md](./02-testing-setup.md)
+3. **Learn Development Workflow** → [06-devops/development-workflow.md](../06-devops/development-workflow.md)

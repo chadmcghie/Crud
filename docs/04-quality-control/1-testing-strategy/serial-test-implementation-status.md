@@ -2,7 +2,7 @@
 
 ## Current Strategy (As of 2025-09-11)
 
-Based on [ADR-001: Serial E2E Test Execution Strategy](../Decisions/0001-Serial-E2E-Testing.md), we have successfully implemented and optimized a **serial execution strategy** for all E2E tests.
+Based on [ADR-001: Serial E2E Test Execution Strategy](../../02-Architecture/Decisions/2025-08-28-adr-001-serial-e2e-testing.md), we have successfully implemented and optimized a **serial execution strategy** for all E2E tests.
 
 ## ✅ Implementation Status - COMPLETED
 
@@ -96,7 +96,7 @@ The following parallel testing approaches were evaluated and rejected:
 - In-memory database approach
 - Complete server isolation per worker
 
-See [Archive/Superseded-Strategies/](../../Archive/Superseded-Strategies/) for historical reference.
+See [Archive/Superseded-Strategies/](../../08-archive/) for historical reference.
 
 ## 🎯 Success Criteria ✅ ACHIEVED
 
@@ -116,6 +116,6 @@ From ADR-001:
 
 ## Related Documents
 
-- [Serial Testing Guide](./SERIAL-TESTING-GUIDE.md)
-- [Serial Test Optimization Plan](./SERIAL-TEST-OPTIMIZATION-PLAN.md)
-- [ADR-001: Serial E2E Testing](../Decisions/0001-Serial-E2E-Testing.md)
+- [Serial Testing Guide](./serial-testing-guide.md)
+- [Serial Test Optimization Plan](./serial-test-optimization-plan.md)
+- [ADR-001: Serial E2E Testing](../../02-Architecture/Decisions/2025-08-28-adr-001-serial-e2e-testing.md)
