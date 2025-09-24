@@ -4,11 +4,11 @@
 
 | ID | Date | Title | Status | Impact |
 |----|------|-------|--------|--------|
-| ADR-001 | 2025-08-28 | [Serial E2E Testing](./0001-Serial-E2E-Testing.md) | ✅ Implemented | High |
-| ADR-002 | 2025-08-29 | [E2E Database Performance Optimization](./0002-E2E-Database-Performance-Optimization.md) | ✅ Implemented | Medium |
-| ADR-003 | 2025-08-29 | [E2E Testing Database Use Playwrights webServer](./0003-E2E-Testing-Database-Use-Playwrights-webServer.md) | ✅ Implemented | High |
-| ADR-004 | 2025-08-30 | [Angular Async Testing Approach](./0004-Angular-Async-Testing-Approach.md) | ✅ Implemented | Medium |
-| ADR-005 | 2025-09-01 | [CI-CD Dependency Management](./0005-CI-CD-Dependency-Management.md) | ✅ Implemented | Medium |
+| ADR-001 | 2025-08-28 | [Serial E2E Testing](./2025-08-28-adr-001-serial-e2e-testing.md) | ✅ Implemented | High |
+| ADR-002 | 2025-08-29 | [E2E Database Performance Optimization](./2025-08-29-adr-002-e2e-database-performance-optimization.md) | ✅ Implemented | Medium |
+| ADR-003 | 2025-08-29 | [E2E Testing Database Use Playwrights webServer](./2025-09-04-adr-003-e2e-testing-database-use-playwrights-webserver.md) | ✅ Implemented | High |
+| ADR-004 | 2025-08-30 | [Angular Async Testing Approach](./2025-08-30-adr-004-angular-async-testing-approach.md) | ✅ Implemented | Medium |
+| ADR-005 | 2025-09-01 | [CI-CD Dependency Management](./2025-09-01-adr-005-ci-cd-dependency-management.md) | ✅ Implemented | Medium |
 
 ## Decision Categories
 
@@ -50,5 +50,5 @@
 ```
 
 ## Cross-References
-- **Architecture Guidelines**: [../1-architecture-guidelines.md](../1-architecture-guidelines.md)
-- **Testing Strategy**: [../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md](../../04-Quality-Control/01-testing-strategy/01-testing-strategy.md)
+- **Architecture Guidelines**: [../01-architecture-guidelines.md](../01-architecture-guidelines.md)
+- **Testing Strategy**: [../../04-quality-control/01-testing-strategy/01-testing-strategy.md](../../04-quality-control/01-testing-strategy/01-testing-strategy.md)
