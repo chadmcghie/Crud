@@ -167,7 +167,11 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// </summary>
     public string CreateProviderSpecificTestData(string baseName)
     {
-        var fullName = $"{baseName}_{ProviderName}_{Guid.NewGuid():N}";
+        // Generate a unique suffix using only letters (no numbers) to comply with FullNameFormat validation
+        // FullNameFormat regex: ^[a-zA-Z\s\-'\.]+$ allows only letters, spaces, hyphens, apostrophes, and periods
+        var guid = Guid.NewGuid().ToString("N");
+        var letterOnlySuffix = new string(guid.Where(c => char.IsLetter(c)).Take(8).ToArray());
+        var fullName = $"{baseName} {ProviderName} {letterOnlySuffix}";
         return fullName.Length > 50 ? fullName[..50] : fullName;
     }
 

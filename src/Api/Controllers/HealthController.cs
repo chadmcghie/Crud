@@ -43,16 +43,16 @@ public class HealthController : ControllerBase
 
             if (canConnectToDatabase)
             {
-                return Content("Healthy", "text/plain");
+                return Ok(new { Status = "Healthy" });
             }
             else
             {
-                return StatusCode(503, "Unhealthy");
+                return StatusCode(503, new { Status = "Unhealthy" });
             }
         }
         catch (Exception)
         {
-            return StatusCode(503, "Unhealthy");
+            return StatusCode(503, new { Status = "Unhealthy" });
         }
     }
 

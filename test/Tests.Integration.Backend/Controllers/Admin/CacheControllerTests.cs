@@ -7,17 +7,23 @@ using Xunit;
 
 namespace Tests.Integration.Backend.Controllers.Admin;
 
-public class CacheControllerTests : IntegrationTestBase
+public class CacheControllerTests : IntegrationTestBase, IClassFixture<SmokeTestWebApplicationFactory>
 {
-    public CacheControllerTests(TestWebApplicationFactoryFixture fixture) : base(fixture)
+    private readonly SmokeTestWebApplicationFactory _smokeFactory;
+
+    public CacheControllerTests(TestWebApplicationFactoryFixture fixture, SmokeTestWebApplicationFactory smokeFactory) : base(fixture)
     {
+        _smokeFactory = smokeFactory;
     }
 
     [Fact]
     public async Task GetStatistics_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.GetAsync("/api/admin/cache/stats");
+        var response = await client.GetAsync("/api/admin/cache/stats");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -51,8 +57,11 @@ public class CacheControllerTests : IntegrationTestBase
     [Fact]
     public async Task ClearAllCaches_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.DeleteAsync("/api/admin/cache/clear");
+        var response = await client.DeleteAsync("/api/admin/cache/clear");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -84,8 +93,11 @@ public class CacheControllerTests : IntegrationTestBase
     [Fact]
     public async Task RemoveKey_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.DeleteAsync("/api/admin/cache/key/test-key");
+        var response = await client.DeleteAsync("/api/admin/cache/key/test-key");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -110,8 +122,11 @@ public class CacheControllerTests : IntegrationTestBase
     [Fact]
     public async Task WarmCaches_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.PostAsync("/api/admin/cache/warm", null);
+        var response = await client.PostAsync("/api/admin/cache/warm", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -136,8 +151,11 @@ public class CacheControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetKeys_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.GetAsync("/api/admin/cache/keys");
+        var response = await client.GetAsync("/api/admin/cache/keys");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -170,8 +188,11 @@ public class CacheControllerTests : IntegrationTestBase
     [Fact]
     public async Task ClearCachesByPattern_WithoutAuth_ShouldReturnUnauthorized()
     {
+        // Arrange - Use smoke factory that enforces authorization
+        using var client = _smokeFactory.CreateClient();
+
         // Act
-        var response = await Client.DeleteAsync("/api/admin/cache/clear/test:*");
+        var response = await client.DeleteAsync("/api/admin/cache/clear/test:*");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

@@ -69,8 +69,8 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
             $"/health endpoint should return OK in {environment} environment");
 
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().Be("Healthy",
-            $"/health endpoint should return 'Healthy' in {environment} environment");
+        content.Should().Be("{\"status\":\"Healthy\"}",
+            $"/health endpoint should return JSON with status 'Healthy' in {environment} environment");
     }
 
     /// <summary>

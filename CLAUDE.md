@@ -18,10 +18,10 @@ This is a multi-platform CRUD application using Clean Architecture with:
 ### Development
 ```bash
 # Start both API and Angular (use PowerShell)
-.scripts/LaunchApps.ps1
+scripts/LaunchApps.ps1
 
 # Kill running servers before builds
-.scripts/kill-servers.ps1
+scripts/kill-servers.ps1
 
 # Start API only
 dotnet run --project src/Api/Api.csproj --launch-profile http

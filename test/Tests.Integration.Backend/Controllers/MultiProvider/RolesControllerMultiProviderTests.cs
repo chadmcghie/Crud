@@ -99,10 +99,13 @@ public class RolesControllerMultiProviderTests
             var updateResponse = await testInstance.AuthenticatedPutJsonAsync($"/api/roles/{createdRole!.Id}", updateRequest);
 
             // Assert
-            updateResponse.StatusCode.Should().Be(HttpStatusCode.OK,
+            updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent,
                 $"Role update should succeed for {testInstance.ProviderName}");
 
-            var updatedRole = await testInstance.ReadJsonAsync<RoleDto>(updateResponse);
+            // Verify the update by retrieving the role
+            var getResponse = await testInstance.AuthenticatedGetAsync($"/api/roles/{createdRole.Id}");
+            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            var updatedRole = await testInstance.ReadJsonAsync<RoleDto>(getResponse);
             updatedRole.Should().NotBeNull();
             updatedRole!.Id.Should().Be(createdRole.Id);
             updatedRole.Name.Should().Be(updatedName);

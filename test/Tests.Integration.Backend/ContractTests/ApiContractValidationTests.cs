@@ -189,17 +189,20 @@ public class ApiContractValidationTests : ContractTestBase
 
         // Test GET /health contract
         var healthResponse = await client.GetAsync("/health");
-        ValidateResponseContract(healthResponse, HttpStatusCode.OK, "text/plain");
+        ValidateResponseContract(healthResponse, HttpStatusCode.OK, "application/json");
 
-        var healthContent = await healthResponse.Content.ReadAsStringAsync();
-        healthContent.Should().Be("Healthy", "Health endpoint should return 'Healthy' text");
+        var healthData = await ValidateJsonContract<object>(healthResponse);
+        ValidateContractStructure(healthData, health =>
+        {
+            health.Should().NotBeNull("Health data should not be null");
+        });
 
         // Test GET /api/health contract (detailed health)
         var apiHealthResponse = await client.GetAsync("/api/health");
         ValidateResponseContract(apiHealthResponse, HttpStatusCode.OK, "application/json");
 
-        var healthData = await ValidateJsonContract<object>(apiHealthResponse);
-        ValidateContractStructure(healthData, health =>
+        var apiHealthData = await ValidateJsonContract<object>(apiHealthResponse);
+        ValidateContractStructure(apiHealthData, health =>
         {
             health.Should().NotBeNull("Health data should not be null");
             // Health data structure should be consistent

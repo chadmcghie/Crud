@@ -288,6 +288,17 @@ public abstract class IntegrationTestBase : IClassFixture<TestWebApplicationFact
         return await userClient.GetAsync(requestUri);
     }
 
+    /// <summary>
+    /// Creates an unauthenticated client that enforces authorization checks
+    /// Used for testing authorization failure scenarios
+    /// </summary>
+    protected HttpClient CreateUnauthenticatedClientWithAuthEnforcement()
+    {
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Enforce-Auth", "true");
+        return client;
+    }
+
     public void Dispose()
     {
         Scope?.Dispose();

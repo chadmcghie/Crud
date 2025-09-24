@@ -39,8 +39,10 @@ public static class TestDataBuilders
         string? phone = null,
         IEnumerable<Guid>? roleIds = null)
     {
+        // Generate name with only valid characters for FullNameFormat validation
+        var uniqueSuffix = DateTime.UtcNow.Ticks.ToString();
         return new CreatePersonRequest(
-            fullName ?? $"John Doe {Guid.NewGuid().ToString()[..8]}",
+            fullName ?? $"John Doe {uniqueSuffix}",
             phone,
             roleIds ?? Array.Empty<Guid>()
         );

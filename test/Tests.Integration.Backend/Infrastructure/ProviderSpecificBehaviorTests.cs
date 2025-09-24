@@ -243,7 +243,7 @@ public class ProviderSpecificBehaviorTests : IDisposable
 
         // Act
         var role = Domain.Entities.Role.Create(
-            $"Unicode_{provider}_{Guid.NewGuid():N[..8]}",
+            $"Unicode_{provider}_{Guid.NewGuid().ToString("N")}",
             unicodeText);
         context.Roles.Add(role);
         await context.SaveChangesAsync();
