@@ -148,7 +148,7 @@ Create pull request:
 - All tests passing ✓
 
 ## Related
-- Spec: @docs/03-Development/specs/[spec-folder]/
+- Spec: @docs/03-development/02-specs/[spec-folder]/
 - Issue: #[number] (if applicable)
 ```
 

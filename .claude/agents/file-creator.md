@@ -324,6 +324,7 @@ Files:
 - Create parent directories if they don't exist
 - Use mkdir -p for nested directories
 - Verify directory creation before creating files
+- If directories are indexed, use 2 digit indexing (example: 01-New-Directory)
 
 ## Output Format
 
