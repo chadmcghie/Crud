@@ -4,9 +4,9 @@ Welcome to the Crud project! This section contains everything you need to get up
 
 ## Quick Start
 
-1. **Big Picture**: [Project Overview](1-big-picture.md)
-2. **Why CRUD**: [Why this project exists](2-why-crud.md)
-3. **Agent Guide**: [How to use AI agents for development](4-agent-guide.md)
+1. **Big Picture**: [Project Overview](01-big-picture.md)
+2. **Why CRUD**: [Why this project exists](02-why-crud.md)
+3. **Agent Guide**: [How to use AI agents for development](04-agent-guide.md)
 
 ## Prerequisites
 
@@ -17,9 +17,9 @@ Welcome to the Crud project! This section contains everything you need to get up
 
 ## Next Steps
 
-1. Review the [Big Picture](1-big-picture.md) to understand the project architecture
-2. Read the [Why CRUD](2-why-crud.md) to understand the project's purpose
-3. Check the [Agent Guide](4-agent-guide.md) to learn how to use AI agents effectively
+1. Review the [Big Picture](01-big-picture.md) to understand the project architecture
+2. Read the [Why CRUD](02-why-crud.md) to understand the project's purpose
+3. Check the [Agent Guide](04-agent-guide.md) to learn how to use AI agents effectively
 
 ## Project Structure
 
