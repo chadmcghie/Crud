@@ -2,14 +2,14 @@ using System.Diagnostics;
 using Api.Dtos;
 using App.Interfaces;
 using Infrastructure.Utilities;
-using Microsoft.AspNetCore.Authorization;
+using Api.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/[controller]")]
-[Authorize(Policy = "AdminOnly")]
+[ConditionalAuthorize("AdminOnly")]
 [Tags("Cache Management")]
 public class CacheController : ControllerBase
 {

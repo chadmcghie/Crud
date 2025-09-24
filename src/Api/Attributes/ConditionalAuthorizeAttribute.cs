@@ -49,11 +49,19 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
 
                 // Check if authorization bypass is explicitly enabled for E2E tests
                 var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+                var isE2ETest = Environment.GetEnvironmentVariable("E2E_TEST_MODE") == "true";
+
+                if (bypassAuth && isE2ETest)
+                {
+                    // Complete bypass for E2E tests - skip all authorization
+                    return;
+                }
 
                 if (bypassAuth)
                 {
-                    // Do nothing - allow the request to proceed for E2E tests only
-                    return;
+                    // For integration tests: still require authentication and policy checks
+                    // This allows integration tests to test authorization behavior
+                    // while still bypassing certain complex auth flows if needed
                 }
 
                 // For integration tests and other Testing scenarios, apply normal authorization

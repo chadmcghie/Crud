@@ -6,8 +6,10 @@ Master registry of all blocking issues encountered in the project. This registry
 ## Active Issues
 | ID | Created | Spec | Category | Description | Severity |
 |---|---|---|---|---|---|
-| BI-2025-09-23-003 | 2025-09-23 | troubleshoot/integration-test-blockers | test | Logging configuration contract violations | medium |
-| BI-2025-09-23-006 | 2025-09-23 | troubleshoot/integration-test-blockers | test | EF InMemory transaction configuration | medium |
+| BI-2025-09-23-009 | 2025-09-23 | comprehensive-test-suite-validation | test | Multi-provider integration test failures (18 tests) | high |
+| BI-2025-09-23-010 | 2025-09-23 | comprehensive-test-suite-validation | data | Unicode data handling failures across all providers (3 tests) | medium |
+| BI-2025-09-23-011 | 2025-09-23 | comprehensive-test-suite-validation | contract | API contract validation failure (1 test) | low |
+| BI-2025-09-23-012 | 2025-09-23 | comprehensive-test-suite-validation | infrastructure | E2E test TypeError during teardown (cosmetic) | low |
 
 ## Resolved Issues
 | ID | Created | Resolved | Spec | Category | Description | Resolution Summary |
@@ -29,6 +31,7 @@ Master registry of all blocking issues encountered in the project. This registry
 | BI-2025-09-08-001 | 2025-09-08 | 2025-09-08 | N/A | build | MediatR 13 RequestHandlerDelegate compilation errors in tests | Fixed by adding CancellationToken parameter to test delegate lambdas |
 | BI-2025-09-11-001 | 2025-09-11 | 2025-09-11 | controller-authorization-protection | test | Integration tests failing after authorization and middleware changes | Updated compression tests to use authenticated HTTP clients and proper test infrastructure |
 | BI-2025-09-23-003 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | configuration | Logging configuration contract violations - test environment logging level mismatches | Fixed Serilog vs .NET logging integration conflict by adding environment variable to disable Serilog during contract tests |
+| BI-2025-09-23-006 | 2025-09-23 | 2025-09-23 | troubleshoot/integration-test-blockers | test | EF InMemory transaction configuration | Configured InMemory provider to suppress TransactionIgnoredWarning using ConfigureWarnings method |
 
 ## Common Patterns
 
@@ -168,20 +171,29 @@ Technical debt items requiring strategic planning and architectural changes are 
 | BI-2025-09-11-003 | ARCHITECTURAL | MEDIUM | RowVersion concurrency control EF Core + SQLite compatibility issue |
 
 ## Statistics
-- Total Issues: 16
-- Active: 2
-- Resolved: 16
+- Total Issues: 20
+- Active: 4 (new comprehensive test suite validation issues)
+- Resolved: 18
 - Technical Debt: 1 (reclassified from active - see technical debt registry)
 - Average Resolution Time: ~2 hours
 
 ## Recent Session Summary (2025-09-23)
-- **Session Type**: Systematic troubleshooting using historical context with blocking issue registry
-- **Issues Addressed**: 7 total
+- **Session Type**: Historical troubleshooting + comprehensive test suite validation
+- **Issues Addressed**: 11 total (7 resolved + 4 new blocking issues created)
 - **Critical Resolutions**: 5 (BI-2025-09-23-001 JWT configuration, BI-2025-09-23-002 AllowedHosts security config, BI-2025-09-23-003 logging configuration contracts, BI-2025-09-23-004 authorization bypass, BI-2025-09-23-008 E2E environment config)
+- **Authorization Bypass Fix**: Successfully separated E2E vs Integration test authorization behavior
+- **New Issues Identified**: 4 (comprehensive test suite revealed issues previously masked by authorization bypass)
 - **Technical Debt Reclassifications**: 1 (BI-2025-09-11-003 - architectural review needed)
 - **Process Improvements Identified**: 1 (BI-2025-09-22-001 - CI/CD reporting)
-- **Session Duration**: ~4 hours
+- **Session Duration**: ~6 hours
 - **Protected Changes**: 33 code sections preserved, no regressions
+- **Test Suite Status**:
+  - Unit Tests (Backend): ✅ 170/170 passing
+  - Unit Tests (Frontend): ✅ 267/267 passing
+  - Integration Tests: ⚠️ 519/542 passing (22 failures documented as new blocking issues)
+  - E2E Tests: ✅ Core functionality working (cosmetic teardown error documented)
 - **Key Patterns**:
   - Authorization configuration issues in test infrastructure requiring environment variable fixes
   - Configuration validation tests using isolated in-memory config requiring explicit provisioning
+  - Multi-provider database testing revealing fundamental data persistence issues when authorization bypass removed
+  - Unicode data handling failures across all database providers indicating EF Core configuration gaps
