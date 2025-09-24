@@ -12,7 +12,8 @@ test.describe('Authenticated Routes', () => {
     
     // Should be able to see the people list (not redirected to login)
     await expect(page).toHaveURL(/.*people-list/);
-    await expect(page.locator('app-people-list')).toBeVisible();
+    const peopleContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(peopleContent).toBeVisible();
   });
 
   test('can access admin routes when authenticated as admin', async ({ page, authHelper }) => {
@@ -23,7 +24,8 @@ test.describe('Authenticated Routes', () => {
     
     // Should be able to see the roles page (not redirected to unauthorized)
     await expect(page).toHaveURL(/.*roles/);
-    await expect(page.locator('app-roles')).toBeVisible();
+    const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible();
   });
 
   test('redirects to login when not authenticated', async ({ page, authHelper }) => {

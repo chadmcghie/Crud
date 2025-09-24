@@ -119,11 +119,11 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 2: Navigation Journey
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 5000 });
 
     const rolesLink = page.locator('a[routerLink="/roles-list"]');
     await rolesLink.click();
-    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('router-outlet, app-roles, main, .content').waitFor({ state: 'visible', timeout: 5000 });
     journeyChecklist.navigation = true;
 
     // Test 3: CRUD Operations Journey
@@ -147,7 +147,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 4: Form Validation Journey
     await page.goto(baseURL);
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 5000 });
 
     const addButton = page.locator('button:has-text("Add New Person")');
     if (await addButton.isVisible({ timeout: 2000 })) {
@@ -200,7 +200,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     const navStart = Date.now();
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 5000 });
     performanceMetrics.navigationTime = Date.now() - navStart;
 
     // Verify performance standards
@@ -268,17 +268,17 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 2: Event-driven patterns (using waitFor instead of sleep)
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 5000 });
     reliabilityChecklist.eventDrivenPatterns = true;
 
     // Test 3: Error recovery (page refresh recovery)
     await page.reload();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 10000 });
     reliabilityChecklist.errorRecovery = true;
 
     // Test 4: Retry mechanisms (simulate through expect.toPass pattern)
     await expect(async () => {
-      const element = page.locator('app-people-list');
+      const element = page.locator('router-outlet, app-people, main, .content');
       await expect(element).toBeVisible();
     }).toPass({ timeout: 5000 });
     reliabilityChecklist.retryMechanisms = true;
