@@ -89,7 +89,13 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 ["Caching:UseLazyCache"] = "false",
                 ["Caching:UseComposite"] = "false",
                 ["Caching:DefaultExpirationMinutes"] = "5",
-                ["OutputCaching:Disabled"] = "false"  // Enable output caching for conditional request middleware testing
+                ["OutputCaching:Disabled"] = "false",  // Enable output caching for conditional request middleware testing
+                // Add JWT configuration for authentication tests
+                ["Jwt:Secret"] = "TestSecretKey123456789TestSecretKey123456789", // Minimum 32 chars
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:AccessTokenExpirationMinutes"] = "60",
+                ["Jwt:RefreshTokenExpirationDays"] = "7"
             };
 
             var configuration = new ConfigurationBuilder()
@@ -122,6 +128,9 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         });
 
         builder.UseEnvironment("Testing");
+
+        // Set environment variables to bypass authorization for integration tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "true");
     }
 
     /// <summary>
@@ -169,17 +178,21 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        // The Roles field stores comma-separated values
-        // For testing, we'll just set it to "User,Admin" if Admin is requested
-        var rolesValue = role == "Admin" ? "User,Admin" : "User";
+        // Use EF Core entity approach instead of raw SQL to leverage the value comparer fix
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
+        if (user != null)
+        {
+            // Add the requested role using the domain method
+            if (role == "Admin")
+            {
+                user.AddRole("Admin");
+            }
 
-        // Use raw SQL to avoid EF issues with owned entities
-        var sql = @"
-            UPDATE Users 
-            SET Roles = @p0, UpdatedAt = @p1
-            WHERE Email = @p2";
+            await dbContext.SaveChangesAsync();
 
-        await dbContext.Database.ExecuteSqlRawAsync(sql, rolesValue, DateTime.UtcNow, email);
+            // Clear change tracker to ensure fresh data on next load
+            dbContext.ChangeTracker.Clear();
+        }
     }
 
     protected override void Dispose(bool disposing)

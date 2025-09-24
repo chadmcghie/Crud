@@ -369,25 +369,25 @@ jobs:
         echo "**Progressive Testing Strategy**: Integration tests + smoke tests for dev branch validation" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        echo "### 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "### 🧪 PR Validation Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Test Suite | Status | Test Count | Duration | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|------------|--------|------------|----------|---------|" >> $GITHUB_STEP_SUMMARY
-        
-        # Feature workflow status (from wait job)
+
+        # Feature workflow status (from wait job) - but clarify it's part of PR validation
         FEATURE_STATUS="${{ needs.wait-for-feature-workflow.outputs.should-run == 'true' && '✅ Success' || '❌ Failed' }}"
-        echo "| **Unit Tests** (Feature) | $FEATURE_STATUS | ~200+ tests | ~3-5 min | Backend + Frontend unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
-        
+        echo "| **Unit Tests** | $FEATURE_STATUS | ~200+ tests | ~3-5 min | Backend + Frontend unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
+
         # Integration and smoke tests status
         INTEGRATION_STATUS="${{ needs.integration-and-smoke-tests.result == 'success' && '✅ Success' || (needs.integration-and-smoke-tests.result == 'failure' && '❌ Failed') || (needs.integration-and-smoke-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
-        echo "| **Integration Tests** (PR) | $INTEGRATION_STATUS | ~300+ tests | ~3-5 min | Multi-provider database integration tests |" >> $GITHUB_STEP_SUMMARY
-        echo "| **Smoke Tests** (PR) | $INTEGRATION_STATUS | ~10-15 tests | ~2-3 min | Critical user flow validation with E2E |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Integration Tests** | $INTEGRATION_STATUS | ~300+ tests | ~3-5 min | Multi-provider database integration tests |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Smoke Tests** | $INTEGRATION_STATUS | ~10-15 tests | ~2-3 min | Critical user flow validation with E2E |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        echo "### Test Pyramid Progress" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Unit Tests**: Completed at feature level (immediate feedback)" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Integration Tests**: Backend component integration validation" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Smoke Tests**: Critical user flow validation (2-5 minutes)" >> $GITHUB_STEP_SUMMARY
-        echo "- ⏳ **E2E Tests**: Full test suite runs during staging deployment" >> $GITHUB_STEP_SUMMARY
+        echo "### PR Testing Pipeline Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Unit Tests**: All backend & frontend unit tests validated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Integration Tests**: Multi-provider database integration validated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Smoke Tests**: Critical user flows validated with E2E testing" >> $GITHUB_STEP_SUMMARY
+        echo "- ⏳ **Full E2E Tests**: Comprehensive test suite runs during staging deployment" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         echo "### Efficiency Benefits" >> $GITHUB_STEP_SUMMARY

@@ -64,7 +64,7 @@ public class ConfigurationValidationTests : IClassFixture<SqliteTestWebApplicati
         var testConnection = testConfig.GetConnectionString("DefaultConnection");
 
         Assert.NotEqual(devConnection, testConnection);
-        Assert.Contains("CrudApp.db", devConnection);
+        Assert.Contains("CrudAppDev.db", devConnection);
         Assert.Contains("TestDatabase.db", testConnection);
 
         // Testing environment should have database reset enabled

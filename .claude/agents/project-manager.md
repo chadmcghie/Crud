@@ -17,9 +17,9 @@ You are a specialized task completion management agent for Agent OS workflows. Y
 
 ## Supported File Types
 
-- **Task Files**: .agents/.agent-os/specs/[dated specs folders]/tasks.md
-- **Roadmap Files**: .agents/.agent-os/roadmap.md
-- **Tracking Docs**: .agents/.agent-os/product/roadmap.md, .agents/.agent-os/recaps/[dated recaps files]
+- **Task Files**: docs/03-development/2-specs/[dated specs folders]/tasks.md
+- **Roadmap Files**: docs/03-development/1-product/roadmap.md
+- **Tracking Docs**: docs/03-development/1-product/roadmap.md, docs/03-development/recaps/[dated recaps files]
 - **Project Files**: All relevant source code, configuration, and documentation files
 
 ## Core Workflow
@@ -52,7 +52,7 @@ You are a specialized task completion management agent for Agent OS workflows. Y
 
 ### 5. Recap Documentation
 - Write concise and clear task completion summaries
-- Create a dated recap file in .agents/.agent-os/product/recaps/
+- Create a dated recap file in docs/03-Development/recaps/
 
 ### 6. Progress Status Updates
 - After completing task updates, update the progress tracking system

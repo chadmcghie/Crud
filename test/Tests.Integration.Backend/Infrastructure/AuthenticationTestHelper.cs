@@ -18,11 +18,14 @@ public static class AuthenticationTestHelper
         string? email = null,
         string? password = null)
     {
+        // Ensure database is created before attempting authentication operations
+        factory.EnsureDatabaseCreated();
+
         var client = factory.CreateClient();
 
-        // Use provided credentials or generate test ones
-        // Use a simpler email format to avoid potential validation issues in CI
-        email ??= $"test{DateTime.UtcNow.Ticks}@example.com";
+        // Use provided credentials or generate unique ones for parallel test execution
+        // Use GUID + timestamp to ensure uniqueness across parallel test runs
+        email ??= $"test{Guid.NewGuid():N}_{DateTime.UtcNow.Ticks}@example.com";
         password ??= "Test123!@#";
 
         // If admin role is requested, we need to update the user's role BEFORE getting the token
@@ -39,12 +42,25 @@ public static class AuthenticationTestHelper
             };
 
             var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
-            registerResponse.EnsureSuccessStatusCode();
+
+            // Handle the case where user already exists (409 Conflict)
+            // In parallel test execution, multiple tests might try to register the same user
+            if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                // User already exists, that's fine for testing - we'll just login
+                // This handles race conditions in parallel test execution
+            }
+            else
+            {
+                // For any other response, ensure it was successful
+                registerResponse.EnsureSuccessStatusCode();
+            }
 
             // Update the user's role in the database
             await factory.SetUserRoleAsync(email, "Admin");
 
-            // Now login to get a fresh token with the admin role
+            // CRITICAL: Login again to get a fresh JWT token with the updated roles
+            // The previous token only contains the default "User" role
             var loginCommand = new LoginCommand
             {
                 Email = email,
@@ -75,9 +91,40 @@ public static class AuthenticationTestHelper
             };
 
             var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerCommand);
-            registerResponse.EnsureSuccessStatusCode();
 
-            var tokenResponse = await registerResponse.Content.ReadFromJsonAsync<TokenResponse>();
+            // Handle the case where user already exists (409 Conflict)
+            // In parallel test execution, multiple tests might try to register the same user
+            if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                // User already exists, that's fine for testing - we'll just login
+                // This handles race conditions in parallel test execution
+            }
+            else
+            {
+                // For any other response, ensure it was successful
+                registerResponse.EnsureSuccessStatusCode();
+            }
+
+            TokenResponse? tokenResponse = null;
+
+            // If registration was successful, get token from registration response
+            if (registerResponse.IsSuccessStatusCode)
+            {
+                tokenResponse = await registerResponse.Content.ReadFromJsonAsync<TokenResponse>();
+            }
+            else
+            {
+                // If registration failed (user exists), login to get token
+                var loginCommand = new LoginCommand
+                {
+                    Email = email,
+                    Password = password
+                };
+
+                var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginCommand);
+                loginResponse.EnsureSuccessStatusCode();
+                tokenResponse = await loginResponse.Content.ReadFromJsonAsync<TokenResponse>();
+            }
 
             // Create a new client with the authentication token
             var authenticatedClient = factory.CreateClient();

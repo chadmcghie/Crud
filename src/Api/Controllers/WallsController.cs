@@ -12,7 +12,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Tags("Building")]
-[Route("api/[controller]")]
+[Route("api/walls")]
 [ConditionalAuthorize]
 public class WallsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {

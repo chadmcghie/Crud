@@ -16,7 +16,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Tags("People")]
-[Route("api/[controller]")]
+[Route("api/people")]
 [ConditionalAuthorize]
 public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {

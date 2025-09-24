@@ -22,10 +22,9 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsUnique();
 
         // Configure concurrency token
-        // Note: SQLite doesn't support IsRowVersion() the same way as SQL Server
-        // For SQLite compatibility, we'll configure it as a regular byte array
+        // Configure RowVersion with database-specific type
+        // EF Core will use appropriate type based on provider (BLOB for SQLite, VARBINARY for SQL Server)
         builder.Property(r => r.RowVersion)
-            .HasColumnType("BLOB")
             .IsRequired(false)
             .IsConcurrencyToken();
 

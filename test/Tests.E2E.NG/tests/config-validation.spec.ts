@@ -145,14 +145,17 @@ test.describe('Performance Targets', () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Check timeout settings
-    const timeoutMatch = configContent.match(/timeout:\s*(\d+)/);
+    // Check timeout settings - look for main test timeout, not webServer timeout
+    const timeoutMatch = configContent.match(/^\s*timeout:\s*process\.env\.CI.*?(\d+).*?:\s*(\d+)/m);
     if (timeoutMatch) {
-      const timeout = parseInt(timeoutMatch[1]);
-      
-      // Should be reasonable for serial execution (15-60 seconds)
-      expect(timeout).toBeGreaterThanOrEqual(15000);
-      expect(timeout).toBeLessThanOrEqual(60000);
+      const ciTimeout = parseInt(timeoutMatch[1]);
+      const localTimeout = parseInt(timeoutMatch[2]);
+
+      // Both CI and local should be reasonable for serial execution (15-60 seconds)
+      expect(ciTimeout).toBeGreaterThanOrEqual(15000);
+      expect(ciTimeout).toBeLessThanOrEqual(60000);
+      expect(localTimeout).toBeGreaterThanOrEqual(15000);
+      expect(localTimeout).toBeLessThanOrEqual(60000);
     }
     
     // Check action timeout

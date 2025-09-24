@@ -6,12 +6,13 @@ namespace Tests.Integration.Backend.Configuration;
 /// <summary>
 /// Smoke tests to validate basic multi-environment functionality
 /// Ensures the API can start up and respond in different environments
+/// Uses SmokeTestWebApplicationFactory which enforces normal authorization
 /// </summary>
-public class MultiEnvironmentSmokeTests : IClassFixture<SqliteTestWebApplicationFactory>
+public class MultiEnvironmentSmokeTests : IClassFixture<SmokeTestWebApplicationFactory>
 {
-    private readonly SqliteTestWebApplicationFactory _factory;
+    private readonly SmokeTestWebApplicationFactory _factory;
 
-    public MultiEnvironmentSmokeTests(SqliteTestWebApplicationFactory factory)
+    public MultiEnvironmentSmokeTests(SmokeTestWebApplicationFactory factory)
     {
         _factory = factory;
     }

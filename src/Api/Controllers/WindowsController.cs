@@ -12,7 +12,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Tags("Building")]
-[Route("api/[controller]")]
+[Route("api/windows")]
 [ConditionalAuthorize]
 public class WindowsController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {

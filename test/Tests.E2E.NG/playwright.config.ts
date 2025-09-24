@@ -40,7 +40,7 @@ export default defineConfig({
   webServer: [
     {
       // API Server configuration
-      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile http',
+      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
       cwd: process.cwd(),
       url: 'http://localhost:5172/health',
       timeout: 60 * 1000, // 60 seconds to start
@@ -63,6 +63,7 @@ export default defineConfig({
         // Testing-specific features
         TEST_RESET_TOKEN: 'test-only-token',
         BYPASS_AUTHORIZATION_FOR_E2E: 'true',
+        E2E_TEST_MODE: 'true',
 
         // Testing environment logging (minimal for performance)
         Logging__LogLevel__Default: 'Warning',
@@ -138,12 +139,13 @@ export default defineConfig({
     /* Timeouts */
     actionTimeout: 10000,
     navigationTimeout: 30000,
-    
-    expect: {
-      timeout: process.env.CI ? 10000 : 5000,
-    },
   },
-  
+
+  /* Expect configuration */
+  expect: {
+    timeout: process.env.CI ? 10000 : 5000,
+  },
+
   /* Browser configuration */
   projects: [
     {
@@ -191,7 +193,7 @@ export default defineConfig({
   ],
   
   /* Global teardown for cleanup */
-  globalTeardown: './tests/setup/webserver-teardown.ts',
+  // globalTeardown: './tests/setup/webserver-teardown.ts',
   
   /* Metadata */
   metadata: {

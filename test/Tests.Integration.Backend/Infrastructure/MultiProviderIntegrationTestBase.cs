@@ -42,12 +42,12 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Gets a human-readable provider name for test output
     /// </summary>
-    protected string ProviderName => Factory.ProviderName;
+    public string ProviderName => Factory.ProviderName;
 
     /// <summary>
     /// Clears all data from the database for clean test isolation
     /// </summary>
-    protected async Task RunWithCleanDatabaseAsync(Func<Task> testAction)
+    public async Task RunWithCleanDatabaseAsync(Func<Task> testAction)
     {
         // Clear database before test
         await Factory.ClearDatabaseAsync();
@@ -66,7 +66,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Performs authenticated GET request with admin user
     /// </summary>
-    protected async Task<HttpResponseMessage> AuthenticatedGetAsync(string url)
+    public async Task<HttpResponseMessage> AuthenticatedGetAsync(string url)
     {
         await EnsureAuthenticatedAsync();
         return await Client.GetAsync(url);
@@ -75,7 +75,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Performs authenticated POST request with JSON payload
     /// </summary>
-    protected async Task<HttpResponseMessage> AuthenticatedPostJsonAsync<T>(string url, T data)
+    public async Task<HttpResponseMessage> AuthenticatedPostJsonAsync<T>(string url, T data)
     {
         await EnsureAuthenticatedAsync();
         return await Client.PostAsJsonAsync(url, data, JsonOptions);
@@ -84,7 +84,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Performs authenticated PUT request with JSON payload
     /// </summary>
-    protected async Task<HttpResponseMessage> AuthenticatedPutJsonAsync<T>(string url, T data)
+    public async Task<HttpResponseMessage> AuthenticatedPutJsonAsync<T>(string url, T data)
     {
         await EnsureAuthenticatedAsync();
         return await Client.PutAsJsonAsync(url, data, JsonOptions);
@@ -93,7 +93,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Performs authenticated DELETE request
     /// </summary>
-    protected async Task<HttpResponseMessage> AuthenticatedDeleteAsync(string url)
+    public async Task<HttpResponseMessage> AuthenticatedDeleteAsync(string url)
     {
         await EnsureAuthenticatedAsync();
         return await Client.DeleteAsync(url);
@@ -102,7 +102,7 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
     /// <summary>
     /// Reads JSON response content as specified type
     /// </summary>
-    protected async Task<T?> ReadJsonAsync<T>(HttpResponseMessage response)
+    public async Task<T?> ReadJsonAsync<T>(HttpResponseMessage response)
     {
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<T>(content, JsonOptions);
@@ -116,27 +116,63 @@ public abstract class MultiProviderIntegrationTestBase : IDisposable
         if (Client.DefaultRequestHeaders.Authorization != null)
             return;
 
-        // Register a test user and get their token
-        var email = $"test_{Provider}_{Guid.NewGuid():N[..8]}@example.com";
+        // Use the same authentication pattern as smoke tests which works correctly
+        var guidPart = Guid.NewGuid().ToString("N")[..8];
+        var email = $"test_{Provider}_{guidPart}@example.com";
         var password = "Test123!@#";
 
-        var token = await AuthenticationTestHelper.RegisterAndGetTokenAsync(Client, email, password);
+        // Register user through API
+        var registerCommand = new App.Features.Authentication.RegisterUserCommand
+        {
+            Email = email,
+            Password = password,
+            FirstName = "Test",
+            LastName = "Admin"
+        };
 
-        // Update user role to admin for multi-provider testing
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", registerCommand);
+
+        // Handle the case where user already exists (409 Conflict)
+        if (registerResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            // User already exists, that's fine for testing - we'll just login
+        }
+        else
+        {
+            // For any other response, ensure it was successful
+            registerResponse.EnsureSuccessStatusCode();
+        }
+
+        // Update the user's role in the database
         await Factory.SetUserRoleAsync(email, "Admin");
 
-        // Get a fresh token with admin role
-        var adminToken = await AuthenticationTestHelper.GetAuthTokenAsync(Client, email, password);
+        // CRITICAL: Login again to get a fresh JWT token with the updated roles
+        // The previous token only contains the default "User" role
+        var loginCommand = new App.Features.Authentication.LoginCommand
+        {
+            Email = email,
+            Password = password
+        };
 
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        loginResponse.EnsureSuccessStatusCode();
+
+        var tokenResponse = await loginResponse.Content.ReadFromJsonAsync<TokenResponse>();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResponse!.AccessToken);
     }
 
     /// <summary>
     /// Creates test data specific to the current provider for isolation
     /// </summary>
-    protected string CreateProviderSpecificTestData(string baseName)
+    public string CreateProviderSpecificTestData(string baseName)
     {
-        return $"{baseName}_{ProviderName}_{Guid.NewGuid():N[..8]}";
+        // Generate a unique suffix using only letters (no numbers) to comply with FullNameFormat validation
+        // FullNameFormat regex: ^[a-zA-Z\s\-'\.]+$ allows only letters, spaces, hyphens, apostrophes, and periods
+        var guid = Guid.NewGuid().ToString("N");
+        var letterOnlySuffix = new string(guid.Where(c => char.IsLetter(c)).Take(8).ToArray());
+        var fullName = $"{baseName} {ProviderName} {letterOnlySuffix}";
+        return fullName.Length > 50 ? fullName[..50] : fullName;
     }
 
     public void Dispose()

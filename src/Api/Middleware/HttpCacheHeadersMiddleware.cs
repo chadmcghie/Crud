@@ -116,7 +116,7 @@ public class HttpCacheHeadersMiddleware
 
         foreach (var etag in ifNoneMatch)
         {
-            if (etag == "*" || etag.Trim('"') == currentEtag)
+            if (etag == "*" || etag?.Trim('"') == currentEtag)
                 return true;
         }
 

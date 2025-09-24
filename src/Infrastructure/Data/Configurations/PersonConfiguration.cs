@@ -17,9 +17,8 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.Phone)
             .HasMaxLength(20);
 
-        // Configure RowVersion as BLOB but disable concurrency token for many-to-many compatibility
+        // Configure RowVersion with database-specific type but disable concurrency token for many-to-many compatibility
         builder.Property(p => p.RowVersion)
-            .HasColumnType("BLOB")
             .IsRequired(false);
         // .IsConcurrencyToken() - Disabled due to EF Core conflicts with many-to-many updates
 

@@ -10,7 +10,7 @@ namespace Api.Controllers;
 /// Provides environment-specific health information for smoke testing
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("health")]
 public class HealthController : ControllerBase
 {
     private readonly HealthCheckService _healthCheckService;
@@ -31,68 +31,31 @@ public class HealthController : ControllerBase
     }
 
     /// <summary>
-    /// Gets detailed API health status including database connectivity and environment information
+    /// Gets simple health status for basic health checks
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetHealth()
     {
         try
         {
-            // Run health checks
-            var healthReport = await _healthCheckService.CheckHealthAsync();
-
             // Test database connectivity
             var canConnectToDatabase = await TestDatabaseConnectivity();
 
-            // Gather environment information
-            var healthResponse = new
+            if (canConnectToDatabase)
             {
-                Status = healthReport.Status.ToString(),
-                Environment = _environment.EnvironmentName,
-                DatabaseProvider = _configuration.GetValue<string>("DatabaseProvider") ?? "SQLite",
-                DatabaseConnectivity = canConnectToDatabase ? "Connected" : "Disconnected",
-                Timestamp = DateTime.UtcNow,
-                Checks = healthReport.Entries.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new
-                {
-                    Status = kvp.Value.Status.ToString(),
-                    Duration = kvp.Value.Duration.TotalMilliseconds,
-                    Description = kvp.Value.Description
-                }
-              ),
-                Application = new
-                {
-                    Name = "CRUD API",
-                    Version = "1.0.0",
-                    Framework = ".NET 8"
-                }
-            };
-
-            // Return appropriate status code based on health
-            var statusCode = healthReport.Status switch
+                return Ok(new { Status = "Healthy" });
+            }
+            else
             {
-                HealthStatus.Healthy => 200,
-                HealthStatus.Degraded => 200, // Still operational
-                HealthStatus.Unhealthy => 503,
-                _ => 503
-            };
-
-            return StatusCode(statusCode, healthResponse);
+                return StatusCode(503, new { Status = "Unhealthy" });
+            }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Return error response for unhandled exceptions
-            return StatusCode(503, new
-            {
-                Status = "Unhealthy",
-                Environment = _environment.EnvironmentName,
-                Error = "Health check failed",
-                Message = ex.Message,
-                Timestamp = DateTime.UtcNow
-            });
+            return StatusCode(503, new { Status = "Unhealthy" });
         }
     }
+
 
     /// <summary>
     /// Quick health check endpoint for load balancers and monitoring

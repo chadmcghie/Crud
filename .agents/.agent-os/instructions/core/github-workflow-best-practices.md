@@ -48,7 +48,7 @@ gh issue close 127 --comment "Completed as part of spec: ..."
 gh pr create --body "Closes #127
 
 Implementation details...
-Spec: .agents/.agent-os/specs/2025-01-15-feature-name/"
+Spec: docs/03-Development/specs/2025-01-15-feature-name/"
 ```
 
 ### Git Workflow Agent Updates

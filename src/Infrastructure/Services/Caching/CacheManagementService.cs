@@ -164,7 +164,7 @@ public class CacheManagementService : ICacheManagementService
         }
     }
 
-    public async Task<IEnumerable<string>> GetKeysAsync(string pattern = "*", int limit = 100, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<string>> GetKeysAsync(string pattern = "*", int limit = 100, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -174,10 +174,10 @@ public class CacheManagementService : ICacheManagementService
 
                 // Use SCAN to safely iterate through keys
                 var keys = server.Keys(pattern: pattern).Take(limit);
-                return keys.Select(k => k.ToString());
+                return Task.FromResult(keys.Select(k => k.ToString()));
             }
 
-            return Enumerable.Empty<string>();
+            return Task.FromResult(Enumerable.Empty<string>());
         }
         catch (Exception ex)
         {

@@ -49,8 +49,8 @@ You are a specialized file creation agent for Agent OS projects. Your role is to
 
 ## Spec Documentation
 
-- Tasks: @.agents/.agent-os/specs/[FOLDER]/tasks.md
-- Technical Specification: @.agents/.agent-os/specs/[FOLDER]/sub-specs/technical-spec.md
+- Tasks: @docs/03-development/2-specs/[FOLDER]/tasks.md
+- Technical Specification: @docs/03-development/2-specs/[FOLDER]/sub-specs/technical-spec.md
 [ADDITIONAL_DOCS]
 ```
 
@@ -70,7 +70,7 @@ You are a specialized file creation agent for Agent OS projects. Your role is to
 ```markdown
 # Technical Specification
 
-This is the technical specification for the spec detailed in @.agents/.agent-os/specs/[FOLDER]/spec.md
+This is the technical specification for the spec detailed in @docs/03-development/2-specs/[FOLDER]/spec.md
 
 > Created: [CURRENT_DATE]
 > Version: 1.0.0
@@ -92,7 +92,7 @@ This is the technical specification for the spec detailed in @.agents/.agent-os/
 ```markdown
 # Database Schema
 
-This is the database schema implementation for the spec detailed in @.agents/.agent-os/specs/[FOLDER]/spec.md
+This is the database schema implementation for the spec detailed in @docs/03-development/2-specs/[FOLDER]/spec.md
 
 > Created: [CURRENT_DATE]
 > Version: 1.0.0
@@ -110,7 +110,7 @@ This is the database schema implementation for the spec detailed in @.agents/.ag
 ```markdown
 # API Specification
 
-This is the API specification for the spec detailed in @.agents/.agent-os/specs/[FOLDER]/spec.md
+This is the API specification for the spec detailed in @docs/03-Development/specs/[FOLDER]/spec.md
 
 > Created: [CURRENT_DATE]
 > Version: 1.0.0
@@ -128,7 +128,7 @@ This is the API specification for the spec detailed in @.agents/.agent-os/specs/
 ```markdown
 # Tests Specification
 
-This is the tests coverage details for the spec detailed in @.agents/.agent-os/specs/[FOLDER]/spec.md
+This is the tests coverage details for the spec detailed in @docs/03-Development/specs/[FOLDER]/spec.md
 
 > Created: [CURRENT_DATE]
 > Version: 1.0.0
@@ -146,7 +146,7 @@ This is the tests coverage details for the spec detailed in @.agents/.agent-os/s
 ```markdown
 # Spec Tasks
 
-These are the tasks to be completed for the spec detailed in @.agents/.agent-os/specs/[FOLDER]/spec.md
+These are the tasks to be completed for the spec detailed in @docs/03-Development/specs/[FOLDER]/spec.md
 
 > Created: [CURRENT_DATE]
 > Status: Ready for Implementation
@@ -276,7 +276,7 @@ These are the tasks to be completed for the spec detailed in @.agents/.agent-os/
 
 ### Single File Request
 ```
-Create file: .agents/.agent-os/specs/2025-01-29-auth/spec.md
+Create file: docs/03-Development/specs/2025-01-29-auth/spec.md
 Content: [provided content]
 Template: spec
 ```
@@ -284,7 +284,7 @@ Template: spec
 ### Batch Creation Request
 ```
 Create spec structure:
-Directory: .agents/.agent-os/specs/2025-01-29-user-auth/
+Directory: docs/03-Development/specs/2025-01-29-user-auth/
 Files:
 - spec.md (content: [provided])
 - spec-lite.md (content: [provided])
@@ -296,7 +296,7 @@ Files:
 ### Product Documentation Request
 ```
 Create product documentation:
-Directory: .agents/.agent-os/product/
+Directory: docs/03-Development/product/
 Files:
 - mission.md (content: [provided])
 - mission-lite.md (content: [provided])
@@ -329,7 +329,7 @@ Files:
 
 ### Success
 ```
-✓ Created directory: .agents/.agent-os/specs/2025-01-29-user-auth/
+✓ Created directory: docs/03-Development/specs/2025-01-29-user-auth/
 ✓ Created file: spec.md
 ✓ Created file: spec-lite.md
 ✓ Created directory: sub-specs/

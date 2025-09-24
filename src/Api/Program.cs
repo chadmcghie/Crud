@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Api.Configuration;
 using Api.Extensions;
+using Api.HealthChecks;
 using Api.Middleware;
 using App;
 using Infrastructure;
@@ -87,8 +88,13 @@ namespace Api
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                // Replace default logging with Serilog
-                builder.Host.UseSerilog();
+                // Replace default logging with Serilog (unless disabled for tests)
+                // Contract tests set DISABLE_SERILOG_FOR_TESTS environment variable
+                var disableSerilog = Environment.GetEnvironmentVariable("DISABLE_SERILOG_FOR_TESTS") == "true";
+                if (!disableSerilog)
+                {
+                    builder.Host.UseSerilog();
+                }
 
                 // 2) Observability: OpenTelemetry (logs/traces/metrics)
                 builder.Services.AddOpenTelemetry()
@@ -374,7 +380,8 @@ namespace Api
                     });
                 });
 
-                builder.Services.AddHealthChecks();
+                builder.Services.AddHealthChecks()
+                    .AddCheck<DatabaseHealthCheck>("database");
 
                 builder.Services.AddAutoMapper(
                     cfg => { },

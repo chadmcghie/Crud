@@ -17,7 +17,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Tags("Roles")]
-[Route("api/[controller]")]
+[Route("api/roles")]
 [ConditionalAuthorize]
 public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInvalidationService cacheInvalidation) : ControllerBase
 {

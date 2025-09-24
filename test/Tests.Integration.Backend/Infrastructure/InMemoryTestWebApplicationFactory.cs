@@ -60,6 +60,8 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
             {
                 options.UseInMemoryDatabase(_databaseName);
                 options.EnableSensitiveDataLogging();
+                options.ConfigureWarnings(warnings =>
+                    warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
             });
 
             // Register cache services for integration tests (same as SQLite factory)
@@ -69,7 +71,13 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
                 ["Caching:UseLazyCache"] = "false",
                 ["Caching:UseComposite"] = "false",
                 ["Caching:DefaultExpirationMinutes"] = "5",
-                ["OutputCaching:Disabled"] = "false"
+                ["OutputCaching:Disabled"] = "false",
+                // Add JWT configuration for authentication tests
+                ["Jwt:Secret"] = "TestSecretKey123456789TestSecretKey123456789", // Minimum 32 chars
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:AccessTokenExpirationMinutes"] = "60",
+                ["Jwt:RefreshTokenExpirationDays"] = "7"
             };
 
             var configuration = new ConfigurationBuilder()
@@ -98,6 +106,9 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
         });
 
         builder.UseEnvironment("Testing");
+
+        // Set environment variables to bypass authorization for integration tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "true");
     }
 
     public TestLogCapture? LogCapture => _logCapture;
@@ -148,7 +159,7 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
         if (user != null)
         {
             // Add Admin role if requested (User role is already added by default)
@@ -158,6 +169,9 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
             }
 
             await dbContext.SaveChangesAsync();
+
+            // Clear change tracker to ensure fresh data on next load
+            dbContext.ChangeTracker.Clear();
         }
     }
 }

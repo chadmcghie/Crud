@@ -27,7 +27,13 @@ public class SmokeTestFactoryAdapter : ITestWebApplicationFactory
 
     public void EnsureDatabaseCreated()
     {
-        // For smoke tests, database creation is handled by the factory configuration
+        // Ensure database is created with fresh schema for smoke tests
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Force recreation to ensure we have the latest schema
+        dbContext.Database.EnsureDeleted();
+        dbContext.Database.EnsureCreated();
     }
 
     public async Task ClearDatabaseAsync()
@@ -38,14 +44,15 @@ public class SmokeTestFactoryAdapter : ITestWebApplicationFactory
 
     public async Task SetUserRoleAsync(string email, string role)
     {
-        // Basic implementation for smoke tests
+        // Enhanced implementation for smoke tests with better error handling
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user != null && role == "Admin")
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
+        if (user != null)
         {
-            user.AddRole("Admin");
+            // Add the requested role (not just Admin)
+            user.AddRole(role);
             await dbContext.SaveChangesAsync();
         }
     }
