@@ -46,15 +46,19 @@ test.describe('@smoke Application Health Checks', () => {
 
 test.describe('@smoke People Module', () => {
   test('@smoke Can navigate to people list', async ({ page, baseURL }) => {
-    // Navigate directly to the people list page
-    await page.goto(`${baseURL}/people-list`);
-
-    // Wait for Angular to be ready
-    await page.waitForLoadState('networkidle');
-
-    // Check for people list container with multiple selectors
-    const listContainer = page.locator('.people-table, app-people-list, [data-testid="people-list"]').first();
-    await expect(listContainer).toBeVisible({ timeout: 10000 });
+    await page.goto(baseURL);
+    
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    
+    // Click on People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
+    
+    // Check for people list container
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const listContainer = page.locator('.people-table, app-people-list').first();
+    await expect(listContainer).toBeVisible();
   });
   
   test('@smoke People API endpoint responds', async ({ page, apiUrl }) => {
@@ -66,41 +70,49 @@ test.describe('@smoke People Module', () => {
   });
   
   test('@smoke Can open add person form', async ({ page, baseURL }) => {
-    // Navigate directly to the people list page
-    await page.goto(`${baseURL}/people-list`);
-
-    // Wait for Angular to be ready
-    await page.waitForLoadState('networkidle');
-
-    // Check for people list first
-    await expect(page.locator('.people-table, app-people-list, [data-testid="people-list"]').first()).toBeVisible({ timeout: 10000 });
-
-    // Click add button with multiple selectors
-    const addButton = page.locator('button:has-text("Add New Person"), button[data-testid="add-person"], .add-person-btn').first();
-    await expect(addButton).toBeVisible({ timeout: 5000 });
+    await page.goto(baseURL);
+    
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    
+    // Click on People link
+    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Click add button
+    const addButton = page.locator('button:has-text("Add New Person")');
+    await expect(addButton).toBeVisible();
     await addButton.click();
-
+    
     // Form should be visible
-    const form = page.locator('app-people form, form[data-testid="person-form"], .person-form').first();
-    await expect(form).toBeVisible({ timeout: 10000 });
-
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
+    const form = page.locator('app-people form').first();
+    await expect(form).toBeVisible();
+    
     // Check for essential form fields
-    const nameField = page.locator('input#fullName, input[name="fullName"], input[data-testid="fullName"]').first();
-    await expect(nameField).toBeVisible({ timeout: 5000 });
+    const nameField = page.locator('input#fullName');
+    await expect(nameField).toBeVisible();
   });
 });
 
 test.describe('@smoke Roles Module', () => {
   test('@smoke Can navigate to roles list', async ({ page, baseURL }) => {
-    // Navigate directly to the roles list page
-    await page.goto(`${baseURL}/roles-list`);
-
-    // Wait for Angular to be ready
-    await page.waitForLoadState('networkidle');
-
-    // Check for roles list container with multiple selectors
-    const listContainer = page.locator('.roles-table, app-roles-list, [data-testid="roles-list"]').first();
-    await expect(listContainer).toBeVisible({ timeout: 10000 });
+    await page.goto(baseURL);
+    
+    // Wait for app to load
+    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    
+    // Click on Roles link
+    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    await rolesLink.click();
+    
+    // Wait for roles component to load
+    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Check for roles list container
+    const listContainer = page.locator('.roles-table, app-roles-list').first();
+    await expect(listContainer).toBeVisible();
   });
   
   test('@smoke Roles API endpoint responds', async ({ page, apiUrl }) => {
