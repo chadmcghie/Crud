@@ -1,8 +1,9 @@
 using Domain.ValueObjects;
+using Domain.Interfaces;
 
 namespace Domain.Entities.Authentication
 {
-    public class User
+    public class User : ISoftDeletable
     {
         private readonly List<RefreshToken> _refreshTokens = new();
         private readonly HashSet<string> _roles = new();
@@ -21,6 +22,11 @@ namespace Domain.Entities.Authentication
         // Concurrency token for optimistic concurrency control
         // Nullable for SQLite compatibility
         public byte[]? RowVersion { get; set; }
+
+        // Soft delete properties
+        public bool IsDeleted { get; private set; }
+        public DateTime? DeletedAt { get; private set; }
+        public string? DeletedBy { get; private set; }
 
         public User(Email email, PasswordHash passwordHash, string? firstName = null, string? lastName = null)
         {
@@ -165,6 +171,29 @@ namespace Domain.Entities.Authentication
 
             user._roles.Add("User");
             return user;
+        }
+
+        /// <summary>
+        /// Marks the user as soft deleted
+        /// </summary>
+        /// <param name="deletedBy">The user or system performing the delete</param>
+        public void SoftDelete(string? deletedBy = null)
+        {
+            IsDeleted = true;
+            DeletedAt = DateTime.UtcNow;
+            DeletedBy = deletedBy;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Restores a soft deleted user
+        /// </summary>
+        public void Restore()
+        {
+            IsDeleted = false;
+            DeletedAt = null;
+            DeletedBy = null;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }
