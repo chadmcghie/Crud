@@ -5,7 +5,7 @@ import * as path from 'path';
 /**
  * Serial test fixture that handles database cleanup between tests
  */
-export const test = base.extend({
+export const test = base.extend<{ apiUrl: string; baseURL: string }>({
   // Automatic database cleanup before each test
   page: async ({ page }, use) => {
     // Enable E2E test mode to bypass auth guards
@@ -60,10 +60,16 @@ export const test = base.extend({
     // Use the page
     await use(page);
     
-    // Clean up E2E mode
-    await page.evaluate(() => {
-      localStorage.removeItem('e2e-test-mode');
-    });
+    // Clean up E2E mode (only if page was used)
+    try {
+      await page.evaluate(() => {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('e2e-test-mode');
+        }
+      });
+    } catch (error) {
+      // Ignore localStorage access errors if page wasn't navigated to a valid domain
+    }
     
     // Optional: Log database size after test for monitoring
     if (process.env.DATABASE_PATH && process.env.DEBUG_DB) {
