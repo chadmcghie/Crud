@@ -25,7 +25,7 @@ Welcome to the Crud project! This section contains everything you need to get up
 
 - **02-Architecture/**: System architecture and design decisions
 - **03-Development/**: Development workflows, specs, and project management
-- **04-Quality-Control/**: Code, architecture, and design review processes
+- **04-Quality-Control/**: Testing strategy, reviews, troubleshooting, and technical debt management
 - **05-environment/**: Development and testing environment setup
 - **06-devops/**: Development workflow and deployment processes
 - **07-tooling/**: Agent OS tuning and tooling configuration
