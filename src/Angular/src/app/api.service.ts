@@ -38,7 +38,9 @@ export class ApiService {
 
   // Roles
   listRoles(): Observable<RoleDto[]> {
-    return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`);
+    return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`, {
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
   }
   getRole(id: string): Observable<RoleDto> {
     return this.http.get<RoleDto>(`${this.baseUrl}/roles/${id}`);
@@ -55,7 +57,9 @@ export class ApiService {
 
   // People
   listPeople(): Observable<PersonResponse[]> {
-    return this.http.get<PersonResponse[]>(`${this.baseUrl}/people`);
+    return this.http.get<PersonResponse[]>(`${this.baseUrl}/people`, {
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
   }
   getPerson(id: string): Observable<PersonResponse> {
     return this.http.get<PersonResponse>(`${this.baseUrl}/people/${id}`);

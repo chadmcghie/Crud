@@ -27,6 +27,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   loading = false;
   errorMessage = '';
+  successMessage = '';
   returnUrl = '/';
 
   ngOnInit(): void {
@@ -36,8 +37,8 @@ export class LoginComponent implements OnInit {
       rememberMe: [false]
     });
 
-    // Get return url from route parameters or default to '/'
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    // Get return url from route parameters or default to home
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
   }
 
   onSubmit(): void {
@@ -47,17 +48,25 @@ export class LoginComponent implements OnInit {
 
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
     const { email, password, rememberMe } = this.loginForm.value;
 
     this.authService.login(email, password, rememberMe).subscribe({
-      next: () => {
-        this.router.navigate([this.returnUrl]);
+      next: (response) => {
+        console.log('Login successful:', response);
+        this.successMessage = 'Login successful! Redirecting...';
         this.loading = false;
+
+        // Give user feedback before redirecting
+        setTimeout(() => {
+          this.router.navigate([this.returnUrl]);
+        }, 500);
       },
       error: (error: HttpErrorResponse & ErrorResponse) => {
         this.loading = false;
-        this.errorMessage = error?.error?.message || 'An error occurred during login. Please try again.';
+        console.error('Login error:', error);
+        this.errorMessage = error?.error?.message || 'Invalid email or password. Please try again.';
       }
     });
   }

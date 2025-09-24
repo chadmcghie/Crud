@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './login.component';
 import { RegisterComponent } from './register.component';
+import { HomeComponent } from './home.component';
 import { PeopleComponent } from './people.component';
 import { PeopleListComponent } from './people-list.component';
 import { RolesComponent } from './roles.component';
 import { RolesListComponent } from './roles-list.component';
-import { AuthGuard } from './auth.guard';
-import { RoleGuard } from './role.guard';
+import { SiteIndexComponent } from './site-index.component';
+import { canActivateGuard } from './auth.guard';
+import { canActivateAdmin } from './admin.guard';
 
 export const routes: Routes = [
   // Public routes
@@ -20,39 +22,53 @@ export const routes: Routes = [
     path: 'reset-password', 
     loadComponent: () => import('./components/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
   },
-  
+
+  // Home route - public, handles auth state internally
+  {
+    path: 'home',
+    component: HomeComponent
+  },
+
   // Protected routes
-  { 
-    path: 'people', 
+  {
+    path: 'people',
     component: PeopleComponent,
-    canActivate: [AuthGuard]
+    canActivate: [canActivateGuard]
   },
-  { 
-    path: 'people-list', 
+  {
+    path: 'people-list',
     component: PeopleListComponent,
-    canActivate: [AuthGuard]
+    canActivate: [canActivateGuard]
   },
   
-  // Admin routes
-  { 
-    path: 'roles', 
+  // Role management routes - temporarily accessible to all authenticated users
+  {
+    path: 'roles',
     component: RolesComponent,
-    canActivate: [RoleGuard],
-    data: { roles: ['admin'] }
+    canActivate: [canActivateGuard]
   },
-  { 
-    path: 'roles-list', 
+  {
+    path: 'roles-list',
     component: RolesListComponent,
-    canActivate: [RoleGuard],
-    data: { roles: ['admin'] }
+    canActivate: [canActivateGuard]
   },
-  
+
+  // Admin-only routes
+  {
+    path: 'site-index',
+    component: SiteIndexComponent,
+    canActivate: [canActivateAdmin]
+  },
+
   // Unauthorized page (lazy loaded)
-  { 
-    path: 'unauthorized', 
+  {
+    path: 'unauthorized',
     loadComponent: () => import('./unauthorized.component').then(m => m.UnauthorizedComponent)
   },
   
-  // Default route
-  { path: '', redirectTo: '/people-list', pathMatch: 'full' }
+  // Default route - always redirect to home (handles auth state internally)
+  { path: '', component: HomeComponent },
+
+  // Wildcard route - must be last! Catches all unmatched routes
+  { path: '**', component: HomeComponent }
 ];
