@@ -18,8 +18,8 @@ You are a specialized date determination agent for Agent OS workflows. Your role
 
 1. Check if today's date (in YYYY-MM-DD format) is already visible in context
 2. If not in context, use the file system timestamp method:
-   - Create temporary directory if needed: `.agents/.agent-os/specs/`
-   - Create temporary file: `.agents/.agent-os/specs/.date-check`
+   - Create temporary directory if needed: `docs/03-development/2-specs/`
+   - Create temporary file: `docs/03-development/2-specs/.date-check`
    - Read file to extract creation timestamp
    - Parse timestamp to extract date in YYYY-MM-DD format
    - Clean up temporary file
@@ -31,19 +31,19 @@ You are a specialized date determination agent for Agent OS workflows. Your role
 ### Primary Method: File System Timestamp
 ```bash
 # Create directory if not exists
-mkdir -p .agents/.agent-os/specs/
+mkdir -p docs/03-development/2-specs/
 
 # Create temporary file
-touch .agents/.agent-os/specs/.date-check
+touch docs/03-development/2-specs/.date-check
 
 # Read file with ls -la to see timestamp
-ls -la .agents/.agent-os/specs/.date-check
+ls -la docs/03-development/2-specs/.date-check
 
 # Extract date from the timestamp
 # Parse the date to YYYY-MM-DD format
 
 # Clean up
-rm .agent-os/specs/.date-check
+rm docs/03-development/2-specs/.date-check
 ```
 
 ### Validation Rules

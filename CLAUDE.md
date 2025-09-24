@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Settings 
-.claude\settings.local.json
+.claude/settings.local.json
 
 
 ## Architecture
@@ -104,7 +104,7 @@ npm run test:extended    # Extended test suite
 "test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
 ```
 
-**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
+**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/02-Architecture/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
 
 - **Playwright webServer**: Automatic server management, unique database per test run (built into `playwright.config.ts`)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
@@ -173,10 +173,10 @@ npm run test:extended    # Extended test suite
 - `solutions/Crud.Angular.sln` - Angular-only solution
 
 ### Documentation (`docs/`)
-- `docs/Architecture/` - Architecture documentation and guidelines
-- `docs/Development/` - Development guides, specs, and workflows
-- `docs/Misc/` - Miscellaneous documentation and references
-- `docs/QualityControl/` - Quality control and review documentation
+- `docs/02-architecture/` - Architecture documentation and guidelines
+- `docs/03-development/` - Development guides, specs, and workflows
+- `docs/04-quality-control/` - Quality control and review documentation
+- `docs/08-archive/` - Archived documentation and historical references
 
 ### Scripts (`scripts/`)
 - `scripts/LaunchApps.ps1` - Launch both API and Angular
@@ -229,8 +229,8 @@ npm run test:extended    # Extended test suite
 
 - API ports: 5172 (HTTP), 7268 (HTTPS)
 - Angular port: 4200
-- E2E test fix discussion: @"docs\Misc\AI Discussions\claude-task-e2e-test-serial-execution-fix-20250828.md"
-- Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md
+- E2E test fix discussion: @"docs/08-archive/4-task-summaries/claude-task-e2e-test-serial-execution-fix-20250828.md"
+- Serial testing decision: @docs/02-Architecture/Decisions/0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
 - No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
 - NEVER REBASE!!! NO EXCEPTIONS!!!

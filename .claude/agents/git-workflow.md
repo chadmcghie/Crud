@@ -65,7 +65,7 @@ Always include:
 ### Complete Workflow
 ```
 Complete git workflow for password-reset feature:
-- Spec: .agents/.agent-os/specs/2025-01-29-password-reset/
+- Spec: docs/03-Development/specs/2025-01-29-password-reset/
 - Branch: feature/password-reset
 - Changes: All files modified
 - Target: dev branch
@@ -148,7 +148,7 @@ Create pull request:
 - All tests passing ✓
 
 ## Related
-- Spec: @.agents/.agent-os/specs/[spec-folder]/
+- Spec: @docs/03-Development/specs/[spec-folder]/
 - Issue: #[number] (if applicable)
 ```
 

@@ -66,7 +66,7 @@ Use the file-creator subagent to create the following file_structure with valida
 
 ### Step 3: Create mission.md
 
-Use the file-creator subagent to create the file: .agents/.agent-os/product/mission.md and use the following template:
+Use the file-creator subagent to create the file: docs/03-Development/product/mission.md and use the following template:
 
 <file_template>
   <header>
@@ -178,7 +178,7 @@ Use the file-creator subagent to create the file: .agents/.agent-os/product/miss
 
 ### Step 4: Create tech-stack.md
 
-Use the file-creator subagent to create the file: .agents/.agent-os/product/tech-stack.md and use the following template:
+Use the file-creator subagent to create the file: docs/03-Development/product/tech-stack.md and use the following template:
 
 <file_template>
   <header>
@@ -239,7 +239,7 @@ Use the file-creator subagent to create the file: .agents/.agent-os/product/tech
 
 ### Step 5: Create mission-lite.md
 
-Use the file-creator subagent to create the file: .agents/.agent-os/product/mission-lite.md for the purpose of establishing a condensed mission for efficient AI context usage.
+Use the file-creator subagent to create the file: docs/03-Development/product/mission-lite.md for the purpose of establishing a condensed mission for efficient AI context usage.
 
 Use the following template:
 
@@ -279,7 +279,7 @@ Use the following template:
 
 ### Step 6: Create roadmap.md
 
-Use the file-creator subagent to create the following file: .agents/.agent-os/product/roadmap.md using the following template:
+Use the file-creator subagent to create the following file: docs/03-Development/product/roadmap.md using the following template:
 
 <file_template>
   <header>
