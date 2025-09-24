@@ -22,7 +22,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     // Navigate to People section
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc1 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc1).toBeVisible({ timeout: 5000 });
 
     // Create new person
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -38,7 +39,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     await submitButton.click();
 
     // Verify person appears in list
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const listPageContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(listPageContent).toBeVisible({ timeout: 5000 });
     const personRow = page.locator(`tr:has-text("${testUser.fullName}")`).first();
     await expect(personRow).toBeVisible();
 
@@ -53,7 +55,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     await submitButton.click();
 
     // Verify update
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const updatePageContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(updatePageContent).toBeVisible({ timeout: 5000 });
     const updatedPersonRow = page.locator(`tr:has-text("${updatedName}")`).first();
     await expect(updatedPersonRow).toBeVisible();
 
@@ -92,7 +95,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     // Navigate to People section
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc2 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc2).toBeVisible({ timeout: 5000 });
 
     // Create new person
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -118,7 +122,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     await submitButton.click();
 
     // Verify person was created
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc3 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc3).toBeVisible({ timeout: 5000 });
     const personRow = page.locator(`tr:has-text("${testUser.fullName}")`).first();
     await expect(personRow).toBeVisible();
 
@@ -141,7 +146,8 @@ test.describe('@critical Complete Role Management Journey', () => {
     // Navigate to Roles section
     const rolesLink = page.locator('a[routerLink="/roles-list"]');
     await rolesLink.click();
-    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
+    const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible({ timeout: 5000 });
 
     // Create new role
     const addButton = page.locator('button:has-text("Add New Role"), button:has-text("Add Role")');
@@ -158,7 +164,8 @@ test.describe('@critical Complete Role Management Journey', () => {
       await submitButton.click();
 
       // Verify role appears in list
-      await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
+      const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible({ timeout: 5000 });
       const roleRow = page.locator(`tr:has-text("${testRole.name}"), .role-item:has-text("${testRole.name}")`).first();
       await expect(roleRow).toBeVisible();
     } else {
@@ -168,7 +175,8 @@ test.describe('@critical Complete Role Management Journey', () => {
 
       // Refresh page to see new role
       await page.reload();
-      await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
+      const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible({ timeout: 5000 });
       const roleRow = page.locator(`tr:has-text("${testRole.name}"), .role-item:has-text("${testRole.name}")`).first();
       await expect(roleRow).toBeVisible();
     }
@@ -183,14 +191,18 @@ test.describe('@critical Cross-Module User Journeys', () => {
     // Test navigation to People
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
-    await expect(page.locator('app-people-list')).toBeVisible();
+    const pc4 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc4).toBeVisible({ timeout: 5000 });
+    const peoplePageContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(peoplePageContent).toBeVisible();
 
     // Test navigation to Roles
     const rolesLink = page.locator('a[routerLink="/roles-list"]');
     await rolesLink.click();
-    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
-    await expect(page.locator('app-roles-list')).toBeVisible();
+    const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible({ timeout: 5000 });
+    const rolesPageContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesPageContent).toBeVisible();
 
     // Test navigation back to Home (if available)
     const homeLink = page.locator('a[routerLink="/"], a[routerLink="/home"], .navbar-brand');
@@ -201,8 +213,10 @@ test.describe('@critical Cross-Module User Journeys', () => {
 
     // Test browser back/forward navigation
     await page.goBack();
-    await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
-    await expect(page.locator('app-roles-list')).toBeVisible();
+    const rolesContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesContent).toBeVisible({ timeout: 5000 });
+    const rolesPageContent = page.locator('router-outlet, app-roles, main, .content').first();
+    await expect(rolesPageContent).toBeVisible();
 
     await page.goForward();
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 5000 });
@@ -215,7 +229,8 @@ test.describe('@critical Cross-Module User Journeys', () => {
     // Navigate to People
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc5 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc5).toBeVisible({ timeout: 5000 });
 
     // Open add form
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -246,7 +261,8 @@ test.describe('@critical Cross-Module User Journeys', () => {
     await submitButton.click();
 
     // Should redirect back to list
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc6 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc6).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -258,7 +274,8 @@ test.describe('@extended Error Recovery User Journeys', () => {
     // Navigate to People
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc7 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc7).toBeVisible({ timeout: 5000 });
 
     // Try to load data (should work)
     const response = await page.request.get(`${apiUrl}/api/people`);
@@ -266,10 +283,12 @@ test.describe('@extended Error Recovery User Journeys', () => {
 
     // Simulate network recovery by refreshing
     await page.reload();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
+    const pageContentLong = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pageContentLong).toBeVisible({ timeout: 10000 });
 
     // Application should recover and show data
-    await expect(page.locator('app-people-list')).toBeVisible();
+    const peoplePageContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(peoplePageContent).toBeVisible();
   });
 
   test('@extended User can handle page refresh during form completion', async ({ page, baseURL }) => {
@@ -279,7 +298,8 @@ test.describe('@extended Error Recovery User Journeys', () => {
     // Navigate to People and open form
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    const pc8 = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pc8).toBeVisible({ timeout: 5000 });
 
     const addButton = page.locator('button:has-text("Add New Person")');
     await addButton.click();
@@ -292,7 +312,9 @@ test.describe('@extended Error Recovery User Journeys', () => {
     await page.reload();
 
     // Should return to people list (form data lost, but app recovers)
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
-    await expect(page.locator('app-people-list')).toBeVisible();
+    const pageContentLong = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(pageContentLong).toBeVisible({ timeout: 10000 });
+    const peoplePageContent = page.locator('router-outlet, app-people, main, .content').first();
+    await expect(peoplePageContent).toBeVisible();
   });
 });

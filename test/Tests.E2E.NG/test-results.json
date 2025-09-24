@@ -1,5 +1,0 @@
-🚀 Starting global test setup...
-🔧 Configuring 2 parallel test workers
-📦 Worker 0: API=5172, Angular=4200, DB=/tmp/CrudTest_Worker0_1756312545352.db
-📦 Worker 1: API=5173, Angular=4210, DB=/tmp/CrudTest_Worker1_1756312545352.db
-✅ Global test setup completed

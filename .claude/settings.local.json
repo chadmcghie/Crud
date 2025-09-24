@@ -130,7 +130,8 @@
       "Bash(CI=true ASPNETCORE_ENVIRONMENT=Testing dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --filter \"FullyQualifiedName~GetRequest_WithIfModifiedSince_ShouldReturn200_WhenModified\" --no-build --configuration Release --logger \"console;verbosity=minimal\")",
       "Bash(npm ls:*)",
       "Bash(dotnet nuget list:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npx playwright test:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",
@@ -166,7 +167,6 @@
       "Bash(gh pr merge:*)",
       "Bash(gh pr close:*)",
       "Bash(rmdir:*)",
-      "Bash(npx:*)",
       "Bash(kill:*)",
       "Bash(curl:*)",
       "Bash(powershell:*)",

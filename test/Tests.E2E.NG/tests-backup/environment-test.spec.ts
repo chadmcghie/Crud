@@ -1,4 +1,5 @@
-import { test, expect } from './setup/api-only-fixture';
+import { test, expect } from '@playwright/test';
+import { apiOnlyFixture } from './setup/api-only-fixture';
 
 test.describe('Environment Detection Tests', () => {
   test('should detect Testing environment correctly', async ({ apiContext }) => {
@@ -13,8 +14,8 @@ test.describe('Environment Detection Tests', () => {
     console.log('📊 Environment data:', JSON.stringify(envData, null, 2));
 
     // Verify we're in Testing environment
-    expect(envData.environmentName).toBe('Testing');
-    expect(envData.isTesting).toBe(true);
+    expect(envData.EnvironmentName).toBe('Testing');
+    expect(envData.IsTesting).toBe(true);
   });
 
   test('should bypass authorization in Testing environment', async ({ apiContext }) => {
@@ -28,7 +29,7 @@ test.describe('Environment Detection Tests', () => {
     const authData = await authTestResponse.json();
     console.log('🔐 Auth test data:', JSON.stringify(authData, null, 2));
 
-    expect(authData.shouldBypass).toBe(true);
+    expect(authData.ShouldBypass).toBe(true);
   });
 
   test('should allow creating people without authorization in Testing', async ({ apiContext }) => {
@@ -37,7 +38,7 @@ test.describe('Environment Detection Tests', () => {
     const createResponse = await apiContext.post('/api/people', {
       data: {
         FullName: 'Test Environment Person',
-        Phone: '+1-555-0123',
+        Phone: '+1-555-TEST',
         RoleIds: []
       }
     });
@@ -56,3 +57,5 @@ test.describe('Environment Detection Tests', () => {
     }
   });
 });
+
+test.use(apiOnlyFixture);

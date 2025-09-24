@@ -22,7 +22,7 @@ test.describe('@critical Reliability - Form Interaction Patterns', () => {
 
     // Navigate to people using reliable navigation
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
 
     // Open form reliably
     await reliabilityHelpers.clickButtonSafely('button:has-text("Add New Person")', {
@@ -49,7 +49,7 @@ test.describe('@critical Reliability - Form Interaction Patterns', () => {
     await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
       expectedStateAfterClick: async () => {
         // Either we're back at the list or we see a success message
-        return await page.locator('router-outlet, app-people, main, .content').isVisible() ||
+        return await page.locator('app-people-list').isVisible() ||
                await page.locator('.success, .alert-success').isVisible();
       }
     });
@@ -76,7 +76,7 @@ test.describe('@critical Reliability - Form Interaction Patterns', () => {
 
     // Navigate and open form
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
     await reliabilityHelpers.clickButtonSafely('button:has-text("Add New Person")');
 
     // Try to submit empty form
@@ -106,7 +106,7 @@ test.describe('@critical Reliability - Form Interaction Patterns', () => {
     // Submit successfully
     await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
       expectedStateAfterClick: async () => {
-        return await page.locator('router-outlet, app-people, main, .content').isVisible();
+        return await page.locator('app-people-list').isVisible();
       }
     });
   });
@@ -129,19 +129,19 @@ test.describe('@critical Reliability - Navigation and State Management', () => {
     // Navigate to People
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
     await reliabilityHelpers.waitForNavigationToComplete(/people/);
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
 
     // Navigate to Roles
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/roles-list"]', 'click');
     await reliabilityHelpers.waitForNavigationToComplete(/roles/);
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-roles, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-roles-list');
 
     // Test browser back/forward reliability
     await page.goBack();
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
 
     await page.goForward();
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-roles, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-roles-list');
 
     // Return to home if possible
     const homeLink = page.locator('a[routerLink="/"], .navbar-brand');
@@ -157,7 +157,7 @@ test.describe('@critical Reliability - Navigation and State Management', () => {
 
     // Navigate to a specific page
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
 
     // Capture state before refresh
     const preRefreshState = await reliabilityHelpers.capturePageState();
@@ -166,13 +166,13 @@ test.describe('@critical Reliability - Navigation and State Management', () => {
     await page.reload();
 
     // Verify app recovers correctly
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content', {
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list', {
       timeout: 15000 // Allow extra time for refresh
     });
 
     // Verify URL and basic functionality
     expect(page.url()).toContain('people');
-    await expect(page.locator('router-outlet, app-people, main, .content')).toBeVisible();
+    await expect(page.locator('app-people-list')).toBeVisible();
   });
 });
 
@@ -195,7 +195,7 @@ test.describe('@extended Reliability - Error Recovery Scenarios', () => {
 
     // Test UI resilience to network delays
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content', {
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list', {
       timeout: 15000 // Extended timeout for network conditions
     });
   });
@@ -209,7 +209,7 @@ test.describe('@extended Reliability - Error Recovery Scenarios', () => {
     await page.goto(baseURL);
     await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
     await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
+    await reliabilityHelpers.waitForElementToBeReady('app-people-list');
 
     // Handle potential delete confirmation dialog
     await reliabilityHelpers.handlePotentialDialogs(
@@ -335,7 +335,7 @@ test.describe('@smoke Reliability - Baseline Validation', () => {
       await reliabilityHelpers.waitForNavigationToComplete();
 
       // Verify page loaded
-      const expectedComponent = linkSelector.includes('people') ? 'router-outlet, app-people, main, .content' : 'router-outlet, app-roles, main, .content';
+      const expectedComponent = linkSelector.includes('people') ? 'app-people-list' : 'app-roles-list';
       await reliabilityHelpers.waitForElementToBeReady(expectedComponent);
     }
   });
