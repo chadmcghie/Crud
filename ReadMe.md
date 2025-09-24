@@ -58,15 +58,15 @@ This project leverages a comprehensive AI agent ecosystem to accelerate developm
 - **GitHub Copilot**: AI pair programming and suggestions
 
 ### **Getting Started with Agents**
-1. Review the [Agent Utilization Guide](docs/Development/Agent-Utilization-Guide.md)
+1. Review the [Agent Guide](docs/01-overview/4-agent-guide.md)
 2. Use Claude Code commands like `/create-spec` and `/execute-tasks`
 3. Follow the structured workflow in `.agent-os/instructions/core/`
 4. Leverage specialized agents for specific tasks (testing, git workflow, troubleshooting)
 
-See [Agent Utilization Guide](docs/Development/Agent-Utilization-Guide.md) for detailed documentation.
+See [Agent Guide](docs/01-overview/4-agent-guide.md) for detailed documentation.
 
 ## Useful Documents
 
-- [Agent Utilization Guide](docs/Development/Agent-Utilization-Guide.md) - Complete guide to using AI agents for development workflow
-- [.Glossary.md] - Definitions of key terms and acronyms used throughout the documentation.
-- [.Index.md] - Main index of the documentation.
+- [Agent Guide](docs/01-overview/4-agent-guide.md) - Complete guide to using AI agents for development workflow
+- [Glossary](docs/01-overview/.glossary.md) - Definitions of key terms and acronyms used throughout the documentation.
+- [Index](docs/01-overview/.index.md) - Main index of the documentation.
