@@ -51,7 +51,7 @@ public class PeopleControllerMultiProviderTests
         {
             // Arrange
             var personName = testInstance.CreateProviderSpecificTestData("John Doe");
-            var createRequest = TestDataBuilders.CreatePersonRequest(personName, "+1234567890");
+            var createRequest = TestDataBuilders.CreatePersonRequest(personName, "123-456-7890");
 
             // Act
             var response = await testInstance.AuthenticatedPostJsonAsync("/api/people", createRequest);
@@ -64,7 +64,7 @@ public class PeopleControllerMultiProviderTests
             createdPerson.Should().NotBeNull();
             createdPerson!.Id.Should().NotBeEmpty();
             createdPerson.FullName.Should().Be(personName);
-            createdPerson.Phone.Should().Be("+1234567890");
+            createdPerson.Phone.Should().Be("123-456-7890");
         });
     }
 
@@ -87,7 +87,7 @@ public class PeopleControllerMultiProviderTests
             var personName = testInstance.CreateProviderSpecificTestData("Jane Doe");
             var createPersonRequest = TestDataBuilders.CreatePersonRequest(
                 personName,
-                "+1234567890",
+                "123-456-7890",
                 new[] { createdRole!.Id });
 
             // Act
@@ -125,7 +125,7 @@ public class PeopleControllerMultiProviderTests
             var personName = testInstance.CreateProviderSpecificTestData("Person With Role");
             var createPersonRequest = TestDataBuilders.CreatePersonRequest(
                 personName,
-                "+1234567890",
+                "123-456-7890",
                 new[] { createdRole!.Id });
             await testInstance.AuthenticatedPostJsonAsync("/api/people", createPersonRequest);
 

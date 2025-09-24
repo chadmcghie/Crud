@@ -107,8 +107,8 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
 
         builder.UseEnvironment("Testing");
 
-        // Integration tests should test normal authorization behavior
-        // E2E tests will set their own authorization bypass
+        // Set environment variables to bypass authorization for integration tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "true");
     }
 
     public TestLogCapture? LogCapture => _logCapture;

@@ -11,10 +11,10 @@ using Microsoft.Extensions.Logging;
 namespace Tests.Integration.Backend.Infrastructure;
 
 /// <summary>
-/// SQLite-based implementation of test web application factory
-/// Uses file-based SQLite databases for fast, isolated testing
+/// SQLite-based web application factory for smoke tests
+/// Does NOT bypass authorization - enforces normal authorization for smoke testing
 /// </summary>
-public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program>, IMultiProviderTestWebApplicationFactory
+public class SmokeTestWebApplicationFactory : WebApplicationFactory<Api.Program>, ITestWebApplicationFactory
 {
     private static readonly object _lockObject = new object();
     private static bool _databaseInitialized = false;
@@ -24,13 +24,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     private string? _connectionString;
     private TestLogCapture? _logCapture;
 
-    public DatabaseProvider Provider => DatabaseProvider.SQLite;
-    public string ProviderName => "SQLite";
-    public bool SupportsTransactions => true; // SQLite supports transactions with some limitations
-    public bool SupportsForeignKeys => true; // SQLite supports FK constraints when enabled
-    public bool SupportsPersistence => true; // SQLite persists data to file
-
-    public SqliteTestWebApplicationFactory()
+    public SmokeTestWebApplicationFactory()
     {
         // Get worker index from environment or generate a unique one per factory instance
         _workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX") != null
@@ -106,7 +100,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             services.AddCachingServices(configuration);
 
             // Configure logging for better error debugging in tests
-            _logCapture = new TestLogCapture("IntegrationTest");
+            _logCapture = new TestLogCapture("SmokeTest");
             services.AddLogging(builder =>
             {
                 builder.ClearProviders();
@@ -129,8 +123,11 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
 
         builder.UseEnvironment("Testing");
 
-        // Set environment variables to bypass authorization for integration tests
-        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "true");
+        // CRITICAL: Ensure authorization bypass is DISABLED for smoke tests
+        // Clear any existing bypass environment variables that might have been set by other tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "false");
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E", "false");
+        Environment.SetEnvironmentVariable("E2E_TEST_MODE", "false");
     }
 
     /// <summary>
@@ -201,14 +198,21 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         {
             try
             {
-                // Clean up the worker-specific database
-                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).Wait();
+                if (!string.IsNullOrEmpty(_databasePath) && File.Exists(_databasePath))
+                {
+                    // Clean up test database file
+                    File.Delete(_databasePath);
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Ignore cleanup errors during disposal
+                // Log but don't fail disposal
+                Console.WriteLine($"Warning: Failed to delete test database {_databasePath}: {ex.Message}");
             }
+
+            // TestLogCapture doesn't implement IDisposable, so no disposal needed
         }
+
         base.Dispose(disposing);
     }
 }
