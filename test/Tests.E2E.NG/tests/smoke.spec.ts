@@ -32,15 +32,19 @@ test.describe('@smoke Application Health Checks', () => {
   test('@smoke Navigation menu is visible', async ({ page, baseURL }) => {
     await page.goto(baseURL);
 
-    // Wait for the app to load
+    // Wait for the app to load and be E2E ready
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.waitForSelector('[data-e2e-ready="true"]', { timeout: 15000 });
+
+    // Additional wait for auth state to stabilize
+    await page.waitForTimeout(2000);
 
     // Check for navigation links
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     const rolesLink = page.locator('a[routerLink="/roles-list"]');
 
-    await expect(peopleLink).toBeVisible();
-    await expect(rolesLink).toBeVisible();
+    await expect(peopleLink).toBeVisible({ timeout: 15000 });
+    await expect(rolesLink).toBeVisible({ timeout: 15000 });
   });
 });
 

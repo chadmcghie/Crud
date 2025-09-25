@@ -66,6 +66,7 @@ export default defineConfig({
         TEST_RESET_TOKEN: 'test-only-token',
         BYPASS_AUTHORIZATION_FOR_E2E: 'true',
         E2E_TEST_MODE: 'true',
+        BYPASS_AUTHORIZATION_FOR_INTEGRATION: 'true', // Additional bypass for E2E
 
         // Testing environment logging (minimal for performance)
         Logging__LogLevel__Default: 'Warning',
@@ -130,10 +131,11 @@ export default defineConfig({
   /* Test settings */
   use: {
     baseURL: 'http://localhost:4200',
-    
+
     /* API base URL for backend tests */
     extraHTTPHeaders: {
       'X-Test-Run-Id': testRunId.toString(),
+      'X-E2E-Test': 'true', // Additional E2E marker
     },
     
     /* Debugging aids */

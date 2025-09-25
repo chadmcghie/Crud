@@ -15,10 +15,10 @@ import { AuthService } from './auth.service';
     RouterLinkActive
   ],
   template: `
-    <div class="app-container">
+    <div class="app-container" [attr.data-e2e-ready]="isE2EReady">
       <header class="app-header">
         <h1>CRUD Template Application</h1>
-        <nav class="nav-links">
+        <nav class="nav-links" [attr.data-e2e-nav]="true">
           <!-- Debug: Show current user state -->
           <!-- Debug - Auth: {{ (authService.currentUser$ | async)?.email || 'NO USER' }} -->
 
@@ -247,6 +247,7 @@ import { AuthService } from './auth.service';
 })
 export class App {
   title = 'CRUD Template Application';
+  isE2EReady = false;
 
   authService = inject(AuthService);
   private router = inject(Router);
@@ -255,6 +256,8 @@ export class App {
     // Debug: Log auth state changes
     this.authService.currentUser$.subscribe(user => {
       console.log('App component - current user changed:', user);
+      // Mark as ready for E2E tests once auth state is determined
+      this.isE2EReady = true;
     });
   }
 
