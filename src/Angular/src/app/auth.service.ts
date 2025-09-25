@@ -286,8 +286,8 @@ export class AuthService {
 
     // Try different possible role claim formats
     const roleClaims = [
-      payload.role,
-      payload.roles,
+      payload['role'],
+      payload['roles'],
       payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
       payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role']
     ];
