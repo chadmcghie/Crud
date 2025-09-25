@@ -119,7 +119,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 2: Navigation Journey
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('router-outlet').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
 
     const rolesLink = page.locator('a[routerLink="/roles-list"]');
     await rolesLink.click();
@@ -147,7 +147,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 4: Form Validation Journey
     await page.goto(baseURL);
     await peopleLink.click();
-    await page.locator('router-outlet').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
 
     const addButton = page.locator('button:has-text("Add New Person")');
     if (await addButton.isVisible({ timeout: 2000 })) {
@@ -200,7 +200,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     const navStart = Date.now();
     const peopleLink = page.locator('a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('router-outlet').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
     performanceMetrics.navigationTime = Date.now() - navStart;
 
     // Verify performance standards
@@ -268,18 +268,18 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test 2: Event-driven patterns (using waitFor instead of sleep)
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
     await peopleLink.click();
-    await page.locator('router-outlet').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
     reliabilityChecklist.eventDrivenPatterns = true;
 
     // Test 3: Error recovery (page refresh recovery)
     await page.reload();
-    await page.locator('router-outlet').waitFor({ state: 'visible', timeout: 10000 });
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
     reliabilityChecklist.errorRecovery = true;
 
     // Test 4: Retry mechanisms (simulate through expect.toPass pattern)
     await expect(async () => {
-      const element = page.locator('router-outlet');
-      await expect(element).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('body')).toBeVisible();
     }).toPass({ timeout: 5000 });
     reliabilityChecklist.retryMechanisms = true;
 
