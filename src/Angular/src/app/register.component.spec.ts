@@ -189,13 +189,13 @@ describe('RegisterComponent', () => {
     });
 
     it('should submit when form is valid', () => {
-      authService.register.and.returnValue(of({ 
+      authService.register.and.returnValue(of({
         accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         user: { id: '1', email: 'test@example.com', roles: ['user'] }
       }));
       component.onSubmit();
-      expect(authService.register).toHaveBeenCalledWith('test@example.com', 'password123', 'password123');
+      expect(authService.register).toHaveBeenCalledWith('test@example.com', 'password123', 'password123', '', '');
     });
 
     it('should set loading to true when submitting', () => {
