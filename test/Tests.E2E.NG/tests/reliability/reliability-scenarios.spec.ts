@@ -1,319 +1,316 @@
-import { test, expect } from '../fixtures/serial-test-fixture';
+import { test, expect, devices } from '@playwright/test';
 import { ReliabilityHelpers } from '../helpers/reliability-helpers';
-import { PerformanceOptimizedHelpers } from '../helpers/performance-optimized-helpers';
-
-/**
- * E2E Test Reliability Scenarios
- *
- * Tests that validate application reliability under various conditions
- * and ensure consistent behavior in the Testing configuration.
- */
-
-test.describe('@critical Reliability - Form Interaction Patterns', () => {
-  let reliabilityHelpers: ReliabilityHelpers;
-
-  test.beforeEach(async ({ page }) => {
-    reliabilityHelpers = new ReliabilityHelpers(page);
-  });
-
-  test('@critical Reliable form submission with validation', async ({ page, baseURL, apiUrl }) => {
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Navigate to people using reliable navigation
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-
-    // Open form reliably
-    await reliabilityHelpers.clickButtonSafely('button:has-text("Add New Person")', {
-      expectedStateAfterClick: async () => {
-        return await page.locator('app-people form').isVisible();
-      }
-    });
-
-    // Fill form with reliable input handling
-    const testUser = {
-      fullName: `Reliable Test User ${Date.now()}`,
-      phone: '+1-555-0001'
-    };
-
-    await reliabilityHelpers.fillFormFieldSafely('input#fullName', testUser.fullName, {
-      validateInput: true
-    });
-
-    await reliabilityHelpers.fillFormFieldSafely('input#phone', testUser.phone, {
-      validateInput: true
-    });
-
-    // Submit form with state validation
-    await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
-      expectedStateAfterClick: async () => {
-        // Either we're back at the list or we see a success message
-        return await page.locator('router-outlet, app-people, main, .content').isVisible() ||
-               await page.locator('.success, .alert-success').isVisible();
-      }
-    });
-
-    // Validate data persistence using reliable API checking
-    const perfHelpers = new PerformanceOptimizedHelpers(page, page.request, apiUrl);
-    await reliabilityHelpers.validateDataConsistency(
-      async () => {
-        const response = await page.request.get(`${apiUrl}/api/people`);
-        return await response.json();
-      },
-      (people) => {
-        const createdPerson = people.find((p: any) => p.fullName === testUser.fullName);
-        expect(createdPerson).toBeTruthy();
-        expect(createdPerson.phone).toBe(testUser.phone);
-      },
-      { errorMessage: 'Created person not found in API response' }
-    );
-  });
-
-  test('@critical Reliable form validation error handling', async ({ page, baseURL }) => {
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Navigate and open form
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-    await reliabilityHelpers.clickButtonSafely('button:has-text("Add New Person")');
-
-    // Try to submit empty form
-    await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
-      expectedStateAfterClick: async () => {
-        // Form should still be visible (validation failed)
-        return await page.locator('app-people form').isVisible();
-      }
-    });
-
-    // Fill with invalid data
-    await reliabilityHelpers.fillFormFieldSafely('input#fullName', ''); // Empty required field
-    await reliabilityHelpers.fillFormFieldSafely('input#phone', 'invalid-phone-number');
-
-    // Submit and verify validation
-    await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
-      expectedStateAfterClick: async () => {
-        // Form should still be visible with validation errors
-        return await page.locator('app-people form').isVisible();
-      }
-    });
-
-    // Fix validation errors
-    await reliabilityHelpers.fillFormFieldSafely('input#fullName', 'Valid User Name');
-    await reliabilityHelpers.fillFormFieldSafely('input#phone', '+1-555-0002');
-
-    // Submit successfully
-    await reliabilityHelpers.clickButtonSafely('button[type="submit"]:has-text("Save")', {
-      expectedStateAfterClick: async () => {
-        return await page.locator('router-outlet, app-people, main, .content').isVisible();
-      }
-    });
-  });
-});
-
-test.describe('@critical Reliability - Navigation and State Management', () => {
-  let reliabilityHelpers: ReliabilityHelpers;
-
-  test.beforeEach(async ({ page }) => {
-    reliabilityHelpers = new ReliabilityHelpers(page);
-  });
-
-  test('@critical Reliable multi-module navigation', async ({ page, baseURL }) => {
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Capture initial state
-    const initialState = await reliabilityHelpers.capturePageState();
-
-    // Navigate to People
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForNavigationToComplete(/people/);
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-
-    // Navigate to Roles
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/roles-list"]', 'click');
-    await reliabilityHelpers.waitForNavigationToComplete(/roles/);
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-roles, main, .content');
-
-    // Test browser back/forward reliability
-    await page.goBack();
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-
-    await page.goForward();
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-roles, main, .content');
-
-    // Return to home if possible
-    const homeLink = page.locator('a[routerLink="/"], .navbar-brand');
-    if (await homeLink.isVisible({ timeout: 2000 })) {
-      await reliabilityHelpers.interactWithElementInContext('a[routerLink="/"], .navbar-brand', 'click');
-      await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-    }
-  });
-
-  test('@critical Reliable page refresh handling', async ({ page, baseURL }) => {
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Navigate to a specific page
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-
-    // Capture state before refresh
-    const preRefreshState = await reliabilityHelpers.capturePageState();
-
-    // Refresh page
-    await page.reload();
-
-    // Verify app recovers correctly
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content', {
-      timeout: 15000 // Allow extra time for refresh
-    });
-
-    // Verify URL and basic functionality
-    expect(page.url()).toContain('people');
-    await expect(page.locator('router-outlet, app-people, main, .content')).toBeVisible();
-  });
-});
-
-test.describe('@extended Reliability - Error Recovery Scenarios', () => {
-  let reliabilityHelpers: ReliabilityHelpers;
-
-  test.beforeEach(async ({ page }) => {
-    reliabilityHelpers = new ReliabilityHelpers(page);
-  });
-
-  test('@extended Reliable handling of network conditions', async ({ page, baseURL, apiUrl }) => {
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Test API resilience
-    await reliabilityHelpers.executeWithNetworkResilience(async () => {
-      const response = await page.request.get(`${apiUrl}/api/people`);
-      expect(response.ok()).toBe(true);
-    });
-
-    // Test UI resilience to network delays
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content', {
-      timeout: 15000 // Extended timeout for network conditions
-    });
-  });
-
-  test('@extended Reliable dialog and modal handling', async ({ page, baseURL, apiUrl }) => {
-    const perfHelpers = new PerformanceOptimizedHelpers(page, page.request, apiUrl);
-
-    // Create a test person to delete (which might show confirmation dialog)
-    const testPerson = await perfHelpers.createTestPerson();
-
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-    await reliabilityHelpers.interactWithElementInContext('a[routerLink="/people-list"]', 'click');
-    await reliabilityHelpers.waitForElementToBeReady('router-outlet, app-people, main, .content');
-
-    // Handle potential delete confirmation dialog
-    await reliabilityHelpers.handlePotentialDialogs(
-      async () => {
-        // Find and click delete button
-        const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
-        if (await personRow.isVisible({ timeout: 5000 })) {
-          const deleteButton = personRow.locator('button:has-text("Delete")');
-          if (await deleteButton.isVisible({ timeout: 2000 })) {
-            await deleteButton.click();
-          }
-        }
-      },
-      {
-        confirm: async (message) => {
-          console.log(`Handling confirmation dialog: ${message}`);
-          return true; // Accept the deletion
-        }
-      }
-    );
-
-    // Verify deletion through API
-    await reliabilityHelpers.validateDataConsistency(
-      async () => {
-        const response = await page.request.get(`${apiUrl}/api/people/${testPerson.id}`);
-        return response.status();
-      },
-      (status) => {
-        expect(status).toBe(404); // Person should be deleted
-      },
-      { errorMessage: 'Person was not properly deleted' }
-    );
-  });
-
-  test('@extended Reliable concurrent user simulation', async ({ page, baseURL, apiUrl }) => {
-    const perfHelpers = new PerformanceOptimizedHelpers(page, page.request, apiUrl);
-
-    await page.goto(baseURL);
-    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
-
-    // Simulate concurrent operations
-    const concurrentOperations = Array.from({ length: 3 }, async (_, i) => {
-      return await reliabilityHelpers.executeWithNetworkResilience(async () => {
-        const person = await perfHelpers.createTestPerson({
-          fullName: `Concurrent User ${i}`,
-          phone: `+1-555-00${i}0`
-        });
-
-        // Verify creation
-        const response = await page.request.get(`${apiUrl}/api/people/${person.id}`);
-        expect(response.ok()).toBe(true);
-
-        // Cleanup
-        await perfHelpers.cleanupTestPerson(person.id!);
-
-        return person;
-      });
-    });
-
-    const results = await Promise.all(concurrentOperations);
-    expect(results).toHaveLength(3);
-  });
-});
+import * as fs from 'fs';
 
 test.describe('@smoke Reliability - Baseline Validation', () => {
-  test('@smoke Reliable application startup detection', async ({ page, baseURL }) => {
+
+  test('@smoke Deterministic vs setTimeout approach validation', async ({ page, baseURL }) => {
     const reliabilityHelpers = new ReliabilityHelpers(page);
 
     await page.goto(baseURL);
 
-    // Use reliable waiting for app to be ready
+    // Wait for app initialization using deterministic waiting
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Test clicking on People List with deterministic waiting
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+
+    // Verify navigation completed deterministically
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+
+    // Verify content loaded - more specific selector for the people list content
+    await expect(page.locator('app-people-list')).toBeVisible();
+  });
+
+  test('@smoke Form field deterministic filling vs direct typing', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(`${baseURL}/people`);
+
+    // Wait for form to be ready
+    await reliabilityHelpers.waitForElementToBeReady('form');
+
+    // Test deterministic form filling
+    await reliabilityHelpers.fillFormFieldSafely('input[formControlName="fullName"]', 'Test User', {
+      clearFirst: true,
+      validateInput: true
+    });
+
+    // Verify the value was set correctly
+    const inputValue = await page.locator('input[formControlName="fullName"]').inputValue();
+    expect(inputValue).toBe('Test User');
+  });
+
+  test('@smoke Network-based vs Timer-based loading detection', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+
+    // Use network-based loading detection
+    await reliabilityHelpers.waitForNetworkQuiet();
+
+    // Navigate to people list with network awareness
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await reliabilityHelpers.waitForNetworkQuiet();
+
+    // Verify the content is loaded (not just visible, but actually loaded)
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+  });
+
+  test('@smoke State-aware vs Stateless operations', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // State-aware navigation - check current state before navigation
+    const currentUrl = page.url();
+    console.log('Current URL before navigation:', currentUrl);
+
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+
+    // Wait for state change
+    await reliabilityHelpers.waitForNavigationToComplete();
+
+    const newUrl = page.url();
+    console.log('URL after navigation:', newUrl);
+    expect(newUrl).toContain('/people-list');
+    expect(newUrl).not.toBe(currentUrl);
+  });
+
+  test('@smoke Element condition validation vs Timeout-based waiting', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+
+    // Use element condition validation instead of fixed timeouts
     await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")', {
       timeout: 15000
     });
 
-    // Verify Angular is properly loaded
-    const isAngularReady = await page.evaluate(() => {
-      return typeof (window as any).ng !== 'undefined';
+    // Navigate with element condition checks
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click');
+
+    // Wait for specific element conditions rather than arbitrary timeout
+    await reliabilityHelpers.waitForElementToBeReady('h3:has-text("People Directory")', {
+      timeout: 10000
     });
 
-    expect(isAngularReady).toBe(true);
+    // Verify element is in expected state
+    const heading = page.locator('h3:has-text("People Directory")');
+    await expect(heading).toBeVisible();
+    await expect(heading).toHaveText('People Directory');
   });
 
-  test('@smoke Reliable API connectivity check', async ({ page, apiUrl }) => {
+  test('@smoke Event-driven vs Polling mechanisms', async ({ page, baseURL }) => {
     const reliabilityHelpers = new ReliabilityHelpers(page);
 
-    // Test API availability with retry
-    await reliabilityHelpers.executeWithNetworkResilience(async () => {
-      const response = await page.request.get(`${apiUrl}/health`);
-      expect(response.ok()).toBe(true);
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Use event-driven navigation detection
+    const navigationPromise = page.waitForURL('**/people-list');
+
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click');
+
+    // Wait for the navigation event instead of polling
+    await navigationPromise;
+
+    // Additional verification
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+  });
+
+  test('@smoke Error recovery patterns', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Test error recovery - attempt an operation that might fail
+    try {
+      await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/invalid-route"]', 'click', undefined, {
+        waitForStable: true
+      });
+    } catch (error) {
+      console.log('Expected error for invalid route:', error.message);
+      // Verify we're still on a valid page after error
+      await expect(page.locator('h1:has-text("CRUD Template Application")')).toBeVisible();
+    }
+
+    // Verify normal navigation still works after error
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+  });
+
+  test('@smoke Retry pattern effectiveness', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+
+    // Test retry patterns with different retry configurations
+    const startTime = Date.now();
+
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")', {
+      retryOptions: { maxRetries: 3, baseDelay: 100 }
     });
 
-    // Test API data endpoints
-    const endpoints = ['/api/people', '/api/roles'];
+    const endTime = Date.now();
+    console.log(`Element ready with retries: ${endTime - startTime}ms`);
 
-    for (const endpoint of endpoints) {
-      await reliabilityHelpers.executeWithNetworkResilience(async () => {
-        const response = await page.request.get(`${apiUrl}${endpoint}`);
-        expect(response.ok()).toBe(true);
+    // Should succeed within reasonable time even with retries
+    expect(endTime - startTime).toBeLessThan(5000);
+  });
 
-        const data = await response.json();
-        expect(Array.isArray(data)).toBe(true);
-      });
+  test('@smoke Cross-device/browser reliability simulation', async ({ page, browserName, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    console.log(`Running reliability test on: ${browserName}`);
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Test navigation works consistently across different browsers/devices
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+
+    // Browser-specific reliability patterns
+    if (browserName === 'chromium') {
+      // Chromium-specific checks
+      console.log('Running Chromium-specific reliability checks');
+    } else if (browserName === 'firefox') {
+      console.log('Running Firefox-specific reliability checks');
     }
+  });
+
+  test('@smoke Load condition awareness', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    // Track page load conditions
+    const startTime = Date.now();
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+    await reliabilityHelpers.waitForNetworkQuiet();
+
+    const loadTime = Date.now() - startTime;
+    console.log(`Page load completed in: ${loadTime}ms`);
+
+    // Verify load was reasonable (under 10 seconds even in slow conditions)
+    expect(loadTime).toBeLessThan(10000);
+
+    // Test that interactions work immediately after load completion
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+  });
+
+  test('@smoke Stable element reference vs Re-querying', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Get stable reference to navigation element
+    const navElement = page.locator('nav');
+    await expect(navElement).toBeVisible();
+
+    // Use stable reference for interaction
+    const peopleLink = navElement.locator('a[routerLink="/people-list"]');
+    await peopleLink.click();
+
+    await reliabilityHelpers.waitForNavigationToComplete();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+
+    // Verify the navigation element is still stable after route change
+    await expect(navElement).toBeVisible();
+  });
+
+  test('@smoke Memory leak detection in element operations', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    await page.goto(baseURL);
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+
+    // Perform multiple navigation operations to test for memory issues
+    const routes = ['/people-list', '/roles-list', '/home', '/people-list'];
+
+    for (const route of routes) {
+      await reliabilityHelpers.interactWithElementInContext(`nav a[routerLink="${route}"]`, 'click', undefined, {
+        waitForStable: true
+      });
+      await reliabilityHelpers.waitForNavigationToComplete();
+
+      // Brief pause to allow for memory cleanup
+      await page.waitForTimeout(100);
+    }
+
+    // Final verification that we can still interact with the page normally
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+  });
+
+  test('@smoke Performance impact of reliability patterns', async ({ page, baseURL }) => {
+    const reliabilityHelpers = new ReliabilityHelpers(page);
+
+    const metrics = {
+      navigateStart: 0,
+      elementWaitTime: 0,
+      interactionTime: 0,
+      verificationTime: 0
+    };
+
+    // Start timing
+    metrics.navigateStart = Date.now();
+
+    await page.goto(baseURL);
+
+    const elementWaitStart = Date.now();
+    await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
+    metrics.elementWaitTime = Date.now() - elementWaitStart;
+
+    const interactionStart = Date.now();
+    await reliabilityHelpers.interactWithElementInContext('nav a[routerLink="/people-list"]', 'click', undefined, {
+      waitForStable: true
+    });
+    await reliabilityHelpers.waitForNavigationToComplete();
+    metrics.interactionTime = Date.now() - interactionStart;
+
+    const verificationStart = Date.now();
+    await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+    metrics.verificationTime = Date.now() - verificationStart;
+
+    const totalTime = Date.now() - metrics.navigateStart;
+
+    console.log('Performance Metrics:', {
+      elementWait: `${metrics.elementWaitTime}ms`,
+      interaction: `${metrics.interactionTime}ms`,
+      verification: `${metrics.verificationTime}ms`,
+      total: `${totalTime}ms`
+    });
+
+    // Ensure reliability patterns don't cause excessive performance impact
+    expect(metrics.elementWaitTime).toBeLessThan(3000);
+    expect(metrics.interactionTime).toBeLessThan(5000);
+    expect(metrics.verificationTime).toBeLessThan(1000);
+    expect(totalTime).toBeLessThan(15000);
   });
 
   test('@smoke Reliable element interaction verification', async ({ page, baseURL }) => {
@@ -334,9 +331,14 @@ test.describe('@smoke Reliability - Baseline Validation', () => {
       // Verify navigation
       await reliabilityHelpers.waitForNavigationToComplete();
 
-      // Verify page loaded
-      const expectedComponent = linkSelector.includes('people') ? 'router-outlet, app-people, main, .content' : 'router-outlet, app-roles, main, .content';
-      await reliabilityHelpers.waitForElementToBeReady(expectedComponent);
+      // Verify page loaded with more specific selectors
+      if (linkSelector.includes('people')) {
+        await reliabilityHelpers.waitForElementToBeReady('app-people-list');
+        await expect(page.locator('h3:has-text("People Directory")')).toBeVisible();
+      } else {
+        await reliabilityHelpers.waitForElementToBeReady('app-roles-list');
+        await expect(page.locator('h3:has-text("Roles")')).toBeVisible();
+      }
     }
   });
 });

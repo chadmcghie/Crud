@@ -99,7 +99,7 @@ The orchestrator identifies user intent through keyword and pattern matching:
 
 #### Debugging/Troubleshooting Requests
 **Keywords**: debug, fix, error, issue, problem, troubleshoot, why, failing
-**Agent**: troubleshooter
+**Agent**: troubleshooter-simple
 **Examples**:
 - "Debug this error"
 - "Fix the failing tests"
@@ -154,10 +154,15 @@ agents:
     tools: [Read, Grep, Glob]
     triggers: [today, date, current]
     
-  troubleshooter:
-    purpose: Intelligent test error resolution with registry-based learning
+  troubleshooter-simple:
+    purpose: Fast, practical test error resolution - first stage of troubleshooting
     tools: [Bash, Read, Write, Grep, Glob]
     triggers: [debug, fix, error, troubleshoot, failing]
+
+  troubleshooter-complex:
+    purpose: Advanced troubleshooting for complex errors (escalation only)
+    tools: [Bash, Read, Write, Grep, Glob]
+    triggers: [] # Only accessible via troubleshooter-simple escalation
     
   document-blocking-issue:
     purpose: Document critical blockers
@@ -193,7 +198,7 @@ agents:
 
 #### Bug Fix
 ```
-1. troubleshooter -> Analyze issue and implement fixes with registry tracking
+1. troubleshooter-simple -> Quick practical fixes (escalates to troubleshooter-complex if needed)
 2. test-runner -> Verify fix effectiveness
 3. commit-strategist -> Create fix commit
 4. git-workflow -> Push fix
@@ -219,13 +224,14 @@ agents:
 ```mermaid
 graph TD
     context-fetcher --> file-creator
-    context-fetcher --> troubleshooter
+    context-fetcher --> troubleshooter-simple
     file-creator --> test-runner
     test-runner --> commit-strategist
     commit-strategist --> git-workflow
     git-workflow --> project-manager
-    troubleshooter --> test-runner
-    troubleshooter --> file-creator
+    troubleshooter-simple --> test-runner
+    troubleshooter-simple --> file-creator
+    troubleshooter-simple --> troubleshooter-complex
     date-checker --> Independent
     document-blocking-issue --> context-fetcher
 ```
@@ -239,7 +245,7 @@ graph TD
 5. **git-workflow** should run after commit-strategist for push operations
 6. **project-manager** typically runs last to update status
 7. **date-checker** can run independently
-8. **troubleshooter** integrates with registry system and can work independently or with context
+8. **troubleshooter-simple** is the entry point for all troubleshooting, escalates to troubleshooter-complex when needed
 9. **document-blocking-issue** needs context about the issue
 
 ## Learning Cache Integration
@@ -249,7 +255,7 @@ The orchestrator consults the learning cache at `.agents/.agent-os/learning/patt
 - Memory references for important decisions
 - Common troubleshooting approaches
 
-When errors occur, check if pattern exists in learning cache before delegating to troubleshooter.
+When errors occur, check if pattern exists in learning cache before delegating to troubleshooter-simple.
 
 ## Error Handling
 
@@ -329,7 +335,7 @@ identified_tasks:
 
 agent_sequence:
   1. test-runner: Run tests and get failure details
-  2. troubleshooter: Analyze failure patterns and implement fixes
+  2. troubleshooter-simple: Try quick fixes (escalates to complex if needed)
   3. commit-strategist: Create fix commit
 ```
 
