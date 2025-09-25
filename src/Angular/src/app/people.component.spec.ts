@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -33,7 +33,7 @@ describe('PeopleComponent', () => {
       'updatePerson',
       'getPerson'
     ]);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({})
     });
@@ -99,7 +99,7 @@ describe('PeopleComponent', () => {
       'updatePerson',
       'getPerson'
     ]);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({ edit: mockPerson.id })
     });
@@ -159,35 +159,39 @@ describe('PeopleComponent', () => {
     expect(component.selectedRoleIds.size).toBe(0);
   });
 
-  it('should create person successfully', () => {
+  it('should create person successfully', fakeAsync(() => {
     const newPerson: PersonResponse = {
       id: '2',
       fullName: 'Jane Smith',
       phone: '555-0123',
       roles: []
     };
-    
+
     apiService.createPerson.and.returnValue(of(newPerson));
-    
+
     fixture.detectChanges();
-    
+
     component.form.patchValue({
       fullName: 'Jane Smith',
       phone: '555-0123'
     });
-    
+
     component.onSubmit();
-    
+
     expect(apiService.createPerson).toHaveBeenCalledWith({
       fullName: 'Jane Smith',
       phone: '555-0123',
       roleIds: []
     });
+
+    // Fast-forward time to handle setTimeout in navigation
+    tick(2000);
+
     expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
-  });
+  }));
 
-  it('should update person successfully', () => {
+  it('should update person successfully', fakeAsync(() => {
     // Set up the component as if it's in editing mode before detectChanges
     component.editingPerson = mockPerson;
     apiService.updatePerson.and.returnValue(of(undefined));
@@ -211,15 +215,19 @@ describe('PeopleComponent', () => {
     component.selectedRoleIds.add('2');
     
     component.onSubmit();
-    
+
     expect(apiService.updatePerson).toHaveBeenCalledWith('1', {
       fullName: 'John Updated',
       phone: '999-888-7777',
       roleIds: ['2']
     });
+
+    // Fast-forward time to handle setTimeout in navigation
+    tick(2000);
+
     expect(router.navigate).toHaveBeenCalledWith(['/people-list']);
     expect(component.isSubmitting).toBe(false);
-  });
+  }));
 
   it('should handle create person error', () => {
     apiService.createPerson.and.returnValue(throwError(() => new Error('API Error')));
