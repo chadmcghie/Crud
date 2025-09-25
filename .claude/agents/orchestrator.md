@@ -334,9 +334,8 @@ identified_tasks:
   - Verify fix
 
 agent_sequence:
-  1. test-runner: Run tests and get failure details
-  2. troubleshooter-simple: Try quick fixes (escalates to complex if needed)
-  3. commit-strategist: Create fix commit
+  1. troubleshooter-simple: Analyze existing failures and implement fixes
+  2. commit-strategist: Create fix commit
 ```
 
 ### Example 3: Status Request
