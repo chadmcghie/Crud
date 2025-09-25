@@ -1,65 +1,61 @@
-import { test, expect } from '../fixtures/serial-test-fixture';
-
-/**
- * Testing Environment Configuration Validation
- *
- * Ensures E2E tests run exclusively in Testing configuration
- * and that all environment settings are optimized for test execution.
- */
+import { test, expect } from '../fixtures/simple-test-fixture';
 
 test.describe('@smoke Testing Environment Validation', () => {
   test('@smoke Should be running in Testing environment', async ({ page, apiUrl }) => {
-    const response = await page.request.get(`${apiUrl}/api/health`);
+    const response = await page.request.get(`${apiUrl}/api/system/info`);
     expect(response.ok()).toBe(true);
 
-    // Verify we're explicitly in Testing environment
-    const environmentResponse = await page.request.get(`${apiUrl}/api/environment`);
-    if (environmentResponse.ok()) {
-      const envData = await environmentResponse.json();
-      expect(envData.environment).toBe('Testing');
-    }
+    const systemInfo = await response.json();
+    expect(systemInfo.environment).toBe('Testing');
+    console.log('System info:', systemInfo);
   });
 
   test('@smoke Should use SQLite database provider', async ({ page, apiUrl }) => {
-    // Verify database provider through API
-    const response = await page.request.get(`${apiUrl}/api/health`);
+    const response = await page.request.get(`${apiUrl}/api/system/info`);
     expect(response.ok()).toBe(true);
 
-    // Test database functionality (which validates SQLite is working)
-    const peopleResponse = await page.request.get(`${apiUrl}/api/people`);
-    expect(peopleResponse.ok()).toBe(true);
-    expect(Array.isArray(await peopleResponse.json())).toBe(true);
+    const systemInfo = await response.json();
+    expect(systemInfo.databaseProvider).toBe('SQLite');
   });
 
   test('@smoke Should have testing-specific features enabled', async ({ page, apiUrl }) => {
-    // Test that authorization bypass is working
-    const rolesResponse = await page.request.get(`${apiUrl}/api/roles`);
-    expect(rolesResponse.ok()).toBe(true);
+    // Test database reset functionality (only available in Testing environment)
+    const resetResponse = await page.request.post(`${apiUrl}/api/test/reset-database`);
+    expect(resetResponse.ok()).toBe(true);
 
-    // Test that we can access protected endpoints without auth
+    // Test API endpoints work after reset
     const peopleResponse = await page.request.get(`${apiUrl}/api/people`);
     expect(peopleResponse.ok()).toBe(true);
   });
 
   test('@smoke Should use unique database per test run', async ({ page, apiUrl }) => {
-    // Create a test record to verify database isolation
-    const timestamp = Date.now();
+    // Create a unique test entity with valid FullName format (letters, spaces, hyphens, apostrophes, periods only)
     const testData = {
-      fullName: `Test Isolation User ${timestamp}`,
-      phone: '+1-555-0001'
+      fullName: `Test User Alpha Beta`, // Use valid name format without numbers
+      phone: `+1-555-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
     };
 
+    // Create entity
     const createResponse = await page.request.post(`${apiUrl}/api/people`, {
-      data: testData
+      data: testData,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true'
+      }
     });
     expect(createResponse.ok()).toBe(true);
-
     const created = await createResponse.json();
-    expect(created.id).toBeTruthy();
-    expect(created.fullName).toBe(testData.fullName);
 
-    // Cleanup
-    await page.request.delete(`${apiUrl}/api/people/${created.id}`);
+    // Verify it exists
+    const getResponse = await page.request.get(`${apiUrl}/api/people/${created.id}`);
+    expect(getResponse.ok()).toBe(true);
+
+    // Clean up
+    await page.request.delete(`${apiUrl}/api/people/${created.id}`, {
+      headers: {
+        'X-E2E-Test': 'true'
+      }
+    });
   });
 });
 
@@ -67,9 +63,9 @@ test.describe('@smoke Testing Configuration Performance', () => {
   test('@smoke Server startup should be optimized for Testing', async ({ page, apiUrl }) => {
     const startTime = Date.now();
 
-    // Test multiple rapid API calls to verify performance
+    // Make 5 concurrent requests to test server responsiveness
     const promises = Array.from({ length: 5 }, () =>
-      page.request.get(`${apiUrl}/health`)
+      page.request.get(`${apiUrl}/api/people`)
     );
 
     const responses = await Promise.all(promises);
@@ -80,88 +76,64 @@ test.describe('@smoke Testing Configuration Performance', () => {
       expect(response.ok()).toBe(true);
     });
 
-    // Should handle concurrent requests efficiently
+    // Should handle 5 concurrent requests quickly (under 2 seconds)
     const totalTime = endTime - startTime;
-    expect(totalTime).toBeLessThan(2000); // Should complete within 2 seconds
+    console.log(`Performance test: ${totalTime}ms for 5 concurrent requests`);
+    expect(totalTime).toBeLessThan(2000);
   });
 
   test('@smoke Database operations should be fast', async ({ page, apiUrl }) => {
+    const testData = {
+      fullName: 'Performance Test User', // Valid name format
+      phone: '+1-555-1234' // Valid phone format with numbers only
+    };
+
+    // Time a full CRUD cycle
     const startTime = Date.now();
 
-    // Test CRUD cycle timing
-    const testData = { fullName: 'Performance Test User', phone: '+1-555-0002' };
-
-    // Create
-    const createResponse = await page.request.post(`${apiUrl}/api/people`, { data: testData });
+    // Create - with proper E2E test headers
+    const createResponse = await page.request.post(`${apiUrl}/api/people`, {
+      data: testData,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true'
+      }
+    });
     expect(createResponse.ok()).toBe(true);
     const created = await createResponse.json();
 
     // Read
-    const readResponse = await page.request.get(`${apiUrl}/api/people/${created.id}`);
+    const readResponse = await page.request.get(`${apiUrl}/api/people/${created.id}`, {
+      headers: {
+        'X-E2E-Test': 'true'
+      }
+    });
     expect(readResponse.ok()).toBe(true);
 
     // Update
+    const updateData = { ...testData, fullName: 'Updated Performance Test User' };
     const updateResponse = await page.request.put(`${apiUrl}/api/people/${created.id}`, {
-      data: { ...created, fullName: 'Updated Performance Test User' }
+      data: updateData,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true'
+      }
     });
     expect(updateResponse.ok()).toBe(true);
 
     // Delete
-    const deleteResponse = await page.request.delete(`${apiUrl}/api/people/${created.id}`);
+    const deleteResponse = await page.request.delete(`${apiUrl}/api/people/${created.id}`, {
+      headers: {
+        'X-E2E-Test': 'true'
+      }
+    });
     expect(deleteResponse.ok()).toBe(true);
 
     const endTime = Date.now();
     const totalTime = endTime - startTime;
 
-    // CRUD cycle should be fast in Testing environment
-    expect(totalTime).toBeLessThan(1000); // Should complete within 1 second
-  });
-});
-
-test.describe('@critical Testing Environment Constraints', () => {
-  test('@critical Should never attempt multi-configuration testing', async ({ page }) => {
-    // Verify we're not accidentally testing multiple environments
-    // This test exists to prevent regression to multi-config approach
-
-    // Check that we only have one server configuration
-    const testConfig = {
-      environment: 'Testing',
-      singleConfig: true,
-      avoidMultiConfig: true
-    };
-
-    expect(testConfig.environment).toBe('Testing');
-    expect(testConfig.singleConfig).toBe(true);
-    expect(testConfig.avoidMultiConfig).toBe(true);
-  });
-
-  test('@critical Should maintain ADR-001 compliance (serial execution)', async ({ page }) => {
-    // This test documents that we're running serially as required
-    // Workers should be set to 1 in playwright.config.ts
-
-    const serialConfig = {
-      workers: 1,
-      fullyParallel: false,
-      reason: 'SQLite single-writer constraint'
-    };
-
-    expect(serialConfig.workers).toBe(1);
-    expect(serialConfig.fullyParallel).toBe(false);
-  });
-
-  test('@critical Should maintain ADR-003 compliance (webServer)', async ({ page, apiUrl }) => {
-    // Verify we're using Playwright's webServer (not custom server management)
-    const response = await page.request.get(`${apiUrl}/health`);
-    expect(response.ok()).toBe(true);
-
-    // The fact that we can reach the server proves webServer is working
-    // This test documents the architectural decision
-    const webServerConfig = {
-      usingPlaywrightWebServer: true,
-      avoidCustomServerManagement: true
-    };
-
-    expect(webServerConfig.usingPlaywrightWebServer).toBe(true);
-    expect(webServerConfig.avoidCustomServerManagement).toBe(true);
+    console.log(`CRUD cycle time: ${totalTime}ms`);
+    // Full CRUD cycle should complete within 1 second in Testing environment
+    expect(totalTime).toBeLessThan(1000);
   });
 });
