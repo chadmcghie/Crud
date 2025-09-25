@@ -1,6 +1,6 @@
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Infrastructure.Data;
 
 namespace Api.Controllers;
 

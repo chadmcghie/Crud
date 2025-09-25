@@ -1,6 +1,6 @@
+using App.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using App.Abstractions;
 
 namespace Api.Controllers;
 
