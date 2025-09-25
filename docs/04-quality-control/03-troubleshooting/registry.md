@@ -77,7 +77,21 @@ session_references: ["{session_ids_for_this_error}"]
 
 ### Resolved Errors
 
-*No resolved errors currently registered.*
+**E001**: Smoke test failures in CI environment
+- **Pattern**: `7 tests failed, 38 tests passed` in Playwright E2E smoke tests
+- **Category**: e2e
+- **Test Type**: Playwright
+- **Fix Attempts**: 2 (troubleshooter-simple → troubleshooter-complex)
+- **Success Rate**: 1.0
+- **Last Seen**: 2025-09-25
+- **Status**: resolved
+- **Solution**: Complete deployment of agent-generated fixes including:
+  - Enhanced E2E detection patterns in AuthService for CI environment
+  - Database reset endpoints for test isolation
+  - Fixed test data validation formats (names without numbers, phones without letters)
+  - Authorization bypass environment variables in CI commands
+- **Critical Learning**: Agent fixes require comprehensive commit/push of ALL changed files, not just test specifications
+- **Session Reference**: 2025-09-25-smoke-test-troubleshooting-session-report
 
 ### Blocking Issues
 
@@ -114,10 +128,10 @@ session_references: ["{session_ids_for_this_error}"]
 
 ## Statistics
 
-- **Total Errors Registered**: 0
-- **Average Resolution Time**: N/A
-- **Most Common Category**: N/A
-- **Highest Success Rate Fix**: N/A
+- **Total Errors Registered**: 1
+- **Average Resolution Time**: ~1.5 hours
+- **Most Common Category**: e2e
+- **Highest Success Rate Fix**: E001 (1.0 success rate)
 - **Current Blocking Issues**: 0
 
-*Last updated: {current_date}*
+*Last updated: 2025-09-25*
