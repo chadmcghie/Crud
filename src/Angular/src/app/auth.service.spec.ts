@@ -8,8 +8,17 @@ describe('AuthService', () => {
   let httpMock: HttpTestingController;
   const apiUrl = 'http://localhost:5172/api';
 
+  // JWT payload interface for tests
+  interface JwtTestPayload {
+    nameid?: string;
+    email?: string;
+    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[];
+    exp?: number;
+    [key: string]: unknown;
+  }
+
   // Helper function to create a valid test JWT token
-  const createTestJWT = (payload: any): string => {
+  const createTestJWT = (payload: JwtTestPayload): string => {
     const header = { alg: 'HS256', typ: 'JWT' };
     const encodedHeader = btoa(JSON.stringify(header));
     const encodedPayload = btoa(JSON.stringify(payload));
