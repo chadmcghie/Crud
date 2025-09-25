@@ -35,19 +35,9 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
 
         try
         {
-            // Validate required fields
-            if (string.IsNullOrWhiteSpace(request.FirstName))
-            {
-                return new AuthenticationResponse { Success = false, Error = "First name is required" };
-            }
-
-            if (string.IsNullOrWhiteSpace(request.LastName))
-            {
-                return new AuthenticationResponse { Success = false, Error = "Last name is required" };
-            }
-
-            var firstName = request.FirstName.Trim();
-            var lastName = request.LastName.Trim();
+            // Set default values for optional fields
+            var firstName = string.IsNullOrWhiteSpace(request.FirstName) ? "User" : request.FirstName.Trim();
+            var lastName = string.IsNullOrWhiteSpace(request.LastName) ? "" : request.LastName.Trim();
 
             // Create email value object (will throw if invalid)
             var email = new Email(request.Email);
