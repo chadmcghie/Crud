@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Router, ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
 import { PeopleComponent } from './people.component';
 import { ApiService, RoleDto, PersonResponse } from './api.service';
 
@@ -34,6 +34,7 @@ describe('PeopleComponent', () => {
       'getPerson'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
+    routerSpy.events = EMPTY; // Add empty events observable to prevent RouterLink subscription errors
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({})
     });

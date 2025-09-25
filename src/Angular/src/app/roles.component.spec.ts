@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Router, ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
 import { RolesComponent } from './roles.component';
 import { ApiService, RoleDto } from './api.service';
 
@@ -25,6 +25,7 @@ describe('RolesComponent', () => {
       'getRole'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = EMPTY;
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({})
     });
@@ -119,6 +120,7 @@ describe('RolesComponent - Edit Mode', () => {
       'getRole'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = EMPTY;
     // Create ActivatedRoute with edit params
     const editActivatedRoute = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({ edit: '1' })
@@ -227,6 +229,7 @@ describe('RolesComponent - General Tests', () => {
       'getRole'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = EMPTY;
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       queryParams: of({})
     });

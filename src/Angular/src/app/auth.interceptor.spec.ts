@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { AuthInterceptor } from './auth.interceptor';
 import { AuthService } from './auth.service';
 import { Router } from '@angular/router';
-import { of, throwError, Subject } from 'rxjs';
+import { of, throwError, Subject, EMPTY } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
 interface TokenResponse {
@@ -25,6 +25,7 @@ describe('AuthInterceptor', () => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate', 'createUrlTree', 'serializeUrl']);
     routerSpy.createUrlTree.and.returnValue(Promise.resolve(true));
     routerSpy.serializeUrl.and.returnValue('/test');
+    routerSpy.events = EMPTY;
 
     TestBed.configureTestingModule({
       providers: [

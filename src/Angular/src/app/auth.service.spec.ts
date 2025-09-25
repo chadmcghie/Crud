@@ -8,6 +8,14 @@ describe('AuthService', () => {
   let httpMock: HttpTestingController;
   const apiUrl = 'http://localhost:5172/api';
 
+  // Helper function to create a valid test JWT token
+  const createTestJWT = (payload: any): string => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const encodedHeader = btoa(JSON.stringify(header));
+    const encodedPayload = btoa(JSON.stringify(payload));
+    return `${encodedHeader}.${encodedPayload}.test-signature`;
+  };
+
   beforeEach(() => {
     // Clear any stored tokens before each test
     sessionStorage.clear();
@@ -34,8 +42,14 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should send login request and store tokens', () => {
       const mockCredentials = { email: 'test@example.com', password: 'password123' };
+      const jwtPayload = {
+        nameid: '123',
+        email: 'test@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
       const mockResponse = {
-        accessToken: 'mock-access-token',
+        accessToken: createTestJWT(jwtPayload),
         refreshToken: 'mock-refresh-token',
         user: {
           id: '123',
@@ -46,7 +60,7 @@ describe('AuthService', () => {
 
       service.login(mockCredentials.email, mockCredentials.password).subscribe(response => {
         expect(response).toEqual(mockResponse);
-        expect(service.getAccessToken()).toBe('mock-access-token');
+        expect(service.getAccessToken()).toBe(mockResponse.accessToken);
       });
 
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
@@ -56,8 +70,14 @@ describe('AuthService', () => {
     });
 
     it('should update current user on successful login', () => {
+      const jwtPayload = {
+        nameid: '123',
+        email: 'test@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+      };
       const mockResponse = {
-        accessToken: 'mock-access-token',
+        accessToken: createTestJWT(jwtPayload),
         refreshToken: 'mock-refresh-token',
         user: {
           id: '123',
@@ -102,10 +122,18 @@ describe('AuthService', () => {
       const mockRegistration = {
         email: 'newuser@example.com',
         password: 'password123',
-        confirmPassword: 'password123'
+        confirmPassword: 'password123',
+        firstName: undefined,
+        lastName: undefined
+      };
+      const jwtPayload = {
+        nameid: '456',
+        email: 'newuser@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
       const mockResponse = {
-        accessToken: 'mock-access-token',
+        accessToken: createTestJWT(jwtPayload),
         refreshToken: 'mock-refresh-token',
         user: {
           id: '456',
@@ -117,7 +145,7 @@ describe('AuthService', () => {
       service.register(mockRegistration.email, mockRegistration.password, mockRegistration.confirmPassword)
         .subscribe(response => {
           expect(response).toEqual(mockResponse);
-          expect(service.getAccessToken()).toBe('mock-access-token');
+          expect(service.getAccessToken()).toBe(mockResponse.accessToken);
         });
 
       const req = httpMock.expectOne(`${apiUrl}/auth/register`);
@@ -127,8 +155,14 @@ describe('AuthService', () => {
     });
 
     it('should update current user on successful registration', () => {
+      const jwtPayload = {
+        nameid: '456',
+        email: 'newuser@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
       const mockResponse = {
-        accessToken: 'mock-access-token',
+        accessToken: createTestJWT(jwtPayload),
         refreshToken: 'mock-refresh-token',
         user: {
           id: '456',
@@ -194,14 +228,20 @@ describe('AuthService', () => {
 
   describe('refreshToken', () => {
     it('should refresh access token', () => {
+      const jwtPayload = {
+        nameid: '123',
+        email: 'test@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
       const mockResponse = {
-        accessToken: 'new-access-token',
+        accessToken: createTestJWT(jwtPayload),
         refreshToken: 'new-refresh-token'
       };
 
       service.refreshToken().subscribe(response => {
         expect(response).toEqual(mockResponse);
-        expect(service.getAccessToken()).toBe('new-access-token');
+        expect(service.getAccessToken()).toBe(mockResponse.accessToken);
       });
 
       const req = httpMock.expectOne(`${apiUrl}/auth/refresh`);
@@ -300,8 +340,15 @@ describe('AuthService', () => {
 
   describe('token persistence', () => {
     it('should store tokens in sessionStorage by default', () => {
+      const jwtPayload = {
+        nameid: '123',
+        email: 'test@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const sessionToken = createTestJWT(jwtPayload);
       const mockResponse = {
-        accessToken: 'session-token',
+        accessToken: sessionToken,
         refreshToken: 'refresh-token',
         user: { id: '123', email: 'test@example.com', roles: ['user'] }
       };
@@ -310,13 +357,20 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush(mockResponse);
 
-      expect(sessionStorage.getItem('access_token')).toBe('session-token');
+      expect(sessionStorage.getItem('access_token')).toBe(sessionToken);
       expect(localStorage.getItem('access_token')).toBeNull();
     });
 
     it('should store tokens in localStorage when remember me is true', () => {
+      const jwtPayload = {
+        nameid: '123',
+        email: 'test@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const persistentToken = createTestJWT(jwtPayload);
       const mockResponse = {
-        accessToken: 'persistent-token',
+        accessToken: persistentToken,
         refreshToken: 'refresh-token',
         user: { id: '123', email: 'test@example.com', roles: ['user'] }
       };
@@ -325,42 +379,47 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/auth/login`);
       req.flush(mockResponse);
 
-      expect(localStorage.getItem('access_token')).toBe('persistent-token');
+      expect(localStorage.getItem('access_token')).toBe(persistentToken);
       expect(sessionStorage.getItem('access_token')).toBeNull();
     });
   });
 
   describe('initialization', () => {
     it('should load user from stored token on service creation', () => {
-      // Store a token before creating the service
-      sessionStorage.setItem('access_token', 'existing-token');
-      
-      // Recreate TestBed with new service instance  
+      // Create a valid JWT token for testing
+      const jwtPayload = {
+        nameid: '789',
+        email: 'existing@example.com',
+        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'user',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const existingToken = createTestJWT(jwtPayload);
+      const existingUser = {
+        id: '789',
+        email: 'existing@example.com',
+        roles: ['user']
+      };
+
+      // Store both token and user data as service does
+      sessionStorage.setItem('access_token', existingToken);
+      sessionStorage.setItem('user', JSON.stringify(existingUser));
+
+      // Recreate TestBed with new service instance
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [HttpClientTestingModule],
         providers: [AuthService]
       });
-      
+
       const newService = TestBed.inject(AuthService);
       const newHttpMock = TestBed.inject(HttpTestingController);
-      
-      // Service constructor should have called validateStoredToken
-      const req = newHttpMock.expectOne(`${apiUrl}/auth/me`);
-      req.flush({
-        id: '789',
-        email: 'existing@example.com',
-        roles: ['user']
+
+      // Service constructor loads user from stored user data (not JWT), no HTTP call expected
+      newService.currentUser$.pipe(take(1)).subscribe(user => {
+        expect(user).toEqual(existingUser);
       });
 
-      newService.currentUser$.pipe(take(1)).subscribe(user => {
-        expect(user).toEqual({
-          id: '789',
-          email: 'existing@example.com',
-          roles: ['user']
-        });
-      });
-      
+      // Verify no HTTP requests were made during initialization
       newHttpMock.verify();
     });
   });
