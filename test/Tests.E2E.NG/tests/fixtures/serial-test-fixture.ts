@@ -10,6 +10,9 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
   page: async ({ page }, use) => {
     // AGGRESSIVE: Inject authentication tokens before Angular loads
     await page.addInitScript(() => {
+      const injectionTimestamp = new Date().toISOString();
+      console.log('🔍 STORAGE INJECTION RUNNING - Timestamp:', injectionTimestamp);
+
       // Create mock authenticated user matching auth.service.ts expectations
       const mockUser = {
         id: 'e2e-test-user',
@@ -35,9 +38,18 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
 
       // Set E2E test markers for additional detection
       localStorage.setItem('e2e-test-mode', 'active');
+      localStorage.setItem('e2e-injection-timestamp', injectionTimestamp);
       document.documentElement.setAttribute('data-e2e', 'true');
 
-      console.log('🤖 E2E Auth Injection: Mock user and tokens injected before Angular load');
+      console.log('🔍 STORAGE INJECTION COMPLETE:', {
+        timestamp: injectionTimestamp,
+        mockUser: mockUser,
+        tokenLength: mockToken.length,
+        localStorage_set: !!localStorage.getItem('access_token'),
+        sessionStorage_set: !!sessionStorage.getItem('access_token'),
+        e2e_mode_set: localStorage.getItem('e2e-test-mode'),
+        document_attr_set: document.documentElement.getAttribute('data-e2e')
+      });
     });
     
     // Reset database via API before test

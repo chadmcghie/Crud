@@ -33,9 +33,23 @@ export class AuthService {
   private http = inject(HttpClient);
 
   constructor() {
+    // 🔍 DEBUG: AuthService constructor verification
+    console.log('🔍 AuthService Constructor Called - Timestamp:', new Date().toISOString());
+
+    // 🔍 DEBUG: Check what's in storage BEFORE E2E detection
+    console.log('🔍 PRE-E2E Storage Check:', {
+      localStorage_access_token: localStorage.getItem('access_token'),
+      sessionStorage_access_token: sessionStorage.getItem('access_token'),
+      localStorage_user: localStorage.getItem('user'),
+      sessionStorage_user: sessionStorage.getItem('user'),
+      localStorage_e2e_mode: localStorage.getItem('e2e-test-mode'),
+      document_e2e_attr: document.documentElement.getAttribute('data-e2e')
+    });
+
     // E2E Testing: Auto-authenticate for E2E tests
     // More comprehensive E2E detection for CI environments
     const isE2EMode = this.isE2ETestEnvironment();
+    console.log('🔍 Final E2E Mode Decision:', isE2EMode);
 
     if (isE2EMode) {
       // Create mock authenticated user for E2E tests
@@ -50,7 +64,10 @@ export class AuthService {
       console.log('🤖 E2E Detection: User agent =', navigator.userAgent);
       console.log('🤖 E2E Detection: Host =', window.location.hostname);
       console.log('🤖 E2E Detection: Port =', window.location.port);
+      console.log('🤖 E2E Mode: Mock user set to currentUserSubject');
       return;
+    } else {
+      console.log('🔍 E2E Mode NOT detected - proceeding with normal auth flow');
     }
 
     // Normal authentication flow

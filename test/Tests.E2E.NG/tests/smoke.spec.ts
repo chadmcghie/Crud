@@ -19,6 +19,14 @@ test.describe('@smoke Application Health Checks', () => {
   });
 
   test('@smoke Angular application loads', async ({ page, baseURL }) => {
+    // 🔍 DEBUG: Capture console logs to understand what's happening
+    const consoleLogs: string[] = [];
+    page.on('console', msg => {
+      const logEntry = `[${msg.type()}] ${msg.text()}`;
+      consoleLogs.push(logEntry);
+      console.log('🔍 Browser Console:', logEntry);
+    });
+
     const response = await page.goto(baseURL);
     expect(response?.ok()).toBe(true);
 
@@ -27,6 +35,10 @@ test.describe('@smoke Application Health Checks', () => {
       () => typeof (window as any).ng !== 'undefined',
       { timeout: 10000 }
     );
+
+    // 🔍 DEBUG: Log all captured console messages for analysis
+    console.log('🔍 Total Console Messages Captured:', consoleLogs.length);
+    console.log('🔍 All Console Messages:', consoleLogs);
   });
 
   test('@smoke Navigation menu is visible', async ({ page, baseURL }) => {
