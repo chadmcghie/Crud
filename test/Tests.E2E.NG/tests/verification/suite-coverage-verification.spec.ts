@@ -266,7 +266,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     reliabilityChecklist.deterministicWaiting = !!loadWaitResult;
 
     // Test 2: Event-driven patterns (using waitFor instead of sleep)
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
     await peopleLink.click();
     await page.locator('router-outlet, app-people, main, .content').waitFor({ state: 'visible', timeout: 5000 });
     reliabilityChecklist.eventDrivenPatterns = true;

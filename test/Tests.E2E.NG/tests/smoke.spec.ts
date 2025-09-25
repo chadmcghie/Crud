@@ -51,9 +51,9 @@ test.describe('@smoke Application Health Checks', () => {
     // Additional wait for auth state to stabilize
     await page.waitForTimeout(2000);
 
-    // Check for navigation links
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    // Check for navigation links - use nav context to avoid duplicate elements
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
+    const rolesLink = page.locator('nav a[routerLink="/roles-list"]');
 
     await expect(peopleLink).toBeVisible({ timeout: 15000 });
     await expect(rolesLink).toBeVisible({ timeout: 15000 });
