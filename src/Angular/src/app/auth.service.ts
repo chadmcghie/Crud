@@ -98,7 +98,7 @@ export class AuthService {
     const hasTestQuery = window.location.search.includes('e2e=true');
 
     // Check for Playwright-specific indicators
-    const hasTestRunId = !!(window as any).testRunId || document.querySelector('[data-test-run-id]');
+    const hasTestRunId = !!(window as any).testRunId || !!document.querySelector('[data-test-run-id]');
 
     // CI-specific detection - be more aggressive
     const isCIEnvironment = userAgent.includes('headless') ||
