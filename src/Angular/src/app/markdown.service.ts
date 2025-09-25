@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { marked } from 'marked';
@@ -7,7 +7,9 @@ import { marked } from 'marked';
   providedIn: 'root'
 })
 export class MarkdownService {
-  constructor(private http: HttpClient) {
+  private http = inject(HttpClient);
+
+  constructor() {
     // Configure marked options for better rendering
     marked.setOptions({
       gfm: true,

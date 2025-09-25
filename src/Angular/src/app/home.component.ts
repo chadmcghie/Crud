@@ -2,7 +2,6 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from './auth.service';
-import { HttpClient } from '@angular/common/http';
 import { MarkdownService } from './markdown.service';
 import { Observable } from 'rxjs';
 
@@ -13,7 +12,7 @@ import { Observable } from 'rxjs';
   template: `
     <div class="home-container">
       <!-- Public Homepage for non-authenticated users -->
-      <div *ngIf="!(authService.currentUser$ | async)" class="public-homepage">
+      <div *ngIf="(authService.currentUser$ | async) === null" class="public-homepage">
         <div class="readme-content" [innerHTML]="readmeContent$ | async">
           <!-- Dynamic README content will be loaded here -->
         </div>

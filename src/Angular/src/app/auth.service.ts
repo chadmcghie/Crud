@@ -52,7 +52,7 @@ export class AuthService {
   login(email: string, password: string, rememberMe = false): Observable<AuthResponse> {
     this.useLocalStorage = rememberMe;
 
-    return this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password })
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, { email, password })
       .pipe(
         tap(response => {
           console.log('Login response:', response);
@@ -280,7 +280,7 @@ export class AuthService {
     }
   }
 
-  private extractRolesFromToken(payload: any): string[] {
+  private extractRolesFromToken(payload: Record<string, unknown>): string[] {
     console.log('=== ROLES DEBUG ===');
     console.log('Payload keys:', Object.keys(payload));
 
