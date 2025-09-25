@@ -19,8 +19,8 @@ test.describe('People Management - Serial Tests', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People link
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Click People link - use nav context to avoid duplicate elements
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
     await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
@@ -31,8 +31,8 @@ test.describe('People Management - Serial Tests', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People link
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Click People link - use nav context to avoid duplicate elements
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
     await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
@@ -45,8 +45,8 @@ test.describe('People Management - Serial Tests', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
     
-    // Click People link
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Click People link - use nav context to avoid duplicate elements
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
     await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     

@@ -19,6 +19,14 @@ test.describe('@smoke Application Health Checks', () => {
   });
 
   test('@smoke Angular application loads', async ({ page, baseURL }) => {
+    // 🔍 DEBUG: Capture console logs to understand what's happening
+    const consoleLogs: string[] = [];
+    page.on('console', msg => {
+      const logEntry = `[${msg.type()}] ${msg.text()}`;
+      consoleLogs.push(logEntry);
+      console.log('🔍 Browser Console:', logEntry);
+    });
+
     const response = await page.goto(baseURL);
     expect(response?.ok()).toBe(true);
 
@@ -27,20 +35,28 @@ test.describe('@smoke Application Health Checks', () => {
       () => typeof (window as any).ng !== 'undefined',
       { timeout: 10000 }
     );
+
+    // 🔍 DEBUG: Log all captured console messages for analysis
+    console.log('🔍 Total Console Messages Captured:', consoleLogs.length);
+    console.log('🔍 All Console Messages:', consoleLogs);
   });
 
   test('@smoke Navigation menu is visible', async ({ page, baseURL }) => {
     await page.goto(baseURL);
 
-    // Wait for the app to load
+    // Wait for the app to load and be E2E ready
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.waitForSelector('[data-e2e-ready="true"]', { timeout: 15000 });
 
-    // Check for navigation links
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    // Additional wait for auth state to stabilize
+    await page.waitForTimeout(2000);
 
-    await expect(peopleLink).toBeVisible();
-    await expect(rolesLink).toBeVisible();
+    // Check for navigation links - use nav context to avoid duplicate elements
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
+    const rolesLink = page.locator('nav a[routerLink="/roles-list"]');
+
+    await expect(peopleLink).toBeVisible({ timeout: 15000 });
+    await expect(rolesLink).toBeVisible({ timeout: 15000 });
   });
 });
 

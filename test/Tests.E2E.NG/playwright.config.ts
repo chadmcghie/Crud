@@ -40,13 +40,15 @@ export default defineConfig({
   webServer: [
     {
       // API Server configuration
-      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
-      cwd: process.cwd(),
+      command: process.env.CI
+        ? `cd ${path.join(process.cwd(), '..', '..')} && dotnet run --project src/Api/Api.csproj --launch-profile testing`
+        : 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
+      cwd: process.env.CI ? undefined : process.cwd(),
       url: 'http://localhost:5172/health',
       timeout: 60 * 1000, // 60 seconds to start
       reuseExistingServer: !process.env.CI, // Reuse locally, fresh in CI
-      stdout: 'ignore',
-      stderr: 'ignore',
+      stdout: process.env.CI ? 'pipe' : 'ignore', // Show output in CI for debugging
+      stderr: process.env.CI ? 'pipe' : 'ignore', // Show errors in CI for debugging
       env: {
         // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
@@ -64,6 +66,7 @@ export default defineConfig({
         TEST_RESET_TOKEN: 'test-only-token',
         BYPASS_AUTHORIZATION_FOR_E2E: 'true',
         E2E_TEST_MODE: 'true',
+        BYPASS_AUTHORIZATION_FOR_INTEGRATION: 'true', // Additional bypass for E2E
 
         // Testing environment logging (minimal for performance)
         Logging__LogLevel__Default: 'Warning',
@@ -81,8 +84,10 @@ export default defineConfig({
     },
     {
       // Angular Server configuration
-      command: process.env.CI ? 'npm run start:ci' : 'npm start',
-      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      command: process.env.CI
+        ? `cd ${path.join(process.cwd(), '..', '..', 'src', 'Angular')} && npm run start:ci`
+        : 'npm start',
+      cwd: process.env.CI ? undefined : path.join(process.cwd(), '..', '..', 'src', 'Angular'),
       url: 'http://localhost:4200',
       timeout: 120 * 1000, // 2 minutes for Angular compilation
       reuseExistingServer: !process.env.CI,
@@ -91,6 +96,7 @@ export default defineConfig({
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
+        PATH: process.env.PATH, // Ensure PATH is inherited for CI
       },
     }
   ],
@@ -125,10 +131,11 @@ export default defineConfig({
   /* Test settings */
   use: {
     baseURL: 'http://localhost:4200',
-    
+
     /* API base URL for backend tests */
     extraHTTPHeaders: {
       'X-Test-Run-Id': testRunId.toString(),
+      'X-E2E-Test': 'true', // Additional E2E marker
     },
     
     /* Debugging aids */

@@ -98,12 +98,13 @@ The orchestrator identifies user intent through keyword and pattern matching:
 - "When was this created?"
 
 #### Debugging/Troubleshooting Requests
-**Keywords**: debug, fix, error, issue, problem, troubleshoot, why
-**Agent**: troubleshoot-with-history
+**Keywords**: debug, fix, error, issue, problem, troubleshoot, why, failing
+**Agent**: troubleshooter
 **Examples**:
 - "Debug this error"
 - "Fix the failing tests"
 - "Troubleshoot the build issue"
+- "Resolve test failures"
 
 #### Documentation Requests
 **Keywords**: document, blocking, issue, blocker
@@ -153,10 +154,10 @@ agents:
     tools: [Read, Grep, Glob]
     triggers: [today, date, current]
     
-  troubleshoot-with-history:
-    purpose: Debug issues with context
-    tools: [Read, Grep, Glob, Bash]
-    triggers: [debug, fix, error, troubleshoot]
+  troubleshooter:
+    purpose: Intelligent test error resolution with registry-based learning
+    tools: [Bash, Read, Write, Grep, Glob]
+    triggers: [debug, fix, error, troubleshoot, failing]
     
   document-blocking-issue:
     purpose: Document critical blockers
@@ -192,13 +193,10 @@ agents:
 
 #### Bug Fix
 ```
-1. troubleshoot-with-history -> Analyze the issue
-2. context-fetcher -> Find related code
-3. test-runner -> Run tests to reproduce
-4. file-creator -> Apply fixes
-5. test-runner -> Verify fix
-6. commit-strategist -> Create fix commit
-7. git-workflow -> Push fix
+1. troubleshooter -> Analyze issue and implement fixes with registry tracking
+2. test-runner -> Verify fix effectiveness
+3. commit-strategist -> Create fix commit
+4. git-workflow -> Push fix
 ```
 
 #### Documentation Update
@@ -221,12 +219,13 @@ agents:
 ```mermaid
 graph TD
     context-fetcher --> file-creator
-    context-fetcher --> troubleshoot-with-history
+    context-fetcher --> troubleshooter
     file-creator --> test-runner
     test-runner --> commit-strategist
     commit-strategist --> git-workflow
     git-workflow --> project-manager
-    troubleshoot-with-history --> file-creator
+    troubleshooter --> test-runner
+    troubleshooter --> file-creator
     date-checker --> Independent
     document-blocking-issue --> context-fetcher
 ```
@@ -240,7 +239,7 @@ graph TD
 5. **git-workflow** should run after commit-strategist for push operations
 6. **project-manager** typically runs last to update status
 7. **date-checker** can run independently
-8. **troubleshoot-with-history** benefits from context and checks learning cache
+8. **troubleshooter** integrates with registry system and can work independently or with context
 9. **document-blocking-issue** needs context about the issue
 
 ## Learning Cache Integration
@@ -250,7 +249,7 @@ The orchestrator consults the learning cache at `.agents/.agent-os/learning/patt
 - Memory references for important decisions
 - Common troubleshooting approaches
 
-When errors occur, check if pattern exists in learning cache before delegating to troubleshoot-with-history.
+When errors occur, check if pattern exists in learning cache before delegating to troubleshooter.
 
 ## Error Handling
 
@@ -330,11 +329,8 @@ identified_tasks:
 
 agent_sequence:
   1. test-runner: Run tests and get failure details
-  2. troubleshoot-with-history: Analyze failure patterns
-  3. context-fetcher: Find related code
-  4. file-creator: Apply fixes
-  5. test-runner: Verify fixes work
-  6. commit-strategist: Create fix commit
+  2. troubleshooter: Analyze failure patterns and implement fixes
+  3. commit-strategist: Create fix commit
 ```
 
 ### Example 3: Status Request

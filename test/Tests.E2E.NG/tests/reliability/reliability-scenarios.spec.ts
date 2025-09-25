@@ -322,8 +322,8 @@ test.describe('@smoke Reliability - Baseline Validation', () => {
     await page.goto(baseURL);
     await reliabilityHelpers.waitForElementToBeReady('h1:has-text("CRUD Template Application")');
 
-    // Test reliable link interactions
-    const links = ['a[routerLink="/people-list"]', 'a[routerLink="/roles-list"]'];
+    // Test reliable link interactions - use nav context to avoid duplicate elements
+    const links = ['nav a[routerLink="/people-list"]', 'nav a[routerLink="/roles-list"]'];
 
     for (const linkSelector of links) {
       // Navigate
