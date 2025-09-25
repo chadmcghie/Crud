@@ -212,7 +212,10 @@ export class RolesListComponent implements OnInit {
     if (confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
       this.api.deleteRole(role.id).subscribe({
         next: () => {
-          this.loadRoles(); // Refresh the list
+          // Add slight delay to ensure cache invalidation completes
+          setTimeout(() => {
+            this.loadRoles(); // Refresh the list
+          }, 100);
         },
         error: (error) => {
           console.error('Error deleting role:', error);

@@ -198,9 +198,19 @@ export class PerformanceOptimizedHelpers {
   async getPageLoadMetrics(): Promise<PerformanceMetrics> {
     return await this.page.evaluate(() => {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+
+      // Helper function to safely calculate timing differences
+      const safeTiming = (endTime: number, startTime: number): number => {
+        if (!endTime || !startTime || endTime === 0 || startTime === 0) {
+          return 0;
+        }
+        const result = endTime - startTime;
+        return isNaN(result) || result < 0 ? 0 : Math.round(result);
+      };
+
       return {
-        domContentLoaded: Math.round(navigation.domContentLoadedEventEnd - navigation.navigationStart),
-        loadComplete: Math.round(navigation.loadEventEnd - navigation.navigationStart),
+        domContentLoaded: safeTiming(navigation.domContentLoadedEventEnd, navigation.navigationStart),
+        loadComplete: safeTiming(navigation.loadEventEnd, navigation.navigationStart),
         firstPaint: Math.round((performance.getEntriesByType('paint').find(entry =>
           entry.name === 'first-paint')?.startTime || 0)),
         firstContentfulPaint: Math.round((performance.getEntriesByType('paint').find(entry =>

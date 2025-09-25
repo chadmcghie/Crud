@@ -65,17 +65,15 @@ public class EfRoleRepository : IRoleRepository
             var role = await _context.Roles.FindAsync(new object[] { id }, ct);
             if (role != null)
             {
-                _context.Roles.Remove(role);
+                // Use soft delete instead of hard delete for data safety
+                // This resolves the foreign key constraint issue since the role record remains
+                role.SoftDelete("system"); // TODO: Get current user context for audit trail
                 await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             }
         }
         catch (DbUpdateConcurrencyException ex)
         {
             throw new InvalidOperationException("The role was modified by another user. Please refresh and try again.", ex);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY constraint failed") == true)
-        {
-            throw new InvalidOperationException("Cannot delete role because it is assigned to one or more people.", ex);
         }
     }
 }

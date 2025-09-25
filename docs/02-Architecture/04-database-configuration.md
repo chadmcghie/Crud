@@ -184,7 +184,7 @@ Due to SQLite's single-writer limitation and Entity Framework Core's constraints
 - Each test gets a fresh database via file deletion
 - Parallel execution causes database lock errors
 
-See [ADR-001: Serial E2E Testing](./Decisions/0001-Serial-E2E-Testing.md) for full details.
+See [ADR-001: Serial E2E Testing](./decisions/2025-08-28-adr-001-serial-e2e-testing.md) for full details.
 
 ## Troubleshooting
 

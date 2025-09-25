@@ -246,7 +246,7 @@ public class RegisterUserCommandHandlerTests
         [InlineData("John", "")]
         [InlineData(null, "Doe")]
         [InlineData("John", null)]
-        public async Task WithInvalidNames_ShouldReturnFailure(string? firstName, string? lastName)
+        public async Task WithEmptyNames_ShouldUseDefaultsAndSucceed(string? firstName, string? lastName)
         {
             // Arrange
             var command = new RegisterUserCommand
@@ -257,18 +257,37 @@ public class RegisterUserCommandHandlerTests
                 LastName = lastName!
             };
 
+            var hashedPassword = "hashed_password_value_with_proper_length_for_bcrypt";
+            _mockPasswordHasher.Setup(x => x.HashPassword(It.IsAny<string>()))
+                .Returns(hashedPassword);
+
+            _mockUserRepository.Setup(x => x.GetByEmailAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
+
+            var expectedFirstName = string.IsNullOrWhiteSpace(firstName) ? "User" : firstName.Trim();
+            var expectedLastName = string.IsNullOrWhiteSpace(lastName) ? "" : lastName.Trim();
+
+            var createdUser = new User(new Email("test@example.com"), new PasswordHash(hashedPassword), expectedFirstName, expectedLastName);
+            _mockUserRepository.Setup(x => x.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(createdUser);
+
+            _mockJwtTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>()))
+                .Returns("access_token");
+            _mockJwtTokenService.Setup(x => x.GenerateRefreshToken())
+                .Returns("refresh_token");
+
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
             result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().ContainAny("First name", "Last name");
+            result.Success.Should().BeTrue(); // Should succeed with defaults
+            result.AccessToken.Should().Be("access_token");
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(),
                 It.IsAny<CancellationToken>()),
-                Times.Never);
+                Times.Once);
         }
 
         [Fact]

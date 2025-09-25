@@ -27,8 +27,8 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .WithMany()
             .UsingEntity<Dictionary<string, object>>(
                 "PersonRole",
-                j => j.HasOne<Role>().WithMany().HasForeignKey("RoleId"),
-                j => j.HasOne<Person>().WithMany().HasForeignKey("PersonId"),
+                j => j.HasOne<Role>().WithMany().HasForeignKey("RoleId").OnDelete(DeleteBehavior.Cascade),
+                j => j.HasOne<Person>().WithMany().HasForeignKey("PersonId").OnDelete(DeleteBehavior.Cascade),
                 j =>
                 {
                     j.HasKey("PersonId", "RoleId");

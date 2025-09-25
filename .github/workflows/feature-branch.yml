@@ -56,7 +56,16 @@ jobs:
     - name: Auto-format Backend Code
       run: |
         echo "🎨 Auto-formatting C# code with dotnet format..."
-        dotnet format solutions/Crud.sln
+        echo "PATH: $PATH"
+        echo "DOTNET_ROOT: $DOTNET_ROOT"
+        which dotnet || echo "dotnet not found in PATH"
+        # Ensure dotnet is in PATH
+        export PATH="$DOTNET_ROOT:$PATH"
+        dotnet --info
+        echo "Current directory: $(pwd)"
+        echo "Solution file exists: $(ls -la solutions/Crud.sln)"
+        echo "Running dotnet format with full path:"
+        $DOTNET_ROOT/dotnet format solutions/Crud.sln
         echo "✅ Formatting complete"
         
     - name: Frontend Linting
@@ -96,7 +105,9 @@ jobs:
     - name: Verify Final Formatting
       run: |
         echo "🔍 Verifying that all code is now properly formatted..."
-        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
+        # Ensure dotnet is in PATH
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
         if [ $? -ne 0 ]; then
           echo "❌ ERROR: Code still has formatting issues after auto-format!"
           echo "This should not happen. Please check the workflow configuration."
@@ -166,11 +177,15 @@ jobs:
     # Build the cleaned/formatted code - CodeQL observes this build
     - name: Restore .NET dependencies
       if: matrix.language == 'csharp'
-      run: dotnet restore solutions/Crud.sln
+      run: |
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet restore solutions/Crud.sln
       
     - name: Build backend (clean code, single build)
       if: matrix.language == 'csharp'
-      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
+      run: |
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet build solutions/Crud.sln --no-restore --configuration Release
       
     - name: Build Angular app
       if: matrix.language == 'javascript'
@@ -244,7 +259,8 @@ jobs:
     - name: Run backend unit tests
       run: |
         echo "🧪 Running backend unit tests on clean, formatted code..."
-        dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
 
   frontend-unit-tests:
     name: Frontend Unit Tests

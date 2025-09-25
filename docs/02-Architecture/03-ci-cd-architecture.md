@@ -44,7 +44,7 @@ Our CI/CD pipeline implements a GitFlow-inspired branching strategy optimized fo
 
 ### 3. Progressive Testing Strategy with Serial E2E Execution
 
-**Decision**: Serial E2E test execution with progressive categorization (see [ADR-001](./Decisions/0001-Serial-E2E-Testing.md))
+**Decision**: Serial E2E test execution with progressive categorization (see [ADR-001](./decisions/2025-08-28-adr-001-serial-e2e-testing.md))
 
 **Current Strategy (Adopted 2025-08-28)**:
 - **Architecture Constraint**: SQLite + EF Core requires serial execution

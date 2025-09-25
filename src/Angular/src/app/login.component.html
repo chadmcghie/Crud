@@ -1,106 +1,280 @@
-<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4
-            xs:px-6
-            sm:px-8">
-  <div class="max-w-md w-full space-y-8">
-    <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-        Sign in to your account
-      </h2>
+<div class="login-container">
+  <div class="login-card">
+    <h2 class="login-title">Sign in to your account</h2>
+
+    <!-- Status Messages -->
+    <div *ngIf="errorMessage" class="status-message error">
+      <h3>Login Failed</h3>
+      <p>{{ errorMessage }}</p>
     </div>
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
-      <div *ngIf="errorMessage" class="error-message rounded-md bg-red-50 dark:bg-red-900 p-4">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-red-800 dark:text-red-200">{{ errorMessage }}</p>
-          </div>
+
+    <div *ngIf="successMessage" class="status-message success">
+      <h3>Login Succeeded</h3>
+      <p>{{ successMessage }}</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="Enter your email"
+          class="form-input"
+        />
+        <div *ngIf="getEmailErrorMessage()" class="error-text">
+          {{ getEmailErrorMessage() }}
         </div>
       </div>
 
-      <div class="rounded-md shadow-sm -space-y-px">
-        <div>
-          <label for="email" class="sr-only">Email address</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            formControlName="email"
-            autocomplete="email"
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10
-                   sm:text-sm"
-            placeholder="Email address"
-          />
-          <div *ngIf="getEmailErrorMessage()" class="text-red-600 dark:text-red-400 text-sm mt-1">
-            {{ getEmailErrorMessage() }}
-          </div>
-        </div>
-        <div>
-          <label for="password" class="sr-only">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            formControlName="password"
-            autocomplete="current-password"
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10
-                   sm:text-sm"
-            placeholder="Password"
-          />
-          <div *ngIf="getPasswordErrorMessage()" class="text-red-600 dark:text-red-400 text-sm mt-1">
-            {{ getPasswordErrorMessage() }}
-          </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="Enter your password"
+          class="form-input"
+        />
+        <div *ngIf="getPasswordErrorMessage()" class="error-text">
+          {{ getPasswordErrorMessage() }}
         </div>
       </div>
 
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
+      <div class="form-options">
+        <div class="checkbox-group">
           <input
             id="remember-me"
             name="remember-me"
             type="checkbox"
             formControlName="rememberMe"
-            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
-          <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-            Remember me
-          </label>
+          <label for="remember-me">Remember me</label>
         </div>
 
-        <div class="text-sm">
-          <a routerLink="/forgot-password" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
-            Forgot your password?
-          </a>
-        </div>
+        <a routerLink="/forgot-password" class="forgot-link">
+          Forgot password?
+        </a>
       </div>
 
-      <div>
-        <button
-          type="submit"
-          [disabled]="loginForm.invalid || loading"
-          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          <span *ngIf="loading" class="loading-indicator absolute left-0 inset-y-0 flex items-center pl-3">
-            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          </span>
-          {{ loading ? 'Signing in...' : 'Sign in' }}
-        </button>
-      </div>
+      <button
+        type="submit"
+        [disabled]="loginForm.invalid || loading"
+        class="submit-button"
+      >
+        <span *ngIf="loading" class="loading-spinner">⟳</span>
+        {{ loading ? 'Signing in...' : 'Sign in' }}
+      </button>
 
-      <div class="text-center">
-        <span class="text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?
-          <a routerLink="/register" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
-            Sign up
-          </a>
-        </span>
+      <div class="signup-link">
+        Don't have an account?
+        <a routerLink="/register">Sign up</a>
       </div>
     </form>
   </div>
 </div>
+
+<style>
+.login-container {
+  min-height: calc(100vh - 8rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.login-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.status-message {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.status-message.error {
+  background-color: #fed7d7;
+  border: 1px solid #feb2b2;
+  color: #c53030;
+}
+
+.status-message.success {
+  background-color: #c6f6d5;
+  border: 1px solid #9ae6b4;
+  color: #2f855a;
+}
+
+.status-message h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.status-message p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.login-form {
+  text-align: left;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  color: #2d3748;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.error-text {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.checkbox-group label {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.forgot-link {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.submit-button {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.signup-link a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+}
+</style>

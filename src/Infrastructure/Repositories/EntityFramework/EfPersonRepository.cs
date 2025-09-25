@@ -71,7 +71,8 @@ public class EfPersonRepository : IPersonRepository
             var person = await _context.People.FindAsync(new object[] { id }, ct);
             if (person != null)
             {
-                _context.People.Remove(person);
+                // Use soft delete instead of hard delete for data safety
+                person.SoftDelete("system"); // TODO: Get current user context for audit trail
                 await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             }
         }

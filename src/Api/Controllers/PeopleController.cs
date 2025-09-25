@@ -69,7 +69,7 @@ public class PeopleController(IMediator mediator, IMapper mapper, IOutputCacheIn
     }
 
     [HttpPost]
-    [ConditionalAuthorize("AdminOnly")]
+    [ConditionalAuthorize("UserOrAdmin")]  // Temporarily allow users to create people for bootstrap
     public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request, CancellationToken ct)
     {
         var p = await mediator.Send(new CreatePersonCommand(request.FullName, request.Phone, request.RoleIds), ct);

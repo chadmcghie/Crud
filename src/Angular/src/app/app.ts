@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-root',
@@ -18,11 +19,35 @@ import { HttpClientModule } from '@angular/common/http';
       <header class="app-header">
         <h1>CRUD Template Application</h1>
         <nav class="nav-links">
-          <a routerLink="/login" routerLinkActive="active">Login</a>
-          <a routerLink="/register" routerLinkActive="active">Register</a>
-          <a routerLink="/people" routerLinkActive="active">Add Person</a>
-          <a routerLink="/people-list" routerLinkActive="active">People List</a>
-          <a routerLink="/roles-list" routerLinkActive="active">Roles</a>
+          <!-- Debug: Show current user state -->
+          <!-- Debug - Auth: {{ (authService.currentUser$ | async)?.email || 'NO USER' }} -->
+
+          <!-- Show when not authenticated -->
+          <ng-container *ngIf="(authService.currentUser$ | async) === null">
+            <a routerLink="/login" routerLinkActive="active">Login</a>
+          </ng-container>
+
+          <!-- Show when authenticated -->
+          <ng-container *ngIf="authService.currentUser$ | async as user">
+            <a routerLink="/home" routerLinkActive="active">Home</a>
+            <a routerLink="/people" routerLinkActive="active">Add Person</a>
+            <a routerLink="/people-list" routerLinkActive="active">People List</a>
+            <a routerLink="/roles-list" routerLinkActive="active">Roles</a>
+
+            <div class="user-profile">
+              <div class="flex items-center gap-2 text-white/80">
+                <div class="profile-icon">
+                  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <span class="text-sm">{{ user.email }}</span>
+                <button (click)="logout()" class="logout-btn text-sm hover:text-white transition-colors">
+                  Logout
+                </button>
+              </div>
+            </div>
+          </ng-container>
         </nav>
       </header>
 
@@ -38,6 +63,11 @@ import { HttpClientModule } from '@angular/common/http';
     }
 
     .app-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       color: white;
@@ -78,8 +108,45 @@ import { HttpClientModule } from '@angular/common/http';
       color: white;
     }
 
+    .user-profile {
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-icon {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .profile-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
     .main-content {
       padding: 2rem;
+      padding-top: 6rem; /* Add space for fixed header */
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -180,4 +247,27 @@ import { HttpClientModule } from '@angular/common/http';
 })
 export class App {
   title = 'CRUD Template Application';
+
+  authService = inject(AuthService);
+  private router = inject(Router);
+
+  constructor() {
+    // Debug: Log auth state changes
+    this.authService.currentUser$.subscribe(user => {
+      console.log('App component - current user changed:', user);
+    });
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/']); // Go to public homepage
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        // Even if logout fails on server, clear local state
+        this.router.navigate(['/']); // Go to public homepage
+      }
+    });
+  }
 }

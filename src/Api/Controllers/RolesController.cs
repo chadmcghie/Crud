@@ -91,7 +91,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPost]
-    [ConditionalAuthorize("AdminOnly")]
+    [ConditionalAuthorize("UserOrAdmin")] // Temporarily allow any authenticated user to create roles for initial setup
     public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         var r = await mediator.Send(new CreateRoleCommand(request.Name, request.Description), ct);
@@ -103,7 +103,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpPut("{id:guid}")]
-    [ConditionalAuthorize("AdminOnly")]
+    [ConditionalAuthorize("UserOrAdmin")] // Temporarily allow any authenticated user to manage roles for initial setup
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         await mediator.Send(new UpdateRoleCommand(id, request.Name, request.Description), ct);
@@ -115,7 +115,7 @@ public class RolesController(IMediator mediator, IMapper mapper, IOutputCacheInv
     }
 
     [HttpDelete("{id:guid}")]
-    [ConditionalAuthorize("AdminOnly")]
+    [ConditionalAuthorize("UserOrAdmin")] // Temporarily allow any authenticated user to manage roles for initial setup
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await mediator.Send(new DeleteRoleCommand(id), ct);

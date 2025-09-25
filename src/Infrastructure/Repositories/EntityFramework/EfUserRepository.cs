@@ -20,20 +20,20 @@ public class EfUserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
             .Include(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(u => u.Email.Value == email.Value, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email.Value == email.Value && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(Email email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
-            .AnyAsync(u => u.Email.Value == email.Value, cancellationToken);
+            .AnyAsync(u => u.Email.Value == email.Value && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<User> AddAsync(User user, CancellationToken cancellationToken = default)
@@ -86,7 +86,7 @@ public class EfUserRepository : IUserRepository
         var token = await _context.RefreshTokens
             .Include(rt => rt.User)
             .ThenInclude(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.RevokedAt == null && DateTime.UtcNow < rt.ExpiresAt, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.RevokedAt == null && DateTime.UtcNow < rt.ExpiresAt && !rt.User.IsDeleted, cancellationToken);
 
         return token?.User;
     }

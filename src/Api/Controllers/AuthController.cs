@@ -189,6 +189,7 @@ public class AuthController : ControllerBase
         });
     }
 
+
     [HttpGet("me")]
     [Authorize]
     public IActionResult GetCurrentUser()
@@ -216,5 +217,38 @@ public class AuthController : ControllerBase
         };
 
         Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+    }
+
+    /// <summary>
+    /// Temporary bootstrap endpoint to promote the current user to admin
+    /// Only available in Development environment for initial setup
+    /// </summary>
+    [HttpPost("promote-to-admin")]
+    [Authorize]
+    public async Task<IActionResult> PromoteToAdmin(CancellationToken cancellationToken)
+    {
+        // Only allow in development
+        var environment = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        if (!environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest("User ID not found in token");
+        }
+
+        // Add admin role
+        var command = new AddUserRoleCommand(Guid.Parse(userId), "Admin");
+        await _mediator.Send(command, cancellationToken);
+
+        // Return success - user will need to re-login to get updated token with admin role
+        return Ok(new
+        {
+            Message = "User promoted to admin successfully. Please log out and log back in to access admin features.",
+            UserId = userId
+        });
     }
 }

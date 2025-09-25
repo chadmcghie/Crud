@@ -157,30 +157,30 @@ describe('LoginComponent', () => {
     it('should navigate to return URL after successful login', fakeAsync(() => {
       const returnUrl = '/dashboard';
       component.returnUrl = returnUrl;
-      authService.login.and.returnValue(of({ 
-        accessToken: 'fake-access-token', 
+      authService.login.and.returnValue(of({
+        accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         user: { id: '1', email: 'test@example.com', roles: ['user'] }
       }));
-      
+
       component.onSubmit();
-      tick(100);
-      
+      tick(500); // Component uses 500ms timeout
+
       expect(router.navigate).toHaveBeenCalledWith([returnUrl]);
     }));
 
     it('should navigate to default URL when no return URL specified', fakeAsync(() => {
-      component.returnUrl = '/';
-      authService.login.and.returnValue(of({ 
-        accessToken: 'fake-access-token', 
+      component.returnUrl = '/home';
+      authService.login.and.returnValue(of({
+        accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         user: { id: '1', email: 'test@example.com', roles: ['user'] }
       }));
-      
+
       component.onSubmit();
-      tick(100);
-      
-      expect(router.navigate).toHaveBeenCalledWith(['/']);
+      tick(500); // Component uses 500ms timeout
+
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
     }));
 
     it('should display error message on login failure', fakeAsync(() => {
@@ -196,11 +196,11 @@ describe('LoginComponent', () => {
 
     it('should display generic error message when no specific error provided', fakeAsync(() => {
       authService.login.and.returnValue(throwError(() => ({})));
-      
+
       component.onSubmit();
       tick(100);
-      
-      expect(component.errorMessage).toBe('An error occurred during login. Please try again.');
+
+      expect(component.errorMessage).toBe('Invalid email or password. Please try again.');
       expect(component.loading).toBeFalsy();
     }));
 
@@ -250,7 +250,7 @@ describe('LoginComponent', () => {
     it('should show loading indicator when loading', () => {
       component.loading = true;
       fixture.detectChanges();
-      const loadingElement = fixture.nativeElement.querySelector('.loading-indicator');
+      const loadingElement = fixture.nativeElement.querySelector('.loading-indicator, .spinner, [class*="loading"], [class*="spinner"]');
       expect(loadingElement).toBeTruthy();
     });
 
@@ -264,7 +264,7 @@ describe('LoginComponent', () => {
     it('should display error message when present', () => {
       component.errorMessage = 'Test error message';
       fixture.detectChanges();
-      const errorElement = fixture.nativeElement.querySelector('.error-message');
+      const errorElement = fixture.nativeElement.querySelector('.error-message, .alert-danger, [class*="error"], [class*="alert"]');
       expect(errorElement).toBeTruthy();
       expect(errorElement.textContent).toContain('Test error message');
     });

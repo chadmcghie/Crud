@@ -461,3 +461,7 @@ jspm_packages/
 nul
 **/nul
 /test/Tests.E2E.NG/nul
+
+# SQLite Tools
+sqlite-tools/
+sqlite-tools.zip

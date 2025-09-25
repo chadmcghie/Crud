@@ -53,7 +53,7 @@ A **multi-platform CRUD application** demonstrating Clean Architecture best prac
 ## Development Approach
 
 ### Agent-Assisted Development
-This project uses **AI-powered development workflows** with structured specifications, automated task tracking, and comprehensive documentation. See [Agent Utilization Guide](../03-development/Agent-Utilization-Guide.md) for details.
+This project uses **AI-powered development workflows** with structured specifications, automated task tracking, and comprehensive documentation. See [Agent Utilization Guide](../01-overview/04-agent-guide.md) for details.
 
 ### Quality-First Approach
 - **No failures tolerated** - issues are resolved immediately
@@ -71,10 +71,10 @@ This project uses **AI-powered development workflows** with structured specifica
 
 ## Getting Started
 
-1. **Environment Setup** → See [05-environment/1-development-setup.md](../05-environment/1-development-setup.md)
-2. **Architecture Understanding** → See [02-architecture/1-architecture-guidelines.md](../02-architecture/1-architecture-guidelines.md)
-3. **Development Process** → See [03-development/6-workflows/development-workflow.md](../03-development/6-workflows/development-workflow.md)
-4. **Testing Setup** → See [05-environment/2-testing-setup.md](../05-environment/2-testing-setup.md)
+1. **Environment Setup** → See [05-environment/01-development-setup.md](../05-environment/01-development-setup.md)
+2. **Architecture Understanding** → See [02-architecture/01-architecture-guidelines.md](../02-architecture/01-architecture-guidelines.md)
+3. **Development Process** → See [06-devops/development-workflow.md](../06-devops/development-workflow.md)
+4. **Testing Setup** → See [05-environment/02-testing-setup.md](../05-environment/02-testing-setup.md)
 
 ## Quick Launch
 

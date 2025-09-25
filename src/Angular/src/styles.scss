@@ -17,9 +17,29 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, li {
   padding: 0;
 }
 
-/* List styling */
-ul, ol {
+/* List styling - only remove for navigation/UI lists */
+nav ul, nav ol, .nav ul, .nav ol {
   list-style: none;
+}
+
+/* Preserve list styling for content lists */
+.readme-content ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  margin-left: 0 !important;
+  padding-left: 1.5rem !important;
+}
+
+.readme-content ol {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  margin-left: 0 !important;
+  padding-left: 1.5rem !important;
+}
+
+.readme-content li {
+  display: list-item !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Button focus outline */
