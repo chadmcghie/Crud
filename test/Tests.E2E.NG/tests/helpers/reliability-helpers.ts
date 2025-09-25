@@ -411,6 +411,24 @@ export class ReliabilityHelpers {
   }
 
   /**
+   * Wait for network activity to be quiet (no active requests)
+   */
+  async waitForNetworkQuiet(options: {
+    timeout?: number;
+    idleTime?: number;
+  } = {}): Promise<void> {
+    const { timeout = 10000, idleTime = 500 } = options;
+
+    try {
+      await this.page.waitForLoadState('networkidle', { timeout });
+    } catch (error) {
+      // Fallback: wait for a short period if networkidle times out
+      console.log(`Network idle timeout, using fallback delay: ${idleTime}ms`);
+      await this.sleep(idleTime);
+    }
+  }
+
+  /**
    * Utility methods
    */
   private async sleep(ms: number): Promise<void> {
