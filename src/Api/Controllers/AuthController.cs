@@ -245,7 +245,8 @@ public class AuthController : ControllerBase
         await _mediator.Send(command, cancellationToken);
 
         // Return success - user will need to re-login to get updated token with admin role
-        return Ok(new {
+        return Ok(new
+        {
             Message = "User promoted to admin successfully. Please log out and log back in to access admin features.",
             UserId = userId
         });

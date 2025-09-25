@@ -1,8 +1,8 @@
 using System.Diagnostics;
+using Api.Attributes;
 using Api.Dtos;
 using App.Interfaces;
 using Infrastructure.Utilities;
-using Api.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers.Admin;

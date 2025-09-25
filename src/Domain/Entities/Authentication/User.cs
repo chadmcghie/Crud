@@ -1,5 +1,5 @@
-using Domain.ValueObjects;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 
 namespace Domain.Entities.Authentication
 {
