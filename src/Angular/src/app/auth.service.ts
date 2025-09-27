@@ -91,57 +91,67 @@ export class AuthService {
   }
 
   private isE2ETestEnvironment(): boolean {
-    // AGGRESSIVE E2E detection for CI environments
     const userAgent = navigator.userAgent.toLowerCase();
+    const currentPort = window.location.port;
+    const currentHost = window.location.hostname;
 
-    // Multiple detection strategies - ANY of these should trigger E2E mode
-    const isPlaywright = userAgent.includes('playwright') || userAgent.includes('headless');
-    const isTestHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const isTestPort = window.location.port === '4200' || window.location.port === '';
+    // CRITICAL: Exclude unit test ports FIRST to prevent regression loops
+    // Unit test ports (Karma typically uses 9876, 9877, etc.) - these should NEVER be E2E mode
+    const isUnitTestPort = currentPort.startsWith('987') || currentPort.startsWith('988');
+    if (isUnitTestPort) {
+      return false; // Immediately exclude unit tests
+    }
+
+    // E2E-specific detection strategies
+    const isTestHost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+
+    // Only consider E2E if we're on the actual Angular app port (4200) or no port specified
+    const isAngularAppPort = currentPort === '4200' || currentPort === '';
+
+    // Explicit E2E markers (highest priority)
     const hasTestCookie = document.cookie.includes('e2e-test');
     const hasTestQuery = window.location.search.includes('e2e=true');
-
-    // Check for Playwright-specific indicators
     const hasTestRunId = !!(window as { testRunId?: unknown }).testRunId || !!document.querySelector('[data-test-run-id]');
-
-    // CI-specific detection - be more aggressive
-    const isCIEnvironment = userAgent.includes('headless') ||
-                           userAgent.includes('chrome') ||
-                           window.navigator.webdriver === true;
-
-    // Environment variable detection (passed via playwright config)
     const hasE2EEnvMarker = window.location.search.includes('test=true') ||
                            document.documentElement.getAttribute('data-e2e') === 'true';
 
-    // Check if we're in a Playwright test context by checking user agent patterns
+    // If we have explicit E2E markers, we're definitely in E2E mode
+    if (hasTestCookie || hasTestQuery || hasTestRunId || hasE2EEnvMarker) {
+      return true;
+    }
+
+    // Playwright-specific detection (only if not unit tests and on correct port)
+    const isPlaywright = userAgent.includes('playwright');
     const hasPlaywrightUserAgent = userAgent.includes('headlesschrome') ||
-                                   userAgent.includes('chrome') &&
-                                   (userAgent.includes('140.0.') || userAgent.includes('130.0.'));
+                                   (userAgent.includes('chrome') &&
+                                    (userAgent.includes('140.0.') || userAgent.includes('130.0.')));
 
-    // Check if this looks like a testing scenario based on environment
-    const hasTestingIndicators = window.location.port === '4200' &&
-                                 window.location.hostname === 'localhost';
+    // Check if this looks like a real E2E test scenario
+    // Must be: localhost + Angular port + headless browser (but not unit test port)
+    const isLikelyE2E = !isUnitTestPort &&
+                        isAngularAppPort &&
+                        isTestHost &&
+                        (userAgent.includes('headless') || userAgent.includes('chrome'));
 
-    // AGGRESSIVE: If we're on localhost:4200 with any headless browser, assume E2E
-    const isLikelyE2E = isTestHost && isTestPort && (userAgent.includes('headless') || userAgent.includes('chrome'));
-
-    const isE2E = isPlaywright || hasTestCookie || hasTestQuery || hasTestRunId ||
-                  isCIEnvironment || hasE2EEnvMarker || isLikelyE2E ||
-                  hasPlaywrightUserAgent || hasTestingIndicators;
+    // Final E2E determination - require either explicit markers OR proper E2E environment
+    const isE2E = isPlaywright || hasPlaywrightUserAgent ||
+                  (isLikelyE2E && window.navigator.webdriver === true) ||
+                  (isTestHost && isAngularAppPort && userAgent.includes('headless'));
 
     // Always log detection results for debugging
     console.log('🤖 E2E Detection Results:', {
       userAgent: userAgent.substring(0, 80) + '...',
+      currentPort,
+      currentHost,
+      isUnitTestPort,
+      isAngularAppPort,
       isPlaywright,
       isTestHost,
-      isTestPort,
       hasTestCookie,
       hasTestQuery,
       hasTestRunId,
-      isCIEnvironment,
       hasE2EEnvMarker,
       hasPlaywrightUserAgent,
-      hasTestingIndicators,
       isLikelyE2E,
       webdriver: window.navigator.webdriver,
       final: isE2E
