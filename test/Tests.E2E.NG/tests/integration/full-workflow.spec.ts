@@ -23,7 +23,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await apiHelpers.cleanupAll(true);
   });
 
-  test('should complete full role and person management workflow', async () => {
+  test('@extended should complete full role and person management workflow', async () => {
     // Step 1: Create roles via UI
     await pageHelpers.switchToRolesTab();
     
@@ -111,7 +111,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyEmptyState('roles');
   });
 
-  test('should handle mixed UI and API operations', async () => {
+  test('@extended should handle mixed UI and API operations', async () => {
     // Create role via API
     const apiRole = await apiHelpers.createRole(generateTestRole({ name: 'API Role' }));
     
@@ -161,7 +161,7 @@ test.describe('Full Workflow Integration Tests', () => {
     expect(updatedPerson.roles[0].name).toBe(uiRole.name);
   });
 
-  test('should maintain data integrity during rapid operations', async () => {
+  test('@extended should maintain data integrity during rapid operations', async () => {
     // Rapidly create multiple roles
     const rolePromises = [];
     for (let i = 0; i < 5; i++) {
@@ -219,7 +219,7 @@ test.describe('Full Workflow Integration Tests', () => {
     }
   });
 
-  test('should handle error scenarios gracefully', async ({ page }) => {
+  test('@extended should handle error scenarios gracefully', async ({ page }) => {
     // Test form validation errors
     await pageHelpers.switchToRolesTab();
     await pageHelpers.clickAddRole();
@@ -255,7 +255,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('should preserve state during tab switching', async () => {
+  test('@extended should preserve state during tab switching', async () => {
     // Force cleanup at the start to ensure clean state
     await apiHelpers.cleanupAll(true);
     
@@ -304,7 +304,7 @@ test.describe('Full Workflow Integration Tests', () => {
     expect(ourPerson?.roles[0].name).toBe(role.name);
   });
 
-  test('should handle browser refresh correctly', async ({ page }) => {
+  test('@extended should handle browser refresh correctly', async ({ page }) => {
     // Create some data
     const role = await apiHelpers.createRole(generateTestRole());
     const person = await apiHelpers.createPerson(generateTestPerson({

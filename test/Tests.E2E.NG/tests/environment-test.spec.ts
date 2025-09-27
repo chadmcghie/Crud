@@ -1,7 +1,7 @@
 import { test, expect } from './setup/api-only-fixture';
 
 test.describe('Environment Detection Tests', () => {
-  test('should detect Testing environment correctly', async ({ apiContext }) => {
+  test('@smoke should detect Testing environment correctly', async ({ apiContext }) => {
     console.log('🔍 Testing environment detection...');
 
     // Test environment endpoint
@@ -17,7 +17,7 @@ test.describe('Environment Detection Tests', () => {
     expect(envData.isTesting).toBe(true);
   });
 
-  test('should bypass authorization in Testing environment', async ({ apiContext }) => {
+  test('@smoke should bypass authorization in Testing environment', async ({ apiContext }) => {
     console.log('🔐 Testing authorization bypass...');
 
     // Test auth bypass detection
@@ -31,7 +31,7 @@ test.describe('Environment Detection Tests', () => {
     expect(authData.shouldBypass).toBe(true);
   });
 
-  test('should allow creating people without authorization in Testing', async ({ apiContext }) => {
+  test('@smoke should allow creating people without authorization in Testing', async ({ apiContext }) => {
     console.log('🧪 Testing actual people creation without auth...');
 
     const createResponse = await apiContext.post('/api/people', {

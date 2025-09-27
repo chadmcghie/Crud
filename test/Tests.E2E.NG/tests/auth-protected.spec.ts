@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures/authenticated-test';
 
 test.describe('Authenticated Routes', () => {
   // This test uses the authenticatedPage fixture which auto-logs in
-  test('can access people list when authenticated', async ({ page }) => {
+  test('@critical can access people list when authenticated', async ({ page }) => {
     await page.goto('/people-list');
     
     // Should be able to see the people list (not redirected to login)
@@ -16,7 +16,7 @@ test.describe('Authenticated Routes', () => {
     await expect(peopleContent).toBeVisible();
   });
 
-  test('can access admin routes when authenticated as admin', async ({ page, authHelper }) => {
+  test('@critical can access admin routes when authenticated as admin', async ({ page, authHelper }) => {
     // Login as admin
     await authHelper.loginAsAdmin();
     
@@ -28,7 +28,7 @@ test.describe('Authenticated Routes', () => {
     await expect(rolesContent).toBeVisible();
   });
 
-  test('redirects to login when not authenticated', async ({ page, authHelper }) => {
+  test('@critical redirects to login when not authenticated', async ({ page, authHelper }) => {
     // Ensure we're logged out
     await authHelper.logout();
     
@@ -39,7 +39,7 @@ test.describe('Authenticated Routes', () => {
     await expect(page).toHaveURL(/.*login/);
   });
 
-  test('shows unauthorized page for non-admin users', async ({ page, authHelper }) => {
+  test('@critical shows unauthorized page for non-admin users', async ({ page, authHelper }) => {
     // Login as regular user
     await authHelper.login('user@example.com', 'User123!');
     
