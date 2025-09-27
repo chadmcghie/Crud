@@ -32,10 +32,10 @@ public class HealthController : ControllerBase
 
     /// <summary>
     /// Gets simple health status for basic health checks
-    /// Returns plain text for E2E test compatibility
+    /// Returns JSON format for integration test compatibility
     /// </summary>
     [HttpGet]
-    [Produces("text/plain")]
+    [Produces("application/json")]
     public async Task<IActionResult> GetHealth()
     {
         try
@@ -45,16 +45,16 @@ public class HealthController : ControllerBase
 
             if (canConnectToDatabase)
             {
-                return Ok("Healthy");
+                return Ok(new { status = "Healthy" });
             }
             else
             {
-                return StatusCode(503, "Unhealthy");
+                return StatusCode(503, new { status = "Unhealthy" });
             }
         }
         catch (Exception)
         {
-            return StatusCode(503, "Unhealthy");
+            return StatusCode(503, new { status = "Unhealthy" });
         }
     }
 

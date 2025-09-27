@@ -431,7 +431,7 @@ namespace Api
                 // to avoid conflicts with response streaming
 
                 app.MapControllers();
-                app.MapHealthChecks("/health");
+                app.MapHealthChecks("/health/system");
 
                 Log.Information("Application configured successfully. Starting web host...");
                 await app.RunAsync();
