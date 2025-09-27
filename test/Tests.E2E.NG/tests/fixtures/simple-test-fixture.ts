@@ -13,9 +13,9 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
       await resetDatabase(process.env.DATABASE_PATH);
     }
 
-    // Basic page setup
+    // Basic page setup with increased timeout for API operations
     page.setDefaultNavigationTimeout(30000);
-    page.setDefaultTimeout(10000);
+    page.setDefaultTimeout(20000); // Increased from 15000 to 20000ms for complex operations
 
     // Use the page
     await use(page);

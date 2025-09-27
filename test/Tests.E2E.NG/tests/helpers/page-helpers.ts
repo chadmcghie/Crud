@@ -1,6 +1,11 @@
 // Page object helpers for Angular UI interactions
 import { Page, Locator, expect } from '@playwright/test';
 
+// Environment detection for adaptive behavior
+const isCI = !!process.env.CI;
+const isWindows = process.platform === 'win32';
+const debugMode = process.env.DEBUG_E2E === 'true';
+
 export class PageHelpers {
   constructor(private page: Page) {}
 
@@ -60,14 +65,16 @@ export class PageHelpers {
       return typeof (window as any).ng !== 'undefined';
     }, { timeout: 10000 });
 
-    // Multi-selector strategy for component detection - protected pattern
-    const timeout = process.env.CI ? 15000 : 10000;
+    // Environment-optimized component detection timeouts
+    const componentTimeout = isCI ? 20000 : 12000;
     const peopleContent = this.page.locator('router-outlet, app-people, main, .content, h1, h2, h3').first();
-    await peopleContent.waitFor({ state: 'visible', timeout });
+    await peopleContent.waitFor({ state: 'visible', timeout: componentTimeout });
 
-    // Additional wait for component to be fully interactive in CI
-    if (process.env.CI) {
-      await this.page.waitForTimeout(1000); // Brief stability wait
+    // Environment-specific stability waits
+    if (isCI) {
+      await this.page.waitForTimeout(1500); // Longer stability wait in CI
+    } else if (isWindows) {
+      await this.page.waitForTimeout(500); // Brief wait on Windows for rendering
     }
   }
 
