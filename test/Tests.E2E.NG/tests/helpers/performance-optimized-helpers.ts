@@ -97,7 +97,7 @@ export class PerformanceOptimizedHelpers {
       roles: '/roles-list'
     };
 
-    const link = this.page.locator(`a[routerLink="${routeMap[module]}"]`);
+    const link = this.page.locator(`nav a[routerLink="${routeMap[module]}"]`).first();
     await link.click();
 
     const componentMap = {
