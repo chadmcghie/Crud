@@ -12,8 +12,8 @@ test.describe('Minimal E2E Tests', () => {
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
     
-    const text = await response.text();
-    expect(text).toBe('Healthy');
+    const json = await response.json();
+    expect(json.status).toBe('Healthy');
   });
 
   test('@smoke GET /api/people/{id} - should get a person', async ({ apiHelpers, apiUrl }) => {
