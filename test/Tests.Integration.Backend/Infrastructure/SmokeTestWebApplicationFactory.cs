@@ -51,7 +51,7 @@ public class SmokeTestWebApplicationFactory : WebApplicationFactory<Api.Program>
             // Initialize worker-specific database if not already done
             if (string.IsNullOrEmpty(_connectionString))
             {
-                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).Result;
+                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).GetAwaiter().GetResult();
                 _connectionString = $"Data Source={_databasePath}";
             }
 

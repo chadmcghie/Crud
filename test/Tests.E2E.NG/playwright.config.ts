@@ -23,7 +23,10 @@ const testCategory = process.env.TEST_CATEGORY || 'all';
 const testRunId = isCI
   ? `ci-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   : `local-${Date.now()}`;
-const databasePath = path.join(process.cwd(), '..', '..', `CrudTest_${testRunId}.db`);
+// Use current working directory for database file in CI, or temp directory locally
+const databasePath = isCI
+  ? `CrudTest_${testRunId}.db`  // CI: Use current directory
+  : path.join(process.cwd(), '..', '..', `CrudTest_${testRunId}.db`);  // Local: Use repo root
 
 // Export test run ID for teardown
 process.env.TEST_RUN_ID = testRunId;
@@ -47,11 +50,9 @@ export default defineConfig({
   /* Playwright's built-in webServer configuration */
   webServer: [
     {
-      // API Server configuration with environment-specific optimizations
-      command: isCI
-        ? `cd ${path.join(process.cwd(), '..', '..')} && dotnet run --project src/Api/Api.csproj --launch-profile testing`
-        : 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
-      cwd: isCI ? undefined : process.cwd(),
+      // API Server configuration - simplified for better CI compatibility
+      command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
+      cwd: process.cwd(),
       url: 'http://localhost:5172/health',
       timeout: isCI ? 120 * 1000 : 90 * 1000, // More time for CI environment
       reuseExistingServer: !isCI, // Reuse locally, fresh in CI
@@ -60,15 +61,11 @@ export default defineConfig({
       env: {
         // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
-        ASPNETCORE_URLS: isCI
-          ? 'http://0.0.0.0:5172'  // Bind to all interfaces in CI
-          : 'http://localhost:5172',
+        ASPNETCORE_URLS: 'http://localhost:5172',  // Use localhost consistently for better compatibility
 
         // Testing-optimized database configuration with better isolation
         DatabaseProvider: 'SQLite',
-        ConnectionStrings__DefaultConnection: isCI
-          ? `Data Source=${databasePath};Cache=Private;Pooling=False;Mode=ReadWriteCreate;Journal Mode=WAL;`
-          : `Data Source=${databasePath};Journal Mode=WAL;`,
+        ConnectionStrings__DefaultConnection: `Data Source=${databasePath};Journal Mode=WAL;`,
 
         // Environment-specific database settings
         DATABASE_TIMEOUT: isCI ? '30' : '10',
@@ -95,11 +92,9 @@ export default defineConfig({
       },
     },
     {
-      // Angular Server configuration with environment optimizations
-      command: isCI
-        ? `cd ${path.join(process.cwd(), '..', '..', 'src', 'Angular')} && npm run start:ci`
-        : 'npm start',
-      cwd: isCI ? undefined : path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      // Angular Server configuration - simplified for better CI compatibility
+      command: isCI ? 'npm run start:ci' : 'npm start',
+      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
       url: 'http://localhost:4200',
       timeout: isCI ? 180 * 1000 : 120 * 1000, // More time for CI environment compilation
       reuseExistingServer: !isCI,

@@ -57,7 +57,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             // Initialize worker-specific database if not already done
             if (string.IsNullOrEmpty(_connectionString))
             {
-                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).Result;
+                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).GetAwaiter().GetResult();
                 _connectionString = $"Data Source={_databasePath}";
             }
 
@@ -198,7 +198,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             try
             {
                 // Clean up the worker-specific database
-                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).Wait();
+                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).GetAwaiter().GetResult();
             }
             catch (Exception)
             {
