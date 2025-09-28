@@ -65,7 +65,7 @@ export default defineConfig({
 
         // Testing-optimized database configuration with better isolation
         DatabaseProvider: 'SQLite',
-        ConnectionStrings__DefaultConnection: `Data Source=${databasePath};Journal Mode=WAL;`,
+        ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
 
         // Environment-specific database settings
         DATABASE_TIMEOUT: isCI ? '30' : '10',
