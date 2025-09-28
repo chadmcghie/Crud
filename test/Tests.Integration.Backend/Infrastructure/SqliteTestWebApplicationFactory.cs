@@ -68,12 +68,8 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 services.Remove(descriptor);
             }
 
-            // Add SQLite with our worker-specific database connection string
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseSqlite(_connectionString);
-                options.EnableSensitiveDataLogging();
-            });
+            // Register all infrastructure services using SQLite (this includes repositories)
+            services.AddInfrastructureEntityFrameworkSqlite(_connectionString);
 
             // Register the TestDatabaseFactory as a service
             services.AddSingleton(_databaseFactory);

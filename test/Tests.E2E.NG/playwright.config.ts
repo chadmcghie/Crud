@@ -217,6 +217,13 @@ export default defineConfig({
               '--max_old_space_size=4096', // Increase memory limit
               '--disable-backgrounding-occluded-windows',
               '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+              // Enhanced localStorage access for CI environments
+              '--disable-features=VizDisplayCompositor,PrivacySandboxSettings4',
+              '--disable-site-isolation-trials',
+              '--disable-features=VizService',
+              '--disable-blink-features=BlockCredentialedSubresources',
+              '--allow-file-access-from-files',
+              '--disable-web-security-restrictions',
             ] : []),
           ],
         },

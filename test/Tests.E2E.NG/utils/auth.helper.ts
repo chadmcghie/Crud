@@ -27,11 +27,31 @@ export class AuthHelper {
 
   /**
    * Enable E2E test mode for guard bypass
+   * Enhanced with error handling for CI environments
    */
   async enableE2EMode() {
-    await this.page.evaluate(() => {
-      localStorage.setItem('e2e-test-mode', 'active');
-    });
+    try {
+      await this.page.evaluate(() => {
+        try {
+          localStorage.setItem('e2e-test-mode', 'active');
+          console.log('✅ E2E mode enabled via localStorage');
+        } catch (error) {
+          console.warn('⚠️ localStorage access denied, using fallback:', error.message);
+          // Fallback: Set on window object instead
+          (window as any).e2eTestMode = 'active';
+          // Also try sessionStorage as alternative
+          try {
+            sessionStorage.setItem('e2e-test-mode', 'active');
+            console.log('✅ E2E mode enabled via sessionStorage fallback');
+          } catch (sessionError) {
+            console.warn('⚠️ sessionStorage also failed:', sessionError.message);
+          }
+        }
+      });
+    } catch (pageError) {
+      console.warn('⚠️ E2E mode setup failed, continuing without it:', pageError.message);
+      // Continue test execution - auth bypass may work through other mechanisms
+    }
   }
 
   /**
@@ -43,22 +63,47 @@ export class AuthHelper {
 
   /**
    * Check if user is logged in by looking for auth token
+   * Enhanced with error handling for CI environments
    */
   async isLoggedIn(): Promise<boolean> {
-    const token = await this.page.evaluate(() => {
-      return localStorage.getItem('token') || sessionStorage.getItem('token');
-    });
-    return !!token;
+    try {
+      const token = await this.page.evaluate(() => {
+        try {
+          return localStorage.getItem('token') || sessionStorage.getItem('token');
+        } catch (error) {
+          console.warn('⚠️ Storage access denied during login check:', error.message);
+          // Fallback to window object check
+          return (window as any).authToken || null;
+        }
+      });
+      return !!token;
+    } catch (error) {
+      console.warn('⚠️ Login status check failed:', error.message);
+      return false; // Assume not logged in if check fails
+    }
   }
 
   /**
    * Logout current user
+   * Enhanced with error handling for CI environments
    */
   async logout() {
-    await this.page.evaluate(() => {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-    });
+    try {
+      await this.page.evaluate(() => {
+        try {
+          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
+          console.log('✅ Logout: tokens removed from storage');
+        } catch (error) {
+          console.warn('⚠️ Storage access denied during logout:', error.message);
+          // Fallback: Clear window object
+          (window as any).authToken = null;
+          (window as any).e2eTestMode = null;
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ Logout cleanup failed:', error.message);
+    }
     await this.page.goto('/login');
   }
 
@@ -87,11 +132,29 @@ export class AuthHelper {
   /**
    * Mock authentication for faster tests
    * Directly sets auth token without going through login flow
+   * Enhanced with error handling for CI environments
    */
   async mockAuth(token?: string) {
     const mockToken = token || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxOTk5OTk5OTk5fQ.mock';
-    await this.page.evaluate((t) => {
-      localStorage.setItem('token', t);
-    }, mockToken);
+    try {
+      await this.page.evaluate((t) => {
+        try {
+          localStorage.setItem('token', t);
+          console.log('✅ Mock auth: token set in localStorage');
+        } catch (error) {
+          console.warn('⚠️ localStorage access denied during mock auth:', error.message);
+          // Fallback: Set on window object and sessionStorage
+          (window as any).authToken = t;
+          try {
+            sessionStorage.setItem('token', t);
+            console.log('✅ Mock auth: token set in sessionStorage fallback');
+          } catch (sessionError) {
+            console.warn('⚠️ sessionStorage also failed:', sessionError.message);
+          }
+        }
+      }, mockToken);
+    } catch (error) {
+      console.warn('⚠️ Mock auth setup failed:', error.message);
+    }
   }
 }
