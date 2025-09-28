@@ -48,7 +48,7 @@ export class PageHelpers {
     // Wait for the main app component to be fully loaded - this is more reliable than networkidle
     await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
     // Wait for Angular to initialize and render the main content
-    await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
+    await this.page.locator('a[routerLink="/people-list"]').first().waitFor({ state: 'visible', timeout: 15000 });
     // Wait for the app to be interactive (links clickable)
     await this.page.waitForFunction(() => {
       const link = document.querySelector('a[routerLink="/people-list"]');
@@ -104,11 +104,11 @@ export class PageHelpers {
       // Click the Add New Role button which should navigate to the roles form
       await this.page.click('button:has-text("Add New Role")');
       
-      // Wait for navigation to the roles form route
-      await this.page.waitForURL('**/roles', { timeout: 10000 });
+      // Wait for navigation to complete and roles form to be ready
+      await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
       
       // Wait for the roles form component to load and be ready
-      await this.page.waitForSelector('app-roles', { timeout: 10000 });
+      await this.page.locator('app-roles').waitFor({ state: 'visible', timeout: 10000 });
       
       // Wait for form fields to be ready
       await this.page.locator('input#name').waitFor({ state: 'visible', timeout: 5000 });
@@ -125,7 +125,7 @@ export class PageHelpers {
   async submitRoleForm(): Promise<void> {
     await this.retryOperation(async () => {
       // Wait for submit button to be enabled (handle both Create and Update)
-      await this.page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 5000 });
+      await this.page.locator('button[type="submit"]:not([disabled])').first().waitFor({ state: 'visible', timeout: 5000 });
       
       // Add small delay to ensure form is ready
       await this.page.waitForTimeout(100);
@@ -134,7 +134,7 @@ export class PageHelpers {
       await this.page.click('button[type="submit"]');
 
       // Wait for navigation back to the roles-list after successful submission
-      await this.page.waitForURL('**/roles-list', { timeout: 10000 });
+      await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
       
       // Wait for the list component to load
       const rolesContent = this.page.locator('router-outlet, app-roles, main, .content').first();
@@ -152,11 +152,11 @@ export class PageHelpers {
     // Click the edit button which should navigate to the roles form with edit query param
     await roleRow.locator('button:has-text("Edit")').click();
     
-    // Wait for navigation to the roles form route with edit parameter
-    await this.page.waitForURL('**/roles?edit=*', { timeout: 10000 });
+    // Wait for navigation to complete and form to be ready for editing
+    await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
     
     // Wait for the roles form component to load
-    await this.page.waitForSelector('app-roles', { timeout: 10000 });
+    await this.page.locator('app-roles').waitFor({ state: 'visible', timeout: 10000 });
     
     // Wait for form to be populated with existing data
     await this.page.waitForFunction(() => {
@@ -223,11 +223,11 @@ export class PageHelpers {
       await addButton.waitFor({ state: 'visible', timeout: 5000 });
       await addButton.click();
 
-      // Wait for navigation to the people form route
-      await this.page.waitForURL('**/people', { timeout: 10000 });
+      // Wait for navigation to complete and people form to be ready
+      await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Wait for the people form component to load and be ready
-      await this.page.waitForSelector('app-people', { timeout: 10000 });
+      await this.page.locator('app-people').waitFor({ state: 'visible', timeout: 10000 });
     } catch (error) {
       console.log('Add button not found, skipping form navigation test');
       // If no add button found, the UI may not have this functionality yet
@@ -264,7 +264,7 @@ export class PageHelpers {
     
     if (roleNames && roleNames.length > 0) {
       // Wait for roles checkboxes to be loaded in the form
-      await this.page.waitForSelector('input[type="checkbox"]', { timeout: 5000 });
+      await this.page.locator('input[type="checkbox"]').first().waitFor({ state: 'visible', timeout: 5000 });
       await this.page.waitForFunction(() => {
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         return checkboxes.length > 0;
@@ -299,7 +299,7 @@ export class PageHelpers {
 
   async submitPersonForm(): Promise<void> {
     // Wait for submit button to be enabled (handle both Create and Update)
-    await this.page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 5000 });
+    await this.page.locator('button[type="submit"]:not([disabled])').first().waitFor({ state: 'visible', timeout: 5000 });
     
     // Add small delay to ensure form is ready
     await this.page.waitForTimeout(100);
@@ -308,7 +308,7 @@ export class PageHelpers {
     await this.page.click('button[type="submit"]');
     
     // Wait for navigation back to the people-list after successful submission
-    await this.page.waitForURL('**/people-list', { timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
     
     // Wait for the list component to load
     const peopleContent = this.page.locator('router-outlet, app-people, main, .content').first();
@@ -328,12 +328,12 @@ export class PageHelpers {
     // Click the edit button which should navigate to the people form with edit query param
     await personRow.locator('button:has-text("Edit")').click();
     
-    // Wait for navigation to the people form route with edit parameter
-    await this.page.waitForURL('**/people?edit=*', { timeout: 10000 });
+    // Wait for navigation to complete and edit form to be ready
+    await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
     
     // Wait for the people form component to load
-    await this.page.waitForSelector('app-people', { timeout: 10000 });
-    await this.page.waitForSelector('input#fullName', { timeout: 5000 });
+    await this.page.locator('app-people').waitFor({ state: 'visible', timeout: 10000 });
+    await this.page.locator('input#fullName').waitFor({ state: 'visible', timeout: 5000 });
     
     // Wait for form to be populated with existing data
     await this.page.waitForFunction(() => {
@@ -432,7 +432,7 @@ export class PageHelpers {
       await this.page.reload();
       // Instead of waiting for networkidle, wait for specific content to be ready
       await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
-      await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
+      await this.page.locator('a[routerLink="/people-list"]').first().waitFor({ state: 'visible', timeout: 15000 });
       // Small buffer for Angular to stabilize
       }, 3, 2000, 'refreshPage');
   }

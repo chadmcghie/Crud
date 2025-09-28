@@ -109,11 +109,21 @@ namespace Domain.Entities
             // Only update if roles actually changed
             if (!_roles.SetEquals(newRoleSet))
             {
-                _roles.Clear();
-                foreach (var role in newRoleSet)
+                // Use more EF Core-friendly approach for many-to-many updates
+                // Remove roles that are no longer needed
+                var rolesToRemove = _roles.Except(newRoleSet).ToList();
+                foreach (var role in rolesToRemove)
+                {
+                    _roles.Remove(role);
+                }
+
+                // Add new roles that weren't already present
+                var rolesToAdd = newRoleSet.Except(_roles).ToList();
+                foreach (var role in rolesToAdd)
                 {
                     _roles.Add(role);
                 }
+
                 MarkAsUpdated();
             }
         }

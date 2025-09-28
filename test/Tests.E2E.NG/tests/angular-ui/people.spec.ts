@@ -28,7 +28,7 @@ test.describe('People Management UI', () => {
     
     // Wait for the page to fully load - use specific selectors instead of networkidle
     await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 15000 });
-    await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 10000 });
+    await page.locator('a[routerLink="/people-list"]').first().waitFor({ timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -45,14 +45,14 @@ test.describe('People Management UI', () => {
     
     // Wait for any pending operations to complete - use specific checks instead of networkidle
     try {
-      await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 3000 });
+      await page.locator('a[routerLink="/people-list"]').first().waitFor({ timeout: 3000 });
     } catch (error) {
       // Page might be in a transitional state, that's okay for cleanup
       console.warn('Page not fully loaded during cleanup, continuing...');
     }
   });
 
-  test('should display empty state when no people exist', async () => {
+  test('should display empty state when no people exist', async ({ page }) => {
     await pageHelpers.verifyEmptyState('people');
   });
 
@@ -92,7 +92,7 @@ test.describe('People Management UI', () => {
     }
   });
 
-  test('should create multiple people', async () => {
+  test('should create multiple people', async ({ page }) => {
     for (let i = 0; i < testPeople.length; i++) {
       const person = testPeople[i];
       
@@ -107,7 +107,7 @@ test.describe('People Management UI', () => {
     expect(personCount).toBe(testPeople.length);
   });
 
-  test('should validate required fields', async () => {
+  test('should validate required fields', async ({ page }) => {
     await pageHelpers.clickAddPerson();
     
     // Try to submit without filling required fields
@@ -119,7 +119,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifySubmitButtonEnabled();
   });
 
-  test('should create person with roles', async () => {
+  test('should create person with roles', async ({ page }) => {
     // First create some roles
     const role1 = await apiHelpers.createRole(generateTestRole());
     const role2 = await apiHelpers.createRole(generateTestRole());
@@ -140,7 +140,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonHasRole(testPerson.fullName, role2.name);
   });
 
-  test('should edit an existing person', async () => {
+  test('should edit an existing person', async ({ page }) => {
     // First create a person via API
     const originalPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(originalPerson);
@@ -161,7 +161,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonNotExists(originalPerson.fullName);
   });
 
-  test('should delete a person', async () => {
+  test('should delete a person', async ({ page }) => {
     // First create a person via API
     const testPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(testPerson);
@@ -190,7 +190,7 @@ test.describe('People Management UI', () => {
     }
   });
 
-  test('should handle person creation with only required fields', async () => {
+  test('should handle person creation with only required fields', async ({ page }) => {
     const testPerson = generateTestPerson({ phone: undefined });
     
     await pageHelpers.clickAddPerson();
@@ -200,7 +200,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('should refresh the people list', async () => {
+  test('should refresh the people list', async ({ page }) => {
     // Create a person via API (simulating external change)
     const testPerson = generateTestPerson();
     await apiHelpers.createPerson(testPerson);
@@ -353,7 +353,7 @@ test.describe('People Management UI', () => {
     await expect(personRow.locator('td').nth(2)).not.toContainText(role1.name);
   });
 
-  test('should maintain data integrity across tab switches', async () => {
+  test('should maintain data integrity across tab switches', async ({ page }) => {
     // Create a person
     const testPerson = generateTestPerson();
     await pageHelpers.clickAddPerson();

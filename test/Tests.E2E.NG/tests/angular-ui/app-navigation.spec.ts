@@ -115,7 +115,7 @@ test.describe('Application Navigation and Layout', () => {
     await page.reload();
     // Wait for specific content instead of networkidle
     await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
-    await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
+    await page.locator('a[routerLink="/people-list"]').first().waitFor({ timeout: 15000 });
 
     // Navigate to people page after refresh
     await pageHelpers.switchToPeopleTab();
@@ -144,7 +144,7 @@ test.describe('Application Navigation and Layout', () => {
     await pageHelpers.navigateToApp();
 
     // Focus on the roles link
-    await page.locator('a[routerLink="/roles-list"]').focus();
+    await page.locator('a[routerLink="/roles-list"]').first().focus();
 
     // Press Enter to navigate to roles
     await page.keyboard.press('Enter');
