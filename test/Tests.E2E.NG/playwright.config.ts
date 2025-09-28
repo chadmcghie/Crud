@@ -32,6 +32,15 @@ const databasePath = isCI
 process.env.TEST_RUN_ID = testRunId;
 process.env.DATABASE_PATH = databasePath;
 
+// Debug output for CI
+if (isCI) {
+  console.log('[Playwright Config] CI Mode detected');
+  console.log('[Playwright Config] Test Run ID:', testRunId);
+  console.log('[Playwright Config] Database Path:', databasePath);
+  console.log('[Playwright Config] Working Directory:', process.cwd());
+  console.log('[Playwright Config] Angular CWD:', path.resolve(process.cwd(), '..', '..', 'src', 'Angular'));
+}
+
 export default defineConfig({
   testDir: './tests',
 
@@ -66,6 +75,7 @@ export default defineConfig({
         // Testing-optimized database configuration with better isolation
         DatabaseProvider: 'SQLite',
         ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
+        DATABASE_PATH: databasePath,
 
         // Environment-specific database settings
         DATABASE_TIMEOUT: isCI ? '30' : '10',
@@ -94,7 +104,7 @@ export default defineConfig({
     {
       // Angular Server configuration - simplified for better CI compatibility
       command: isCI ? 'npm run start:ci' : 'npm start',
-      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      cwd: path.resolve(process.cwd(), '..', '..', 'src', 'Angular'),
       url: 'http://localhost:4200',
       timeout: isCI ? 180 * 1000 : 120 * 1000, // More time for CI environment compilation
       reuseExistingServer: !isCI,

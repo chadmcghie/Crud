@@ -68,7 +68,6 @@ jobs:
         CI: true
         API_PORT: 5172
         ANGULAR_PORT: 4200
-        DATABASE_PATH: test.db
         API_URL: http://localhost:5172
         ANGULAR_URL: http://localhost:4200
       run: npx playwright test
