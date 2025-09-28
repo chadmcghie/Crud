@@ -21,8 +21,8 @@ test.describe('Application Navigation and Layout', () => {
     await pageHelpers.verifyPageTitle();
 
     // Verify navigation links are present
-    await expect(page.locator('a[routerLink="/people-list"]')).toBeVisible();
-    await expect(page.locator('a[routerLink="/roles-list"]')).toBeVisible();
+    await expect(page.locator('a[routerLink="/people-list"]').first()).toBeVisible();
+    await expect(page.locator('a[routerLink="/roles-list"]').first()).toBeVisible();
   });
 
   test('@critical should navigate to people page', async ({ page }) => {
@@ -98,8 +98,8 @@ test.describe('Application Navigation and Layout', () => {
     await pageHelpers.navigateToApp();
 
     // Navigation links should be visible
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    const peopleLink = page.locator('a[routerLink="/people-list"]').first();
+    const rolesLink = page.locator('a[routerLink="/roles-list"]').first();
 
     await expect(peopleLink).toBeVisible();
     await expect(rolesLink).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('Application Navigation and Layout', () => {
     // Refresh the page
     await page.reload();
     // Wait for specific content instead of networkidle
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
     await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
 
     // Navigate to people page after refresh

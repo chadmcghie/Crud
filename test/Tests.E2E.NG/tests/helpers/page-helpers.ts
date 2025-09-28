@@ -46,7 +46,7 @@ export class PageHelpers {
 
     await this.page.goto('/');
     // Wait for the main app component to be fully loaded - this is more reliable than networkidle
-    await this.page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
+    await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
     // Wait for Angular to initialize and render the main content
     await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
     // Wait for the app to be interactive (links clickable)
@@ -431,7 +431,7 @@ export class PageHelpers {
     await this.retryOperation(async () => {
       await this.page.reload();
       // Instead of waiting for networkidle, wait for specific content to be ready
-      await this.page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 30000 });
+      await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
       await this.page.waitForSelector('a[routerLink="/people-list"]', { timeout: 15000 });
       // Small buffer for Angular to stabilize
       }, 3, 2000, 'refreshPage');
@@ -490,7 +490,7 @@ export class PageHelpers {
   }
 
   async verifyPageTitle(): Promise<void> {
-    await expect(this.page.locator('h1')).toContainText('CRUD Template Application');
+    await expect(this.page.locator('h1').first()).toContainText('CRUD Template Application');
   }
 
   async verifyTabActive(tabName: 'people' | 'roles'): Promise<void> {

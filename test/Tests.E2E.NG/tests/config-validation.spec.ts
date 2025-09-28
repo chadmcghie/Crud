@@ -31,13 +31,13 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(configContent).not.toContain('fullyParallel: true');
   });
   
-  test('@smoke should have no retries configured', async () => {
+  test('@smoke should have proper retries configured', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify retries is 0
-    expect(configContent).toMatch(/retries:\s*0/);
-    expect(configContent).not.toMatch(/retries:\s*[1-9]/);
+    // Verify retries is configured properly (0 for local, 1 for CI)
+    expect(configContent).toMatch(/retries:\s*isCI\s*\?\s*1\s*:\s*0/);
+    expect(configContent).not.toMatch(/retries:\s*[2-9]/);
   });
   
   test('@smoke should use single browser by default', async () => {

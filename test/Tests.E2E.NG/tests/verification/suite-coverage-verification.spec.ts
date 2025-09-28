@@ -113,7 +113,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 
     // Test 1: App Load Journey
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     journeyChecklist.appLoad = true;
 
     // Test 2: Navigation Journey - use nav-specific selectors to avoid ambiguity
@@ -195,7 +195,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test page load performance
     const pageLoadStart = Date.now();
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     performanceMetrics.pageLoadTime = Date.now() - pageLoadStart;
 
     // Test API response performance
@@ -266,14 +266,15 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 
     // Test 1: Deterministic waiting (no setTimeout usage)
     await page.goto(baseURL);
-    const loadWaitResult = await Promise.race([
-      page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
-    ]);
-    reliabilityChecklist.deterministicWaiting = !!loadWaitResult;
+    try {
+      await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
+      reliabilityChecklist.deterministicWaiting = true;
+    } catch (error) {
+      reliabilityChecklist.deterministicWaiting = false;
+    }
 
     // Test 2: Event-driven patterns (using waitFor instead of sleep)
-    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
+    const peopleLink = page.locator('a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.waitForLoadState('networkidle', { timeout: 5000 });
     reliabilityChecklist.eventDrivenPatterns = true;

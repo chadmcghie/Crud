@@ -27,7 +27,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.switchToPeopleTab();
     
     // Wait for the page to fully load - use specific selectors instead of networkidle
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 15000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 15000 });
     await page.waitForSelector('a[routerLink="/people-list"]', { timeout: 10000 });
   });
 

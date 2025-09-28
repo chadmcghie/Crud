@@ -17,7 +17,7 @@ test.describe('People Management - Serial Tests', () => {
   // Smoke tests - quick validation of core functionality (2 min total)
   test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -29,7 +29,7 @@ test.describe('People Management - Serial Tests', () => {
   
   test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -43,7 +43,7 @@ test.describe('People Management - Serial Tests', () => {
   // Critical tests - essential user workflows (5 min total)
   test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');

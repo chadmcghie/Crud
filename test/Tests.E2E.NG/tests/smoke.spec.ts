@@ -163,7 +163,12 @@ test.describe('@smoke Database Operations', () => {
 
     // Create
     const createResponse = await page.request.post(`${apiUrl}/api/roles`, {
-      data: testRole
+      data: testRole,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true'
+      }
     });
     expect(createResponse.ok()).toBe(true);
 
@@ -171,7 +176,12 @@ test.describe('@smoke Database Operations', () => {
     expect(created.name).toBe(testRole.name);
 
     // Read
-    const readResponse = await page.request.get(`${apiUrl}/api/roles/${created.id}`);
+    const readResponse = await page.request.get(`${apiUrl}/api/roles/${created.id}`, {
+      headers: {
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true'
+      }
+    });
     expect(readResponse.ok()).toBe(true);
 
     const read = await readResponse.json();
@@ -180,12 +190,22 @@ test.describe('@smoke Database Operations', () => {
     // Update
     const updatedRole = { ...testRole, description: 'Updated description' };
     const updateResponse = await page.request.put(`${apiUrl}/api/roles/${created.id}`, {
-      data: updatedRole
+      data: updatedRole,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true'
+      }
     });
     expect(updateResponse.ok()).toBe(true);
 
     // Delete
-    const deleteResponse = await page.request.delete(`${apiUrl}/api/roles/${created.id}`);
+    const deleteResponse = await page.request.delete(`${apiUrl}/api/roles/${created.id}`, {
+      headers: {
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true'
+      }
+    });
     expect(deleteResponse.ok()).toBe(true);
   });
 });

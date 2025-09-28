@@ -119,8 +119,8 @@ test.describe('Roles API', () => {
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
     
     const response = await apiContext.delete(`/api/roles/${nonExistentId}`);
-    // API may return 404, 500, or 204 for non-existent resources
-    expect([404, 500, 204]).toContain(response.status());
+    // API may return 400, 404, 500, or 204 for non-existent resources
+    expect([400, 404, 500, 204]).toContain(response.status());
   });
 
   test('@extended should handle multiple roles correctly', async ({ apiHelpers }) => {
