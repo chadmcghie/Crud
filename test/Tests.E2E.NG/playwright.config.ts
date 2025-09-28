@@ -23,9 +23,9 @@ const testCategory = process.env.TEST_CATEGORY || 'all';
 const testRunId = isCI
   ? `ci-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   : `local-${Date.now()}`;
-// Use current working directory for database file in CI, or temp directory locally
+// Use proper writable directory for database file - CRITICAL for CI success
 const databasePath = isCI
-  ? `CrudTest_${testRunId}.db`  // CI: Use current directory
+  ? `/tmp/CrudTest_${testRunId}.db`  // CI: Use /tmp directory (guaranteed writable)
   : path.join(process.cwd(), '..', '..', `CrudTest_${testRunId}.db`);  // Local: Use repo root
 
 // Export test run ID for teardown
