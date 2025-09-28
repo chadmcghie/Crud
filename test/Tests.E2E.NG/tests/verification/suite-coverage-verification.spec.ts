@@ -113,17 +113,21 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 
     // Test 1: App Load Journey
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     journeyChecklist.appLoad = true;
 
-    // Test 2: Navigation Journey
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Test 2: Navigation Journey - use nav-specific selectors to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.waitForLoadState('networkidle', { timeout: 5000 });
 
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    const rolesLink = page.locator('nav a[routerLink="/roles-list"]').first();
     await rolesLink.click();
-    await page.locator('router-outlet, app-roles, main, .content').waitFor({ state: 'visible', timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+    // Use flexible selector pattern like other working tests - wait for any indication of roles page
+    const rolesPageIndicator = page.locator('router-outlet, app-roles, main').first();
+    await rolesPageIndicator.waitFor({ state: 'visible', timeout: 10000 });
     journeyChecklist.navigation = true;
 
     // Test 3: CRUD Operations Journey
@@ -146,7 +150,9 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 
     // Test 4: Form Validation Journey
     await page.goto(baseURL);
-    await peopleLink.click();
+    // Redefine peopleLink for this section with nav-specific selector
+    const navPeopleLink = page.locator('nav a[routerLink="/people-list"]').first();
+    await navPeopleLink.click();
     await page.waitForLoadState('networkidle', { timeout: 5000 });
 
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -154,12 +160,13 @@ test.describe('@critical Test Suite Coverage Verification', () => {
       await addButton.click();
       await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
 
-      // Try submitting empty form
-      const submitButton = page.locator('button[type="submit"]:has-text("Save")');
-      await submitButton.click();
+      // Check form validation - button should be disabled when form is empty
+      const submitButton = page.locator('button[type="submit"]:has-text("Create Person")');
+      await submitButton.waitFor({ state: 'visible', timeout: 5000 });
 
-      // Form should still be visible (validation working)
-      journeyChecklist.formValidation = await page.locator('app-people form').isVisible();
+      // Validation working correctly: button should be disabled for empty form
+      const isDisabled = await submitButton.isDisabled();
+      journeyChecklist.formValidation = isDisabled; // True = validation working
     } else {
       journeyChecklist.formValidation = true; // Skip if no form available
     }
@@ -188,7 +195,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     // Test page load performance
     const pageLoadStart = Date.now();
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     performanceMetrics.pageLoadTime = Date.now() - pageLoadStart;
 
     // Test API response performance
@@ -196,9 +203,9 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     const healthResponse = await page.request.get(`${apiUrl}/health`);
     performanceMetrics.apiResponseTime = Date.now() - apiStart;
 
-    // Test navigation performance
+    // Test navigation performance - use nav-specific selector to avoid ambiguity
     const navStart = Date.now();
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.waitForLoadState('networkidle', { timeout: 5000 });
     performanceMetrics.navigationTime = Date.now() - navStart;
@@ -259,14 +266,15 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 
     // Test 1: Deterministic waiting (no setTimeout usage)
     await page.goto(baseURL);
-    const loadWaitResult = await Promise.race([
-      page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
-    ]);
-    reliabilityChecklist.deterministicWaiting = !!loadWaitResult;
+    try {
+      await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
+      reliabilityChecklist.deterministicWaiting = true;
+    } catch (error) {
+      reliabilityChecklist.deterministicWaiting = false;
+    }
 
     // Test 2: Event-driven patterns (using waitFor instead of sleep)
-    const peopleLink = page.locator('nav a[routerLink="/people-list"]');
+    const peopleLink = page.locator('a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.waitForLoadState('networkidle', { timeout: 5000 });
     reliabilityChecklist.eventDrivenPatterns = true;

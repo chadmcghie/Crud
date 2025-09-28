@@ -24,7 +24,7 @@ env:
 
 jobs:
   manual-smoke-tests:
-    name: Manual Smoke Tests - ${{ inputs.test_category }}
+    name: Manual ${{ inputs.test_category == 'smoke' && 'Smoke Tests' || inputs.test_category == 'critical' && 'Critical Tests' || 'Extended Tests' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

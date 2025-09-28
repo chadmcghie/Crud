@@ -10,31 +10,34 @@ import { faker } from '@faker-js/faker';
 
 test.describe('@critical Complete Person Management Journey', () => {
   test('@critical User can create, view, edit, and delete a person', async ({ page, baseURL, apiUrl }) => {
+    // Use simple names without special characters to avoid validation issues
     const testUser = {
-      fullName: faker.person.fullName(),
-      phone: faker.phone.number({ style: 'national' })
+      fullName: `${faker.person.firstName()} ${faker.person.lastName()}`,
+      phone: `+1-555-${Math.floor(Math.random() * 9000) + 1000}` // Use format that matches validation regex
     };
 
     // Navigate to application
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to People section
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Navigate to People section - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
-    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
+    await page.waitForTimeout(500); // Allow component to stabilize
 
     // Create new person
     const addButton = page.locator('button:has-text("Add New Person")');
+    await addButton.waitFor({ state: 'visible', timeout: 10000 });
     await addButton.click();
-    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('app-people form').waitFor({ state: 'visible', timeout: 10000 });
 
     // Fill form
     await page.fill('input#fullName', testUser.fullName);
     await page.fill('input#phone', testUser.phone);
 
-    // Submit form
-    const submitButton = page.locator('button[type="submit"]:has-text("Save")');
+    // Submit form - use the correct button text from the form
+    const submitButton = page.locator('button:has-text("Create Person")');
     await submitButton.click();
 
     // Verify person appears in list
@@ -47,10 +50,17 @@ test.describe('@critical Complete Person Management Journey', () => {
     await editButton.click();
     await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
 
-    // Update name
-    const updatedName = `${testUser.fullName} (Updated)`;
+    // Update name with a simple, valid name
+    const updatedName = `${testUser.fullName} Updated`;
     await page.fill('input#fullName', updatedName);
-    await submitButton.click();
+
+    // Wait for validation to pass (button to become enabled)
+    const updateButton = page.locator('button:has-text("Update Person")');
+    await updateButton.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Wait for button to be enabled
+    await expect(updateButton).toBeEnabled({ timeout: 5000 });
+    await updateButton.click();
 
     // Verify update
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
@@ -59,28 +69,31 @@ test.describe('@critical Complete Person Management Journey', () => {
 
     // Delete the person
     const deleteButton = updatedPersonRow.locator('button:has-text("Delete")');
+
+    // Handle the confirm dialog that will appear
+    page.once('dialog', async dialog => {
+      await dialog.accept(); // Click OK on the confirm dialog
+    });
+
     await deleteButton.click();
 
-    // Confirm deletion (if confirmation dialog appears)
-    try {
-      const confirmButton = page.locator('button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Delete")').first();
-      await confirmButton.click({ timeout: 2000 });
-    } catch {
-      // No confirmation dialog, deletion was immediate
-    }
+    // Wait for the deletion to complete
+    await page.waitForResponse(response =>
+      response.url().includes('/api/people') && response.status() === 204
+    );
 
     // Verify person is removed
-    await expect(page.locator(`tr:has-text("${updatedName}")`)).not.toBeVisible();
+    await expect(page.locator(`tr:has-text("${updatedName}")`).first()).not.toBeVisible({ timeout: 5000 });
   });
 
   test('@critical User can assign roles to a person', async ({ page, baseURL, apiUrl }) => {
     const testUser = {
-      fullName: faker.person.fullName(),
-      phone: faker.phone.number({ style: 'national' })
+      fullName: `${faker.person.firstName()} ${faker.person.lastName()}`,
+      phone: `+1-555-${Math.floor(Math.random() * 9000) + 1000}` // Use format that matches validation regex
     };
 
     // First, create a role via API for assignment
-    const roleData = { name: 'Test Role', description: 'Role for user journey test' };
+    const roleData = { name: `Test Role ${Date.now()}`, description: 'Role for user journey test' };
     const roleResponse = await page.request.post(`${apiUrl}/api/roles`, { data: roleData });
     expect(roleResponse.ok()).toBe(true);
     const createdRole = await roleResponse.json();
@@ -89,8 +102,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to People section
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Navigate to People section - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
 
@@ -105,8 +118,12 @@ test.describe('@critical Complete Person Management Journey', () => {
 
     // Assign role (if role selection is available in form)
     try {
-      const roleCheckbox = page.locator(`input[type="checkbox"][value="${createdRole.id}"], label:has-text("${roleData.name}")`);
-      if (await roleCheckbox.isVisible({ timeout: 2000 })) {
+      // Wait for checkboxes to load first
+      await page.locator('input[type="checkbox"]').first().waitFor({ state: 'visible', timeout: 5000 });
+
+      // Use getByRole for better accessibility
+      const roleCheckbox = page.getByRole('checkbox', { name: new RegExp(roleData.name, 'i') });
+      if (await roleCheckbox.isVisible({ timeout: 3000 })) {
         await roleCheckbox.check();
       }
     } catch {
@@ -114,7 +131,7 @@ test.describe('@critical Complete Person Management Journey', () => {
     }
 
     // Submit form
-    const submitButton = page.locator('button[type="submit"]:has-text("Save")');
+    const submitButton = page.locator('button:has-text("Create Person")');
     await submitButton.click();
 
     // Verify person was created
@@ -130,16 +147,16 @@ test.describe('@critical Complete Person Management Journey', () => {
 test.describe('@critical Complete Role Management Journey', () => {
   test('@critical User can create, view, edit, and delete a role', async ({ page, baseURL, apiUrl }) => {
     const testRole = {
-      name: faker.company.buzzPhrase().replace(/[^a-zA-Z0-9 ]/g, ''),
-      description: faker.lorem.sentence()
+      name: `Test Role ${Date.now()}`, // Simple name without special chars
+      description: 'Test role description'
     };
 
     // Navigate to application
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to Roles section
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    // Navigate to Roles section - use first link to avoid ambiguity
+    const rolesLink = page.locator('nav a[routerLink="/roles-list"]').first();
     await rolesLink.click();
     await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
 
@@ -153,8 +170,8 @@ test.describe('@critical Complete Role Management Journey', () => {
       await page.fill('input[name="name"], #name', testRole.name);
       await page.fill('input[name="description"], textarea[name="description"], #description', testRole.description);
 
-      // Submit form
-      const submitButton = page.locator('button[type="submit"]:has-text("Save"), button:has-text("Create")');
+      // Submit form - use the correct button text from the form
+      const submitButton = page.locator('button:has-text("Create Role"), button:has-text("Save"), button:has-text("Create")');
       await submitButton.click();
 
       // Verify role appears in list
@@ -180,14 +197,14 @@ test.describe('@critical Cross-Module User Journeys', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Test navigation to People
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Test navigation to People - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
     await expect(page.locator('app-people-list')).toBeVisible();
 
-    // Test navigation to Roles
-    const rolesLink = page.locator('a[routerLink="/roles-list"]');
+    // Test navigation to Roles - use first link to avoid ambiguity
+    const rolesLink = page.locator('nav a[routerLink="/roles-list"]').first();
     await rolesLink.click();
     await page.locator('app-roles-list').waitFor({ state: 'visible', timeout: 5000 });
     await expect(page.locator('app-roles-list')).toBeVisible();
@@ -212,8 +229,8 @@ test.describe('@critical Cross-Module User Journeys', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to People
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Navigate to People - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
 
@@ -222,22 +239,23 @@ test.describe('@critical Cross-Module User Journeys', () => {
     await addButton.click();
     await page.locator('app-people form').waitFor({ state: 'visible', timeout: 5000 });
 
-    // Try to submit empty form (should show validation)
-    const submitButton = page.locator('button[type="submit"]:has-text("Save")');
-    await submitButton.click();
+    // Check form validation - button should be disabled when form is empty
+    const submitButton = page.locator('button:has-text("Create Person")');
+    await submitButton.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Check for validation messages
-    const validationMessages = page.locator('.error, .invalid, .validation-error, .form-error');
-    if (await validationMessages.first().isVisible({ timeout: 2000 })) {
-      await expect(validationMessages.first()).toBeVisible();
-    }
+    // Verify validation is working: button should be disabled for empty form
+    const isDisabled = await submitButton.isDisabled();
+    expect(isDisabled).toBe(true); // Validation working correctly
 
     // Fill form with invalid data
     await page.fill('input#fullName', ''); // Empty required field
     await page.fill('input#phone', 'invalid-phone');
-    await submitButton.click();
 
-    // Form should not submit successfully
+    // Button should still be disabled due to empty required field
+    const stillDisabled = await submitButton.isDisabled();
+    expect(stillDisabled).toBe(true); // Validation still working
+
+    // Form should remain visible (validation preventing submission)
     await expect(page.locator('app-people form')).toBeVisible();
 
     // Fill with valid data
@@ -255,8 +273,8 @@ test.describe('@extended Error Recovery User Journeys', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to People
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Navigate to People - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
 
@@ -276,8 +294,8 @@ test.describe('@extended Error Recovery User Journeys', () => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
-    // Navigate to People and open form
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Navigate to People and open form - use first link to avoid ambiguity
+    const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
 

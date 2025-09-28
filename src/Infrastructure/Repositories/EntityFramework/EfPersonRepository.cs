@@ -47,13 +47,32 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
-            // For tracked entities, EF Core will automatically detect property changes
-            // Only call Update() if the entity is not being tracked to avoid concurrency conflicts
-            // with many-to-many relationship changes
+            // Ensure entity is properly tracked with its navigation properties
             var entry = _context.Entry(person);
             if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
             {
-                _context.People.Update(person);
+                // If detached, attach and load existing roles to properly track many-to-many changes
+                _context.People.Attach(person);
+                await entry.Collection(p => p.Roles).LoadAsync(ct);
+                entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            }
+            else
+            {
+                // For tracked entities, ensure roles collection is loaded
+                if (!entry.Collection(p => p.Roles).IsLoaded)
+                {
+                    await entry.Collection(p => p.Roles).LoadAsync(ct);
+                }
+            }
+
+            // Ensure all role entities in the person's collection are tracked by this context
+            foreach (var role in person.Roles)
+            {
+                var roleEntry = _context.Entry(role);
+                if (roleEntry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+                {
+                    _context.Attach(role);
+                }
             }
 
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);

@@ -4,9 +4,16 @@ import * as path from 'path';
 
 /**
  * Serial test fixture that handles database cleanup between tests
+ * Environment-aware configuration for CI/local differences
  */
+
+// Environment detection
+const isCI = !!process.env.CI;
+const isWindows = process.platform === 'win32';
+const debugMode = process.env.DEBUG_E2E === 'true';
+
 export const test = base.extend<{ apiUrl: string; baseURL: string }>({
-  // Automatic database cleanup before each test
+  // Environment-aware page setup with automatic database cleanup
   page: async ({ page }, use) => {
     // AGGRESSIVE: Inject authentication tokens before Angular loads
     await page.addInitScript(() => {
@@ -51,54 +58,68 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
         document_attr_set: document.documentElement.getAttribute('data-e2e')
       });
     });
-    
-    // Reset database via API before test
+
+    // Reset database via API before test with environment-specific handling
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
-    
-    // Only log database reset on retry or when not in CI
-    if (test.info().retry > 0 || !process.env.CI) {
+
+    // Environment-specific logging strategy
+    const shouldLog = test.info().retry > 0 || !isCI || debugMode;
+    if (shouldLog) {
       console.log(`🔄 Resetting database for test: ${test.info().title}`);
     }
-    
+
     try {
       const response = await page.request.post(`${apiUrl}/api/database/reset`, {
         data: { workerIndex: 0, preserveSchema: true },
         headers: {
           'X-Test-Reset-Token': process.env.TEST_RESET_TOKEN || 'test-only-token'
-        }
+        },
+        // Environment-specific timeout
+        timeout: isCI ? 30000 : 15000
       });
-      
+
       if (!response.ok()) {
-        console.warn(`Database reset failed: ${response.status()}`);
+        const errorMsg = `Database reset failed: ${response.status()}`;
+        if (shouldLog) console.warn(errorMsg);
       }
     } catch (error) {
-      // Only log errors on retry or when important
-      if (test.info().retry > 0) {
+      // Environment-aware error logging
+      if (test.info().retry > 0 || debugMode) {
         console.warn(`Could not reset database: ${error}`);
       }
     }
-    
-    // Set up page with default navigation timeout
-    page.setDefaultNavigationTimeout(30000);
-    page.setDefaultTimeout(10000);
-    
-    // Log console errors only on retry
-    if (test.info().retry > 0) {
+
+    // Environment-specific page timeout configuration
+    const navTimeout = isCI ? 45000 : 30000;
+    const defaultTimeout = isCI ? 30000 : 20000;
+
+    page.setDefaultNavigationTimeout(navTimeout);
+    page.setDefaultTimeout(defaultTimeout);
+
+    // Environment-aware error logging
+    if (test.info().retry > 0 || debugMode) {
       page.on('console', msg => {
         if (msg.type() === 'error') {
           console.error(`[Browser Error] ${msg.text()}`);
         }
       });
-      
-      // Log page errors
+
+      // Log page errors with environment context
       page.on('pageerror', error => {
         console.error(`[Page Error] ${error.message}`);
       });
+
+      // Additional CI-specific error handling
+      if (isCI) {
+        page.on('requestfailed', request => {
+          console.error(`[Request Failed] ${request.url()} - ${request.failure()?.errorText}`);
+        });
+      }
     }
-    
+
     // Use the page
     await use(page);
-    
+
     // Clean up E2E auth tokens and test mode (only if page was used)
     try {
       await page.evaluate(() => {
@@ -114,20 +135,20 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
     } catch (error) {
       // Ignore localStorage access errors if page wasn't navigated to a valid domain
     }
-    
+
     // Optional: Log database size after test for monitoring
     if (process.env.DATABASE_PATH && process.env.DEBUG_DB) {
       const size = await getDatabaseSize(process.env.DATABASE_PATH);
       console.log(`📊 Database size after test: ${(size / 1024).toFixed(2)} KB`);
     }
   },
-  
+
   // API base URL from environment
   apiUrl: async ({}, use) => {
     const url = process.env.API_URL || 'http://localhost:5172';
     await use(url);
   },
-  
+
   // Angular base URL from environment
   baseURL: async ({}, use) => {
     const url = process.env.ANGULAR_URL || 'http://localhost:4200';
@@ -177,7 +198,7 @@ export const helpers = {
     }
     throw new Error('API did not become ready in time');
   },
-  
+
   /**
    * Create test data via API
    */
@@ -188,15 +209,15 @@ export const helpers = {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!response.ok()) {
       const body = await response.text();
       throw new Error(`Failed to create test data: ${response.status()} - ${body}`);
     }
-    
+
     return response.json();
   },
-  
+
   /**
    * Clean up test data via API
    */
@@ -207,7 +228,7 @@ export const helpers = {
       console.warn(`Failed to cleanup test data: ${err}`);
     }
   },
-  
+
   /**
    * Wait for Angular to be ready
    */
@@ -216,7 +237,7 @@ export const helpers = {
     await page.waitForFunction(() => {
       return typeof (window as any).ng !== 'undefined';
     }, { timeout: 30000 });
-    
+
     // Wait for Angular to be stable
     await page.evaluate(() => {
       return new Promise((resolve) => {

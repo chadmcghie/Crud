@@ -47,7 +47,7 @@ public class CacheControllerTests : IntegrationTestBase, IClassFixture<SmokeTest
             var stats = JsonSerializer.Deserialize<CacheStatsResponse>(content, JsonOptions);
 
             stats.Should().NotBeNull();
-            stats.HitRatio.Should().BeGreaterThanOrEqualTo(0);
+            stats!.HitRatio.Should().BeGreaterThanOrEqualTo(0);
             stats.TotalHits.Should().BeGreaterThanOrEqualTo(0);
             stats.TotalMisses.Should().BeGreaterThanOrEqualTo(0);
             stats.KeyCount.Should().BeGreaterThanOrEqualTo(0);
@@ -85,7 +85,7 @@ public class CacheControllerTests : IntegrationTestBase, IClassFixture<SmokeTest
             var result = JsonSerializer.Deserialize<CacheClearResponse>(content, JsonOptions);
 
             result.Should().NotBeNull();
-            result.Cleared.Should().BeTrue();
+            result!.Cleared.Should().BeTrue();
             result.Message.Should().NotBeNullOrEmpty();
         });
     }
@@ -179,7 +179,7 @@ public class CacheControllerTests : IntegrationTestBase, IClassFixture<SmokeTest
             var result = JsonSerializer.Deserialize<CacheKeyListResponse>(content, JsonOptions);
 
             result.Should().NotBeNull();
-            result.Keys.Should().NotBeNull();
+            result!.Keys.Should().NotBeNull();
             result.TotalCount.Should().BeGreaterThanOrEqualTo(0);
             result.Pattern.Should().Be("*");
         });
@@ -216,7 +216,7 @@ public class CacheControllerTests : IntegrationTestBase, IClassFixture<SmokeTest
             var result = JsonSerializer.Deserialize<CacheClearResponse>(content, JsonOptions);
 
             result.Should().NotBeNull();
-            result.Cleared.Should().BeTrue();
+            result!.Cleared.Should().BeTrue();
             result.Message.Should().Contain("test:*");
         });
     }

@@ -125,23 +125,38 @@ namespace Api
                 var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+                // DIAGNOSTIC: Log database configuration for startup debugging
+                Log.Information("🔍 STARTUP DEBUG: DatabaseProvider={DatabaseProvider}", databaseProvider);
+                Log.Information("🔍 STARTUP DEBUG: Initial ConnectionString={ConnectionString}", connectionString);
+                Log.Information("🔍 STARTUP DEBUG: Environment={Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+
                 // E2E test isolation helpers (only for SQLite)
                 var workerDatabase = Environment.GetEnvironmentVariable("WORKER_DATABASE");
                 var workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX");
 
                 if (databaseProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
                 {
+                    Log.Information("🔍 STARTUP DEBUG: SQLite provider detected");
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_DATABASE={WorkerDatabase}", workerDatabase);
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_INDEX={WorkerIndex}", workerIndex);
+
                     if (!string.IsNullOrWhiteSpace(workerDatabase))
                     {
                         connectionString = $"Data Source={workerDatabase}";
-                        Log.Information("🗄️ Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                        Log.Information("🔍 STARTUP DEBUG: Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
                     }
                     else if (!string.IsNullOrWhiteSpace(workerIndex))
                     {
                         var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                         var workerDbName = $"CrudAppTest_Worker{workerIndex}_{ts}.db";
                         connectionString = $"Data Source={workerDbName}";
-                        Log.Information("🗄️ Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                        Log.Information("🔍 STARTUP DEBUG: Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
+                    }
+                    else
+                    {
+                        Log.Information("🔍 STARTUP DEBUG: Using default connection string: {ConnectionString}", connectionString);
                     }
 
                     var tenantPrefix = Environment.GetEnvironmentVariable("TENANT_PREFIX");
@@ -166,9 +181,21 @@ namespace Api
                     case "sqlite":
                         if (string.IsNullOrWhiteSpace(connectionString))
                             throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQLite.");
-                        builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+
+                        Log.Information("🔍 STARTUP DEBUG: About to register SQLite services with connection: {ConnectionString}", connectionString);
+                        try
+                        {
+                            builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+                            Log.Information("🔍 STARTUP DEBUG: ✅ Successfully registered SQLite services");
+                            usingEfProvider = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("🔍 STARTUP DEBUG: ❌ Failed to register SQLite services: {Error}", ex.Message);
+                            Log.Error("🔍 STARTUP DEBUG: Full exception: {Exception}", ex);
+                            throw;
+                        }
                         Log.Information("Using SQLite provider with connection: {ConnectionString}", connectionString);
-                        usingEfProvider = true;
                         break;
 
                     default:
@@ -431,13 +458,22 @@ namespace Api
                 // to avoid conflicts with response streaming
 
                 app.MapControllers();
-                app.MapHealthChecks("/health");
+                app.MapHealthChecks("/health/system");
 
-                Log.Information("Application configured successfully. Starting web host...");
+                Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
+                Log.Information("🔍 STARTUP DEBUG: Listening URLs will be: {Urls}", string.Join(", ", app.Urls));
                 await app.RunAsync();
             }
             catch (Exception ex)
             {
+                Log.Fatal("🔍 STARTUP DEBUG: ❌❌❌ APPLICATION CRASHED DURING STARTUP ❌❌❌");
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Type: {ExceptionType}", ex.GetType().Name);
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Message: {ExceptionMessage}", ex.Message);
+                Log.Fatal("🔍 STARTUP DEBUG: Stack Trace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Log.Fatal("🔍 STARTUP DEBUG: Inner Exception: {InnerException}", ex.InnerException);
+                }
                 Log.Fatal(ex, "Application terminated unexpectedly");
                 throw;
             }

@@ -16,6 +16,7 @@ export class PerformanceOptimizedHelpers {
 
   /**
    * Fast data setup using API instead of UI
+   * Enhanced with proper authentication and error handling
    */
   async createTestPerson(data?: Partial<TestPerson>): Promise<TestPerson> {
     const personData = {
@@ -25,11 +26,21 @@ export class PerformanceOptimizedHelpers {
     };
 
     const response = await this.request.post(`${this.apiUrl}/api/people`, {
-      data: personData
+      data: personData,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true',
+        // Add bypass headers for E2E testing
+        'X-Test-Bypass-Auth': 'true',
+        'X-Test-Run-Id': process.env.TEST_RUN_ID || 'local-test'
+      }
     });
 
     if (!response.ok()) {
-      throw new Error(`Failed to create test person: ${response.status()}`);
+      const errorText = await response.text();
+      console.error(`❌ Failed to create test person: ${response.status()} - ${errorText}`);
+      console.error('Request data:', personData);
+      throw new Error(`Failed to create test person: ${response.status()} - ${errorText}`);
     }
 
     return await response.json();
@@ -43,11 +54,21 @@ export class PerformanceOptimizedHelpers {
     };
 
     const response = await this.request.post(`${this.apiUrl}/api/roles`, {
-      data: roleData
+      data: roleData,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-E2E-Test': 'true',
+        // Add bypass headers for E2E testing
+        'X-Test-Bypass-Auth': 'true',
+        'X-Test-Run-Id': process.env.TEST_RUN_ID || 'local-test'
+      }
     });
 
     if (!response.ok()) {
-      throw new Error(`Failed to create test role: ${response.status()}`);
+      const errorText = await response.text();
+      console.error(`❌ Failed to create test role: ${response.status()} - ${errorText}`);
+      console.error('Request data:', roleData);
+      throw new Error(`Failed to create test role: ${response.status()} - ${errorText}`);
     }
 
     return await response.json();
@@ -66,13 +87,34 @@ export class PerformanceOptimizedHelpers {
 
   /**
    * Fast cleanup using API
+   * Enhanced with proper authentication
    */
   async cleanupTestPerson(id: string): Promise<void> {
-    await this.request.delete(`${this.apiUrl}/api/people/${id}`);
+    const response = await this.request.delete(`${this.apiUrl}/api/people/${id}`, {
+      headers: {
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true',
+        'X-Test-Run-Id': process.env.TEST_RUN_ID || 'local-test'
+      }
+    });
+
+    if (!response.ok()) {
+      console.warn(`⚠️ Failed to cleanup test person ${id}: ${response.status()}`);
+    }
   }
 
   async cleanupTestRole(id: string): Promise<void> {
-    await this.request.delete(`${this.apiUrl}/api/roles/${id}`);
+    const response = await this.request.delete(`${this.apiUrl}/api/roles/${id}`, {
+      headers: {
+        'X-E2E-Test': 'true',
+        'X-Test-Bypass-Auth': 'true',
+        'X-Test-Run-Id': process.env.TEST_RUN_ID || 'local-test'
+      }
+    });
+
+    if (!response.ok()) {
+      console.warn(`⚠️ Failed to cleanup test role ${id}: ${response.status()}`);
+    }
   }
 
   async cleanupMultiplePeople(ids: string[]): Promise<void> {
@@ -97,7 +139,7 @@ export class PerformanceOptimizedHelpers {
       roles: '/roles-list'
     };
 
-    const link = this.page.locator(`a[routerLink="${routeMap[module]}"]`);
+    const link = this.page.locator(`nav a[routerLink="${routeMap[module]}"]`).first();
     await link.click();
 
     const componentMap = {

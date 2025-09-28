@@ -55,7 +55,18 @@ public class InMemoryTestWebApplicationFactory : WebApplicationFactory<Api.Progr
                 services.Remove(descriptor);
             }
 
-            // Add InMemory database with unique name for isolation
+            // Register all infrastructure services first (this will add DbContext)
+            // Note: For InMemory, we need to override the DbContext registration after
+            var tempConnectionString = "Data Source=:memory:"; // Temporary connection for infrastructure setup
+            services.AddInfrastructureEntityFrameworkSqlite(tempConnectionString);
+
+            // Now override the DbContext registration to use InMemory database
+            var dbDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            if (dbDescriptor != null)
+            {
+                services.Remove(dbDescriptor);
+            }
+
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseInMemoryDatabase(_databaseName);

@@ -17,7 +17,7 @@ test.describe('People Management - Serial Tests', () => {
   // Smoke tests - quick validation of core functionality (2 min total)
   test(tagTest('should load the people list page', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -29,7 +29,7 @@ test.describe('People Management - Serial Tests', () => {
   
   test(tagTest('should display the add person button', 'smoke'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -43,7 +43,7 @@ test.describe('People Management - Serial Tests', () => {
   // Critical tests - essential user workflows (5 min total)
   test(tagTest('should create a new person through UI', 'critical'), async ({ page, baseURL }) => {
     await page.goto(baseURL);
-    await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
+    await page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 10000 });
     
     // Click People link - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -68,8 +68,9 @@ test.describe('People Management - Serial Tests', () => {
       // Form might stay open, check if person was added
     });
     
-    // Verify the person appears in the list
-    await page.goto(`${baseURL}`);
+    // Verify the person appears in the list - navigate to people-list page
+    await page.goto(`${baseURL}/people-list`);
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
     await expect(page.locator(`text=${testName}`)).toBeVisible({ timeout: 10000 });
   });
   
@@ -78,12 +79,13 @@ test.describe('People Management - Serial Tests', () => {
     const uniqueLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
     const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
       fullName: `Edit Test Person ${uniqueLetter}`,
-      phone: '555-0100'
+      phone: '+1-555-0100'
     });
     
     // Navigate to people list
-    await page.goto(`${baseURL}`);
-    
+    await page.goto(`${baseURL}/people-list`);
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
+
     // Find and click edit for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await row.locator('button:has-text("Edit")').click();
@@ -98,8 +100,9 @@ test.describe('People Management - Serial Tests', () => {
     // Save changes - look for Update Person button
     await page.click('button[type="submit"]:has-text("Update Person")');
     
-    // Verify the update
-    await page.goto(`${baseURL}`);
+    // Verify the update - navigate to people-list page
+    await page.goto(`${baseURL}/people-list`);
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
     await expect(page.locator(`text=${updatedName}`)).toBeVisible();
     
     // Cleanup
@@ -111,12 +114,13 @@ test.describe('People Management - Serial Tests', () => {
     const uniqueLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Random A-Z
     const testPerson = await helpers.createTestData(page, apiUrl, 'api/people', {
       fullName: `Delete Test Person ${uniqueLetter}`,
-      phone: '555-0200'
+      phone: '+1-555-0200'
     });
-    
+
     // Navigate to people list
-    await page.goto(`${baseURL}`);
-    
+    await page.goto(`${baseURL}/people-list`);
+    await page.waitForSelector('app-people-list', { timeout: 5000 });
+
     // Find and click delete for the test person
     const row = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     
@@ -187,15 +191,15 @@ test.describe('People Management - Serial Tests', () => {
     const people = await Promise.all([
       helpers.createTestData(page, apiUrl, 'api/people', {
         fullName: 'Alice Searchtest',
-        phone: '555-0301'
+        phone: '+1-555-0301'
       }),
       helpers.createTestData(page, apiUrl, 'api/people', {
         fullName: 'Bob Searchtest',
-        phone: '555-0302'
+        phone: '+1-555-0302'
       }),
       helpers.createTestData(page, apiUrl, 'api/people', {
         fullName: 'Charlie Different',
-        phone: '555-0303'
+        phone: '+1-555-0303'
       })
     ]);
     
@@ -237,7 +241,7 @@ test.describe('People Management - Serial Tests', () => {
     for (let i = 1; i <= 15; i++) {
       people.push(await helpers.createTestData(page, apiUrl, 'api/people', {
         fullName: `Pagination Test Person ${String.fromCharCode(65 + i - 1)}`,  // A, B, C, etc.
-        phone: `555-04${i.toString().padStart(2, '0')}`
+        phone: `+1-555-04${i.toString().padStart(2, '0')}`
       }));
     }
     
@@ -281,7 +285,7 @@ test.describe('People API - Serial Tests', () => {
         page.request.post(`${apiUrl}/api/people`, {
           data: {
             fullName: `Concurrent Test Person ${String.fromCharCode(65 + i)}`,  // A, B, C, etc.
-            phone: `555-05${i}0`
+            phone: `+1-555-05${i}0`
           }
         })
       );
