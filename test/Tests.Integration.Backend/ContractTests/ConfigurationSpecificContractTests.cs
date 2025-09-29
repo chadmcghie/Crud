@@ -125,7 +125,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         var testValue = $"test-{DateTime.UtcNow.Ticks}";
 
         memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
-        var retrievedValue = memoryCache.Get<string>(testKey);
+        var retrievedValue = memoryCache!.Get<string>(testKey);
         retrievedValue.Should().Be(testValue, $"Caching should work consistently in {environment}");
 
         _output.WriteLine($"✓ Caching configuration contract validated for {environment}");
