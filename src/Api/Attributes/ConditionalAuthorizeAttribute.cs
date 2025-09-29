@@ -120,7 +120,8 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
                     {
                         Console.WriteLine($"  - {failure.Message}");
                     }
-                    Console.WriteLine($"DEBUG: User roles: [{string.Join(", ", context.HttpContext.User.FindAll("role")?.Select(c => c.Value) ?? new string[0])}]");
+                    var roleClaims = context.HttpContext.User.FindAll("role");
+                    Console.WriteLine($"DEBUG: User roles: [{string.Join(", ", roleClaims?.Select(c => c.Value) ?? Array.Empty<string>())}]");
                     context.Result = new ForbidResult();
                     return;
                 }
