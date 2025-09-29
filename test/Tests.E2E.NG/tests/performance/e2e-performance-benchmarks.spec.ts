@@ -85,7 +85,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     }
   });
 
-  test('@extended Bulk data handling performance', async ({ page, request, apiUrl }) => {
+  test('@extended Bulk data handling performance', async ({ page, request, apiUrl, baseURL }) => {
     const startTime = Date.now();
 
     // Create multiple people to test bulk performance
@@ -93,7 +93,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     const creationTime = Date.now() - startTime;
 
     // Navigate to people list and verify all are displayed
-    await page.goto(`${page.url().split('/')[0]}//${page.url().split('//')[1].split('/')[0]}`);
+    await page.goto(baseURL);
     await perfHelpers.navigateToModule('people');
 
     // Verify all people appear in UI
