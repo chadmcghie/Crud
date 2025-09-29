@@ -409,22 +409,49 @@ export class ApiHelpers {
   // Pre-test cleanup - only removes stale data from previous test runs
   async cleanupRoles(forceImmediate: boolean = false): Promise<void> {
     console.log(`🧹 Worker ${this.workerId}: Starting role cleanup...`);
-    
+
     try {
       const roles = await this.getRoles();
-      // Only cleanup OLD test roles (older than 1 second) for sequential execution
-      // Unless forceImmediate is true, then cleanup all test roles
+
+      // AGGRESSIVE CLEANUP: In Testing environment with forceImmediate, cleanup EVERYTHING
+      // This prevents test data accumulation that causes timeouts
+      if (forceImmediate && (process.env.ASPNETCORE_ENVIRONMENT === 'Testing' || process.env.CI)) {
+        const rolesToCleanup = roles; // Clean up ALL roles
+
+        if (rolesToCleanup.length === 0) {
+          console.log(`✅ Worker ${this.workerId}: No roles to cleanup`);
+          return;
+        }
+
+        console.log(`🧹 Worker ${this.workerId}: AGGRESSIVE cleanup - removing ALL ${rolesToCleanup.length} roles in Testing environment`);
+
+        for (const role of rolesToCleanup) {
+          try {
+            await this.deleteRole(role.id);
+            console.log(`✅ Worker ${this.workerId}: Deleted role ${role.id}`);
+          } catch (error) {
+            if (!error.message?.includes('404')) {
+              console.warn(`⚠️  Worker ${this.workerId}: Failed to cleanup role ${role.id}:`, error);
+            }
+          }
+        }
+
+        console.log(`✅ Worker ${this.workerId}: Role cleanup completed`);
+        return;
+      }
+
+      // PATTERN-BASED CLEANUP: For normal execution, use time-based pattern matching
       const oneSecondAgo = new Date(Date.now() - 1 * 1000);
       const rolesToCleanup = roles.filter(role => {
         // Skip seed data roles (but not test roles like "UI Role")
         if (['Administrator', 'Manager', 'Developer', 'Analyst', 'User'].includes(role.name)) {
           return false;
         }
-        
-        // Force immediate cleanup for integration tests
+
+        // Force immediate cleanup for integration tests (pattern-based)
         if (forceImmediate) {
           // Clean up any test-related roles (including "UI Role" and generated test roles)
-          return role.name === 'UI Role' || 
+          return role.name === 'UI Role' ||
                  (role.name.includes('W') && role.name.includes('_')) ||
                  role.name.startsWith('Test Role') ||
                  role.name.includes('Unique Role') ||
@@ -490,17 +517,44 @@ export class ApiHelpers {
 
   async cleanupPeople(forceImmediate: boolean = false): Promise<void> {
     console.log(`🧹 Worker ${this.workerId}: Starting people cleanup...`);
-    
+
     try {
       const people = await this.getPeople();
-      // Only cleanup OLD test people (older than 1 second) for sequential execution
-      // Unless forceImmediate is true, then cleanup all test people
+
+      // AGGRESSIVE CLEANUP: In Testing environment with forceImmediate, cleanup EVERYTHING
+      // This prevents test data accumulation that causes timeouts
+      if (forceImmediate && (process.env.ASPNETCORE_ENVIRONMENT === 'Testing' || process.env.CI)) {
+        const peopleToCleanup = people; // Clean up ALL people
+
+        if (peopleToCleanup.length === 0) {
+          console.log(`✅ Worker ${this.workerId}: No people to cleanup`);
+          return;
+        }
+
+        console.log(`🧹 Worker ${this.workerId}: AGGRESSIVE cleanup - removing ALL ${peopleToCleanup.length} people in Testing environment`);
+
+        for (const person of peopleToCleanup) {
+          try {
+            await this.deletePerson(person.id);
+            console.log(`✅ Worker ${this.workerId}: Deleted person ${person.id}`);
+          } catch (error) {
+            if (!error.message?.includes('404')) {
+              console.warn(`⚠️  Worker ${this.workerId}: Failed to cleanup person ${person.id}:`, error);
+            }
+          }
+        }
+
+        console.log(`✅ Worker ${this.workerId}: People cleanup completed`);
+        return;
+      }
+
+      // PATTERN-BASED CLEANUP: For normal execution, use time-based pattern matching
       const oneSecondAgo = new Date(Date.now() - 1 * 1000);
       const peopleToCleanup = people.filter(person => {
-        // Force immediate cleanup for integration tests
+        // Force immediate cleanup for integration tests (pattern-based)
         if (forceImmediate) {
           // Clean up any test-related people (including "UI Person" and generated test people)
-          return person.fullName === 'UI Person' || 
+          return person.fullName === 'UI Person' ||
                  (person.fullName.includes('W') && person.fullName.includes('_')) ||
                  person.fullName.includes('Rapid Person') ||
                  person.fullName.includes('API Person');

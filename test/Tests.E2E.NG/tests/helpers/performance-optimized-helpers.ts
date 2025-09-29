@@ -19,10 +19,12 @@ export class PerformanceOptimizedHelpers {
    * Enhanced with proper authentication and error handling
    */
   async createTestPerson(data?: Partial<TestPerson>): Promise<TestPerson> {
-    // Generate a valid name (only letters, spaces, hyphens, apostrophes, dots)
-    const randomSuffix = Math.random().toString(36).substring(2, 8).replace(/[^a-z]/gi, '');
+    // Generate random suffix using only letters for validation compliance
+    // Validation regex: ^[a-zA-Z\s\-'\.]+$
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const suffix = Array.from({ length: 6 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
     const personData = {
-      fullName: data?.fullName || `Test User ${randomSuffix || 'Alpha'}`,
+      fullName: data?.fullName || `Test User ${suffix}`,
       phone: data?.phone || '+1-555-0000',
       ...data
     };
@@ -80,8 +82,9 @@ export class PerformanceOptimizedHelpers {
    * Batch creation for multiple test entities
    */
   async createMultiplePeople(count: number): Promise<TestPerson[]> {
+    const suffixes = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa'];
     const promises = Array.from({ length: count }, (_, i) =>
-      this.createTestPerson({ fullName: `Batch User ${i + 1}`, phone: `+1-555-000${i}` })
+      this.createTestPerson({ fullName: `Batch User ${suffixes[i % suffixes.length]}`, phone: `+1-555-000${i}` })
     );
 
     return Promise.all(promises);
@@ -225,16 +228,18 @@ export class PerformanceOptimizedHelpers {
   /**
    * Performance monitoring utilities
    */
-  async measureOperationTime<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
+  async measureOperationTime<T>(operation: () => Promise<T>, operationName: string): Promise<number> {
     const startTime = Date.now();
     try {
-      const result = await operation();
+      await operation();
       const endTime = Date.now();
-      console.log(`Operation "${operationName}" took ${endTime - startTime}ms`);
-      return result;
+      const duration = endTime - startTime;
+      console.log(`Operation "${operationName}" took ${duration}ms`);
+      return duration;
     } catch (error) {
       const endTime = Date.now();
-      console.log(`Operation "${operationName}" failed after ${endTime - startTime}ms`);
+      const duration = endTime - startTime;
+      console.log(`Operation "${operationName}" failed after ${duration}ms`);
       throw error;
     }
   }

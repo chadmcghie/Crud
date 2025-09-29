@@ -56,7 +56,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task LoggingConfiguration_Contract_ShouldRespectEnvironmentLevels(string environment)
+    public Task LoggingConfiguration_Contract_ShouldRespectEnvironmentLevels(string environment)
     {
         _output.WriteLine($"=== VALIDATING LOGGING CONFIGURATION CONTRACT: {environment} ===");
 

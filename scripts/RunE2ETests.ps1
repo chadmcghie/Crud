@@ -1,4 +1,8 @@
-﻿param(
+#!/usr/bin/env pwsh
+# Script to run E2E tests with API server management
+# Cross-platform: Works on Windows, macOS, and Linux
+
+param(
     [ValidateSet("smoke", "critical", "extended", "all")]
     [string]$TestSuite = "all",
     [string]$ApiProject = ".\src\Api\Api.csproj",
@@ -35,13 +39,21 @@ function Stop-TestServers {
     }
 }
 
-# Function to start API server in background
+# Function to start API server in background (cross-platform)
 function Start-ApiServer {
     Write-Host "📡 Starting API server for testing..." -ForegroundColor Yellow
 
     # Start API with testing profile
-    $apiArgs = @("run", "--project", "`"$ApiProject`"", "--launch-profile", "testing")
-    $apiProcess = Start-Process "dotnet" -ArgumentList $apiArgs -PassThru -WindowStyle Hidden
+    $apiArgs = @("run", "--project", $ApiProject, "--launch-profile", "testing")
+
+    if ($IsWindows) {
+        # Windows: Use WindowStyle Hidden
+        $apiProcess = Start-Process "dotnet" -ArgumentList $apiArgs -PassThru -WindowStyle Hidden
+    }
+    else {
+        # macOS/Linux: Start process in background (no WindowStyle parameter)
+        $apiProcess = Start-Process "dotnet" -ArgumentList $apiArgs -PassThru
+    }
 
     if ($apiProcess) {
         Write-Host "✅ API server started with PID: $($apiProcess.Id)" -ForegroundColor Green
