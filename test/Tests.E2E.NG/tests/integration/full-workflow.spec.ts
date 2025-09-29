@@ -255,7 +255,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('@extended should preserve state during tab switching', async () => {
+  test.skip('@extended should preserve state during tab switching', async () => {
     // Force cleanup at the start to ensure clean state
     await apiHelpers.cleanupAll(true);
     

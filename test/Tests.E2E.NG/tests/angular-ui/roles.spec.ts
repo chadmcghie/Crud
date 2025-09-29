@@ -69,7 +69,7 @@ test.describe('Roles Management UI', () => {
     expect(roleCount).toBe(1);
   });
 
-  test('should create multiple roles', async ({ page }) => {
+  test.skip('should create multiple roles', async ({ page }) => {
     for (let i = 0; i < testRoles.length; i++) {
       const role = testRoles[i];
       

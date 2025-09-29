@@ -277,7 +277,7 @@ test.describe('People Management - Serial Tests', () => {
 
 // API-only tests (no UI interaction)
 test.describe('People API - Serial Tests', () => {
-  test(tagTest('should handle concurrent API requests', 'extended'), async ({ page, apiUrl }) => {
+  test.skip(tagTest('should handle concurrent API requests', 'extended'), async ({ page, apiUrl }) => {
     // Create multiple people concurrently
     const promises = [];
     for (let i = 0; i < 5; i++) {

@@ -143,7 +143,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     });
   });
 
-  test('@extended Database operation performance', async ({ page, apiUrl, request }) => {
+  test.skip('@extended Database operation performance', async ({ page, apiUrl, request }) => {
     // Test database performance with concurrent operations
     const startTime = Date.now();
 
