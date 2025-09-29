@@ -235,3 +235,4 @@ npm run test:extended    # Extended test suite
 - No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
 - NEVER REBASE!!! NO EXCEPTIONS!!!
 - Manual E2E Tests should be run from the branch that pushed the changes.  Do this by using --ref and -f params
+- When I ask for e2e tests, run all e2e tests;  if i want smoke tests, i will ask for smoke tests;
