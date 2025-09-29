@@ -110,8 +110,7 @@ namespace Api
                         .AddConsoleExporter())
                     .WithMetrics(m => m
                         .AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation()
-                        .AddConsoleExporter());
+                        .AddHttpClientInstrumentation());
 
                 // 3) App & Infra
                 builder.Services.AddApplication();

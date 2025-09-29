@@ -360,7 +360,7 @@ public class ContractTestSuiteVerification : ContractTestBase
         corsResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
     }
 
-    private async Task ValidateServiceInterfaceContractsForEnvironment(string environment)
+    private Task ValidateServiceInterfaceContractsForEnvironment(string environment)
     {
         using var factory = CreateFactoryForEnvironment(environment);
         using var scope = factory.Services.CreateScope();
@@ -374,9 +374,11 @@ public class ContractTestSuiteVerification : ContractTestBase
 
         scope.ServiceProvider.GetRequiredService<MediatR.IMediator>()
           .Should().NotBeNull($"MediatR should be available in {environment}");
+
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateConfigurationSpecificContractsForEnvironment(string environment)
+    private Task ValidateConfigurationSpecificContractsForEnvironment(string environment)
     {
         using var factory = CreateFactoryForEnvironment(environment);
         using var scope = factory.Services.CreateScope();
@@ -392,6 +394,8 @@ public class ContractTestSuiteVerification : ContractTestBase
 
         configuration["Logging:LogLevel:Default"]
           .Should().NotBeNullOrEmpty($"Log level should be configured in {environment}");
+
+        return Task.CompletedTask;
     }
 
     private async Task ValidateNoContractRegressionsAcrossEnvironments()

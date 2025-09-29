@@ -110,7 +110,7 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
             {
                 Console.WriteLine($"DEBUG: Checking policy: {_policy}");
                 var authResult = await authorizationService.AuthorizeAsync(
-                    context.HttpContext.User, _policy);
+                    context.HttpContext.User!, _policy);
 
                 Console.WriteLine($"DEBUG: Policy {_policy} result: {authResult.Succeeded}");
                 if (!authResult.Succeeded)
@@ -120,7 +120,8 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
                     {
                         Console.WriteLine($"  - {failure.Message}");
                     }
-                    Console.WriteLine($"DEBUG: User roles: [{string.Join(", ", context.HttpContext.User.FindAll("role")?.Select(c => c.Value) ?? new string[0])}]");
+                    var roleClaims = context.HttpContext.User?.FindAll("role") ?? Enumerable.Empty<System.Security.Claims.Claim>();
+                    Console.WriteLine($"DEBUG: User roles: [{string.Join(", ", roleClaims.Select(c => c.Value))}]");
                     context.Result = new ForbidResult();
                     return;
                 }

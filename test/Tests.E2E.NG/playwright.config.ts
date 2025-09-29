@@ -32,6 +32,15 @@ const databasePath = isCI
 process.env.TEST_RUN_ID = testRunId;
 process.env.DATABASE_PATH = databasePath;
 
+// Debug output for CI
+if (isCI) {
+  console.log('[Playwright Config] CI Mode detected');
+  console.log('[Playwright Config] Test Run ID:', testRunId);
+  console.log('[Playwright Config] Database Path:', databasePath);
+  console.log('[Playwright Config] Working Directory:', process.cwd());
+  console.log('[Playwright Config] Angular CWD:', path.resolve(process.cwd(), '..', '..', 'src', 'Angular'));
+}
+
 export default defineConfig({
   testDir: './tests',
 
@@ -56,8 +65,8 @@ export default defineConfig({
       url: 'http://localhost:5172/health',
       timeout: isCI ? 120 * 1000 : 90 * 1000, // More time for CI environment
       reuseExistingServer: !isCI, // Reuse locally, fresh in CI
-      stdout: isCI ? 'pipe' : 'ignore', // Show output in CI for debugging
-      stderr: isCI ? 'pipe' : 'ignore', // Show errors in CI for debugging
+      stdout: 'ignore', // Suppress output, check logs on failure
+      stderr: 'ignore', // Suppress errors, check logs on failure
       env: {
         // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
@@ -66,6 +75,7 @@ export default defineConfig({
         // Testing-optimized database configuration with better isolation
         DatabaseProvider: 'SQLite',
         ConnectionStrings__DefaultConnection: `Data Source=${databasePath}`,
+        DATABASE_PATH: databasePath,
 
         // Environment-specific database settings
         DATABASE_TIMEOUT: isCI ? '30' : '10',
@@ -94,12 +104,12 @@ export default defineConfig({
     {
       // Angular Server configuration - simplified for better CI compatibility
       command: isCI ? 'npm run start:ci' : 'npm start',
-      cwd: path.join(process.cwd(), '..', '..', 'src', 'Angular'),
+      cwd: path.resolve(process.cwd(), '..', '..', 'src', 'Angular'),
       url: 'http://localhost:4200',
       timeout: isCI ? 180 * 1000 : 120 * 1000, // More time for CI environment compilation
       reuseExistingServer: !isCI,
-      stdout: isCI ? 'pipe' : 'ignore', // Show output in CI for debugging
-      stderr: isCI ? 'pipe' : 'ignore', // Show errors in CI for debugging
+      stdout: 'ignore', // Suppress output, check logs on failure
+      stderr: 'ignore', // Suppress errors, check logs on failure
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
