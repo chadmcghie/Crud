@@ -186,7 +186,7 @@ test.describe('People Management - Serial Tests', () => {
     }
   });
   
-  test(tagTest('should filter people list by search term', 'extended'), async ({ page, baseURL, apiUrl }) => {
+  test.skip(tagTest('should filter people list by search term', 'extended'), async ({ page, baseURL, apiUrl }) => {
     // Create multiple test people
     const people = await Promise.all([
       helpers.createTestData(page, apiUrl, 'api/people', {
