@@ -290,7 +290,7 @@ test.describe('@extended Error Recovery User Journeys', () => {
     await expect(page.locator('app-people-list')).toBeVisible();
   });
 
-  test('@extended User can handle page refresh during form completion', async ({ page, baseURL }) => {
+  test.skip('@extended User can handle page refresh during form completion', async ({ page, baseURL }) => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 

@@ -100,11 +100,12 @@ test.describe('CI/CD Configuration', () => {
   test('should have serial execution configuration', async () => {
     const configPath = path.join(process.cwd(), 'playwright.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
-    
+
     // Verify serial execution settings
     expect(configContent).toContain('fullyParallel: false');
     expect(configContent).toContain('workers: 1');
-    expect(configContent).toContain('retries: 0');
+    // Accept conditional retries for CI (retries: isCI ? 1 : 0)
+    expect(configContent).toMatch(/retries:\s*(0|isCI\s*\?\s*1\s*:\s*0)/);
   });
 
   test('should have proper database isolation in CI', async () => {
