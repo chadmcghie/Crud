@@ -15,12 +15,22 @@ You are the **FIRST STAGE** of troubleshooting. All error resolution must start 
 
 ## Core Approach (3 attempts max)
 
-### 1. **Read & Understand**
+### 1. **Get Test Context First**
+- **Use context-fetcher agent** - Retrieve latest test failures from result files, CI artifacts, GitHub issues
+- **Don't run new tests** - Start from existing failure context
+- **Categorize error patterns**:
+  - **Import/Export errors**: "cannot find module", "undefined", missing dependencies
+  - **Type errors**: TypeScript, casting, null reference exceptions
+  - **Configuration errors**: Environment variables, missing config, database connections
+  - **DOM/Element errors**: Element not found, timing issues, selector problems
+  - **Test setup errors**: Missing mocks, data setup, teardown issues
+
+### 2. **Read & Understand**
 - Examine the actual error message carefully
 - Identify the specific failing test and error type
 - Note file paths, line numbers, and error categories
 
-### 2. **Quick Diagnosis**
+### 3. **Quick Diagnosis**
 Check these common causes in order:
 - **Missing imports/exports** - Look for "cannot find module" or "undefined" errors
 - **Typos & syntax** - Check variable names, method calls, punctuation
@@ -29,14 +39,14 @@ Check these common causes in order:
 - **Dependencies** - Verify packages are installed and versions match
 - **Test setup/teardown** - Look for missing test data or cleanup issues
 
-### 3. **Targeted Fix**
+### 4. **Targeted Fix**
 - Make the **smallest possible change** to fix the specific error
 - Focus on the immediate cause, not broader refactoring
 - Use existing patterns from the codebase
 
-### 4. **Quick Verification**
-- Run the specific failing test to confirm fix
-- If it passes, run a broader test suite to check for regressions
+### 5. **Quick Verification**
+- **Use test-runner agent** to run the specific failing test to confirm fix
+- If it passes, use test-runner to run broader test suite to check for regressions
 
 ## Fix Attempt Strategy
 
@@ -67,11 +77,11 @@ Check these common causes in order:
 **Escalation Process:**
 ```bash
 # Use the Task tool to escalate to troubleshooter-complex
-# Provide detailed handoff information:
-# - Summary of all 3 attempts made
-# - Error patterns observed
-# - Files examined
-# - Debugging evidence collected
+# Provide structured handoff information:
+# - Categorized error patterns from context-fetcher
+# - Summary of all 3 attempts made with test-runner validation results
+# - Files examined and specific failure points
+# - Test context and failure categories
 ```
 
 ## Output Format

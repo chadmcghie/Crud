@@ -406,7 +406,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
         return null;
     }
 
-    private async Task<HashSet<string>> CaptureBaselineServiceRegistrations()
+    private Task<HashSet<string>> CaptureBaselineServiceRegistrations()
     {
         var services = new HashSet<string>();
         var environment = "Development";
@@ -429,10 +429,10 @@ public class ContractRegressionDetectionTests : ContractTestBase
             services.Add(serviceType);
         }
 
-        return services;
+        return Task.FromResult(services);
     }
 
-    private async Task<HashSet<string>> CaptureServiceRegistrationsForEnvironment(string environment)
+    private Task<HashSet<string>> CaptureServiceRegistrationsForEnvironment(string environment)
     {
         var services = new HashSet<string>();
 
@@ -454,10 +454,10 @@ public class ContractRegressionDetectionTests : ContractTestBase
             services.Add(serviceType);
         }
 
-        return services;
+        return Task.FromResult(services);
     }
 
-    private async Task ValidateEnvironmentSpecificConfigurationContract(
+    private Task ValidateEnvironmentSpecificConfigurationContract(
       string environment,
       IConfiguration configuration,
       List<string> regressions)
@@ -475,6 +475,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
         {
             regressions.Add($"Log level regression in {environment}: expected {expectedLogLevel}, got {actualLogLevel}");
         }
+        return Task.CompletedTask;
     }
 
     private async Task<Dictionary<string, object>> CaptureBaselineMiddlewareBehavior()
@@ -560,7 +561,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
         return healthChecks;
     }
 
-    private async Task<HashSet<string>> CaptureBaselineDatabaseSchema()
+    private Task<HashSet<string>> CaptureBaselineDatabaseSchema()
     {
         var tables = new HashSet<string>();
         var environment = "Development";
@@ -577,10 +578,10 @@ public class ContractRegressionDetectionTests : ContractTestBase
         tables.Add("Walls");
         tables.Add("Windows");
 
-        return tables;
+        return Task.FromResult(tables);
     }
 
-    private async Task<HashSet<string>> CaptureDatabaseSchemaForEnvironment(string environment)
+    private Task<HashSet<string>> CaptureDatabaseSchemaForEnvironment(string environment)
     {
         var tables = new HashSet<string>();
 
@@ -596,6 +597,6 @@ public class ContractRegressionDetectionTests : ContractTestBase
         tables.Add("Walls");
         tables.Add("Windows");
 
-        return tables;
+        return Task.FromResult(tables);
     }
 }

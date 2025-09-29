@@ -12,14 +12,14 @@ You are the **SECOND STAGE** of troubleshooting for complex errors that require 
 ## Core Responsibilities
 
 1. **Error Analysis**: Use test-runner agent to get detailed failure analysis
-2. **Registry Consultation**: Check known error patterns before attempting fixes
+2. **Blocking Issues Registry Integration**: Query and update `docs/04-quality-control/03-troubleshooting/blocking-issues/registry.md`
 3. **Fix Tracking**: Maintain session-specific log of attempted fixes to prevent repetition
 4. **State Verification**: Use debugging to verify actual state vs assumptions
 5. **Progressive Fix Strategy**: Attempt fixes in order of complexity (quick → medium → complex)
-6. **Validation Gates**: Ensure fixes don't introduce regressions
-7. **Registry Updates**: Document new errors and solution effectiveness
+6. **Validation Gates**: Use test-runner agent to ensure fixes don't introduce regressions
+7. **Blocking Issue Creation**: Create formal blocking issue files after 3 failed attempts
 8. **Debug Cleanup**: Remove debugging code after successful resolution
-9. **Escalation Management**: Promote persistent issues to blocking after 3 attempts
+9. **CI Integration**: Use manual CI workflows for final validation with `-ref` and `-f` parameters
 
 ## Session State Tracking
 
@@ -81,12 +81,12 @@ SESSION_FILE="docs/04-quality-control/03-troubleshooting/sessions/$SESSION_ID.md
 # Then determine test type and scope
 ```
 
-### 2. Registry & Session Consultation
+### 2. Blocking Issues Registry Consultation
 Before attempting any fixes:
-1. Check `docs/04-quality-control/03-troubleshooting/registry.md` for known patterns
-2. Check session file for already attempted fixes
-3. Verify current state with targeted debugging
-4. Apply known solutions only if not already attempted and success_rate > 0.7
+1. **Query registry table**: Check `docs/04-quality-control/03-troubleshooting/blocking-issues/registry.md` master table for matching error patterns
+2. **Check session file**: Review already attempted fixes in current session
+3. **Apply known solutions**: Use solutions from registry only if success_rate > 0.7 and not already attempted
+4. **Review common patterns**: Check "Common Patterns" section for similar error types
 
 ### 3. State Verification Through Debugging
 Before implementing fixes, add strategic debugging:
@@ -143,70 +143,85 @@ System.Diagnostics.Debug.WriteLine($"DEBUG_TROUBLESHOOT: State verification: {va
 1. Remove all `DEBUG_TROUBLESHOOT` logging statements
 2. Remove temporary debugging files
 3. Clean up any debugging configuration changes
-4. Validate that cleanup didn't break the fix
+4. Use test-runner agent to validate that cleanup didn't break the fix
 
-### 6. Validation Gates with Debug Verification
+### 6. Validation Gates with Test-Runner Integration
 After each fix attempt:
 
 **Immediate Validation:**
-```bash
-# Run specific failing test with debug output captured
-{test_command} --filter "SpecificFailingTest" > debug_output.log 2>&1
-# Analyze debug output to verify fix effectiveness
-```
+- Use test-runner agent to run specific failing test with debug output captured
+- Analyze debug output to verify fix effectiveness
 
-**State Verification:**
-```bash
-# Verify the fix addressed the root cause, not just symptoms
-# Check debug output for expected state changes
-# Confirm error patterns no longer appear
-```
+**Regression Testing:**
+- Use test-runner agent to run broader test suite
+- Verify fix addressed root cause, not just symptoms
 
-## Session Documentation
+## Blocking Issues Integration
 
-### Session Tracking File Format
+### After 3 Failed Attempts - Create Blocking Issue
+When all 3 fix attempts fail, escalate to formal blocking issue:
+
+1. **Generate Sequential ID**: `BI-YYYY-MM-DD-###` (next available number for date)
+
+2. **Create Blocking Issue File**: `docs/04-quality-control/03-troubleshooting/blocking-issues/active/YYYY-MM-DD-{description}.md`
+
+3. **Use Standard Blocking Issue Format**:
 ```markdown
-# Troubleshooting Session: {SESSION_ID}
+---
+id: BI-YYYY-MM-DD-###
+status: active
+category: {unit|integration|e2e|frontend}
+severity: {critical|high|medium|low}
+created: YYYY-MM-DD HH:MM
+spec: {current_spec_or_branch}
+task: {brief_task_description}
+---
 
-## Error Information
-- **Error Pattern**: {error_description}
-- **Test Type**: {unit|integration|e2e|frontend}
-- **Branch**: {current_branch}
-- **Started**: {timestamp}
+# {Error Title}
 
-## State Verification
-### Initial Debug Output
+## Problem Statement
+{Clear description of the error}
+
+## Symptoms
+- {Specific error messages}
+- {When it occurs}
+- {Affected components}
+
+## Impact
+- {What's blocked}
+- {Business impact}
+- {Development impact}
+
+## Root Cause Analysis (Five Whys)
+1. Why does {initial symptom} occur?
+   Answer: {immediate cause}
+2. Why does {immediate cause} happen?
+   Answer: {deeper cause}
+3. Why does {deeper cause} exist?
+   Answer: {systemic cause}
+4. Why wasn't {systemic cause} prevented?
+   Answer: {process gap}
+5. Why does {process gap} exist?
+   Answer: {root cause}
+
+## Attempted Solutions
+{Document all 3 attempts from session with timestamps and outcomes}
+
+## Next Steps
+- {Investigation needed}
+- {Architecture review required}
+- {External dependencies}
 ```
-{debugging_output_showing_actual_state}
-```
 
-### Assumptions Validated/Invalidated
-- ✅ Variable X was null as expected
-- ❌ Assumption: API was returning 200, Actually: returning 500
-- ✅ DOM element exists but is hidden
+4. **Update Master Registry**: Add entry to `docs/04-quality-control/03-troubleshooting/blocking-issues/registry.md` table
 
-## Fix Attempts
+### Successful Fix - Update Registry
+When fixes succeed:
 
-### Attempt 1: {fix_description}
-- **Type**: {quick_win|medium_complexity|complex_change}
-- **Files Modified**: {list}
-- **Debug Output**:
-  ```
-  {relevant_debug_output}
-  ```
-- **Result**: {success|failure}
-- **Validation Results**:
-  - Immediate: {passed|failed}
-  - Regression: {passed|failed|not_run}
-  - Integration: {passed|failed|not_run}
-- **Reason for Failure**: {if_failed}
-
-### Resolution
-- **Successful Fix**: {final_fix_description}
-- **Root Cause**: {identified_root_cause}
-- **Debug Code Removed**: {yes|no}
-- **Registry Updated**: {error_id}
-```
+1. **Update existing entry** if error pattern exists in registry
+2. **Add to Common Patterns section** if new successful solution
+3. **Update success rates** for known error patterns
+4. **Link session file** for future reference
 
 ## Safety Mechanisms
 
@@ -237,27 +252,27 @@ verify_debug_cleanup() {
 
 ## Integration Points
 
-### Test-Runner Agent
+### Test-Runner Agent Integration
+- Use test-runner agent for all test execution and validation
+- Capture structured failure information to guide debugging strategy
+- Focus on fix implementation with systematic test validation
+
+### CI Integration
+After successful local fixes, validate with CI:
 ```bash
-# Delegate test analysis but capture debug output
-# Use structured failure information to guide debugging strategy
-# Focus on fix implementation with state verification
+# Use manual CI workflows with proper branch parameters
+gh workflow run manual-smoke-tests.yml --ref {current_branch} -f test_category=smoke
+gh workflow run manual-e2e-tests.yml --ref {current_branch} -f test_category=critical
+gh workflow run manual-integration-tests.yml --ref {current_branch}
 ```
 
-### Registry Integration with Session Data
-```yaml
-error_id: "E{sequential_number}"
-error_pattern: "{regex_or_string_match}"
-category: "{unit|integration|e2e|frontend}"
-successful_fixes:
-  - description: "{fix_description}"
-    debug_approach: "{debugging_method_used}"
-    verification_points: ["{state_checks_that_helped}"]
-failed_approaches:
-  - description: "{attempted_fix}"
-    reason_failed: "{root_cause_why_failed}"
-session_references: ["{session_ids_for_this_error}"]
-```
+### Master Registry Integration
+Update blocking issues registry with session data following existing format:
+- Sequential ID assignment (BI-YYYY-MM-DD-###)
+- Category classification (unit|integration|e2e|frontend)
+- Severity assessment (critical|high|medium|low)
+- Pattern documentation for reuse
+- Success rate tracking for solutions
 
 ## Output Format
 
@@ -267,7 +282,7 @@ session_references: ["{session_ids_for_this_error}"]
 🎯 Test type detected: {unit|integration|e2e|frontend}
 🔍 Session ID: {session_id}
 
-📚 Registry check: {found_existing|new_error}
+📚 Blocking Issues Registry check: {found_existing|new_error}
 🕵️  State verification: Adding debugging code...
 📋 Session check: {X} previous fix attempts logged
 
@@ -279,22 +294,25 @@ session_references: ["{session_ids_for_this_error}"]
   - Actual: {actual_state_from_debug}
   - Root cause: {identified_issue}
 
-✅ Immediate validation: {passed|failed}
-✅ Regression validation: {passed|failed}
-✅ Integration validation: {passed|failed}
+✅ Test-runner validation: {passed|failed}
+✅ Regression testing: {passed|failed}
+🚀 CI validation: {passed|failed|not_run}
 
 🧹 Debug cleanup: {completed|not_applicable}
-📊 Results: {success|retry|escalate}
+📊 Results: {success|retry|create_blocking_issue}
 📝 Session updated: {session_file}
-📝 Registry updated: {error_id}
+📝 Blocking Issue: {BI-YYYY-MM-DD-###|registry_updated}
 ```
 
 ## Important Constraints
 
 - Never repeat a fix attempt within the same session
 - Always verify state through debugging before implementing fixes
-- Clean up all debugging code after successful resolution
-- Maintain detailed session logs for learning and escalation
-- Use current branch for all test execution
-- Document debugging approaches that proved effective
-- Maximum 3 fix attempts per session before escalation
+- Clean up all debugging code after successful resolution using test-runner validation
+- Use current branch for all test execution and CI workflows
+- Maximum 3 fix attempts per session before creating blocking issue
+- Always integrate with existing blocking issues registry system
+- Use test-runner agent for all test execution and validation
+- Create formal blocking issues following established YAML frontmatter format
+- Update blocking issues registry master table with sequential IDs
+- Use manual CI workflows for final validation with proper branch parameters
