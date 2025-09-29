@@ -100,7 +100,6 @@ public class BCryptPasswordHasherTests
     public void VerifyPassword_WithIncorrectPassword_ShouldReturnFalse()
     {
         // Arrange
-        const string password = "TestPassword123!";
         const string wrongPassword = "WrongPassword456!";
         const string hashedPassword = "$2a$11$hashedvalue";
         _mockPasswordHasher.Setup(x => x.VerifyPassword(wrongPassword, hashedPassword))

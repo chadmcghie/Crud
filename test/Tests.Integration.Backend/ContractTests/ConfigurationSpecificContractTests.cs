@@ -94,6 +94,8 @@ public class ConfigurationSpecificContractTests : ContractTestBase
           $"Error logging should be enabled in {environment}");
 
         _output.WriteLine($"✓ Logging configuration contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Theory]
@@ -122,7 +124,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         var testKey = $"config-contract-{environment}";
         var testValue = $"test-{DateTime.UtcNow.Ticks}";
 
-        memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
+        memoryCache.Set(testKey, testValue, TimeSpan.FromMinutes(1));
         var retrievedValue = memoryCache.Get<string>(testKey);
         retrievedValue.Should().Be(testValue, $"Caching should work consistently in {environment}");
 

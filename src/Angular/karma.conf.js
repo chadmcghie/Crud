@@ -40,6 +40,17 @@ module.exports = function (config) {
     },
     reporters: ['progress', 'kjhtml', 'coverage', 'junit'],
     browsers: ['Chrome'],
-    restartOnFileChange: true
+    customLaunchers: {
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox',
+          '--disable-gpu',
+          '--disable-dev-shm-usage'
+        ]
+      }
+    },
+    restartOnFileChange: true,
+    singleRun: false
   });
 };

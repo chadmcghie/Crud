@@ -110,7 +110,7 @@ public class ConditionalAuthorizeAttribute : Attribute, IAsyncAuthorizationFilte
             {
                 Console.WriteLine($"DEBUG: Checking policy: {_policy}");
                 var authResult = await authorizationService.AuthorizeAsync(
-                    context.HttpContext.User, _policy);
+                    context.HttpContext.User!, _policy);
 
                 Console.WriteLine($"DEBUG: Policy {_policy} result: {authResult.Succeeded}");
                 if (!authResult.Succeeded)
