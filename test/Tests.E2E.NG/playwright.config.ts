@@ -248,7 +248,8 @@ export default defineConfig({
     ] : []),
   ],
 
-  /* Global teardown for cleanup */
+  /* Global setup and teardown */
+  globalSetup: './global-setup.ts',
   // globalTeardown: './tests/setup/webserver-teardown.ts',
 
   /* Metadata */

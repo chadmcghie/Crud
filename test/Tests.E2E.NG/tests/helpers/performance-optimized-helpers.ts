@@ -346,10 +346,12 @@ export class PerformanceOptimizedHelpers {
    * Test data builders for fast setup
    */
   buildTestPerson(overrides?: Partial<TestPerson>): Partial<TestPerson> {
-    const timestamp = Date.now();
+    // Generate a valid name (only letters, spaces, hyphens, apostrophes, dots)
+    const randomSuffix = Math.random().toString(36).substring(2, 8).replace(/[^a-z]/gi, '') || 'Alpha';
+    const randomPhone = Math.floor(1000 + Math.random() * 9000);
     return {
-      fullName: `Performance Test User ${timestamp}`,
-      phone: `+1-555-${String(timestamp).slice(-4)}`,
+      fullName: `Performance Test User ${randomSuffix}`,
+      phone: `+1-555-${randomPhone}`,
       ...overrides
     };
   }
