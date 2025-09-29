@@ -15,14 +15,14 @@ export class AuthHelper {
   async login(email: string = 'test@example.com', password: string = 'Test123!') {
     // Enable E2E test mode to bypass guards if login fails
     await this.enableE2EMode();
-    
+
     await this.page.goto('/login');
     await this.page.fill('input[name="email"]', email);
     await this.page.fill('input[name="password"]', password);
     await this.page.click('button[type="submit"]');
-    
-    // Wait for navigation or token storage
-    await this.page.waitForURL('**/people-list', { timeout: 5000 });
+
+    // Wait for navigation to home page (default after login)
+    await this.page.waitForURL('**/home', { timeout: 5000 });
   }
 
   /**

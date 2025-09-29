@@ -100,6 +100,7 @@ The following features have been implemented:
   - ✅ **API Response Caching** - Output caching middleware and HTTP response headers
   - ✅ **Cache Management** - Management endpoints, statistics, and health checks
 - [x] API response compression - Gzip/Brotli compression with performance monitoring `S`
+- [ ] Feature flags for testability - Enable/disable features (caching, compression, auth, resilience) per environment `M`
 - [ ] Database query optimization - Add indexes and optimize queries `M`
 - [ ] Lazy loading in Angular - Code splitting by route `M`
 - [ ] Background job processing - Implement Hangfire or similar `L`
@@ -111,6 +112,43 @@ The following features have been implemented:
 - ✅ **Task 3: CQRS Query Caching** - Fully implemented (Issues #93 closed)
 - ✅ **Task 4: API Response Caching** - Fully implemented (Issue #94 closed - separate spec)
 - ✅ **Task 5: Cache Management & Monitoring** - Fully implemented (Issue #95 closed)
+
+### Feature Flag Implementation Plan
+
+**Goal:** Enable selective feature toggling for test isolation and environment-specific configuration
+
+**Priority Features:**
+1. **Caching** (4-6 hours) - Disable caching services, cached repositories, and output caching
+2. **Response Compression** (1-2 hours) - Toggle Gzip/Brotli compression
+3. **Authentication/Authorization** (1 hour) - Enable/disable JWT authentication (E2E bypass already exists)
+4. **Polly Resilience** (2-3 hours) - Toggle circuit breakers, retries, and timeouts
+5. **OpenTelemetry** (1 hour) - Toggle observability instrumentation
+6. **Rate Limiting** (1-2 hours) - Toggle rate limiting middleware
+7. **CORS** (30 minutes) - Toggle CORS policy (already environment-gated)
+
+**Configuration Structure:**
+```json
+"Features": {
+  "Caching": true,
+  "ResponseCompression": true,
+  "Authentication": true,
+  "ResiliencePolicies": true,
+  "OpenTelemetry": true,
+  "RateLimiting": true,
+  "Cors": true
+}
+```
+
+**Effort Estimate:**
+- Core features (Caching, Compression, Auth): 4-6 hours
+- All features: 10-12 hours
+- With comprehensive testing: 15-20 hours
+
+**Benefits:**
+- Simpler, faster tests without cache/retry complexity
+- Deterministic test behavior without circuit breakers
+- Environment-specific feature control
+- Easier debugging and troubleshooting
 
 ### Dependencies
 

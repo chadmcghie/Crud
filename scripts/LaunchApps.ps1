@@ -1,4 +1,8 @@
-﻿param(
+#!/usr/bin/env pwsh
+# Script to launch API and Angular development servers
+# Cross-platform: Works on Windows, macOS, and Linux
+
+param(
     [string]$ApiProject = ".\src\Api\Api.csproj",
     [string]$ApiUrl = "http://localhost:5172/swagger",
     [int]$Timeout = 60,
@@ -19,9 +23,66 @@ function Test-ApiHealth {
     }
 }
 
+# Function to start process in new terminal (cross-platform)
+function Start-ProcessInTerminal {
+    param(
+        [string]$Command,
+        [string[]]$Arguments,
+        [string]$WorkingDirectory = $null
+    )
+
+    if ($IsWindows) {
+        # Windows: Use Start-Process with WindowStyle
+        $params = @{
+            FilePath = $Command
+            ArgumentList = $Arguments
+            PassThru = $true
+            WindowStyle = "Normal"
+        }
+        if ($WorkingDirectory) {
+            $params.WorkingDirectory = $WorkingDirectory
+        }
+        return Start-Process @params
+    }
+    elseif ($IsMacOS) {
+        # macOS: Use osascript to open Terminal.app
+        $argString = ($Arguments | ForEach-Object { "`"$_`"" }) -join ' '
+        $script = "tell application `"Terminal`" to do script `"cd '$WorkingDirectory'; $Command $argString`""
+        & osascript -e $script
+        # Return a mock process object since osascript doesn't return PID easily
+        return [PSCustomObject]@{ Id = -1 }
+    }
+    else {
+        # Linux: Try common terminal emulators
+        $terminals = @(
+            @{ Cmd = "gnome-terminal"; Args = @("--", $Command) + $Arguments }
+            @{ Cmd = "xterm"; Args = @("-e", $Command) + $Arguments }
+            @{ Cmd = "konsole"; Args = @("-e", $Command) + $Arguments }
+        )
+
+        foreach ($term in $terminals) {
+            if (Get-Command $term.Cmd -ErrorAction SilentlyContinue) {
+                $params = @{
+                    FilePath = $term.Cmd
+                    ArgumentList = $term.Args
+                    PassThru = $true
+                }
+                if ($WorkingDirectory) {
+                    $params.WorkingDirectory = $WorkingDirectory
+                }
+                return Start-Process @params
+            }
+        }
+
+        Write-Host "⚠️ No supported terminal emulator found. Starting in background..." -ForegroundColor Yellow
+        return Start-Process $Command -ArgumentList $Arguments -PassThru
+    }
+}
+
 # Start the API in a new terminal window
 Write-Host "📡 Starting API from $ApiProject ..." -ForegroundColor Yellow
-$apiProcess = Start-Process "dotnet" -ArgumentList "run --project `"$ApiProject`" --launch-profile http" -PassThru -WindowStyle Normal
+$apiArgs = @("run", "--project", $ApiProject, "--launch-profile", "http")
+$apiProcess = Start-ProcessInTerminal -Command "dotnet" -Arguments $apiArgs
 
 if ($apiProcess) {
     Write-Host "✅ API process started with PID: $($apiProcess.Id)" -ForegroundColor Green
@@ -50,11 +111,12 @@ while ($elapsed -lt $Timeout) {
 if ($success) {
     Write-Host ""
     Write-Host "🌐 Starting Angular frontend..." -ForegroundColor Yellow
-    
+
     # Change to Angular directory and start the app in a new terminal
-    $angularDir = ".\src\Angular"
-    $angularProcess = Start-Process "ng" -ArgumentList "serve --proxy-config proxy.conf.json" -WorkingDirectory $angularDir -PassThru -WindowStyle Normal
-    
+    $angularDir = Join-Path $PSScriptRoot ".." "src" "Angular"
+    $angularArgs = @("serve", "--proxy-config", "proxy.conf.json")
+    $angularProcess = Start-ProcessInTerminal -Command "ng" -Arguments $angularArgs -WorkingDirectory $angularDir
+
     if ($angularProcess) {
         Write-Host "✅ Angular process started with PID: $($angularProcess.Id)" -ForegroundColor Green
         Write-Host ""

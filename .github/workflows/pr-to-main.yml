@@ -92,7 +92,7 @@ jobs:
       working-directory: ./src/Angular
       run: |
         echo "🏗️ Building Angular for production readiness tests..."
-        npm run build -- --configuration=production --aot --optimization --build-optimizer
+        npm run build -- --configuration=production --optimization
         echo "✅ Angular built for production configuration"
     
     # Run backend integration tests
