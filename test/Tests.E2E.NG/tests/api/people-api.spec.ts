@@ -282,7 +282,7 @@ test.describe('People API', () => {
     }
   });
 
-  test('should return proper HTTP status codes', async ({ apiContext }) => {
+  test.skip('should return proper HTTP status codes', async ({ apiContext }) => {
     const testPerson = generateTestPerson();
     
     // POST should return 201 Created

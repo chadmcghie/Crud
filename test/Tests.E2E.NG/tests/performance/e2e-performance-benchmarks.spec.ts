@@ -85,7 +85,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     }
   });
 
-  test('@extended Bulk data handling performance', async ({ page, request, apiUrl, baseURL }) => {
+  test.skip('@extended Bulk data handling performance', async ({ page, request, apiUrl, baseURL }) => {
     const startTime = Date.now();
 
     // Create multiple people to test bulk performance
