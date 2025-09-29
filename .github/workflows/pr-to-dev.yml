@@ -11,17 +11,17 @@ on:
       skip_feature_wait:
         description: 'Skip waiting for feature workflow (manual override)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_integration_tests:
         description: 'Force run integration tests even if feature workflow failed'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       skip_integration_tests:
         description: 'Skip integration tests (run smoke tests only)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 # Cancel in-progress runs for the same PR/branch
