@@ -6,11 +6,24 @@ import { generateTestRole, testRoles } from '../helpers/test-data';
 test.describe('Roles Management UI', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
+  const testStartTime = Date.now();
 
-  test.beforeEach(async ({ page, apiContext }) => {
+  test.beforeEach(async ({ page, apiContext }, testInfo) => {
+    const testElapsedTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
+    console.log(`\n🧪 [${testElapsedTime}s] Starting test: ${testInfo.title}`);
+
     pageHelpers = new PageHelpers(page);
     apiHelpers = new ApiHelpers(apiContext, 0, process.env.API_URL || 'http://localhost:5172');
-    
+
+    // Log database state BEFORE cleanup
+    try {
+      const peopleCount = (await apiHelpers.getPeople()).length;
+      const rolesCount = (await apiHelpers.getRoles()).length;
+      console.log(`📊 PRE-cleanup DB state: ${peopleCount} people, ${rolesCount} roles`);
+    } catch (e) {
+      console.warn('Could not get pre-cleanup DB state:', e);
+    }
+
     // Clean up any existing data
     if (apiHelpers) {
       try {
@@ -39,11 +52,21 @@ test.describe('Roles Management UI', () => {
     }, { timeout: 5000 });
   });
 
-  test.afterEach(async () => {
+  test.afterEach(async ({}, testInfo) => {
+    // Log database state AFTER test
+    try {
+      const peopleCount = (await apiHelpers.getPeople()).length;
+      const rolesCount = (await apiHelpers.getRoles()).length;
+      console.log(`📊 POST-test DB state: ${peopleCount} people, ${rolesCount} roles`);
+    } catch (e) {
+      console.warn('Could not get post-test DB state:', e);
+    }
+
     // Clean up after each test
     if (apiHelpers) {
       try {
         await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
+        console.log(`✅ Cleanup completed for: ${testInfo.title}`);
       } catch (error) {
         console.warn('Failed to cleanup after test:', error);
       }
