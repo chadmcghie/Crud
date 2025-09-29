@@ -38,7 +38,7 @@ jobs:
     - name: Run Angular unit tests
       id: run-tests
       working-directory: src/Angular
-      run: npm test
+      run: npm run test:ci
       continue-on-error: true
 
     - name: Upload test results

@@ -99,7 +99,7 @@ public class ServiceInterfaceContractTests : ContractTestBase
         logger!.LogInformation("Contract test message for {Environment}", environment);
 
         // Verify logger can handle different log levels
-        var canLogError = logger.IsEnabled(LogLevel.Error);
+        var canLogError = logger!.IsEnabled(LogLevel.Error);
         canLogError.Should().BeTrue("Error logging should be enabled across all environments");
 
         // Configuration-specific logging level validation
@@ -114,6 +114,8 @@ public class ServiceInterfaceContractTests : ContractTestBase
         _output.WriteLine($"Expected minimum log level for {environment}: {expectedMinLevel}");
 
         _output.WriteLine($"✓ Logging services contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Theory]
@@ -133,7 +135,7 @@ public class ServiceInterfaceContractTests : ContractTestBase
         var connectionString = configuration!.GetConnectionString("DefaultConnection");
         connectionString.Should().NotBeNullOrEmpty($"Connection string should be available in {environment}");
 
-        var databaseProvider = configuration["DatabaseProvider"];
+        var databaseProvider = configuration!["DatabaseProvider"];
         databaseProvider.Should().NotBeNullOrEmpty($"Database provider should be configured in {environment}");
 
         // Environment-specific configuration validation
@@ -151,6 +153,8 @@ public class ServiceInterfaceContractTests : ContractTestBase
         logLevel.Should().Be(expectedLogLevel, $"Log level should match environment expectations for {environment}");
 
         _output.WriteLine($"✓ Configuration services contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Theory]
@@ -200,10 +204,12 @@ public class ServiceInterfaceContractTests : ContractTestBase
         var testValue = $"test-value-{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}";
 
         memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
-        var retrievedValue = memoryCache.Get<string>(testKey);
+        var retrievedValue = memoryCache!.Get<string>(testKey);
         retrievedValue.Should().Be(testValue, "Memory cache should store and retrieve values correctly");
 
         _output.WriteLine($"✓ Caching services contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Theory]
@@ -264,6 +270,8 @@ public class ServiceInterfaceContractTests : ContractTestBase
         }
 
         _output.WriteLine($"✓ Service lifetime contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Fact]

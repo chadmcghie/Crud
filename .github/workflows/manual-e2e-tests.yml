@@ -66,10 +66,15 @@ jobs:
       working-directory: test/Tests.E2E.NG
       env:
         CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
         API_PORT: 5172
         ANGULAR_PORT: 4200
         API_URL: http://localhost:5172
         ANGULAR_URL: http://localhost:4200
+        BYPASS_AUTHORIZATION_FOR_E2E: true
+        E2E_TEST_MODE: true
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
       run: npx playwright test
       continue-on-error: true
 
