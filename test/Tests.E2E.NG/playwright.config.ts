@@ -65,8 +65,8 @@ export default defineConfig({
       url: 'http://localhost:5172/health',
       timeout: isCI ? 120 * 1000 : 90 * 1000, // More time for CI environment
       reuseExistingServer: !isCI, // Reuse locally, fresh in CI
-      stdout: isCI ? 'pipe' : 'ignore', // Show output in CI for debugging
-      stderr: isCI ? 'pipe' : 'ignore', // Show errors in CI for debugging
+      stdout: 'ignore', // Suppress noisy server logs
+      stderr: 'pipe', // Keep error output for real issues
       env: {
         // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
@@ -108,8 +108,8 @@ export default defineConfig({
       url: 'http://localhost:4200',
       timeout: isCI ? 180 * 1000 : 120 * 1000, // More time for CI environment compilation
       reuseExistingServer: !isCI,
-      stdout: isCI ? 'pipe' : 'ignore', // Show output in CI for debugging
-      stderr: isCI ? 'pipe' : 'ignore', // Show errors in CI for debugging
+      stdout: 'ignore', // Suppress noisy server logs
+      stderr: 'pipe', // Keep error output for real issues
       env: {
         PORT: '4200',
         API_URL: 'http://localhost:5172',
