@@ -82,8 +82,9 @@ export class PerformanceOptimizedHelpers {
    * Batch creation for multiple test entities
    */
   async createMultiplePeople(count: number): Promise<TestPerson[]> {
+    const suffixes = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa'];
     const promises = Array.from({ length: count }, (_, i) =>
-      this.createTestPerson({ fullName: `Batch User ${i + 1}`, phone: `+1-555-000${i}` })
+      this.createTestPerson({ fullName: `Batch User ${suffixes[i % suffixes.length]}`, phone: `+1-555-000${i}` })
     );
 
     return Promise.all(promises);

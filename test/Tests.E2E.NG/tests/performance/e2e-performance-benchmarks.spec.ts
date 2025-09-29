@@ -147,9 +147,10 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     // Test database performance with concurrent operations
     const startTime = Date.now();
 
+    const suffixes = ['Alpha', 'Beta', 'Gamma'];
     const concurrentOperations = Array.from({ length: 3 }, async (_, i) => {
       const person = await perfHelpers.createTestPerson({
-        fullName: `Concurrent User ${i}`,
+        fullName: `Concurrent User ${suffixes[i]}`,
         phone: `+1-555-000${i}`
       });
 
