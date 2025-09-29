@@ -94,11 +94,13 @@ public class ConfigurationSpecificContractTests : ContractTestBase
           $"Error logging should be enabled in {environment}");
 
         _output.WriteLine($"✓ Logging configuration contract validated for {environment}");
+
+        await Task.CompletedTask;
     }
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task CachingConfiguration_Contract_ShouldMaintainConsistency(string environment)
+    public Task CachingConfiguration_Contract_ShouldMaintainConsistency(string environment)
     {
         _output.WriteLine($"=== VALIDATING CACHING CONFIGURATION CONTRACT: {environment} ===");
 
@@ -123,10 +125,11 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         var testValue = $"test-{DateTime.UtcNow.Ticks}";
 
         memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
-        var retrievedValue = memoryCache.Get<string>(testKey);
+        var retrievedValue = memoryCache!.Get<string>(testKey);
         retrievedValue.Should().Be(testValue, $"Caching should work consistently in {environment}");
 
         _output.WriteLine($"✓ Caching configuration contract validated for {environment}");
+        return Task.CompletedTask;
     }
 
     [Theory]
@@ -204,7 +207,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task EnvironmentSpecificServices_Contract_ShouldBeConfiguredCorrectly(string environment)
+    public Task EnvironmentSpecificServices_Contract_ShouldBeConfiguredCorrectly(string environment)
     {
         _output.WriteLine($"=== VALIDATING ENVIRONMENT-SPECIFIC SERVICES CONTRACT: {environment} ===");
 
@@ -246,11 +249,12 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         }
 
         _output.WriteLine($"✓ Environment-specific services contract validated for {environment}");
+        return Task.CompletedTask;
     }
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task ConfigurationInheritance_Contract_ShouldMaintainHierarchy(string environment)
+    public Task ConfigurationInheritance_Contract_ShouldMaintainHierarchy(string environment)
     {
         _output.WriteLine($"=== VALIDATING CONFIGURATION INHERITANCE CONTRACT: {environment} ===");
 
@@ -292,10 +296,11 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         }
 
         _output.WriteLine($"✓ Configuration inheritance contract validated for {environment}");
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public async Task ConfigurationContracts_ShouldBeConsistentYetDistinct()
+    public Task ConfigurationContracts_ShouldBeConsistentYetDistinct()
     {
         _output.WriteLine("=== CROSS-ENVIRONMENT CONFIGURATION CONTRACT CONSISTENCY ===");
 
@@ -349,5 +354,6 @@ public class ConfigurationSpecificContractTests : ContractTestBase
           "Production should use Error log level");
 
         _output.WriteLine("\n✓ Configuration contracts are consistent yet appropriately distinct");
+        return Task.CompletedTask;
     }
 }

@@ -34,6 +34,7 @@ permissions:
   checks: write
   actions: read         # For downloading artifacts from feature workflow
   repository-projects: read  # Additional permission that might be needed
+  statuses: write       # For creating commit statuses in PR summary
 
 env:
   DOTNET_VERSION: '8.0.x'
