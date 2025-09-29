@@ -19,8 +19,10 @@ export class PerformanceOptimizedHelpers {
    * Enhanced with proper authentication and error handling
    */
   async createTestPerson(data?: Partial<TestPerson>): Promise<TestPerson> {
+    // Generate random suffix using letters only (no numbers) for validation compliance
+    const suffix = Math.random().toString(36).substring(2, 8).replace(/[0-9]/g, '');
     const personData = {
-      fullName: data?.fullName || `Test User ${Date.now()}`,
+      fullName: data?.fullName || `Test User ${suffix}`,
       phone: data?.phone || '+1-555-0000',
       ...data
     };
@@ -223,16 +225,18 @@ export class PerformanceOptimizedHelpers {
   /**
    * Performance monitoring utilities
    */
-  async measureOperationTime<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
+  async measureOperationTime<T>(operation: () => Promise<T>, operationName: string): Promise<number> {
     const startTime = Date.now();
     try {
-      const result = await operation();
+      await operation();
       const endTime = Date.now();
-      console.log(`Operation "${operationName}" took ${endTime - startTime}ms`);
-      return result;
+      const duration = endTime - startTime;
+      console.log(`Operation "${operationName}" took ${duration}ms`);
+      return duration;
     } catch (error) {
       const endTime = Date.now();
-      console.log(`Operation "${operationName}" failed after ${endTime - startTime}ms`);
+      const duration = endTime - startTime;
+      console.log(`Operation "${operationName}" failed after ${duration}ms`);
       throw error;
     }
   }

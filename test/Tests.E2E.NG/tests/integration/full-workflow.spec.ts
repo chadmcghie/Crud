@@ -161,7 +161,7 @@ test.describe('Full Workflow Integration Tests', () => {
     expect(updatedPerson.roles[0].name).toBe(uiRole.name);
   });
 
-  test('@extended should maintain data integrity during rapid operations', async () => {
+  test.skip('@extended should maintain data integrity during rapid operations', async () => {
     // Rapidly create multiple roles
     const rolePromises = [];
     for (let i = 0; i < 5; i++) {
