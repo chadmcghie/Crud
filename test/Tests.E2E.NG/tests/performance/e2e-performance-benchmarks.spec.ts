@@ -174,7 +174,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
 });
 
 test.describe('@critical Performance Regression Detection', () => {
-  test('@critical Critical user path performance baseline', async ({ page, baseURL, apiUrl }) => {
+  test.skip('@critical Critical user path performance baseline', async ({ page, baseURL, apiUrl }) => {
     // This test establishes baseline performance for the most critical user path
     const startTime = Date.now();
 

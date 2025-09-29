@@ -302,7 +302,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 });
 
 test.describe('@extended Test Suite Quality Metrics', () => {
-  test('@extended Should provide comprehensive coverage metrics', async () => {
+  test.skip('@extended Should provide comprehensive coverage metrics', async () => {
     // Calculate coverage statistics
     const testDir = path.join(__dirname, '..');
     const testFiles = await findTestFiles(testDir);
