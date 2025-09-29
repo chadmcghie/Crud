@@ -47,12 +47,35 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
-            _context.People.Update(person);
+            // Ensure entity is properly tracked with its navigation properties
+            var entry = _context.Entry(person);
+            if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+            {
+                // If detached, attach and load existing roles to properly track many-to-many changes
+                _context.People.Attach(person);
+                await entry.Collection(p => p.Roles).LoadAsync(ct);
+                entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            }
+            else
+            {
+                // For tracked entities, ensure roles collection is loaded
+                if (!entry.Collection(p => p.Roles).IsLoaded)
+                {
+                    await entry.Collection(p => p.Roles).LoadAsync(ct);
+                }
+            }
+
+            // Ensure all role entities in the person's collection are tracked by this context
+            foreach (var role in person.Roles)
+            {
+                var roleEntry = _context.Entry(role);
+                if (roleEntry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+                {
+                    _context.Attach(role);
+                }
+            }
+
             await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            throw new InvalidOperationException("The person was modified by another user. Please refresh and try again.", ex);
         }
         catch (DbUpdateException ex)
         {
@@ -67,7 +90,8 @@ public class EfPersonRepository : IPersonRepository
             var person = await _context.People.FindAsync(new object[] { id }, ct);
             if (person != null)
             {
-                _context.People.Remove(person);
+                // Use soft delete instead of hard delete for data safety
+                person.SoftDelete("system"); // TODO: Get current user context for audit trail
                 await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
             }
         }

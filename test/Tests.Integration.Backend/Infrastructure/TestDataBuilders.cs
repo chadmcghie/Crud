@@ -14,8 +14,10 @@ public static class TestDataBuilders
 
     public static CreateRoleRequest CreateRoleRequest(string? name = null, string? description = null)
     {
+        // Generate unique name with timestamp to avoid conflicts in parallel tests
+        var uniqueName = name ?? $"Role_{Guid.NewGuid():N}_{DateTime.UtcNow.Ticks}";
         return new CreateRoleRequest(
-            name ?? _fixture.Create<string>(),
+            uniqueName,
             description
         );
     }
@@ -37,8 +39,10 @@ public static class TestDataBuilders
         string? phone = null,
         IEnumerable<Guid>? roleIds = null)
     {
+        // Generate name with only valid characters for FullNameFormat validation
+        var uniqueSuffix = DateTime.UtcNow.Ticks.ToString();
         return new CreatePersonRequest(
-            fullName ?? _fixture.Create<string>(),
+            fullName ?? $"John Doe {uniqueSuffix}",
             phone,
             roleIds ?? Array.Empty<Guid>()
         );
@@ -47,12 +51,14 @@ public static class TestDataBuilders
     public static UpdatePersonRequest UpdatePersonRequest(
         string? fullName = null,
         string? phone = null,
-        IEnumerable<Guid>? roleIds = null)
+        IEnumerable<Guid>? roleIds = null,
+        byte[]? rowVersion = null)
     {
         return new UpdatePersonRequest(
-            fullName ?? _fixture.Create<string>(),
+            fullName ?? $"Jane Smith {Guid.NewGuid().ToString()[..8]}",
             phone,
-            roleIds ?? Array.Empty<Guid>()
+            roleIds ?? Array.Empty<Guid>(),
+            rowVersion
         );
     }
 

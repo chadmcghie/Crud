@@ -9,7 +9,7 @@ test.describe('Roles Management UI', () => {
 
   test.beforeEach(async ({ page, apiContext }) => {
     pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, 0);
+    apiHelpers = new ApiHelpers(apiContext, 0, process.env.API_URL || 'http://localhost:5172');
     
     // Clean up any existing data
     if (apiHelpers) {
@@ -50,11 +50,11 @@ test.describe('Roles Management UI', () => {
     }
   });
 
-  test('should display empty state when no roles exist', async () => {
+  test('should display empty state when no roles exist', async ({ page }) => {
     await pageHelpers.verifyEmptyState('roles');
   });
 
-  test('should create a new role successfully', async () => {
+  test('should create a new role successfully', async ({ page }) => {
     const testRole = generateTestRole();
     
     await pageHelpers.clickAddRole();
@@ -69,7 +69,7 @@ test.describe('Roles Management UI', () => {
     expect(roleCount).toBe(1);
   });
 
-  test('should create multiple roles', async () => {
+  test('should create multiple roles', async ({ page }) => {
     for (let i = 0; i < testRoles.length; i++) {
       const role = testRoles[i];
       
@@ -84,7 +84,7 @@ test.describe('Roles Management UI', () => {
     expect(roleCount).toBe(testRoles.length);
   });
 
-  test('should validate required fields', async () => {
+  test('should validate required fields', async ({ page }) => {
     await pageHelpers.clickAddRole();
     
     // Try to submit without filling required fields
@@ -96,7 +96,7 @@ test.describe('Roles Management UI', () => {
     await pageHelpers.verifySubmitButtonEnabled();
   });
 
-  test('should edit an existing role', async () => {
+  test('should edit an existing role', async ({ page }) => {
     // First create a role via API
     const originalRole = generateTestRole();
     const createdRole = await apiHelpers.createRole(originalRole);
@@ -117,7 +117,7 @@ test.describe('Roles Management UI', () => {
     await pageHelpers.verifyRoleNotExists(originalRole.name);
   });
 
-  test('should delete a role', async () => {
+  test('should delete a role', async ({ page }) => {
     // First create a role via API
     const testRole = generateTestRole();
     const createdRole = await apiHelpers.createRole(testRole);
@@ -145,7 +145,7 @@ test.describe('Roles Management UI', () => {
     }
   });
 
-  test('should handle role creation with only required fields', async () => {
+  test('should handle role creation with only required fields', async ({ page }) => {
     const testRole = generateTestRole({ description: undefined });
     
     await pageHelpers.clickAddRole();
@@ -155,7 +155,7 @@ test.describe('Roles Management UI', () => {
     await pageHelpers.verifyRoleExists(testRole.name);
   });
 
-  test('should refresh the roles list', async () => {
+  test('should refresh the roles list', async ({ page }) => {
     // Create a role via API (simulating external change)
     const testRole = generateTestRole();
     await apiHelpers.createRole(testRole);
@@ -202,7 +202,7 @@ test.describe('Roles Management UI', () => {
     await expect(page.locator('textarea#description')).toHaveValue('');
   });
 
-  test('should maintain data integrity across tab switches', async () => {
+  test('should maintain data integrity across tab switches', async ({ page }) => {
     // Create a role
     const testRole = generateTestRole();
     await pageHelpers.clickAddRole();

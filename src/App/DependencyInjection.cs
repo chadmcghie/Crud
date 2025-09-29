@@ -1,7 +1,6 @@
 using App.Abstractions;
 using App.Behaviors;
 using App.Services;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,14 +13,17 @@ public static class DependencyInjection
         // Register example service demonstrating generic repository with specifications
         services.AddScoped<IPersonQueryService, PersonQueryService>();
 
+
         // Register MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
-        // Register Validation Pipeline Behavior
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        // Register Pipeline Behaviors (order matters - validation first, then caching)
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(DataAnnotationsValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CacheInvalidationBehavior<,>));
 
-        // Register Validators
-        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        // Register Cache Key Generator
+        services.AddSingleton<ICacheKeyGenerator, CacheKeyGenerator>();
 
         return services;
     }

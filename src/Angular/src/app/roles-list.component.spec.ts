@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
 import { RolesListComponent } from './roles-list.component';
 import { ApiService, RoleDto } from './api.service';
 
@@ -35,6 +35,7 @@ describe('RolesListComponent', () => {
       'deleteRole'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = EMPTY;
 
     await TestBed.configureTestingModule({
       imports: [RolesListComponent, HttpClientTestingModule],
@@ -100,19 +101,23 @@ describe('RolesListComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/roles'], { queryParams: { edit: roleToEdit.id } });
   });
 
-  it('should delete role after confirmation', () => {
+  it('should delete role after confirmation', fakeAsync(() => {
     spyOn(window, 'confirm').and.returnValue(true);
     apiService.deleteRole.and.returnValue(of(undefined));
-    
+
     fixture.detectChanges();
-    
+
     const roleToDelete = mockRoles[0];
     component.onDeleteRole(roleToDelete);
-    
+
     expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete the role "Admin"?');
     expect(apiService.deleteRole).toHaveBeenCalledWith('1');
+
+    // Advance time to trigger the setTimeout in the delete success handler
+    tick(100);
+
     expect(apiService.listRoles).toHaveBeenCalledTimes(2); // Once on init, once after delete
-  });
+  }));
 
   it('should not delete role if not confirmed', () => {
     spyOn(window, 'confirm').and.returnValue(false);

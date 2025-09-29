@@ -13,7 +13,8 @@ public record UpdatePersonCommand(
     Guid Id,
     string FullName,
     string? Phone,
-    IEnumerable<Guid>? RoleIds
+    IEnumerable<Guid>? RoleIds,
+    byte[]? RowVersion
 ) : IRequest;
 
 public record DeletePersonCommand(Guid Id) : IRequest;

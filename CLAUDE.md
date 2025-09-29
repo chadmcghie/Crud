@@ -1,6 +1,9 @@
 # CLAUDE.md
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Settings 
+.claude/settings.local.json
+
 
 ## Architecture
 
@@ -15,10 +18,10 @@ This is a multi-platform CRUD application using Clean Architecture with:
 ### Development
 ```bash
 # Start both API and Angular (use PowerShell)
-./LaunchApps.ps1
+scripts/LaunchApps.ps1
 
 # Kill running servers before builds
-./kill-servers.ps1
+scripts/kill-servers.ps1
 
 # Start API only
 dotnet run --project src/Api/Api.csproj --launch-profile http
@@ -101,7 +104,7 @@ npm run test:extended    # Extended test suite
 "test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
 ```
 
-**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
+**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/02-Architecture/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
 
 - **Playwright webServer**: Automatic server management, unique database per test run (built into `playwright.config.ts`)
 - Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
@@ -111,67 +114,90 @@ npm run test:extended    # Extended test suite
 
 ## Project Structure
 
+### Source Code (`src/`)
 - `src/Domain/` - Business entities and logic (no dependencies)
+  - `Entities/` - Domain entities (Person, Role, Wall, Window, etc.)
+  - `Enums/` - Domain enumerations
+  - `Events/` - Domain events
+  - `Interfaces/` - Domain interfaces
+  - `Specifications/` - Domain specifications
+  - `Validators/` - Domain validators
+  - `ValueObjects/` - Domain value objects
 - `src/App/` - Application services, CQRS handlers, DTOs
+  - `Abstractions/` - Application abstractions
+  - `Behaviors/` - MediatR behaviors
+  - `Features/` - Feature-based organization (Authentication, People, Roles, Walls, Windows)
+  - `Interfaces/` - Application interfaces
+  - `Mappings/` - AutoMapper profiles
+  - `Models/` - Application models
+  - `Services/` - Application services
 - `src/Infrastructure/` - EF Core, repositories, external services
+  - `Data/` - DbContext and configurations
+  - `Migrations/` - Entity Framework migrations
+  - `Repositories/` - Repository implementations
+  - `Resilience/` - Polly resilience patterns
+  - `Services/` - Infrastructure services
 - `src/Api/` - ASP.NET Core Web API controllers
+  - `Controllers/` - API controllers
+  - `Dtos/` - Data transfer objects
+  - `Mappings/` - API mapping profiles
+  - `Middleware/` - Custom middleware
+  - `Validators/` - API validators
 - `src/Angular/` - Angular frontend application
+  - `src/app/` - Angular application code
+  - `src/assets/` - Static assets
+  - `public/` - Public assets
+  - `proxy.conf*.json` - Development proxy configurations
+
+### Test Projects (`test/`)
 - `test/Tests.Unit.Backend/` - xUnit, Moq, FluentAssertions
+  - `App/` - Application layer unit tests
+  - `Domain/` - Domain layer unit tests
+  - `Infrastructure/` - Infrastructure layer unit tests
+  - `TestData/` - Test data builders
+  - `Validators/` - Validator unit tests
 - `test/Tests.Integration.Backend/` - API integration tests with WebApplicationFactory
+  - `Api/` - API integration tests
+  - `Controllers/` - Controller integration tests
+  - `E2E/` - End-to-end integration tests
+  - `Infrastructure/` - Infrastructure integration tests
 - `test/Tests.Integration.NG/` - Angular integration tests with Karma
 - `test/Tests.E2E.NG/` - Playwright E2E tests
-- `.claude/` - Claude Code configuration and custom tools
+  - `tests/` - E2E test files organized by feature
+  - `test-artifacts/` - Test artifacts and reports
+  - `test-results/` - Test execution results
 
-## Claude Configuration (.claude folder)
+### Solutions (`solutions/`)
+- `solutions/Crud.sln` - Complete solution file
+- `solutions/Crud.Backend.sln` - Backend-only solution
+- `solutions/Crud.Angular.sln` - Angular-only solution
 
-The `.claude` folder contains project-specific Claude Code configurations and tools:
+### Documentation (`docs/`)
+- `docs/02-architecture/` - Architecture documentation and guidelines
+- `docs/03-development/` - Development guides, specs, and workflows
+- `docs/04-quality-control/` - Quality control and review documentation
+- `docs/08-archive/` - Archived documentation and historical references
 
-### Structure
-- `.claude/settings.local.json` - Pre-approved actions and permissions
-- `.claude/commands/` - Custom slash commands for common workflows
-- `.claude/agents/` - Specialized agent configurations
-- `.claude/.agent-os/` - Agent OS standards and instructions
+### Scripts (`scripts/`)
+- `scripts/LaunchApps.ps1` - Launch both API and Angular
+- `scripts/kill-servers.ps1` - Kill running servers
 
-### Available Commands
-Located in `.claude/commands/`:
-- `analyze-product` - Analyze codebase and install Agent OS
-- `create-spec` - Create specifications for features
-- `create-tasks` - Break down work into manageable tasks
-- `document-blocker` - Document blocking issues
-- `execute-tasks` - Execute planned tasks
-- `plan-product` - Plan product features and architecture
-- `summarize-thread` - Summarize conversation threads
-- `troubleshoot-issues` - Debug and resolve problems
-
-### Specialized Agents
-Located in `.claude/agents/`:
-- `test-runner` - Run tests and analyze failures
-- `file-creator` - Create files with proper structure
-- `git-workflow` - Handle git operations and PRs
-- `project-manager` - Track tasks and roadmaps
-- `context-fetcher` - Retrieve relevant documentation
-- `date-checker` - Determine current date
-- `document-blocking-issue` - Document critical blockers
-- `troubleshoot-with-history` - Debug with context history
-
-### Agent OS Standards
-Located in `.claude/.agent-os/`:
-- `standards/` - Code style guides (C#, JS, CSS, HTML), best practices
-- `instructions/` - Core workflows for analysis, specs, tasks, execution
-
-### Recommended Additional Folders
-Consider adding these to `.claude/` for better context:
-- `templates/` - File templates for common patterns
-- `snippets/` - Reusable code snippets
-- `workflows/` - Multi-step process definitions
-- `context/` - Project-specific context and decisions
+### Configuration Files
+- `global.json` - .NET SDK version specification
+- `package-lock.json` - Root npm dependencies
+- `test-formatting.sh` - Test formatting script
 
 ## Database
 
-- Development: SQLite with file-based storage
-- Connection string in appsettings: `Data Source=crud.db`
-- Migrations: `dotnet ef migrations add <name> -p src/Infrastructure -s src/Api`
-- Update database: `dotnet ef database update -p src/Infrastructure -s src/Api`
+- **Development**: SQLite with file-based storage
+- **Database Files**: Multiple SQLite databases for different environments
+  - `src/Api/CrudApp.db` - Main development database
+  - `src/Api/CrudAppDev.db` - Development database
+  - `src/Api/CrudAppDesignTime.db` - Design-time database
+  - `CrudTest_local.db` - Local test database
+- **Connection strings**: Configured in `appsettings.*.json` files
+- **Migrations**: `dotnet ef migrations add <name> -p src/Infrastructure -s src/Api`
+- **Update database**: `dotnet ef database update -p src/Infrastructure -s src/Api`
 
 ## Clean Architecture Rules
 
@@ -182,6 +208,7 @@ Consider adding these to `.claude/` for better context:
 5. Use MediatR for all business operations
 6. Repository pattern for data access
 7. DTOs for API contracts, separate from domain models
+
 ## Important Rules
 
 - **NEVER commit or push without explicit permission**
@@ -191,10 +218,21 @@ Consider adding these to `.claude/` for better context:
   - `dotnet format solutions/Crud.sln` for .NET code
   - `npm run lint` in src/Angular for TypeScript code
 
+## Known Issues & Workarounds
+
+### Settings.local.json Not Auto-Loading
+- **Issue**: `.claude/settings.local.json` permissions don't load automatically at startup
+- **Workaround**: Run `/permissions` command once at session start to trigger settings loading
+- **Fix Applied**: Removed conflicting `"Bash(echo:*)"` from "ask" section that was overriding specific echo commands in "allow" section
+
 ## Key References
 
 - API ports: 5172 (HTTP), 7268 (HTTPS)
 - Angular port: 4200
-- E2E test fix discussion: @"docs\Misc\AI Discussions\claude-task-e2e-test-serial-execution-fix-20250828.md"
-- Serial testing decision: @docs\Decisions\0001-Serial-E2E-Testing.md
+- E2E test fix discussion: @"docs/08-archive/04-task-summaries/2025-08-28-claude-task-e2e-test-serial-execution-fix.md"
+- Serial testing decision: @docs/02-Architecture/Decisions/0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
+- No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
+- NEVER REBASE!!! NO EXCEPTIONS!!!
+- Manual E2E Tests should be run from the branch that pushed the changes.  Do this by using --ref and -f params
+- When I ask for e2e tests, run all e2e tests;  if i want smoke tests, i will ask for smoke tests;

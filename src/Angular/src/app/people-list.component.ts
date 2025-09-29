@@ -243,7 +243,10 @@ export class PeopleListComponent implements OnInit {
     if (confirm(`Are you sure you want to delete ${person.fullName}?`)) {
       this.api.deletePerson(person.id).subscribe({
         next: () => {
-          this.loadPeople(); // Refresh the list
+          // Add slight delay to ensure cache invalidation completes
+          setTimeout(() => {
+            this.loadPeople(); // Refresh the list
+          }, 100);
         },
         error: (error) => {
           console.error('Error deleting person:', error);

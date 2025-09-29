@@ -2,15 +2,13 @@ using Ardalis.GuardClauses;
 
 namespace Domain.Entities;
 
-public class Role
+public class Role : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     private string _name = string.Empty;
     public string Name
     {
         get => _name;
-        set
+        private set
         {
             _name = Guard.Against.NullOrWhiteSpace(value, nameof(value));
             Guard.Against.StringTooLong(value, 100, nameof(value));
@@ -21,7 +19,7 @@ public class Role
     public string? Description
     {
         get => _description;
-        set
+        private set
         {
             if (value != null)
             {
@@ -31,5 +29,54 @@ public class Role
         }
     }
 
-    public byte[]? RowVersion { get; set; }
+    // EF Core constructor
+    private Role()
+    {
+    }
+
+    // Internal constructor for testing - allows setting Id for unit tests
+    internal Role(Guid id, string name, string? description = null)
+    {
+        SetId(id);
+        Name = name;
+        Description = description;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    // Factory method for creating new Role
+    public static Role Create(string name, string? description = null)
+    {
+        return new Role
+        {
+            Name = name,
+            Description = description
+        };
+    }
+
+    // Factory method for testing with specific ID
+    internal static Role CreateForTesting(Guid id, string name, string? description = null)
+    {
+        return new Role(id, name, description);
+    }
+
+    // Domain methods for state changes
+    public void UpdateName(string name)
+    {
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+
+        if (Name != name)
+        {
+            Name = name;
+            MarkAsUpdated();
+        }
+    }
+
+    public void UpdateDescription(string? description)
+    {
+        if (Description != description)
+        {
+            Description = description;
+            MarkAsUpdated();
+        }
+    }
 }

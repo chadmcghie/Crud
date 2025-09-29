@@ -189,13 +189,13 @@ describe('RegisterComponent', () => {
     });
 
     it('should submit when form is valid', () => {
-      authService.register.and.returnValue(of({ 
+      authService.register.and.returnValue(of({
         accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         user: { id: '1', email: 'test@example.com', roles: ['user'] }
       }));
       component.onSubmit();
-      expect(authService.register).toHaveBeenCalledWith('test@example.com', 'password123', 'password123');
+      expect(authService.register).toHaveBeenCalledWith('test@example.com', 'password123', 'password123', '', '');
     });
 
     it('should set loading to true when submitting', () => {
@@ -339,21 +339,21 @@ describe('RegisterComponent', () => {
     it('should show loading indicator when loading', () => {
       component.loading = true;
       fixture.detectChanges();
-      const loadingElement = fixture.nativeElement.querySelector('.loading-indicator');
+      const loadingElement = fixture.nativeElement.querySelector('.loading-spinner');
       expect(loadingElement).toBeTruthy();
     });
 
     it('should hide loading indicator when not loading', () => {
       component.loading = false;
       fixture.detectChanges();
-      const loadingElement = fixture.nativeElement.querySelector('.loading-indicator');
+      const loadingElement = fixture.nativeElement.querySelector('.loading-spinner');
       expect(loadingElement).toBeFalsy();
     });
 
     it('should display error message when present', () => {
       component.errorMessage = 'Test error message';
       fixture.detectChanges();
-      const errorElement = fixture.nativeElement.querySelector('.error-message');
+      const errorElement = fixture.nativeElement.querySelector('.status-message.error');
       expect(errorElement).toBeTruthy();
       expect(errorElement.textContent).toContain('Test error message');
     });
@@ -361,7 +361,7 @@ describe('RegisterComponent', () => {
     it('should display success message when present', () => {
       component.successMessage = 'Test success message';
       fixture.detectChanges();
-      const successElement = fixture.nativeElement.querySelector('.success-message');
+      const successElement = fixture.nativeElement.querySelector('.status-message.success');
       expect(successElement).toBeTruthy();
       expect(successElement.textContent).toContain('Test success message');
     });

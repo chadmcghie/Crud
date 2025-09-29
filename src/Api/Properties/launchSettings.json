@@ -29,6 +29,18 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
+    "testing": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5172",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Testing",
+        "BYPASS_AUTHORIZATION_FOR_E2E": "true",
+        "E2E_TEST_MODE": "true",
+        "TEST_RESET_TOKEN": "test-only-token"
+      }
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,

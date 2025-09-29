@@ -2,19 +2,43 @@ import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } fro
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService, PersonResponse, RoleDto, CreatePersonRequest, UpdatePersonRequest } from './api.service';
 import { CustomValidators } from './validators/custom-validators';
 
 @Component({
   selector: 'app-people',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule, RouterModule],
   template: `
     <div class="people-form-container">
       <h3>{{ editingPerson ? 'Edit Person' : 'Add New Person' }}</h3>
-      
-             <form [formGroup]="form" (ngSubmit)="onSubmit($event)" class="person-form">
+
+      <!-- Success Message -->
+      <div class="alert alert-success" *ngIf="successMessage">
+        <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="error">
+        <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        {{ error }}
+      </div>
+
+      <!-- Roles Error Message -->
+      <div class="alert alert-warning" *ngIf="rolesError">
+        <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        {{ rolesError }}
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit($event)" class="person-form">
         <div class="form-group">
           <label for="fullName">Full Name *</label>
           <input 
@@ -65,7 +89,16 @@ import { CustomValidators } from './validators/custom-validators';
             </div>
           </div>
           <div *ngIf="roles.length === 0" class="no-roles-message">
-            No roles available. Please create roles first.
+            <div class="no-roles-content">
+              <p><strong>No roles available.</strong></p>
+              <p>You need to create roles before you can assign them to people.</p>
+              <a routerLink="/roles-list" class="create-roles-link">
+                <svg class="link-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                Create Roles Now
+              </a>
+            </div>
           </div>
         </div>
 
@@ -190,6 +223,35 @@ import { CustomValidators } from './validators/custom-validators';
       text-align: center;
       font-size: 14px;
     }
+
+    .no-roles-content p {
+      margin: 0 0 8px 0;
+      color: #856404;
+    }
+
+    .create-roles-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 16px;
+      background-color: rgba(0, 123, 255, 0.1);
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .create-roles-link:hover {
+      background-color: rgba(0, 123, 255, 0.2);
+      text-decoration: none;
+    }
+
+    .link-icon {
+      width: 16px;
+      height: 16px;
+    }
     
     .form-actions {
       display: flex;
@@ -246,6 +308,41 @@ import { CustomValidators } from './validators/custom-validators';
       background: #007bff;
       color: white;
     }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .alert-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .alert-success {
+      background-color: #d1edff;
+      border: 1px solid #0084ff;
+      color: #0066cc;
+    }
+
+    .alert-error {
+      background-color: #ffe6e6;
+      border: 1px solid #ff4757;
+      color: #c44569;
+    }
+
+    .alert-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+    }
   `]
 })
 export class PeopleComponent implements OnInit, OnChanges {
@@ -259,6 +356,7 @@ export class PeopleComponent implements OnInit, OnChanges {
   isSubmitting = false;
   error: string | null = null;
   rolesError: string | null = null;
+  successMessage: string | null = null;
   
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
@@ -358,6 +456,7 @@ export class PeopleComponent implements OnInit, OnChanges {
     if (this.form.valid && !this.isSubmitting) {
       this.isSubmitting = true;
       this.error = null;
+      this.successMessage = null;
       const formValue = this.form.value;
       
       const payload: CreatePersonRequest | UpdatePersonRequest = {
@@ -372,8 +471,11 @@ export class PeopleComponent implements OnInit, OnChanges {
           next: () => {
             this.isSubmitting = false;
             this.error = null;
-            // Navigate back to the list after successful update
-            this.router.navigate(['/people-list']);
+            this.successMessage = `Person "${payload.fullName}" has been updated successfully!`;
+            // Show success message for a few seconds, then navigate
+            setTimeout(() => {
+              this.router.navigate(['/people-list']);
+            }, 2000);
           },
           error: (error: unknown) => {
             console.error('Error updating person:', error);
@@ -384,12 +486,15 @@ export class PeopleComponent implements OnInit, OnChanges {
       } else {
         // Create new person
         this.api.createPerson(payload).subscribe({
-          next: (_person: PersonResponse) => {
+          next: (person: PersonResponse) => {
             this.isSubmitting = false;
             this.error = null;
+            this.successMessage = `Person "${person.fullName}" has been created successfully!`;
             this.resetForm();
-            // Navigate back to the list after successful creation
-            this.router.navigate(['/people-list']);
+            // Show success message for a few seconds, then navigate
+            setTimeout(() => {
+              this.router.navigate(['/people-list']);
+            }, 2000);
           },
           error: (error: unknown) => {
             console.error('Error creating person:', error);
@@ -414,13 +519,42 @@ export class PeopleComponent implements OnInit, OnChanges {
     this.form.reset();
     this.selectedRoleIds.clear();
     this.error = null;
+    this.successMessage = null;
   }
 
   private handleApiError(error: unknown, operation?: 'create' | 'update') {
-    const httpError = error as { error?: { errors?: Record<string, string[]>; detail?: string; title?: string } };
+    console.error('API Error:', error);
+
+    const httpError = error as {
+      status?: number;
+      error?: { errors?: Record<string, string[]>; detail?: string; title?: string; message?: string }
+    };
+
+    // Handle specific HTTP status codes first
+    if (httpError.status === 403) {
+      this.error = 'Permission denied. You do not have the required role to create people. Please contact an administrator.';
+      return;
+    }
+
+    if (httpError.status === 401) {
+      this.error = 'Authentication failed. Please log in again.';
+      return;
+    }
+
+    if (httpError.status === 404) {
+      this.error = 'API endpoint not found. Please contact support.';
+      return;
+    }
+
+    if (httpError.status === 500) {
+      this.error = 'Server error occurred. Please try again later or contact support.';
+      return;
+    }
+
+    // Handle validation errors
     if (httpError.error?.errors) {
       const errors = httpError.error.errors;
-      const errorMessages = Object.keys(errors).map(key => 
+      const errorMessages = Object.keys(errors).map(key =>
         `${key}: ${errors[key].join(', ')}`
       ).join('; ');
       this.error = errorMessages;
@@ -428,14 +562,17 @@ export class PeopleComponent implements OnInit, OnChanges {
       this.error = httpError.error.detail;
     } else if (httpError.error?.title) {
       this.error = httpError.error.title;
+    } else if (httpError.error?.message) {
+      this.error = httpError.error.message;
     } else {
       // Provide specific error messages based on operation
+      const statusText = httpError.status ? ` (Status: ${httpError.status})` : '';
       if (operation === 'create') {
-        this.error = 'Failed to create person. Please check your input and try again.';
+        this.error = `Failed to create person${statusText}. Please check your input and try again.`;
       } else if (operation === 'update') {
-        this.error = 'Failed to update person. Please check your input and try again.';
+        this.error = `Failed to update person${statusText}. Please check your input and try again.`;
       } else {
-        this.error = 'An error occurred. Please check your input and try again.';
+        this.error = `An error occurred${statusText}. Please check your input and try again.`;
       }
     }
   }

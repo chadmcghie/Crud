@@ -37,10 +37,16 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
 - ✅ Require branches to be up to date before merging
 - Select these required status checks:
   - `PR Validation Summary`
-  - `Backend Unit Tests`
-  - `Frontend Unit Tests`
   - `Backend Integration Tests`
-  - `End-to-End Tests`
+  - ❌ ~~`Backend Unit Tests`~~ **REMOVED** - Unit tests run at feature level for immediate feedback
+  - ❌ ~~`Frontend Unit Tests`~~ **REMOVED** - Unit tests run at feature level for immediate feedback
+  - ❌ ~~`End-to-End Tests`~~ **REMOVED** - E2E tests run during staging deployment
+
+**Note:** Unit and E2E tests are intentionally excluded from dev branch requirements because:
+- **Unit tests** run at feature level for immediate feedback (2-3 minutes)
+- **E2E tests** run during staging deployment for comprehensive validation
+- **PRs to `dev`** focus on integration tests and code quality checks
+- This provides faster PR feedback while maintaining comprehensive testing
 
 **Additional settings**
 - ✅ Require conversation resolution before merging

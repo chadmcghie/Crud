@@ -5,7 +5,7 @@ test.describe('Password Reset Flow @smoke', () => {
   const baseUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
   const apiUrl = process.env.API_URL || 'http://localhost:5172';
   
-  test('Complete password reset workflow', async ({ page, request }) => {
+  test('@extended Complete password reset workflow', async ({ page, request }) => {
     // Generate unique test data
     const email = faker.internet.email();
     const password = 'Test123!@#';
@@ -142,7 +142,7 @@ test.describe('Password Reset Flow @smoke', () => {
 test.describe('Password Reset API Endpoints @critical', () => {
   const apiUrl = process.env.API_URL || 'http://localhost:5172';
   
-  test('POST /api/auth/forgot-password returns success for valid email', async ({ request }) => {
+  test('@critical POST /api/auth/forgot-password returns success for valid email', async ({ request }) => {
     const response = await request.post(`${apiUrl}/api/auth/forgot-password`, {
       data: { email: 'test@example.com' }
     });
@@ -152,7 +152,7 @@ test.describe('Password Reset API Endpoints @critical', () => {
     expect(data.message).toBeDefined();
   });
 
-  test('POST /api/auth/forgot-password returns error for invalid email format', async ({ request }) => {
+  test('@critical POST /api/auth/forgot-password returns error for invalid email format', async ({ request }) => {
     const response = await request.post(`${apiUrl}/api/auth/forgot-password`, {
       data: { email: 'not-an-email' }
     });
@@ -162,7 +162,7 @@ test.describe('Password Reset API Endpoints @critical', () => {
     expect(data.error).toContain('format');
   });
 
-  test('POST /api/auth/validate-reset-token returns status for any token', async ({ request }) => {
+  test('@critical POST /api/auth/validate-reset-token returns status for any token', async ({ request }) => {
     const response = await request.post(`${apiUrl}/api/auth/validate-reset-token`, {
       data: { token: 'any-token-value' }
     });
@@ -175,7 +175,7 @@ test.describe('Password Reset API Endpoints @critical', () => {
     expect(data).toHaveProperty('isUsed');
   });
 
-  test('POST /api/auth/reset-password validates password requirements', async ({ request }) => {
+  test('@critical POST /api/auth/reset-password validates password requirements', async ({ request }) => {
     const testCases = [
       { password: 'short', expectedError: 'at least 8 characters' },
       { password: 'nouppercase123!', expectedError: 'uppercase' },

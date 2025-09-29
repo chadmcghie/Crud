@@ -13,7 +13,7 @@ encoding: UTF-8
 With the user's approval, proceed to creating a tasks list based on the current feature spec.
 
 <pre_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/pre-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/pre-flight.md
 </pre_flight_check>
 
 <process_flow>
@@ -95,7 +95,7 @@ Evaluate readiness to begin implementation by presenting the first task summary 
 
 <execution_flow>
   IF user_confirms_yes:
-    REFERENCE: @.agent-os/instructions/core/execute-tasks.md
+    REFERENCE: @.agents/.agent-os/instructions/core/execute-tasks.md
     FOCUS: Only Task 1 and its subtasks
     CONSTRAINT: Do not proceed to additional tasks without explicit user request
   ELSE:
@@ -107,5 +107,5 @@ Evaluate readiness to begin implementation by presenting the first task summary 
 </process_flow>
 
 <post_flight_check>
-  EXECUTE: @.agent-os/instructions/meta/post-flight.md
+  EXECUTE: @.agents/.agent-os/instructions/meta/post-flight.md
 </post_flight_check>

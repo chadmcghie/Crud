@@ -343,10 +343,44 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   private handleApiError(error: unknown) {
-    const httpError = error as { error?: { errors?: Record<string, string[]>; detail?: string; title?: string } };
+    console.error('Roles API error details:', error);
+
+    const httpError = error as {
+      status: number;
+      message?: string;
+      error?: {
+        error?: string;
+        errors?: Record<string, string[]>;
+        detail?: string;
+        title?: string;
+      }
+    };
+
+    // Handle network/connection errors
+    if (httpError.status === 0) {
+      this.error = 'Unable to connect to the API server. Please make sure the backend is running on port 5172.';
+      return;
+    }
+
+    if (httpError.status === 404) {
+      this.error = 'Roles API endpoint not found. Please check if the backend roles controller is properly configured.';
+      return;
+    }
+
+    if (httpError.status === 401) {
+      this.error = 'Authentication failed. Please log in again.';
+      return;
+    }
+
+    if (httpError.status === 403) {
+      this.error = 'Access denied. You may not have permission to manage roles.';
+      return;
+    }
+
+    // Handle validation errors
     if (httpError.error?.errors) {
       const errors = httpError.error.errors;
-      const errorMessages = Object.keys(errors).map(key => 
+      const errorMessages = Object.keys(errors).map(key =>
         `${key}: ${errors[key].join(', ')}`
       ).join('; ');
       this.error = errorMessages;
@@ -354,8 +388,10 @@ export class RolesComponent implements OnInit, OnChanges {
       this.error = httpError.error.detail;
     } else if (httpError.error?.title) {
       this.error = httpError.error.title;
+    } else if (httpError.message) {
+      this.error = `Network error: ${httpError.message}`;
     } else {
-      this.error = 'An error occurred. Please check your input and try again.';
+      this.error = `An error occurred (HTTP ${httpError.status}). Please check your input and try again.`;
     }
   }
 }

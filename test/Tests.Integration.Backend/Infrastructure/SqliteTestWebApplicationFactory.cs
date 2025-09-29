@@ -1,8 +1,10 @@
+using Infrastructure;
 using Infrastructure.Data;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +14,7 @@ namespace Tests.Integration.Backend.Infrastructure;
 /// SQLite-based implementation of test web application factory
 /// Uses file-based SQLite databases for fast, isolated testing
 /// </summary>
-public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program>, ITestWebApplicationFactory
+public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program>, IMultiProviderTestWebApplicationFactory
 {
     private static readonly object _lockObject = new object();
     private static bool _databaseInitialized = false;
@@ -21,6 +23,12 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
     private string? _databasePath;
     private string? _connectionString;
     private TestLogCapture? _logCapture;
+
+    public DatabaseProvider Provider => DatabaseProvider.SQLite;
+    public string ProviderName => "SQLite";
+    public bool SupportsTransactions => true; // SQLite supports transactions with some limitations
+    public bool SupportsForeignKeys => true; // SQLite supports FK constraints when enabled
+    public bool SupportsPersistence => true; // SQLite persists data to file
 
     public SqliteTestWebApplicationFactory()
     {
@@ -49,7 +57,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             // Initialize worker-specific database if not already done
             if (string.IsNullOrEmpty(_connectionString))
             {
-                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).Result;
+                _databasePath = _databaseFactory.CreateWorkerDatabaseAsync(_workerIndex).GetAwaiter().GetResult();
                 _connectionString = $"Data Source={_databasePath}";
             }
 
@@ -60,18 +68,38 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
                 services.Remove(descriptor);
             }
 
-            // Add SQLite with our worker-specific database connection string
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseSqlite(_connectionString);
-                options.EnableSensitiveDataLogging();
-            });
+            // Register all infrastructure services using SQLite (this includes repositories)
+            services.AddInfrastructureEntityFrameworkSqlite(_connectionString);
 
             // Register the TestDatabaseFactory as a service
             services.AddSingleton(_databaseFactory);
 
             // Register DatabaseTestService for improved database cleanup
             services.AddScoped<DatabaseTestService>();
+
+            // Register cache services for integration tests
+            // Create a minimal configuration for caching (in-memory only for tests)
+            var inMemorySettings = new Dictionary<string, string?>
+            {
+                ["Caching:UseRedis"] = "false",
+                ["Caching:UseLazyCache"] = "false",
+                ["Caching:UseComposite"] = "false",
+                ["Caching:DefaultExpirationMinutes"] = "5",
+                ["OutputCaching:Disabled"] = "false",  // Enable output caching for conditional request middleware testing
+                // Add JWT configuration for authentication tests
+                ["Jwt:Secret"] = "TestSecretKey123456789TestSecretKey123456789", // Minimum 32 chars
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:AccessTokenExpirationMinutes"] = "60",
+                ["Jwt:RefreshTokenExpirationDays"] = "7"
+            };
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+
+            // Use the same caching configuration as production but with in-memory only
+            services.AddCachingServices(configuration);
 
             // Configure logging for better error debugging in tests
             _logCapture = new TestLogCapture("IntegrationTest");
@@ -96,6 +124,9 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         });
 
         builder.UseEnvironment("Testing");
+
+        // Set environment variables to bypass authorization for integration tests
+        Environment.SetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_INTEGRATION", "true");
     }
 
     /// <summary>
@@ -138,6 +169,28 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
         await databaseService.ResetDatabaseAsync(_workerIndex);
     }
 
+    public async Task SetUserRoleAsync(string email, string role)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Use EF Core entity approach instead of raw SQL to leverage the value comparer fix
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Value == email);
+        if (user != null)
+        {
+            // Add the requested role using the domain method
+            if (role == "Admin")
+            {
+                user.AddRole("Admin");
+            }
+
+            await dbContext.SaveChangesAsync();
+
+            // Clear change tracker to ensure fresh data on next load
+            dbContext.ChangeTracker.Clear();
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
@@ -145,7 +198,7 @@ public class SqliteTestWebApplicationFactory : WebApplicationFactory<Api.Program
             try
             {
                 // Clean up the worker-specific database
-                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).Wait();
+                _databaseFactory.CleanupWorkerDatabaseAsync(_workerIndex).GetAwaiter().GetResult();
             }
             catch (Exception)
             {

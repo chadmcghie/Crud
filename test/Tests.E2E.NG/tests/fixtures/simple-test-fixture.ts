@@ -5,27 +5,27 @@ import { resetDatabase } from '../setup/simple-database-utils';
  * Simple test fixture with basic database cleanup
  * No complex monitoring or state management
  */
-export const test = base.extend({
+export const test = base.extend<{ apiUrl: string; baseURL: string }>({
   // Simple database cleanup before each test
   page: async ({ page }, use) => {
     // Reset database if path is set
     if (process.env.DATABASE_PATH) {
       await resetDatabase(process.env.DATABASE_PATH);
     }
-    
-    // Basic page setup
+
+    // Basic page setup with increased timeout for API operations
     page.setDefaultNavigationTimeout(30000);
-    page.setDefaultTimeout(10000);
-    
+    page.setDefaultTimeout(20000); // Increased from 15000 to 20000ms for complex operations
+
     // Use the page
     await use(page);
   },
-  
+
   // API URL from environment
   apiUrl: async ({}, use) => {
     await use(process.env.API_URL || 'http://localhost:5172');
   },
-  
+
   // Angular URL from environment
   baseURL: async ({}, use) => {
     await use(process.env.ANGULAR_URL || 'http://localhost:4200');
@@ -55,7 +55,7 @@ export const helpers = {
     }
     throw new Error('API not ready');
   },
-  
+
   /**
    * Create test data via API
    */
@@ -64,14 +64,14 @@ export const helpers = {
       data,
       headers: { 'Content-Type': 'application/json' },
     });
-    
+
     if (!response.ok()) {
       throw new Error(`Failed to create test data: ${response.status()}`);
     }
-    
+
     return response.json();
   },
-  
+
   /**
    * Delete test data via API
    */

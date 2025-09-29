@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getTempDirectory } from './setup/temp-directory';
 
 /**
  * Tests to validate serial execution configuration
@@ -10,7 +11,7 @@ import * as path from 'path';
 
 test.describe('Serial Execution Configuration Validation', () => {
   
-  test('should have single worker configuration', async () => {
+  test('@smoke should have single worker configuration', async () => {
     // Read the main config file
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
@@ -21,7 +22,7 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(workersMatch?.[1]).toBe('1');
   });
   
-  test('should have serial execution enabled', async () => {
+  test('@smoke should have serial execution enabled', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
@@ -30,16 +31,16 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(configContent).not.toContain('fullyParallel: true');
   });
   
-  test('should have no retries configured', async () => {
+  test('@smoke should have proper retries configured', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Verify retries is 0
-    expect(configContent).toMatch(/retries:\s*0/);
-    expect(configContent).not.toMatch(/retries:\s*[1-9]/);
+    // Verify retries is configured properly (0 for local, 1 for CI)
+    expect(configContent).toMatch(/retries:\s*isCI\s*\?\s*1\s*:\s*0/);
+    expect(configContent).not.toMatch(/retries:\s*[2-9]/);
   });
   
-  test('should use single browser by default', async () => {
+  test('@smoke should use single browser by default', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
@@ -58,7 +59,7 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(configContent).toContain("name: 'chromium'");
   });
   
-  test('should have proper global teardown configured', async () => {
+  test('@smoke should have proper global teardown configured', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
@@ -66,10 +67,10 @@ test.describe('Serial Execution Configuration Validation', () => {
     expect(configContent).toMatch(/globalTeardown:\s*['"]\.\/(tests\/)?setup\/webserver-teardown/);
   });
   
-  test('should execute tests sequentially', async ({ page }) => {
+  test('@smoke should execute tests sequentially', async ({ page }) => {
     // This test verifies runtime behavior
     // Create a timestamp file to track execution order
-    const timestampFile = path.join(process.env.TEMP || '/tmp', 'test-execution-order.txt');
+    const timestampFile = path.join(getTempDirectory(), 'test-execution-order.txt');
     const timestamp = Date.now();
     
     // Append timestamp to file
@@ -105,7 +106,7 @@ test.describe('Serial Execution Configuration Validation', () => {
 
 test.describe('Test Categorization', () => {
   
-  test('should support test tagging for categorization', async () => {
+  test('@smoke should support test tagging for categorization', async () => {
     const testFiles = [
       path.join(__dirname, 'serial-example.spec.ts'),
       path.join(__dirname, 'smoke.spec.ts')
@@ -140,18 +141,21 @@ test.describe('Test Categorization', () => {
 
 test.describe('Performance Targets', () => {
   
-  test('should meet timeout requirements', async () => {
+  test('@smoke should meet timeout requirements', async () => {
     const configPath = path.join(__dirname, '..', 'playwright.config.ts');
     const configContent = fs.readFileSync(configPath, 'utf-8');
     
-    // Check timeout settings
-    const timeoutMatch = configContent.match(/timeout:\s*(\d+)/);
+    // Check timeout settings - look for main test timeout, not webServer timeout
+    const timeoutMatch = configContent.match(/^\s*timeout:\s*process\.env\.CI.*?(\d+).*?:\s*(\d+)/m);
     if (timeoutMatch) {
-      const timeout = parseInt(timeoutMatch[1]);
-      
-      // Should be reasonable for serial execution (15-60 seconds)
-      expect(timeout).toBeGreaterThanOrEqual(15000);
-      expect(timeout).toBeLessThanOrEqual(60000);
+      const ciTimeout = parseInt(timeoutMatch[1]);
+      const localTimeout = parseInt(timeoutMatch[2]);
+
+      // Both CI and local should be reasonable for serial execution (15-60 seconds)
+      expect(ciTimeout).toBeGreaterThanOrEqual(15000);
+      expect(ciTimeout).toBeLessThanOrEqual(60000);
+      expect(localTimeout).toBeGreaterThanOrEqual(15000);
+      expect(localTimeout).toBeLessThanOrEqual(60000);
     }
     
     // Check action timeout

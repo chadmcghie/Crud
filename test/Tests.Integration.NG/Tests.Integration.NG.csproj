@@ -7,6 +7,10 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    
+    <!-- Configure test results to go to test folder -->
+    <VSTestResultsDirectory>..\..\test\TestResults</VSTestResultsDirectory>
+    <TestResultsDirectory>..\..\test\TestResults</TestResultsDirectory>
   </PropertyGroup>
 
   <ItemGroup>

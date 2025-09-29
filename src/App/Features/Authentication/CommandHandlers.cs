@@ -1,9 +1,9 @@
 using App.Abstractions;
+using App.Validation;
 using Domain.Entities.Authentication;
 using Domain.Events;
 using Domain.Interfaces;
 using Domain.ValueObjects;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -35,12 +35,9 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
 
         try
         {
-            // Validate required fields
-            if (string.IsNullOrWhiteSpace(request.FirstName))
-                return new AuthenticationResponse { Success = false, Error = "First name is required" };
-
-            if (string.IsNullOrWhiteSpace(request.LastName))
-                return new AuthenticationResponse { Success = false, Error = "Last name is required" };
+            // Set default values for optional fields
+            var firstName = string.IsNullOrWhiteSpace(request.FirstName) ? "User" : request.FirstName.Trim();
+            var lastName = string.IsNullOrWhiteSpace(request.LastName) ? "" : request.LastName.Trim();
 
             // Create email value object (will throw if invalid)
             var email = new Email(request.Email);
@@ -53,12 +50,18 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
                 return new AuthenticationResponse { Success = false, Error = "Email already exists" };
             }
 
+            // Password strength validation
+            if (!IsPasswordStrong(request.Password, out string passwordError))
+            {
+                return new AuthenticationResponse { Success = false, Error = passwordError };
+            }
+
             // Hash password
             var hashedPassword = _passwordHasher.HashPassword(request.Password);
             var passwordHash = new PasswordHash(hashedPassword);
 
             // Create new user
-            var user = User.Create(email, passwordHash, request.FirstName, request.LastName);
+            var user = User.Create(email, passwordHash, firstName, lastName);
 
             // Generate tokens
             var accessToken = _jwtTokenService.GenerateAccessToken(user);
@@ -99,6 +102,43 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, A
             _logger.LogError(ex, "Error during user registration");
             throw;
         }
+    }
+
+    private bool IsPasswordStrong(string password, out string error)
+    {
+        error = string.Empty;
+
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+        {
+            error = "Password must be at least 8 characters long";
+            return false;
+        }
+
+        if (!password.Any(char.IsUpper))
+        {
+            error = "Password must contain at least one uppercase letter";
+            return false;
+        }
+
+        if (!password.Any(char.IsLower))
+        {
+            error = "Password must contain at least one lowercase letter";
+            return false;
+        }
+
+        if (!password.Any(char.IsDigit))
+        {
+            error = "Password must contain at least one number";
+            return false;
+        }
+
+        if (!password.Any(ch => "!@#$%^&*()_+-=[]{}|;:,.<>?".Contains(ch)))
+        {
+            error = "Password must contain at least one special character";
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -328,7 +368,7 @@ public class RevokeTokenCommandHandler : IRequestHandler<RevokeTokenCommand, boo
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validation is now handled by FluentValidation pipeline behavior
+        // Validation is now handled by DataAnnotations validation pipeline behavior
 
         try
         {
@@ -380,7 +420,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Validation is now handled by FluentValidation pipeline behavior
+        // Validation is now handled by DataAnnotations validation pipeline behavior
 
         try
         {
@@ -670,7 +710,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     {
         error = string.Empty;
 
-        if (password.Length < 8)
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
         {
             error = "Password must be at least 8 characters long";
             return false;
@@ -778,6 +818,86 @@ public class ValidateResetTokenQueryHandler : IRequestHandler<ValidateResetToken
                 IsUsed = false,
                 ExpiresAt = null
             };
+        }
+    }
+}
+
+public class AddUserRoleCommandHandler : IRequestHandler<AddUserRoleCommand, bool>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<AddUserRoleCommandHandler> _logger;
+
+    public AddUserRoleCommandHandler(
+        IUserRepository userRepository,
+        ILogger<AddUserRoleCommandHandler> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
+    public async Task<bool> Handle(AddUserRoleCommand request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found: {UserId}", request.UserId);
+                return false;
+            }
+
+            user.AddRole(request.Role);
+            await _userRepository.UpdateAsync(user, cancellationToken);
+
+            _logger.LogInformation("Added role {Role} to user {UserId}", request.Role, request.UserId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add role {Role} to user {UserId}", request.Role, request.UserId);
+            return false;
+        }
+    }
+}
+
+public class PromoteUserToAdminCommandHandler : IRequestHandler<PromoteUserToAdminCommand, AuthenticationResponse>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<PromoteUserToAdminCommandHandler> _logger;
+
+    public PromoteUserToAdminCommandHandler(
+        IUserRepository userRepository,
+        ILogger<PromoteUserToAdminCommandHandler> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
+    public async Task<AuthenticationResponse> Handle(PromoteUserToAdminCommand request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for admin promotion: {UserId}", request.UserId);
+                return new AuthenticationResponse { Success = false, Error = "User not found" };
+            }
+
+            // Add admin role if not already present
+            if (!user.Roles.Contains("admin"))
+            {
+                user.AddRole("admin");
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                _logger.LogInformation("User {UserId} promoted to admin", request.UserId);
+            }
+
+            return new AuthenticationResponse { Success = true };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to promote user {UserId} to admin", request.UserId);
+            return new AuthenticationResponse { Success = false, Error = "Failed to promote user to admin" };
         }
     }
 }

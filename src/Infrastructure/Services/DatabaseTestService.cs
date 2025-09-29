@@ -1,4 +1,6 @@
 using System.Data.Common;
+using App.Abstractions;
+using App.Models;
 using Infrastructure.Data;
 using Infrastructure.Resilience;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ namespace Infrastructure.Services;
 /// Service for managing database operations during testing.
 /// Provides database reset and seeding capabilities using EF Core for SQLite.
 /// </summary>
-public class DatabaseTestService
+public class DatabaseTestService : IDatabaseTestService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
@@ -61,15 +63,10 @@ public class DatabaseTestService
         {
             var connectionString = _context.Database.GetConnectionString();
 
-            // In CI/Docker environments, use file deletion for much better performance
-            if (Environment.GetEnvironmentVariable("CI") == "true" &&
-                !string.IsNullOrEmpty(connectionString))
-            {
-                await ResetByFileDeletionAsync(workerIndex, seedData);
-                return;
-            }
-
-            // Use EF Core cleanup for SQLite compatibility
+            // TEMPORARY FIX: Always use EF Core cleanup for better reliability in CI
+            // The file deletion method has SQLite locking issues in GitHub Actions
+            // TODO: Investigate and fix file deletion method for better performance
+            _logger.LogInformation("Using EF Core cleanup method for reliable database reset in CI");
             await ResetWithEfCoreAsync(workerIndex, seedData);
         }
         catch (Exception ex)
@@ -179,6 +176,18 @@ public class DatabaseTestService
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
 
+            // Delete PasswordResetTokens first (has FK to Users)
+            _logger.LogDebug("Deleting PasswordResetTokens for worker {WorkerIndex}...", workerIndex);
+            var tokensStart = DateTime.UtcNow;
+            await _context.PasswordResetTokens.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted PasswordResetTokens in {Ms}ms", (DateTime.UtcNow - tokensStart).TotalMilliseconds);
+
+            // Delete Users (authentication data)
+            _logger.LogDebug("Deleting Users for worker {WorkerIndex}...", workerIndex);
+            var usersStart = DateTime.UtcNow;
+            await _context.Users.ExecuteDeleteAsync();
+            _logger.LogDebug("Deleted Users in {Ms}ms", (DateTime.UtcNow - usersStart).TotalMilliseconds);
+
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
             var peopleStart = DateTime.UtcNow;
             await _context.People.ExecuteDeleteAsync();
@@ -246,6 +255,8 @@ public class DatabaseTestService
             RolesCount = await _context.Roles.CountAsync(),
             WallsCount = await _context.Walls.CountAsync(),
             WindowsCount = await _context.Windows.CountAsync(),
+            UsersCount = await _context.Users.CountAsync(),
+            PasswordResetTokensCount = await _context.PasswordResetTokens.CountAsync(),
             ConnectionString = _context.Database.GetConnectionString()?.Replace("Password=", "Password=***"),
             CanConnect = await _context.Database.CanConnectAsync()
         };
@@ -270,6 +281,10 @@ public class DatabaseTestService
             issues.Add($"Walls table contains {stats.WallsCount} records");
         if (stats.WindowsCount > 0)
             issues.Add($"Windows table contains {stats.WindowsCount} records");
+        if (stats.UsersCount > 0)
+            issues.Add($"Users table contains {stats.UsersCount} records");
+        if (stats.PasswordResetTokensCount > 0)
+            issues.Add($"PasswordResetTokens table contains {stats.PasswordResetTokensCount} records");
 
         // Check database connectivity
         if (!stats.CanConnect)
@@ -316,6 +331,10 @@ public class DatabaseTestService
             issues.Add($"Walls table not cleaned up: {stats.WallsCount} records remain");
         if (stats.WindowsCount > 0)
             issues.Add($"Windows table not cleaned up: {stats.WindowsCount} records remain");
+        if (stats.UsersCount > 0)
+            issues.Add($"Users table not cleaned up: {stats.UsersCount} records remain");
+        if (stats.PasswordResetTokensCount > 0)
+            issues.Add($"PasswordResetTokens table not cleaned up: {stats.PasswordResetTokensCount} records remain");
 
         // Check database connectivity
         if (!stats.CanConnect)
@@ -358,6 +377,8 @@ public class DatabaseTestService
             await _context.Roles.CountAsync();
             await _context.Walls.CountAsync();
             await _context.Windows.CountAsync();
+            await _context.Users.CountAsync();
+            await _context.PasswordResetTokens.CountAsync();
 
             _logger.LogDebug("Database integrity verification passed for worker {WorkerIndex}", workerIndex);
             return true;
@@ -373,15 +394,17 @@ public class DatabaseTestService
     {
         if (!await _context.Roles.AnyAsync())
         {
+            // Generate unique role names to avoid conflicts in parallel test execution
+            var uniqueSuffix = $"{Guid.NewGuid():N}_{DateTime.UtcNow.Ticks}";
             var roles = new[]
             {
-                new Domain.Entities.Role { Name = "Administrator", Description = "System administrator with full access" },
-                new Domain.Entities.Role { Name = "User", Description = "Standard user with limited access" },
-                new Domain.Entities.Role { Name = "Guest", Description = "Guest user with read-only access" }
+                Domain.Entities.Role.Create($"Administrator_{uniqueSuffix}", "System administrator with full access"),
+                Domain.Entities.Role.Create($"User_{uniqueSuffix}", "Standard user with limited access"),
+                Domain.Entities.Role.Create($"Guest_{uniqueSuffix}", "Guest user with read-only access")
             };
 
             _context.Roles.AddRange(roles);
-            _logger.LogDebug("Added {Count} seed roles", roles.Length);
+            _logger.LogDebug("Added {Count} seed roles with unique names", roles.Length);
         }
     }
 
@@ -391,8 +414,8 @@ public class DatabaseTestService
         {
             var people = new[]
             {
-                new Domain.Entities.Person { FullName = "John Doe" },
-                new Domain.Entities.Person { FullName = "Jane Smith" }
+                Domain.Entities.Person.Create("John Doe"),
+                Domain.Entities.Person.Create("Jane Smith")
             };
 
             _context.People.AddRange(people);
@@ -401,31 +424,4 @@ public class DatabaseTestService
     }
 
     // The MaskConnectionString method has been removed as we now avoid logging connection strings entirely.
-}
-
-/// <summary>
-/// Database statistics for debugging and monitoring.
-/// </summary>
-public class DatabaseStats
-{
-    public int PeopleCount { get; set; }
-    public int RolesCount { get; set; }
-    public int WallsCount { get; set; }
-    public int WindowsCount { get; set; }
-    public string? ConnectionString { get; set; }
-    public bool CanConnect { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-}
-
-/// <summary>
-/// Result of database validation operations
-/// </summary>
-public class DatabaseValidationResult
-{
-    public int WorkerIndex { get; set; }
-    public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = new List<string>();
-    public DatabaseStats Stats { get; set; } = null!;
-    public string ValidationType { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }

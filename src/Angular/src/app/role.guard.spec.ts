@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RoleGuard } from './role.guard';
 import { AuthService } from './auth.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, EMPTY } from 'rxjs';
 
 interface User {
   id: string;
@@ -23,6 +23,7 @@ describe('RoleGuard', () => {
       currentUser$: currentUserSubject.asObservable()
     });
     const routerSpy = jasmine.createSpyObj('Router', ['createUrlTree', 'navigate']);
+    routerSpy.events = EMPTY;
 
     TestBed.configureTestingModule({
       providers: [

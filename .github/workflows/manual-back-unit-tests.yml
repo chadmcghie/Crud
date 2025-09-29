@@ -1,0 +1,61 @@
+name: Manual Backend Unit Tests
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      branch:
+        description: 'Branch to test (default: dev)'
+        required: false
+        default: 'dev'
+        type: string
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  manual-back-unit-tests:
+    name: Manual Backend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore .NET dependencies
+      run: dotnet restore solutions/Crud.sln
+
+    - name: Build .NET solution
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
+
+    - name: Run backend unit tests
+      id: run-tests
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release --logger trx --results-directory TestResults/
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: back-unit-test-results-${{ github.run_number }}
+        path: TestResults/
+        retention-days: 7
+
+    - name: Report test results
+      if: always()
+      run: |
+        if [ "${{ steps.run-tests.outcome }}" == "success" ]; then
+          echo "✅ Backend unit tests passed on branch ${{ inputs.branch }}"
+          echo "::notice title=Tests Passed::Backend unit tests completed successfully"
+        else
+          echo "❌ Backend unit tests failed on branch ${{ inputs.branch }}"
+          echo "Check the uploaded artifacts for details"
+          echo "::error title=Tests Failed::Backend unit tests failed - check artifacts for details"
+        fi

@@ -8,16 +8,18 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
 {
     public async Task<Person> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
     {
-        var person = new Person { FullName = request.FullName, Phone = request.Phone };
+        var person = Person.Create(request.FullName, request.Phone);
 
         if (request.RoleIds != null)
         {
+            var roles = new List<Role>();
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
                     ?? throw new ArgumentException($"Role {roleId} not found");
-                person.Roles.Add(role);
+                roles.Add(role);
             }
+            person.UpdateRoles(roles);
         }
 
         return await personRepository.AddAsync(person, cancellationToken);
@@ -28,21 +30,27 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
 {
     public async Task Handle(UpdatePersonCommand request, CancellationToken cancellationToken)
     {
+        // Load existing person to work with tracked entity
         var person = await personRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Person {request.Id} not found");
 
-        person.FullName = request.FullName;
-        person.Phone = request.Phone;
+        // Update person properties using domain methods
+        person.UpdateFullName(request.FullName);
+        person.UpdatePhone(request.Phone);
 
         if (request.RoleIds != null)
         {
-            person.Roles.Clear();
+            // Load all required roles first to validate they exist
+            var newRoles = new List<Role>();
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
                     ?? throw new ArgumentException($"Role {roleId} not found");
-                person.Roles.Add(role);
+                newRoles.Add(role);
             }
+
+            // Update roles using domain method
+            person.UpdateRoles(newRoles);
         }
 
         await personRepository.UpdateAsync(person, cancellationToken);

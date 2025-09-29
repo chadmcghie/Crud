@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, throwError, EMPTY } from 'rxjs';
 import { PeopleListComponent } from './people-list.component';
 import { ApiService, PersonResponse } from './api.service';
 
@@ -35,6 +35,7 @@ describe('PeopleListComponent', () => {
       'deletePerson'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = EMPTY;
 
     await TestBed.configureTestingModule({
       imports: [PeopleListComponent, HttpClientTestingModule],
@@ -118,19 +119,23 @@ describe('PeopleListComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/people'], { queryParams: { edit: personToEdit.id } });
   });
 
-  it('should delete person after confirmation', () => {
+  it('should delete person after confirmation', fakeAsync(() => {
     spyOn(window, 'confirm').and.returnValue(true);
     apiService.deletePerson.and.returnValue(of(undefined));
-    
+
     fixture.detectChanges();
-    
+
     const personToDelete = mockPeople[0];
     component.onDeletePerson(personToDelete);
-    
+
     expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete John Doe?');
     expect(apiService.deletePerson).toHaveBeenCalledWith('1');
+
+    // Advance time to trigger the setTimeout in the delete success handler
+    tick(100);
+
     expect(apiService.listPeople).toHaveBeenCalledTimes(2); // Once on init, once after delete
-  });
+  }));
 
   it('should not delete person if not confirmed', () => {
     spyOn(window, 'confirm').and.returnValue(false);

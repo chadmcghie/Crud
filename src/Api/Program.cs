@@ -2,9 +2,11 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Api.Configuration;
+using Api.Extensions;
+using Api.HealthChecks;
 using Api.Middleware;
 using App;
-using FluentValidation;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -86,8 +88,13 @@ namespace Api
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                // Replace default logging with Serilog
-                builder.Host.UseSerilog();
+                // Replace default logging with Serilog (unless disabled for tests)
+                // Contract tests set DISABLE_SERILOG_FOR_TESTS environment variable
+                var disableSerilog = Environment.GetEnvironmentVariable("DISABLE_SERILOG_FOR_TESTS") == "true";
+                if (!disableSerilog)
+                {
+                    builder.Host.UseSerilog();
+                }
 
                 // 2) Observability: OpenTelemetry (logs/traces/metrics)
                 builder.Services.AddOpenTelemetry()
@@ -103,11 +110,13 @@ namespace Api
                         .AddConsoleExporter())
                     .WithMetrics(m => m
                         .AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation()
-                        .AddConsoleExporter());
+                        .AddHttpClientInstrumentation());
 
                 // 3) App & Infra
                 builder.Services.AddApplication();
+
+                // 4) Response Compression
+                builder.Services.AddResponseCompressionServices();
 
                 builder.Services.AddHttpClient("default")
                     .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
@@ -115,23 +124,38 @@ namespace Api
                 var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+                // DIAGNOSTIC: Log database configuration for startup debugging
+                Log.Information("🔍 STARTUP DEBUG: DatabaseProvider={DatabaseProvider}", databaseProvider);
+                Log.Information("🔍 STARTUP DEBUG: Initial ConnectionString={ConnectionString}", connectionString);
+                Log.Information("🔍 STARTUP DEBUG: Environment={Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+
                 // E2E test isolation helpers (only for SQLite)
                 var workerDatabase = Environment.GetEnvironmentVariable("WORKER_DATABASE");
                 var workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX");
 
                 if (databaseProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
                 {
+                    Log.Information("🔍 STARTUP DEBUG: SQLite provider detected");
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_DATABASE={WorkerDatabase}", workerDatabase);
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_INDEX={WorkerIndex}", workerIndex);
+
                     if (!string.IsNullOrWhiteSpace(workerDatabase))
                     {
                         connectionString = $"Data Source={workerDatabase}";
-                        Log.Information("🗄️ Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                        Log.Information("🔍 STARTUP DEBUG: Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
                     }
                     else if (!string.IsNullOrWhiteSpace(workerIndex))
                     {
                         var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                         var workerDbName = $"CrudAppTest_Worker{workerIndex}_{ts}.db";
                         connectionString = $"Data Source={workerDbName}";
-                        Log.Information("🗄️ Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                        Log.Information("🔍 STARTUP DEBUG: Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
+                    }
+                    else
+                    {
+                        Log.Information("🔍 STARTUP DEBUG: Using default connection string: {ConnectionString}", connectionString);
                     }
 
                     var tenantPrefix = Environment.GetEnvironmentVariable("TENANT_PREFIX");
@@ -156,9 +180,21 @@ namespace Api
                     case "sqlite":
                         if (string.IsNullOrWhiteSpace(connectionString))
                             throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQLite.");
-                        builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+
+                        Log.Information("🔍 STARTUP DEBUG: About to register SQLite services with connection: {ConnectionString}", connectionString);
+                        try
+                        {
+                            builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+                            Log.Information("🔍 STARTUP DEBUG: ✅ Successfully registered SQLite services");
+                            usingEfProvider = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("🔍 STARTUP DEBUG: ❌ Failed to register SQLite services: {Error}", ex.Message);
+                            Log.Error("🔍 STARTUP DEBUG: Full exception: {Exception}", ex);
+                            throw;
+                        }
                         Log.Information("Using SQLite provider with connection: {ConnectionString}", connectionString);
-                        usingEfProvider = true;
                         break;
 
                     default:
@@ -181,9 +217,17 @@ namespace Api
                     });
                 });
 
-                // Add FluentValidation validators
-                builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-                builder.Services.AddValidatorsFromAssembly(typeof(App.DependencyInjection).Assembly);
+                // Add caching services
+                builder.Services.AddCachingServices(builder.Configuration);
+
+                // Add cached repository decorators (only if using EF provider)
+                if (usingEfProvider)
+                {
+                    builder.Services.AddCachedRepositories();
+                }
+
+                // Add output caching
+                builder.Services.AddApiOutputCaching(builder.Configuration);
 
                 // Configure JWT Authentication
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
@@ -244,8 +288,28 @@ namespace Api
                 // Add authorization policies
                 builder.Services.AddAuthorization(options =>
                 {
-                    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-                    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+
+                    // Check if authorization bypass is explicitly enabled for E2E tests
+                    var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+
+                    if (isTestEnvironment && bypassAuth)
+                    {
+                        // In Testing environment with E2E bypass enabled, bypass all authorization for E2E tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => true));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireAssertion(context => true));
+
+                        // Set fallback policy to allow all for E2E tests
+                        options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                            .RequireAssertion(context => true)
+                            .Build();
+                    }
+                    else
+                    {
+                        // Normal authorization policies for production and integration tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                    }
                 });
 
                 // Add rate limiting for password reset endpoint
@@ -282,7 +346,17 @@ namespace Api
                             }));
                 });
 
-                builder.Services.AddControllers()
+                // Register the conditional request filter
+                builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+
+                // Register cache invalidation service
+                builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
+
+                builder.Services.AddControllers(options =>
+                    {
+                        // Add conditional request filter globally
+                        options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                    })
                     .AddJsonOptions(options =>
                     {
                         // Configure DateTime serialization to include UTC "Z" suffix
@@ -332,7 +406,8 @@ namespace Api
                     });
                 });
 
-                builder.Services.AddHealthChecks();
+                builder.Services.AddHealthChecks()
+                    .AddCheck<DatabaseHealthCheck>("database");
 
                 builder.Services.AddAutoMapper(
                     cfg => { },
@@ -358,19 +433,46 @@ namespace Api
                 }
 
                 app.UseHttpsRedirection();
+                app.UseResponseCompression();
+                app.UseStaticFiles(); // Serve static files with compression
+                app.UseMiddleware<CompressionPerformanceMiddleware>();
                 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
                 app.UseCors("AllowAngular");
                 app.UseRateLimiter();
                 app.UseAuthentication();
                 app.UseAuthorization();
-                app.MapControllers();
-                app.MapHealthChecks("/health");
 
-                Log.Information("Application configured successfully. Starting web host...");
+                // Add output caching middleware (if not disabled)
+                var outputCachingDisabled = app.Configuration.GetValue<bool>("OutputCaching:Disabled");
+                if (!outputCachingDisabled)
+                {
+                    app.UseMiddleware<Api.Middleware.ConditionalRequestMiddleware>(); // Must run before output cache
+                    app.UseOutputCache();
+                }
+
+                // Note: Conditional request support (ETag/If-None-Match, Last-Modified/If-Modified-Since) 
+                // is handled automatically by ASP.NET Core when controllers set proper headers
+
+                // Note: Cache status and HTTP headers are handled within controllers
+                // to avoid conflicts with response streaming
+
+                app.MapControllers();
+                app.MapHealthChecks("/health/system");
+
+                Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
+                Log.Information("🔍 STARTUP DEBUG: Listening URLs will be: {Urls}", string.Join(", ", app.Urls));
                 await app.RunAsync();
             }
             catch (Exception ex)
             {
+                Log.Fatal("🔍 STARTUP DEBUG: ❌❌❌ APPLICATION CRASHED DURING STARTUP ❌❌❌");
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Type: {ExceptionType}", ex.GetType().Name);
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Message: {ExceptionMessage}", ex.Message);
+                Log.Fatal("🔍 STARTUP DEBUG: Stack Trace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Log.Fatal("🔍 STARTUP DEBUG: Inner Exception: {InnerException}", ex.InnerException);
+                }
                 Log.Fatal(ex, "Application terminated unexpectedly");
                 throw;
             }

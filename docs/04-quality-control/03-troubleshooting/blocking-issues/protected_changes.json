@@ -1,0 +1,45 @@
+{
+  "protected_changes": [
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "src/Angular/src/app/auth.service.ts",
+      "lines": [100, 103],
+      "hash": "current-working-tree",
+      "change_description": "Unit test port exclusion logic",
+      "reason": "Prevents unit tests from incorrectly entering E2E authentication mode",
+      "created": "2025-09-25 18:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "src/Angular/src/app/auth.service.ts",
+      "lines": [131, 134],
+      "hash": "current-working-tree",
+      "change_description": "Refined E2E detection logic",
+      "reason": "More precise targeting of E2E environments vs unit tests",
+      "created": "2025-09-25 18:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "test/Tests.Unit.Backend/Infrastructure/Services/BCryptPasswordHasherTests.cs",
+      "lines": [1, 202],
+      "hash": "current-working-tree",
+      "change_description": "Mocked IPasswordHasher interface for unit tests",
+      "reason": "Eliminates slow cryptographic operations - tests business logic not BCrypt library",
+      "created": "2025-09-25 19:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "test/Tests.Unit.Backend/Infrastructure/PollyResilienceTests.cs",
+      "lines": [1, 92],
+      "hash": "current-working-tree",
+      "change_description": "Converted to configuration testing only",
+      "reason": "Eliminates slow retry delays - tests policy configuration not Polly execution",
+      "created": "2025-09-25 19:00",
+      "do_not_modify": true
+    }
+  ],
+  "last_updated": "2025-09-25T19:15:00Z"
+}

@@ -15,7 +15,7 @@ namespace Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.19");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.20");
 
             modelBuilder.Entity("Domain.Entities.Authentication.PasswordResetToken", b =>
                 {
@@ -106,8 +106,17 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FirstName")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsLocked")
                         .HasColumnType("INTEGER");
@@ -140,18 +149,32 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .HasColumnType("BLOB");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -164,9 +187,21 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -176,6 +211,9 @@ namespace Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .HasColumnType("BLOB");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -203,6 +241,12 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -210,6 +254,9 @@ namespace Infrastructure.Migrations
                     b.Property<double>("Height")
                         .HasPrecision(10, 2)
                         .HasColumnType("REAL");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double>("Length")
                         .HasPrecision(10, 2)
@@ -235,6 +282,9 @@ namespace Infrastructure.Migrations
                     b.Property<double?>("RValue")
                         .HasPrecision(10, 2)
                         .HasColumnType("REAL");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
 
                     b.Property<double>("Thickness")
                         .HasPrecision(10, 2)
@@ -262,11 +312,13 @@ namespace Infrastructure.Migrations
                         .HasPrecision(10, 4)
                         .HasColumnType("REAL");
 
-                    b.Property<double>("Area")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("REAL");
-
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
@@ -309,6 +361,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Location")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
@@ -329,6 +384,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Orientation")
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
 
                     b.Property<double?>("SolarHeatGainCoefficient")
                         .HasPrecision(5, 3)

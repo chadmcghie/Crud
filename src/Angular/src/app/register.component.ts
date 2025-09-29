@@ -40,6 +40,8 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.registerForm = this.formBuilder.group({
+      firstName: [''],
+      lastName: [''],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
@@ -73,9 +75,9 @@ export class RegisterComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const { email, password, confirmPassword } = this.registerForm.value;
+    const { firstName, lastName, email, password, confirmPassword } = this.registerForm.value;
 
-    this.authService.register(email, password, confirmPassword).subscribe({
+    this.authService.register(email, password, confirmPassword, firstName, lastName).subscribe({
       next: (_response: AuthResponse) => {
         this.successMessage = 'Registration successful! Logging you in...';
         this.loading = false;

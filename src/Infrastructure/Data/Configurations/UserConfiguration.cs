@@ -38,12 +38,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                 .IsRequired();
         });
 
-        // Configure Roles collection as JSON
+        // Configure Roles collection as comma-separated string with value comparer
         builder.Property(u => u.Roles)
             .HasConversion(
                 v => string.Join(',', v),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet())
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .Metadata.SetValueComparer(new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<IReadOnlyCollection<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToHashSet()));
 
         // Configure timestamps
         builder.Property(u => u.CreatedAt)

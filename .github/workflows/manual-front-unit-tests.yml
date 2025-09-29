@@ -1,0 +1,64 @@
+name: Manual Frontend Unit Tests
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      branch:
+        description: 'Branch to test (default: dev)'
+        required: false
+        default: 'dev'
+        type: string
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  manual-front-unit-tests:
+    name: Manual Frontend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: src/Angular/package-lock.json
+
+    - name: Install Angular dependencies
+      working-directory: src/Angular
+      run: npm ci
+
+    - name: Run Angular unit tests
+      id: run-tests
+      working-directory: src/Angular
+      run: npm run test:ci
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: front-unit-test-results-${{ github.run_number }}
+        path: |
+          src/Angular/coverage/
+          src/Angular/test-results/
+        retention-days: 7
+
+    - name: Report test results
+      if: always()
+      run: |
+        if [ "${{ steps.run-tests.outcome }}" == "success" ]; then
+          echo "✅ Frontend unit tests passed on branch ${{ inputs.branch }}"
+          echo "::notice title=Tests Passed::Frontend unit tests completed successfully"
+        else
+          echo "❌ Frontend unit tests failed on branch ${{ inputs.branch }}"
+          echo "Check the uploaded artifacts for details"
+          echo "::error title=Tests Failed::Frontend unit tests failed - check artifacts for details"
+        fi

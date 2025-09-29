@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Implement a distributed caching layer using Redis and LazyCache to reduce database load by 60-80% and achieve <200ms response times for 1000+ concurrent users. The solution provides transparent caching integration through repository decorators, CQRS behaviors, and API output caching, with automatic cache invalidation on data mutations and comprehensive monitoring capabilities. Redis serves as the primary distributed cache with automatic fallback to in-memory caching when unavailable.

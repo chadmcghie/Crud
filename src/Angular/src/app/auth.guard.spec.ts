@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot, Route, UrlSegment } from '@angular/router';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, EMPTY } from 'rxjs';
 
 interface User {
   id: string;
@@ -24,6 +24,7 @@ describe('AuthGuard', () => {
       currentUser$: currentUserSubject.asObservable()
     });
     const routerSpy = jasmine.createSpyObj('Router', ['createUrlTree', 'navigate']);
+    routerSpy.events = EMPTY;
 
     TestBed.configureTestingModule({
       providers: [
