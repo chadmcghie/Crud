@@ -204,7 +204,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task EnvironmentSpecificServices_Contract_ShouldBeConfiguredCorrectly(string environment)
+    public Task EnvironmentSpecificServices_Contract_ShouldBeConfiguredCorrectly(string environment)
     {
         _output.WriteLine($"=== VALIDATING ENVIRONMENT-SPECIFIC SERVICES CONTRACT: {environment} ===");
 
@@ -246,6 +246,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         }
 
         _output.WriteLine($"✓ Environment-specific services contract validated for {environment}");
+        return Task.CompletedTask;
     }
 
     [Theory]

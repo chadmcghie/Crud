@@ -132,7 +132,8 @@
       "Bash(dotnet nuget list:*)",
       "Bash(tree:*)",
       "Bash(npx playwright test:*)",
-      "Bash(ng serve:*)"
+      "Bash(ng serve:*)",
+      "Bash(gh workflow run:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",
