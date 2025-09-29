@@ -95,7 +95,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         _output.WriteLine($"✓ Logging configuration contract validated for {environment}");
 
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     [Theory]
