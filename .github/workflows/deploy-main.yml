@@ -189,7 +189,7 @@ jobs:
         echo "🏗️ Building Angular for production config using validated code from PR..."
         echo "NOTE: This is the ONLY rebuild - backend artifacts are reused as-is"
         npm ci
-        npm run build -- --configuration=production --aot --optimization --build-optimizer
+        npm run build -- --configuration=production --optimization
         echo "✅ Frontend built for production configuration"
         
     # Reuse pre-built backend binaries without any rebuild
