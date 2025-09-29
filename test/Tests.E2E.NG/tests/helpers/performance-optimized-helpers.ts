@@ -19,8 +19,10 @@ export class PerformanceOptimizedHelpers {
    * Enhanced with proper authentication and error handling
    */
   async createTestPerson(data?: Partial<TestPerson>): Promise<TestPerson> {
-    // Generate random suffix using letters only (no numbers) for validation compliance
-    const suffix = Math.random().toString(36).substring(2, 8).replace(/[0-9]/g, '');
+    // Generate random suffix using only letters for validation compliance
+    // Validation regex: ^[a-zA-Z\s\-'\.]+$
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const suffix = Array.from({ length: 6 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
     const personData = {
       fullName: data?.fullName || `Test User ${suffix}`,
       phone: data?.phone || '+1-555-0000',

@@ -144,8 +144,8 @@ test.describe('People Management - Serial Tests', () => {
   test(tagTest('should handle validation errors when creating person', 'extended'), async ({ page, baseURL }) => {
     await page.goto(`${baseURL}`);
     
-    // Click People link first
-    const peopleLink = page.locator('a[routerLink="/people-list"]');
+    // Click People link first - use .first() to handle multiple matches
+    const peopleLink = page.locator('a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.waitForSelector('app-people-list', { timeout: 5000 });
     
