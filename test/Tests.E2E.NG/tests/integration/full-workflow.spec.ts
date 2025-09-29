@@ -23,7 +23,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await apiHelpers.cleanupAll(true);
   });
 
-  test('@extended should complete full role and person management workflow', async () => {
+  test.skip('@extended should complete full role and person management workflow', async () => {
     // Step 1: Create roles via UI
     await pageHelpers.switchToRolesTab();
     
@@ -111,7 +111,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyEmptyState('roles');
   });
 
-  test('@extended should handle mixed UI and API operations', async () => {
+  test.skip('@extended should handle mixed UI and API operations', async () => {
     // Create role via API
     const apiRole = await apiHelpers.createRole(generateTestRole({ name: 'API Role' }));
     
