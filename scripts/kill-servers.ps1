@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 # Script to kill API and Angular development servers
+# Cross-platform: Works on Windows, macOS, and Linux
 
 Write-Host "Checking for running servers..." -ForegroundColor Yellow
 
@@ -10,23 +11,43 @@ $angularPort = 4200
 
 $killedProcesses = 0
 
+# Function to find process IDs by port (cross-platform)
+function Get-ProcessByPort {
+    param([int]$Port)
+
+    if ($IsWindows) {
+        # Windows: Use Get-NetTCPConnection
+        $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
+        if ($connections) {
+            return $connections | Select-Object -ExpandProperty OwningProcess -Unique
+        }
+    }
+    else {
+        # macOS/Linux: Use lsof
+        $output = & lsof -ti:$Port 2>$null
+        if ($output) {
+            return $output | ForEach-Object { [int]$_ }
+        }
+    }
+
+    return @()
+}
+
 foreach ($port in ($apiPorts + $angularPort)) {
     Write-Host "`nChecking port $port..." -ForegroundColor Cyan
-    
+
     # Find processes using the port
-    $connections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
-    
-    if ($connections) {
-        $processIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-        
+    $processIds = Get-ProcessByPort -Port $port
+
+    if ($processIds -and $processIds.Count -gt 0) {
         foreach ($processId in $processIds) {
             if ($processId -gt 0) {
                 try {
                     $process = Get-Process -Id $processId -ErrorAction Stop
                     $processName = $process.ProcessName
-                    
+
                     Write-Host "  Found: $processName (PID: $processId) on port $port" -ForegroundColor Yellow
-                    
+
                     # Kill the process
                     Stop-Process -Id $processId -Force -ErrorAction Stop
                     Write-Host "  Killed: $processName (PID: $processId)" -ForegroundColor Green
