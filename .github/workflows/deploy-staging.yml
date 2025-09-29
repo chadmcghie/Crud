@@ -140,13 +140,21 @@ jobs:
         fi
         echo "✅ Staging artifacts verified - ready for smoke tests"
         
+    # Install Angular dependencies (required for webServer)
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for E2E test server..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+
     # Install E2E dependencies
     - name: Install E2E dependencies
       working-directory: ./test/Tests.E2E.NG
       run: |
         npm ci
         npx playwright install --with-deps chromium
-        
+
     # Run smoke tests only - targeting 2 minutes as per issue requirements  
     - name: Run staging-specific smoke tests
       working-directory: ./test/Tests.E2E.NG
