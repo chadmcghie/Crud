@@ -1,12 +1,13 @@
 ---
 id: BI-2025-09-10-001
-status: active
+status: resolved
 category: test
 severity: high
 created: 2025-09-10 15:30
-resolved: 
+resolved: 2025-09-29
 spec: e2e-testing
 task: staging-deployment-validation
+resolution: Resolved by elimination of staging branch and implementation of 3-stage pipeline (dev → main). See spec: 2025-09-29-branch-deployment-strategy
 ---
 
 # E2E Test Failures in Staging Deployment Pipeline
@@ -114,3 +115,21 @@ None available - deployment pipeline blocked
 - Pull Request: #176
 - Staging deployment validation failure
 - Spec: E2E testing framework (playwright configuration)
+
+## Resolution (2025-09-29)
+
+This issue was **definitively resolved** by implementing a 3-stage CI/CD pipeline that eliminates the staging branch entirely.
+
+**Resolution Approach**:
+- Implemented 3-stage pipeline: feature → dev → main
+- Eliminated staging branch from repository (deleted both local and remote)
+- Renamed deploy-staging.yml to deploy-dev.yml
+- Created new deploy-production.yml for main branch
+- Updated all documentation to reflect 3-stage model
+
+**Why This Resolves the Issue**:
+Since the staging branch and staging deployment workflow no longer exist, the E2E test failures specific to staging deployment are no longer possible. The dev environment now runs the full E2E suite, and production runs smoke tests only.
+
+**Specification**: See `docs/03-Development/specs/2025-09-29-branch-deployment-strategy/`
+**GitHub Issue**: #258
+**Pull Request**: #261

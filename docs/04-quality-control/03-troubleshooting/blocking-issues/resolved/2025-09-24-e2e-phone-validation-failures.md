@@ -3,9 +3,10 @@
 ## Issue Summary
 **ID**: BI-2025-09-24-002
 **Created**: 2025-09-24
+**Resolved**: 2025-09-25
 **Severity**: MEDIUM
 **Category**: Validation
-**Status**: ACTIVE
+**Status**: RESOLVED
 
 ## Description
 E2E tests are failing when creating people with phone numbers that should be valid. The API returns 400 Bad Request with validation errors for phone number format, even when using properly formatted phone numbers.
@@ -63,3 +64,9 @@ From test helpers, common formats used:
 
 ## Context
 This issue emerged after resolving E2E navigation issues, revealing data validation problems that were previously masked by navigation failures.
+
+## Resolution (2025-09-25)
+
+Resolved as part of comprehensive E2E test ecosystem fix (**BI-2025-09-25-001**).
+
+**Evidence**: E2E smoke tests 45/45 passing, including tests that create people with phone numbers.
