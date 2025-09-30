@@ -10,7 +10,9 @@ using App;
 using Infrastructure;
 using Infrastructure.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -407,7 +409,7 @@ namespace Api
                 });
 
                 builder.Services.AddHealthChecks()
-                    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready" });
+                    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready", "live" });
 
                 builder.Services.AddAutoMapper(
                     cfg => { },
@@ -457,10 +459,22 @@ namespace Api
                 // to avoid conflicts with response streaming
 
                 app.MapControllers();
-                app.MapHealthChecks("/health/system");
-                app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+
+                // Health check endpoints following Kubernetes liveness/readiness pattern
+                app.MapHealthChecks("/health", new HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("live")
+                });
+
+                app.MapHealthChecks("/health/ready", new HealthCheckOptions
                 {
                     Predicate = check => check.Tags.Contains("ready")
+                });
+
+                app.MapHealthChecks("/health/detailed", new HealthCheckOptions
+                {
+                    Predicate = _ => true,
+                    ResponseWriter = WriteDetailedHealthResponse
                 });
 
                 Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
@@ -484,6 +498,42 @@ namespace Api
             {
                 Log.CloseAndFlush();
             }
+        }
+
+        /// <summary>
+        /// Custom response writer for detailed health check endpoint
+        /// Provides comprehensive diagnostic information including environment, database provider, and application metadata
+        /// </summary>
+        private static Task WriteDetailedHealthResponse(HttpContext context, HealthReport report)
+        {
+            context.Response.ContentType = "application/json";
+
+            var environment = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+
+            var result = JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                environment = environment.EnvironmentName,
+                databaseProvider = configuration["DatabaseProvider"] ?? "SQLite",
+                timestamp = DateTime.UtcNow.ToString("O"),
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    duration = e.Value.Duration.TotalMilliseconds,
+                    description = e.Value.Description,
+                    exception = e.Value.Exception?.Message
+                }),
+                application = new
+                {
+                    name = "CRUD API",
+                    version = "1.0.0",
+                    framework = ".NET 8"
+                }
+            }, new JsonSerializerOptions { WriteIndented = true });
+
+            return context.Response.WriteAsync(result);
         }
     }
 }

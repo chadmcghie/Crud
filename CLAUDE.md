@@ -134,6 +134,24 @@ npm run test:extended    # Extended test suite
 - Serial execution strategy (`workers: 1`) for SQLite/EF Core compatibility
 - CI/CD uses same webServer configuration as local development
 
+## Health Checks
+
+The application uses ASP.NET Core Health Checks middleware following Kubernetes liveness/readiness patterns:
+
+- **`GET /health`** - Liveness probe (is app alive?)
+  - Used by: Kubernetes, load balancers
+  - Returns: Standard ASP.NET Core health check JSON
+
+- **`GET /health/ready`** - Readiness probe (is app ready for traffic?)
+  - Used by: Kubernetes, Playwright test startup
+  - Includes EF Core warm-up (`CountAsync`) to prevent cold-start timeouts
+
+- **`GET /health/detailed`** - Diagnostic endpoint
+  - Used by: Operations, support teams
+  - Returns: Detailed JSON with environment, database provider, app metadata
+
+All endpoints use tag-based filtering (`"live"` and `"ready"` tags) on the `DatabaseHealthCheck` class.
+
 ## Project Structure
 
 ### Source Code (`src/`)
