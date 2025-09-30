@@ -407,7 +407,7 @@ namespace Api
                 });
 
                 builder.Services.AddHealthChecks()
-                    .AddCheck<DatabaseHealthCheck>("database");
+                    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready" });
 
                 builder.Services.AddAutoMapper(
                     cfg => { },
@@ -458,6 +458,10 @@ namespace Api
 
                 app.MapControllers();
                 app.MapHealthChecks("/health/system");
+                app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("ready")
+                });
 
                 Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
                 Log.Information("🔍 STARTUP DEBUG: Listening URLs will be: {Urls}", string.Join(", ", app.Urls));

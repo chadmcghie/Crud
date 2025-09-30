@@ -1,7 +1,8 @@
 # BI-2025-09-23-012: E2E Test TypeError During Teardown
 
 **Created**: 2025-09-23 17:05
-**Status**: ACTIVE
+**Resolved**: 2025-09-25
+**Status**: RESOLVED
 **Priority**: LOW
 **Category**: E2E Testing, Test Infrastructure
 **Affects**: Playwright E2E Tests

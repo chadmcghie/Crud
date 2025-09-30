@@ -62,7 +62,7 @@ export default defineConfig({
       // API Server configuration - simplified for better CI compatibility
       command: 'dotnet run --project ../../src/Api/Api.csproj --launch-profile testing',
       cwd: process.cwd(),
-      url: 'http://localhost:5172/health',
+      url: 'http://localhost:5172/health/ready',  // Use readiness endpoint to ensure EF Core is warmed up
       timeout: isCI ? 120 * 1000 : 90 * 1000, // More time for CI environment
       reuseExistingServer: !isCI, // Reuse locally, fresh in CI
       stdout: 'ignore', // Suppress output, check logs on failure

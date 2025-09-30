@@ -1,4 +1,5 @@
 using Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Api.HealthChecks;
@@ -20,11 +21,16 @@ public class DatabaseHealthCheck : IHealthCheck
         try
         {
             await _dbContext.Database.CanConnectAsync(cancellationToken);
-            return HealthCheckResult.Healthy("Database connection is healthy");
+
+            // Warm up EF Core by forcing model compilation
+            // This ensures write operations are ready before tests begin
+            _ = await _dbContext.People.CountAsync(cancellationToken);
+
+            return HealthCheckResult.Healthy("Database ready for operations");
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("Database connection failed", ex);
+            return HealthCheckResult.Unhealthy("Database not ready", ex);
         }
     }
 }

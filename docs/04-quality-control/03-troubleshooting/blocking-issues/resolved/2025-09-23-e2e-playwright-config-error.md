@@ -1,13 +1,14 @@
 ---
 id: BI-2025-09-23-006
-status: superseded
+status: resolved
 category: test
 severity: high
 created: 2025-09-23 16:50
-resolved:
+resolved: 2025-09-23
 superseded_by: BI-2025-09-23-008
 spec: integration-test-troubleshooting
 task: categorize-remaining-test-failures - SUPERSEDED by more specific E2E TypeError issue
+resolution: Superseded by BI-2025-09-23-008 which provided more specific diagnosis of the TypeError issue
 ---
 
 # E2E Test Configuration Error - Playwright Cannot Start

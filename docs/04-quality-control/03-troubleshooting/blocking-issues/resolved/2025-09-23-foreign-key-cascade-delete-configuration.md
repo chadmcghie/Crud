@@ -2,7 +2,7 @@
 
 **Created**: 2025-09-23 22:23
 **Status**: OPEN
-**Priority**: MEDIUM
+**Priority**: HIGH
 **Category**: Database Design, Integration Testing, Data Integrity
 **Affects**: Foreign Key Constraint Tests, Person-Role Relationships
 
