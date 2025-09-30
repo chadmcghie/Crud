@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Establish a clear 3-stage CI/CD pipeline (feature → dev → main) where branch names match environment names (dev branch = dev environment, main branch = production). Update deployment workflows to run comprehensive E2E testing on dev environment and create missing production deployment workflow, eliminating the unused staging branch and updating all documentation to reflect the actual implementation.
