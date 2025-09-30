@@ -1,8 +1,8 @@
-name: Deploy to Staging
+name: Deploy to Production
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
   workflow_dispatch:  # Allow manual trigger
 
 env:
@@ -27,11 +27,11 @@ jobs:
           echo "⏭️ Skipping deployment - Copilot commit detected"
         else
           echo "should-deploy=true" >> $GITHUB_OUTPUT
-          echo "✅ Proceeding with staging deployment"
+          echo "✅ Proceeding with production deployment"
         fi
 
-  build-staging:
-    name: Build for Staging (Once)
+  build-production:
+    name: Build for Production (Once)
     runs-on: ubuntu-latest
     needs: check-commit
     if: needs.check-commit.outputs.should-deploy == 'true'
@@ -56,66 +56,66 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
 
-    - name: Build backend for staging (Testing config)
+    - name: Build backend for production (Release config)
       run: |
-        echo "🏗️ Building backend for staging with Testing configuration..."
+        echo "🏗️ Building backend for production with Release configuration..."
         dotnet restore solutions/Crud.sln
         dotnet build solutions/Crud.sln --no-restore --configuration Release
-        echo "✅ Backend build completed for staging environment"
+        echo "✅ Backend build completed for production"
 
     - name: Install Angular dependencies
       working-directory: ./src/Angular
       run: |
-        echo "📦 Installing Angular dependencies for staging build..."
+        echo "📦 Installing Angular dependencies for production build..."
         npm ci
         echo "✅ Angular dependencies installed"
 
-    - name: Build Angular for staging
+    - name: Build Angular for production
       working-directory: ./src/Angular
       run: |
-        echo "🏗️ Building Angular for staging configuration..."
-        npm run build -- --configuration=staging
-        echo "✅ Angular built for staging configuration"
+        echo "🏗️ Building Angular for production configuration..."
+        npm run build -- --configuration=production
+        echo "✅ Angular built for production with optimization"
 
-    - name: Create staging artifacts
+    - name: Create production artifacts
       id: create-artifacts
       run: |
-        echo "📦 Creating staging build artifacts..."
+        echo "📦 Creating production build artifacts..."
 
-        # Create version info for staging environment
-        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"staging\"}" > version.json
-        echo "📋 Version info for staging:"
+        # Create version info for production environment
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"production\"}" > version.json
+        echo "📋 Version info for production:"
         cat version.json
 
         echo "created=true" >> $GITHUB_OUTPUT
-        echo "✅ Staging artifacts prepared"
+        echo "✅ Production artifacts prepared"
 
-    - name: Upload staging build artifacts
+    - name: Upload production build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: staging-build-${{ github.sha }}
+        name: production-build-${{ github.sha }}
         path: |
           src/*/bin/Release/
           test/*/bin/Release/
           src/Api/appsettings*.json
           src/Angular/dist/
           version.json
-        retention-days: 7
+        retention-days: 30  # Longer retention for production
 
-  staging-smoke-tests:
-    name: Staging Smoke Tests (Using Build Artifacts)
+  production-smoke-tests:
+    name: Production Smoke Tests (Using Build Artifacts)
     runs-on: ubuntu-latest
-    needs: [check-commit, build-staging]
-    if: needs.check-commit.outputs.should-deploy == 'true' && needs.build-staging.outputs.artifacts-created == 'true'
+    needs: [check-commit, build-production]
+    if: needs.check-commit.outputs.should-deploy == 'true' && needs.build-production.outputs.artifacts-created == 'true'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download staging build artifacts
+    - name: Download production build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: staging-build-${{ github.sha }}
+        name: production-build-${{ github.sha }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -131,15 +131,15 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
 
-    - name: Verify staging artifacts
+    - name: Verify production artifacts
       run: |
-        echo "📋 Using staging build artifacts (no rebuild)..."
+        echo "📋 Using production build artifacts (no rebuild)..."
         if [ -f "version.json" ]; then
-          echo "Staging artifact version:"
+          echo "Production artifact version:"
           cat version.json | jq .
         fi
-        echo "✅ Staging artifacts verified - ready for smoke tests"
-        
+        echo "✅ Production artifacts verified - ready for smoke tests"
+
     # Install Angular dependencies (required for webServer)
     - name: Install Angular dependencies
       working-directory: ./src/Angular
@@ -155,134 +155,134 @@ jobs:
         npm ci
         npx playwright install --with-deps chromium
 
-    # Run smoke tests only - targeting 2 minutes as per issue requirements  
-    - name: Run staging-specific smoke tests
+    # Run smoke tests only - comprehensive testing already done in dev
+    - name: Run production smoke tests
       working-directory: ./test/Tests.E2E.NG
       run: |
-        echo "🚀 Running staging smoke tests using staging build artifacts..."
-        echo "Targeting ~2 minutes with Testing configuration"
-        npm run test:smoke  # Instead of full suite
+        echo "🚀 Running production smoke tests..."
+        echo "Quick validation - targeting ~2-3 minutes (full suite already passed in dev)"
+        npm run test:smoke  # Smoke tests only
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
         DatabaseProvider: SQLite
         TEST_RESET_TOKEN: test-only-token
-        TEST_RUN_ID: staging-${{ github.run_id }}-${{ github.run_number }}
-        
-    - name: Upload staging test results
+        TEST_RUN_ID: production-${{ github.run_id }}-${{ github.run_number }}
+
+    - name: Upload production test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: staging-smoke-tests-${{ github.sha }}
+        name: production-smoke-test-results-${{ github.sha }}
         path: |
           test/Tests.E2E.NG/playwright-report/
           test/Tests.E2E.NG/test-results/
-        retention-days: 7
+        retention-days: 30  # Longer retention for production
 
-  prepare-staging-artifacts:
-    name: Prepare Staging Deployment Artifacts (Using Build Artifacts)
+  prepare-production-artifacts:
+    name: Prepare Production Deployment Artifacts (Using Build Artifacts)
     runs-on: ubuntu-latest
-    needs: [build-staging, staging-smoke-tests]
-    if: needs.staging-smoke-tests.result == 'success' && needs.build-staging.outputs.artifacts-created == 'true'
+    needs: [build-production, production-smoke-tests]
+    if: needs.production-smoke-tests.result == 'success' && needs.build-production.outputs.artifacts-created == 'true'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download staging build artifacts
+    - name: Download production build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: staging-build-${{ github.sha }}
+        name: production-build-${{ github.sha }}
 
-    - name: Verify staging artifacts for deployment
+    - name: Verify production artifacts for deployment
       run: |
-        echo "📦 Using staging build artifacts for deployment (no rebuild)..."
+        echo "📦 Using production build artifacts for deployment (no rebuild)..."
         if [ -f "version.json" ]; then
           echo "📋 Deployment artifact version:"
           cat version.json | jq .
         fi
-        echo "✅ Staging artifacts verified for deployment preparation"
+        echo "✅ Production artifacts verified for deployment preparation"
 
-    - name: Verify Angular staging build
+    - name: Verify Angular production build
       run: |
-        echo "📋 Verifying Angular staging build from artifacts..."
+        echo "📋 Verifying Angular production build from artifacts..."
         if [ -d "src/Angular/dist" ]; then
-          echo "✅ Angular staging build found in artifacts"
+          echo "✅ Angular production build found in artifacts"
           ls -la src/Angular/dist/
         else
-          echo "❌ Angular staging build not found in artifacts!"
+          echo "❌ Angular production build not found in artifacts!"
           exit 1
         fi
 
-    - name: Package backend for staging (using artifacts)
+    - name: Package backend for production (using artifacts)
       run: |
-        echo "📦 Packaging backend from staging artifacts (no rebuild)..."
+        echo "📦 Packaging backend from production artifacts (no rebuild)..."
 
         # Package the pre-built backend from artifacts
-        mkdir -p ./staging-backend
-        cp -r src/Api/bin/Release/net8.0/* ./staging-backend/
+        mkdir -p ./production-backend
+        cp -r src/Api/bin/Release/net8.0/* ./production-backend/
 
         # Copy appsettings files
         if [ -f "src/Api/appsettings.json" ]; then
-          cp src/Api/appsettings*.json ./staging-backend/
-          echo "✅ Appsettings files copied to staging package"
+          cp src/Api/appsettings*.json ./production-backend/
+          echo "✅ Appsettings files copied to production package"
         fi
 
-        # Create version info for staging environment
-        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"staging\"}" > ./staging-backend/version.json
-        echo "📋 Version info for staging:"
-        cat ./staging-backend/version.json
+        # Create version info for production environment
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"production\"}" > ./production-backend/version.json
+        echo "📋 Version info for production:"
+        cat ./production-backend/version.json
 
-        cd ./staging-backend
-        zip -r ../staging-api.zip .
+        cd ./production-backend
+        zip -r ../production-api.zip .
         cd ..
-        echo "✅ Backend packaged for staging deployment"
-        
+        echo "✅ Backend packaged for production deployment"
+
     - name: Package frontend (using artifacts)
       run: |
-        echo "📦 Packaging frontend from staging artifacts (no rebuild)..."
+        echo "📦 Packaging frontend from production artifacts (no rebuild)..."
         cd ./src/Angular/dist
-        zip -r ../../../staging-frontend.zip .
+        zip -r ../../../production-frontend.zip .
         cd ../../..
-        echo "✅ Frontend packaged from staging artifacts"
-        
-    - name: Upload staging artifacts
+        echo "✅ Frontend packaged from production artifacts"
+
+    - name: Upload production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: staging-artifacts-${{ github.sha }}
+        name: production-artifacts-${{ github.sha }}
         path: |
-          staging-api.zip
-          staging-frontend.zip
-        retention-days: 7
+          production-api.zip
+          production-frontend.zip
+        retention-days: 30  # Longer retention for production
 
-  deploy-staging:
-    name: Deploy to Staging Environment
+  deploy-production:
+    name: Deploy to Production Environment
     runs-on: ubuntu-latest
-    needs: prepare-staging-artifacts
+    needs: prepare-production-artifacts
     environment:
-      name: staging
+      name: production
       url: ${{ steps.deploy.outputs.url }}
-    
+
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: staging-artifacts-${{ github.sha }}
-        
+        name: production-artifacts-${{ github.sha }}
+
     # ====================================
-    # Staging Deployment
+    # Production Deployment
     # ====================================
     # Configure deployment based on your hosting platform
     # Uncomment and modify the appropriate section below:
-    
+
     # --- Option 1: Azure App Service ---
     # - name: Deploy to Azure Web App
     #   uses: azure/webapps-deploy@v2
     #   with:
-    #     app-name: 'your-app-staging'
-    #     publish-profile: ${{ secrets.AZURE_STAGING_PUBLISH_PROFILE }}
-    #     package: staging-api.zip
-    
+    #     app-name: 'your-app-production'
+    #     publish-profile: ${{ secrets.AZURE_PRODUCTION_PUBLISH_PROFILE }}
+    #     package: production-api.zip
+
     # --- Option 2: AWS Elastic Beanstalk ---
     # - name: Deploy to AWS EB
     #   uses: einaregilsson/beanstalk-deploy@v21
@@ -290,45 +290,45 @@ jobs:
     #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
     #     aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     #     application_name: your-app
-    #     environment_name: your-app-staging
+    #     environment_name: your-app-production
     #     version_label: ${{ github.sha }}
     #     region: us-east-1
-    #     deployment_package: staging-api.zip
-    
+    #     deployment_package: production-api.zip
+
     # --- Option 3: Docker/Kubernetes ---
     # - name: Build and push Docker image
     #   run: |
-    #     docker build -t your-registry/your-app:staging-${{ github.sha }} .
-    #     docker push your-registry/your-app:staging-${{ github.sha }}
+    #     docker build -t your-registry/your-app:${{ github.sha }} .
+    #     docker push your-registry/your-app:${{ github.sha }}
     # - name: Deploy to Kubernetes
     #   run: |
-    #     kubectl set image deployment/your-app your-app=your-registry/your-app:staging-${{ github.sha }} -n staging
-    
+    #     kubectl set image deployment/your-app your-app=your-registry/your-app:${{ github.sha }} -n production
+
     # --- Option 4: IIS/Windows Server (self-hosted runner) ---
     # - name: Deploy to IIS
     #   run: |
-    #     Stop-WebSite -Name "YourApp-Staging"
-    #     Expand-Archive -Path staging-api.zip -DestinationPath C:\inetpub\staging\api -Force
-    #     Expand-Archive -Path staging-frontend.zip -DestinationPath C:\inetpub\staging\www -Force
-    #     Start-WebSite -Name "YourApp-Staging"
-    
+    #     Stop-WebSite -Name "YourApp-Production"
+    #     Expand-Archive -Path production-api.zip -DestinationPath C:\inetpub\www\api -Force
+    #     Expand-Archive -Path production-frontend.zip -DestinationPath C:\inetpub\www\www -Force
+    #     Start-WebSite -Name "YourApp-Production"
+
     # --- Default: Placeholder for manual configuration ---
-    - name: Deploy to staging
+    - name: Deploy to production environment
       id: deploy
       run: |
-        echo "🚀 Deploying to staging environment..."
+        echo "🚀 Deploying to production environment..."
         echo "Version: ${{ github.sha }}"
         # Replace this section with actual deployment commands
         # Example: Copy files to server, restart services, etc.
-        echo "url=https://staging.your-app.com" >> $GITHUB_OUTPUT
-        
+        echo "url=https://your-app.com" >> $GITHUB_OUTPUT
+
     - name: Verify deployment health
       run: |
-        echo "🏥 Checking staging deployment health..."
-        # Uncomment and modify for your staging URL:
+        echo "🏥 Checking production deployment health..."
+        # Uncomment and modify for your production URL:
         # curl -f ${{ steps.deploy.outputs.url }}/health || exit 1
-        echo "✅ Staging deployment healthy"
-        
+        echo "✅ Production deployment healthy"
+
     - name: Run post-deployment tests
       run: |
         echo "🧪 Running post-deployment smoke tests..."
@@ -338,36 +338,41 @@ jobs:
   notify-deployment:
     name: Notify Deployment Status
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: deploy-production
     if: always()
-    
+
     steps:
     - name: Create deployment summary
       run: |
-        echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ${{ needs.deploy-staging.result == 'success' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ needs.deploy-production.result == 'success' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
         echo "- **Version**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Workflow run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
-          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "1. Test the staging environment" >> $GITHUB_STEP_SUMMARY
-          echo "2. Get stakeholder approval" >> $GITHUB_STEP_SUMMARY
-          echo "3. Create PR from \`dev\` → \`main\` for production deployment" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+          echo "### ✅ Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Monitor application metrics and error rates" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify critical user flows in production" >> $GITHUB_STEP_SUMMARY
+          echo "3. Keep previous version available for quick rollback if needed" >> $GITHUB_STEP_SUMMARY
         else
-          echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
-          echo "The staging deployment failed. Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+          echo "### ❌ Production Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**⚠️ CRITICAL: Production deployment failed**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs and initiate rollback procedures if necessary." >> $GITHUB_STEP_SUMMARY
         fi
-        
+
     # --- Notification Options ---
     # Uncomment and configure the appropriate notification method:
-    
+
     # Option 1: Slack notification
     # - name: Notify Slack
     #   if: always()
@@ -375,12 +380,12 @@ jobs:
     #   with:
     #     status: ${{ job.status }}
     #     text: |
-    #       Staging Deployment ${{ job.status == 'success' && '✅' || '❌' }}
+    #       Production Deployment ${{ job.status == 'success' && '✅' || '❌' }}
     #       Version: ${{ github.sha }}
-    #       Environment: Staging
+    #       Environment: Production
     #       Deployed by: ${{ github.actor }}
     #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-    
+
     # Option 2: Microsoft Teams notification
     # - name: Notify Teams
     #   if: always()
@@ -388,9 +393,9 @@ jobs:
     #   with:
     #     github-token: ${{ github.token }}
     #     ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK }}
-    #     notification-summary: Staging Deployment ${{ job.status }}
+    #     notification-summary: Production Deployment ${{ job.status }}
     #     notification-color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
-    
+
     # Option 3: Email notification
     # - name: Send email notification
     #   if: always()
@@ -400,11 +405,11 @@ jobs:
     #     server_port: 465
     #     username: ${{ secrets.EMAIL_USERNAME }}
     #     password: ${{ secrets.EMAIL_PASSWORD }}
-    #     subject: Staging Deployment ${{ job.status }} - ${{ github.sha }}
+    #     subject: Production Deployment ${{ job.status }} - ${{ github.sha }}
     #     to: devops@your-company.com
     #     from: GitHub Actions
     #     body: |
-    #       Staging deployment has ${{ job.status }}.
+    #       Production deployment has ${{ job.status }}.
     #       Version: ${{ github.sha }}
     #       Deployed by: ${{ github.actor }}
     #       View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -413,5 +418,5 @@ jobs:
     #   uses: 8398a7/action-slack@v3
     #   with:
     #     status: ${{ job.status }}
-    #     text: 'Staging deployment ${{ needs.deploy-staging.result }}'
+    #     text: 'Production deployment ${{ needs.deploy-production.result }}'
     #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}

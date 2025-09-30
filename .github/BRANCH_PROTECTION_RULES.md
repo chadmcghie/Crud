@@ -4,16 +4,15 @@ This document outlines the recommended branch protection rules for the CI/CD pip
 
 ## Branch Structure
 
-- **`dev`** - Default branch, integration branch for features
-- **`staging`** - Pre-production branch, full E2E testing environment
-- **`main`** - Production branch, requires management approval
+- **`dev`** - Default branch, integration branch for features, deploys to dev environment
+- **`main`** - Production branch, requires management approval, deploys to production
 - **`feature/*`** - Feature development branches
-- **`bugfix/*`** - Bug fix branches  
+- **`bugfix/*`** - Bug fix branches
 - **`hotfix/*`** - Emergency production fixes
 
 ## Branch Flow
 
-The strict branch flow is: `feature/bugfix → dev → staging → main`
+The strict branch flow is: `feature/bugfix → dev → main`
 
 - Direct commits to protected branches are **prohibited**
 - All changes must go through pull requests
@@ -40,40 +39,17 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
   - `Backend Integration Tests`
   - ❌ ~~`Backend Unit Tests`~~ **REMOVED** - Unit tests run at feature level for immediate feedback
   - ❌ ~~`Frontend Unit Tests`~~ **REMOVED** - Unit tests run at feature level for immediate feedback
-  - ❌ ~~`End-to-End Tests`~~ **REMOVED** - E2E tests run during staging deployment
+  - ❌ ~~`End-to-End Tests`~~ **REMOVED** - E2E tests run during dev environment deployment
 
 **Note:** Unit and E2E tests are intentionally excluded from dev branch requirements because:
 - **Unit tests** run at feature level for immediate feedback (2-3 minutes)
-- **E2E tests** run during staging deployment for comprehensive validation
+- **E2E tests** run during dev environment deployment for comprehensive validation
 - **PRs to `dev`** focus on integration tests and code quality checks
 - This provides faster PR feedback while maintaining comprehensive testing
 
 **Additional settings**
 - ✅ Require conversation resolution before merging
 - ✅ Require signed commits (optional, for enhanced security)
-- ✅ Include administrators
-- ✅ Allow force pushes → **Disabled**
-- ✅ Allow deletions → **Disabled**
-
-### For `staging` branch:
-
-1. Go to Settings → Branches → Add rule
-2. Branch name pattern: `staging`
-3. Configure these settings:
-
-**Protect matching branches**
-- ✅ Require a pull request before merging
-  - ✅ Require approvals: **1**
-  - ✅ Dismiss stale pull request approvals when new commits are pushed
-  
-**Require status checks to pass before merging**
-- ✅ Require branches to be up to date before merging
-- Select these required status checks:
-  - `PR Validation Summary`
-  - `Validate PR Source Branch` (from enforce-branch-flow.yml)
-
-**Additional settings**
-- ✅ Require conversation resolution before merging
 - ✅ Include administrators
 - ✅ Allow force pushes → **Disabled**
 - ✅ Allow deletions → **Disabled**
@@ -123,41 +99,37 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
    - Push commits triggers `feature-branch-tests.yml` (quick tests)
    
 3. **Create PR to `dev`**
-   - Triggers `pr-validation.yml` (smoke tests for quick feedback)
+   - Triggers `pr-to-dev.yml` (integration + smoke tests)
    - Requires 1 approval
-   - All smoke tests must pass
+   - All tests must pass
 
 4. **After merge to `dev`**
-   - Triggers `deploy-staging.yml`
+   - Triggers `deploy-dev.yml`
    - Runs full E2E test suite
-   - Automatically deploys to staging environment
+   - Automatically deploys to dev environment
 
 ### Release Workflow
 
-1. **Staging validation**
-   - Full E2E tests run automatically in staging
-   - Team validates features in staging environment
-   
-2. **Create PR from `dev` to `staging`**
-   - Requires 1 approval
-   - Branch flow validation ensures PR is from `dev`
-   - All staging tests must have passed
+1. **Dev environment validation**
+   - Full E2E tests run automatically in dev environment
+   - Team validates features in dev environment
 
-3. **Create PR from `staging` to `main`**
+2. **Create PR from `dev` to `main`**
    - Requires 2 approvals (including management)
-   - Branch flow validation ensures PR is from `staging`
-   - Triggers final production tests
+   - Branch flow validation ensures PR is from `dev`
+   - Triggers production readiness validation
 
-4. **After merge to `main`**
+3. **After merge to `main`**
    - Triggers `deploy-production.yml`
    - Requires environment approval (production-approval gate)
    - Deploys to production
+   - Runs post-deployment smoke tests
 
 ## Environment Protection Rules
 
 ### In GitHub Settings → Environments:
 
-**staging**
+**dev**
 - No required reviewers (automated deployment)
 - Can deploy from `dev` branch only
 - Runs full E2E test suite automatically
@@ -175,12 +147,11 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
 
 | Event | Workflow | Purpose | Tests Run |
 |-------|----------|---------|-----------|
-| Push to `feature/*` | feature-branch-tests.yml | Quick validation | Unit tests |
-| PR to `dev` or `main` | pr-validation.yml | PR validation | Smoke tests (~2-5 min) |
-| PR to `staging` or `main` | enforce-branch-flow.yml | Branch flow enforcement | N/A - validation only |
-| Push to `dev` | deploy-staging.yml | Deploy to staging | Full E2E suite |
-| Push to `staging` | N/A | No auto-deploy | Tests already passed |
-| Push to `main` | deploy-production.yml | Deploy to production | Final smoke tests |
+| Push to `feature/*` | feature-branch.yml | Quick validation | Unit tests |
+| PR to `dev` | pr-to-dev.yml | PR validation | Integration + smoke E2E (~5-10 min) |
+| Push to `dev` | deploy-dev.yml | Deploy to dev environment | Full E2E suite (~15-20 min) |
+| PR to `main` | pr-to-main.yml | Production readiness | Integration + critical E2E (~10-15 min) |
+| Push to `main` | deploy-production.yml | Deploy to production | Smoke tests + health checks (~2-5 min) |
 
 ## Testing Strategy
 
@@ -190,20 +161,20 @@ The strict branch flow is: `feature/bugfix → dev → staging → main`
    - Quick unit tests on push
    - Developer gets fast feedback
 
-2. **Pull Request to Dev** 
-   - Smoke tests only (~2-5 minutes)
+2. **Pull Request to Dev**
+   - Integration + smoke E2E tests (~5-10 minutes)
    - Fast PR validation
    - Prevents broken code from entering dev
 
-3. **Dev to Staging** (automatic on merge)
-   - Full E2E test suite
-   - Complete validation in staging environment
-   - Real-world integration testing
+3. **Dev Environment Deployment** (automatic on merge to dev)
+   - Full E2E test suite (~15-20 minutes)
+   - Complete validation in dev environment
+   - Comprehensive pre-production testing
 
-4. **Staging to Production** (via main)
-   - Tests already passed in staging
-   - Final smoke tests for safety
-   - Management approval required
+4. **Production Deployment** (automatic on merge to main)
+   - Tests already passed in dev
+   - Post-deployment smoke tests for safety
+   - Health checks and monitoring validation
 
 ## Security Considerations
 
@@ -250,7 +221,7 @@ git commit -S -m "Your signed commit message"
 **Verification:**
 - Signed commits show "Verified" badge on GitHub
 - Required for `main` branch (recommended)
-- Optional but encouraged for `staging`
+- Optional but encouraged for `dev`
 
 ### 3. Audit Trail
 - All deployments are logged in GitHub Actions
@@ -259,8 +230,8 @@ git commit -S -m "Your signed commit message"
 
 ## Rollback Procedures
 
-1. **Staging Rollback**
-   - Re-run previous successful staging deployment
+1. **Dev Environment Rollback**
+   - Re-run previous successful dev deployment
    - Or push fix to `dev` branch
 
 2. **Production Rollback**
@@ -278,12 +249,13 @@ Configure these notifications:
 ## Next Steps
 
 1. **Configure branch protection rules in GitHub**
-   - Apply rules for `dev`, `staging`, and `main` branches
+   - Apply rules for `dev` and `main` branches
    - Enable "Include administrators" to enforce rules for everyone
    - Set up required status checks
+   - Remove branch protection from unused `staging` branch (if present)
 
 2. **Set up environment protection rules**
-   - Configure staging and production environments
+   - Configure dev and production environments
    - Add required reviewers for production
 
 3. **Set up GPG signing (optional but recommended)**
@@ -305,5 +277,5 @@ Configure these notifications:
 
 7. **Test the complete pipeline**
    - Create a sample feature branch
-   - Follow the complete flow: feature → dev → staging → main
+   - Follow the complete flow: feature → dev → main
    - Verify all protections and tests work as expected
