@@ -13,6 +13,28 @@ This is a multi-platform CRUD application using Clean Architecture with:
 - **Layers**: Domain → App → Infrastructure → Api → UI (Angular/MAUI)
 - **Ports**: API runs on 5172 (HTTP) and 7268 (HTTPS), Angular on 4200
 
+## Branch and Deployment Strategy
+
+This project uses a 3-stage pipeline:
+- **Feature branches** (`feature/*`, `bugfix/*`, `hotfix/*`) → Development work, no deployment
+- **dev branch** → Deploys to dev environment (dev.your-app.com)
+- **main branch** → Deploys to production (your-app.com)
+
+### Deployment Triggers
+- Merge to `dev` → Triggers `deploy-dev.yml` → Deploys to dev environment → Runs full E2E suite
+- Merge to `main` → Triggers `deploy-production.yml` → Deploys to production → Runs smoke tests
+
+### Testing Strategy
+
+Test distribution across the pipeline:
+- **Feature branches**: Unit tests only (~3-5 min)
+- **PR to dev**: Integration + smoke E2E tests (~5-10 min)
+- **Dev deployment**: Full E2E test suite (~15-20 min)
+- **PR to main**: Production readiness validation (~10-15 min)
+- **Production deployment**: Smoke tests + health checks (~2-5 min)
+
+See @docs/03-Development/specs/2025-09-29-branch-deployment-strategy/ for complete specification.
+
 ## Key Commands
 
 ### Development

@@ -32,8 +32,8 @@ Before starting development:
 | `feature/*` | New features | `dev` | `dev` |
 | `bugfix/*` | Bug fixes | `dev` | `dev` |
 | `hotfix/*` | Emergency fixes | `main` | `main` & `dev` |
-| `dev` | Integration branch | - | `main` |
-| `main` | Production branch | - | - |
+| `dev` | Integration branch, deploys to dev environment | - | `main` |
+| `main` | Production branch, deploys to production | - | - |
 
 ### Creating a Feature Branch
 
@@ -217,38 +217,41 @@ Brief description of changes
 
 **After Merge**:
 - Branch auto-deleted (if configured)
-- Triggers `deploy-staging.yml`
-- Auto-deploys to staging environment
+- Triggers `deploy-dev.yml`
+- Auto-deploys to dev environment
+- Runs full E2E test suite
 
-## Working with Staging
+## Working with Dev Environment
 
-### Staging Deployment
+### Dev Environment Deployment
 
 After merging to `dev`:
-1. Staging deployment starts automatically
-2. Takes 5-10 minutes
-3. Available at: `https://staging.your-app.com`
+1. Dev environment deployment starts automatically
+2. Takes 20-30 minutes (includes full E2E test suite)
+3. Available at: `https://dev.your-app.com`
 
-### Testing in Staging
+### Testing in Dev Environment
 
 **Verification Steps**:
-1. Test new features
-2. Verify integrations
-3. Check performance
-4. Review with stakeholders
+1. Automated full E2E test suite runs first
+2. Manual testing of new features
+3. Verify integrations
+4. Check performance
+5. Review with stakeholders before promoting to production
 
 ### Reporting Issues
 
-If issues found in staging:
+If issues found in dev environment:
 1. Create bugfix branch from `dev`
 2. Fix the issue
 3. Follow standard PR process
+4. After merge, deployment re-runs with full E2E suite
 
 ## Production Deployment
 
 ### Creating Production PR
 
-When staging is approved:
+When dev environment is validated:
 
 ```bash
 # Ensure dev is up to date
@@ -261,7 +264,8 @@ git pull origin dev
 
 **Requirements**:
 - Management approval (2 reviewers)
-- Staging sign-off completed
+- Dev environment testing completed and signed off
+- Full E2E test suite passed
 - No critical issues
 
 ### Production Deployment Process
