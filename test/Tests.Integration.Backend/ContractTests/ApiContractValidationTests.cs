@@ -251,11 +251,32 @@ public class ApiContractValidationTests : ContractTestBase
         {
             _output.WriteLine($"\nValidating contract consistency for {endpoint}:");
 
+            // /health endpoint returns text/plain, not JSON
+            if (endpoint == "/health")
+            {
+                foreach (var environment in GetSupportedEnvironments())
+                {
+                    using var client = CreateClientForEnvironment(environment);
+                    var response = await client.GetAsync(endpoint);
+
+                    response.StatusCode.Should().Be(HttpStatusCode.OK,
+                        "Health endpoint should return OK status in {0}", environment);
+                    response.Content.Headers.ContentType?.MediaType.Should().Be("text/plain",
+                        "Health endpoint should return text/plain content type in {0}", environment);
+
+                    var healthContent = await response.Content.ReadAsStringAsync();
+                    healthContent.Should().NotBeNullOrEmpty("Health endpoint should return content");
+
+                    _output.WriteLine($"  ✓ {environment}: Contract validated");
+                }
+                continue;
+            }
+
             var results = await ValidateContractAcrossEnvironments<object>(
               endpoint,
               async client =>
               {
-                  if (endpoint.StartsWith("/api/") && endpoint != "/health")
+                  if (endpoint.StartsWith("/api/"))
                   {
                       // For API endpoints, use authenticated client
                       using var factory = CreateFactoryForEnvironment("Development");
