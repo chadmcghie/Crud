@@ -106,8 +106,8 @@ export const test = base.extend<TestFixtures>({
       console.log('🔓 E2E test mode enabled - authentication bypassed');
     });
 
-    // Navigate to Angular URL
-    await page.goto(angularUrl);
+    // NOTE: Do NOT navigate here - let individual tests navigate via pageHelpers.navigateToApp()
+    // This ensures addInitScript runs on the actual test navigation, not a premature one
 
     await use(page);
 
