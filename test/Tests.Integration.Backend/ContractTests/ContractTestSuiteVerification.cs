@@ -351,12 +351,12 @@ public class ContractTestSuiteVerification : ContractTestBase
         using var client = CreateClientForEnvironment(environment);
 
         // Test basic middleware pipeline
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
 
         // Test CORS middleware
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
-        var corsResponse = await client.GetAsync("/api/health");
+        var corsResponse = await client.GetAsync("/health");
         corsResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
     }
 

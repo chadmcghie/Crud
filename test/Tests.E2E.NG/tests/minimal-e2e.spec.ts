@@ -8,12 +8,13 @@ test.describe('Minimal E2E Tests', () => {
     
     const response = await apiContext.get('/health');
     console.log(`📊 Health check response: ${response.status()}`);
-    
+
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
-    
-    const json = await response.json();
-    expect(json.status).toBe('Healthy');
+
+    // /health endpoint returns plain text "Healthy" after consolidation
+    const text = await response.text();
+    expect(text).toBe('Healthy');
   });
 
   test('@smoke GET /api/people/{id} - should get a person', async ({ apiHelpers, apiUrl }) => {
