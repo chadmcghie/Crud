@@ -40,7 +40,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
             {
                 using var client = CreateClientForEnvironment(environment);
                 await client.GetAsync("/health");
-                await client.GetAsync("/api/health");
+                await client.GetAsync("/health/ready");
             });
             categoryResults["HealthEndpoints"] = healthTime;
 
@@ -71,7 +71,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
                 using var client = CreateClientForEnvironment(environment);
                 await client.GetAsync("/api/nonexistent"); // 404 handling
                 client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
-                await client.GetAsync("/api/health"); // CORS handling
+                await client.GetAsync("/health"); // CORS handling
             });
             categoryResults["MiddlewarePipeline"] = middlewareTime;
 

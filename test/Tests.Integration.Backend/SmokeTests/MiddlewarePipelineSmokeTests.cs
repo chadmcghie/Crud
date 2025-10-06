@@ -203,7 +203,7 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
 
             // Test that logging doesn't break requests
             using var client = factory.CreateClient();
-            var response = await client.GetAsync("/api/health");
+            var response = await client.GetAsync("/health");
 
             response.StatusCode.Should().BeOneOf(
           HttpStatusCode.OK,
@@ -238,7 +238,7 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
 
             for (int i = 0; i < 5; i++)
             {
-                tasks.Add(client.GetAsync("/api/health"));
+                tasks.Add(client.GetAsync("/health"));
             }
 
             var responses = await Task.WhenAll(tasks);
@@ -276,7 +276,7 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             using var client = CreateClientForEnvironment(environment);
 
             // Test key middleware components quickly
-            var response = await client.GetAsync("/api/health");
+            var response = await client.GetAsync("/health");
             response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
 
             // Test error handling
