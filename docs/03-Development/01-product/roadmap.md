@@ -185,10 +185,23 @@ The following features have been implemented:
 
 - [ ] Docker containerization - Multi-stage Dockerfile `M`
 - [ ] Kubernetes manifests - K8s deployment configs `M`
-- [ ] Health checks - Liveness and readiness probes `S`
+- [x] Health checks - Kubernetes liveness/readiness/detailed endpoints implemented `S` ✅ **Completed 2025-09-29**
 - [ ] Distributed tracing - Full OpenTelemetry implementation `L`
 - [ ] Metrics dashboards - Grafana dashboards `M`
 - [ ] Automated database migrations - Zero-downtime deployments `M`
+
+### Completed DevOps Features (2025-09-29)
+- [x] **3-Stage CI/CD Pipeline** - Feature → Dev → Main deployment strategy with branch-based environments
+  - deploy-dev.yml workflow for dev environment with full E2E suite
+  - deploy-production.yml workflow for production with smoke tests
+  - Eliminated staging branch confusion
+  - See: [Branch Deployment Strategy Spec](../02-specs/2025-09-29-branch-deployment-strategy/)
+
+- [x] **Health Check System** - ASP.NET Core middleware with Kubernetes patterns
+  - `/health` endpoint for liveness probes
+  - `/health/ready` endpoint for readiness probes with EF Core warm-up
+  - `/health/detailed` endpoint for diagnostics
+  - See: [Health Check Consolidation Spec](../02-specs/2025-09-29-health-check-consolidation/)
 
 ### Dependencies
 

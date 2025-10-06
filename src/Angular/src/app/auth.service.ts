@@ -102,6 +102,14 @@ export class AuthService {
       return false; // Immediately exclude unit tests
     }
 
+    // CRITICAL: Check for e2e-test-mode flag set by Playwright addInitScript
+    // This is the PRIMARY way E2E tests signal their presence
+    const hasE2ETestModeFlag = localStorage.getItem('e2e-test-mode') === 'active';
+    if (hasE2ETestModeFlag) {
+      console.log('🔓 E2E Mode detected via localStorage flag');
+      return true;
+    }
+
     // E2E-specific detection strategies
     const isTestHost = currentHost === 'localhost' || currentHost === '127.0.0.1';
 
