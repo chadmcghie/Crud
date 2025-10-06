@@ -86,11 +86,10 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
           System.Net.HttpStatusCode.ServiceUnavailable
         );
 
-        // Test /api/health endpoint
-        var apiHealthResponse = await client.GetAsync("/api/health");
-        apiHealthResponse.StatusCode.Should().BeOneOf(
+        // Test /health/detailed endpoint
+        var detailedHealthResponse = await client.GetAsync("/health/detailed");
+        detailedHealthResponse.StatusCode.Should().BeOneOf(
           System.Net.HttpStatusCode.OK,
-          System.Net.HttpStatusCode.NotFound,
           System.Net.HttpStatusCode.ServiceUnavailable
         );
 
@@ -152,7 +151,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
 
         // Test CORS (with origin header)
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
-        var corsResponse = await client.GetAsync("/api/health");
+        var corsResponse = await client.GetAsync("/health");
         corsResponse.StatusCode.Should().BeOneOf(
           System.Net.HttpStatusCode.OK,
           System.Net.HttpStatusCode.ServiceUnavailable

@@ -187,25 +187,25 @@ public class ApiContractValidationTests : ContractTestBase
 
         using var client = CreateClientForEnvironment(environment);
 
-        // Test GET /health contract
+        // Test GET /health contract (liveness check - returns text/plain)
         var healthResponse = await client.GetAsync("/health");
-        ValidateResponseContract(healthResponse, HttpStatusCode.OK, "application/json");
+        healthResponse.StatusCode.Should().Be(HttpStatusCode.OK,
+            "Health endpoint should return OK status in {0}", environment);
 
-        var healthData = await ValidateJsonContract<object>(healthResponse);
-        ValidateContractStructure(healthData, health =>
+        var healthContent = await healthResponse.Content.ReadAsStringAsync();
+        healthContent.Should().NotBeNullOrEmpty("Health endpoint should return content");
+        healthContent.ToLower().Should().Contain("healthy",
+            "Health endpoint should indicate healthy status");
+
+        // Test GET /health/detailed contract (detailed health)
+        var detailedHealthResponse = await client.GetAsync("/health/detailed");
+        ValidateResponseContract(detailedHealthResponse, HttpStatusCode.OK, "application/json");
+
+        var detailedHealthData = await ValidateJsonContract<object>(detailedHealthResponse);
+        ValidateContractStructure(detailedHealthData, health =>
         {
-            health.Should().NotBeNull("Health data should not be null");
-        });
-
-        // Test GET /api/health contract (detailed health)
-        var apiHealthResponse = await client.GetAsync("/api/health");
-        ValidateResponseContract(apiHealthResponse, HttpStatusCode.OK, "application/json");
-
-        var apiHealthData = await ValidateJsonContract<object>(apiHealthResponse);
-        ValidateContractStructure(apiHealthData, health =>
-        {
-            health.Should().NotBeNull("Health data should not be null");
-            // Health data structure should be consistent
+            health.Should().NotBeNull("Detailed health data should not be null");
+            // Detailed health data structure should be consistent
         });
 
         _output.WriteLine($"✓ Health API contract validated for {environment}");
@@ -251,11 +251,32 @@ public class ApiContractValidationTests : ContractTestBase
         {
             _output.WriteLine($"\nValidating contract consistency for {endpoint}:");
 
+            // /health endpoint returns text/plain, not JSON
+            if (endpoint == "/health")
+            {
+                foreach (var environment in GetSupportedEnvironments())
+                {
+                    using var client = CreateClientForEnvironment(environment);
+                    var response = await client.GetAsync(endpoint);
+
+                    response.StatusCode.Should().Be(HttpStatusCode.OK,
+                        "Health endpoint should return OK status in {0}", environment);
+                    response.Content.Headers.ContentType?.MediaType.Should().Be("text/plain",
+                        "Health endpoint should return text/plain content type in {0}", environment);
+
+                    var healthContent = await response.Content.ReadAsStringAsync();
+                    healthContent.Should().NotBeNullOrEmpty("Health endpoint should return content");
+
+                    _output.WriteLine($"  ✓ {environment}: Contract validated");
+                }
+                continue;
+            }
+
             var results = await ValidateContractAcrossEnvironments<object>(
               endpoint,
               async client =>
               {
-                  if (endpoint.StartsWith("/api/") && endpoint != "/health")
+                  if (endpoint.StartsWith("/api/"))
                   {
                       // For API endpoints, use authenticated client
                       using var factory = CreateFactoryForEnvironment("Development");
