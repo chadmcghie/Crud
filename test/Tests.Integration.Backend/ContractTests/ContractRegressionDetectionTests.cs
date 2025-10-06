@@ -487,13 +487,13 @@ public class ContractRegressionDetectionTests : ContractTestBase
 
         // Test CORS behavior
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
-        var corsResponse = await client.GetAsync("/api/health");
+        var corsResponse = await client.GetAsync("/health");
         behavior["CORS"] = corsResponse.StatusCode;
 
         // Test compression behavior
         client.DefaultRequestHeaders.AcceptEncoding.Clear();
         client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip");
-        var compressionResponse = await client.GetAsync("/api/health");
+        var compressionResponse = await client.GetAsync("/health");
         behavior["Compression"] = compressionResponse.StatusCode;
 
         return behavior;
@@ -507,13 +507,13 @@ public class ContractRegressionDetectionTests : ContractTestBase
 
         // Test CORS behavior
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
-        var corsResponse = await client.GetAsync("/api/health");
+        var corsResponse = await client.GetAsync("/health");
         behavior["CORS"] = corsResponse.StatusCode;
 
         // Test compression behavior
         client.DefaultRequestHeaders.AcceptEncoding.Clear();
         client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip");
-        var compressionResponse = await client.GetAsync("/api/health");
+        var compressionResponse = await client.GetAsync("/health");
         behavior["Compression"] = compressionResponse.StatusCode;
 
         return behavior;

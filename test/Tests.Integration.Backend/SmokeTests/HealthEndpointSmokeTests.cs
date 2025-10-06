@@ -56,53 +56,38 @@ public class HealthEndpointSmokeTests : SmokeTestBase
 
     [Theory]
     [MemberData(nameof(GetEnvironmentsAsTestData))]
-    public async Task ApiHealthEndpoint_ShouldReturnHealthy_WithinTimeLimit(string environment)
+    public async Task DetailedHealthEndpoint_ShouldReturnHealthy_WithinTimeLimit(string environment)
     {
         // Arrange
         using var client = CreateClientForEnvironment(environment);
-        _output.WriteLine($"Testing /api/health endpoint in {environment} environment");
+        _output.WriteLine($"Testing /health/detailed endpoint in {environment} environment");
 
         // Act & Assert
         var executionTime = await MeasureExecutionTimeAsync(async () =>
         {
-            var response = await client.GetAsync("/api/health");
+            var response = await client.GetAsync("/health/detailed");
 
-            // Note: /api/health might not exist yet, so we handle both cases
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                _output.WriteLine($"/api/health endpoint not found in {environment} - this is expected if not implemented yet");
-                response.StatusCode.Should().Be(HttpStatusCode.NotFound,
-              $"/api/health endpoint not implemented yet in {environment} environment");
-            }
-            else
-            {
-                ValidateHealthyResponse(response, environment, "/api/health");
+            ValidateHealthyResponse(response, environment, "/health/detailed");
 
-                var content = await response.Content.ReadAsStringAsync();
-                content.Should().NotBeNullOrEmpty($"/api/health should return content in {environment} environment");
+            var content = await response.Content.ReadAsStringAsync();
+            content.Should().NotBeNullOrEmpty($"/health/detailed should return content in {environment} environment");
 
-                // Validate JSON response structure for API health endpoint
-                try
-                {
-                    var healthData = JsonSerializer.Deserialize<JsonElement>(content);
-                    healthData.ValueKind.Should().Be(JsonValueKind.Object,
-                  $"/api/health should return valid JSON object in {environment} environment");
-                }
-                catch (JsonException)
-                {
-                    // If it's not JSON, it should at least contain health-related content
-                    content.ToLower().Should().Contain("health",
-                  $"/api/health should contain health information in {environment} environment");
-                }
-            }
+            // Validate JSON response structure for detailed health endpoint
+            var healthData = JsonSerializer.Deserialize<JsonElement>(content);
+            healthData.ValueKind.Should().Be(JsonValueKind.Object,
+              $"/health/detailed should return valid JSON object in {environment} environment");
 
-        }, $"/api/health endpoint in {environment}");
+            // Validate it has detailed health information
+            healthData.TryGetProperty("status", out _).Should().BeTrue(
+              $"/health/detailed should include status property in {environment} environment");
+
+        }, $"/health/detailed endpoint in {environment}");
 
         // Assert timing constraint
         executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"/api/health endpoint should respond within 10 seconds in {environment} environment");
+          $"/health/detailed endpoint should respond within 10 seconds in {environment} environment");
 
-        _output.WriteLine($"/api/health in {environment}: {executionTime.TotalMilliseconds:F0}ms");
+        _output.WriteLine($"/health/detailed in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
 
     [Theory]
