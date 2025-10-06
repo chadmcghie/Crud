@@ -38,11 +38,8 @@ export class PageHelpers {
 
   // Navigation helpers
   async navigateToApp(): Promise<void> {
-    // Enable E2E test mode before navigation to bypass authentication guards
-    await this.page.addInitScript(() => {
-      localStorage.setItem('e2e-test-mode', 'active');
-      console.log('🔓 E2E test mode enabled - authentication bypassed');
-    });
+    // Note: E2E test mode is now set in test fixture before page loads
+    // No need to call addInitScript here as it's too late
 
     await this.page.goto('/');
     // Wait for the main app component to be fully loaded - this is more reliable than networkidle
@@ -429,6 +426,7 @@ export class PageHelpers {
   // General helpers
   async refreshPage(): Promise<void> {
     await this.retryOperation(async () => {
+      // Note: E2E test mode persists across page reloads via addInitScript in fixture
       await this.page.reload();
       // Instead of waiting for networkidle, wait for specific content to be ready
       await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });

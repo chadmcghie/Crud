@@ -13,6 +13,13 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
       await resetDatabase(process.env.DATABASE_PATH);
     }
 
+    // CRITICAL: Enable E2E test mode BEFORE any navigation
+    // This must run before page.goto() to ensure localStorage is set when app initializes
+    await page.addInitScript(() => {
+      localStorage.setItem('e2e-test-mode', 'active');
+      console.log('🔓 E2E test mode enabled - authentication bypassed');
+    });
+
     // Basic page setup with increased timeout for API operations
     page.setDefaultNavigationTimeout(30000);
     page.setDefaultTimeout(20000); // Increased from 15000 to 20000ms for complex operations
