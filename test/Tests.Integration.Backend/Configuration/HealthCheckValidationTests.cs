@@ -70,7 +70,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
 
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Healthy",
-            $"/health endpoint should return JSON with 'Healthy' status in {environment} environment");
+            $"/health endpoint should return 'Healthy' status in {environment} environment");
     }
 
     /// <summary>
@@ -96,16 +96,16 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
 
         var content = await response.Content.ReadAsStringAsync();
         content.Should().NotBeNullOrEmpty(
-            $"/api/health endpoint should return health information in {environment} environment");
+            $"/health/detailed endpoint should return health information in {environment} environment");
 
         // Validate JSON structure
         var healthInfo = JsonSerializer.Deserialize<JsonElement>(content);
         healthInfo.TryGetProperty("status", out var statusProperty).Should().BeTrue(
-            $"/api/health should include status in {environment} environment");
+            $"/health/detailed should include status in {environment} environment");
 
         var status = statusProperty.GetString();
         status.Should().Be("Healthy",
-            $"/api/health should report Healthy status in {environment} environment");
+            $"/health/detailed should report Healthy status in {environment} environment");
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
             using var client = factory.CreateClient();
 
             // Act
-            var response = await client.GetAsync("/api/health");
+            var response = await client.GetAsync("/health/detailed");
             var content = await response.Content.ReadAsStringAsync();
             var healthInfo = JsonSerializer.Deserialize<JsonElement>(content);
 
