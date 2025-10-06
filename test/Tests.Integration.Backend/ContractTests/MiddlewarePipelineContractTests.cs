@@ -32,7 +32,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         // Add CORS origin header to trigger CORS middleware
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
 
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
 
         // CORS middleware contract expectations
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
@@ -68,7 +68,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
         client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
 
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
 
         // Compression middleware contract expectations
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
@@ -168,7 +168,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
 
         // Test that logging doesn't interfere with requests
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
 
@@ -187,7 +187,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
         client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
 
         // Pipeline contract expectations
         response.Should().NotBeNull("Response should be received through complete pipeline");
@@ -212,7 +212,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
 
         using var client = CreateClientForEnvironment(environment);
 
-        var response = await client.GetAsync("/api/health");
+        var response = await client.GetAsync("/health");
 
         // Security headers contract (these may or may not be present based on configuration)
         var securityHeaders = response.Headers

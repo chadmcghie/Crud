@@ -277,7 +277,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
             var authenticatedClient = await AuthenticationTestHelper.CreateAdminClientAsync(adapter);
 
             // Test essential endpoints quickly
-            var coreEndpoints = new[] { "/api/roles", "/api/people", "/api/health" };
+            var coreEndpoints = new[] { "/api/roles", "/api/people", "/health" };
 
             foreach (var endpoint in coreEndpoints)
             {
