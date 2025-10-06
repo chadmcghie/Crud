@@ -94,16 +94,23 @@ export const test = base.extend<TestFixtures>({
   page: async ({ browser, angularUrl }, use) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    
+
     // Set timeouts
     page.setDefaultNavigationTimeout(45000);
     page.setDefaultTimeout(15000);
-    
+
+    // CRITICAL: Enable E2E test mode BEFORE navigation
+    // This must run before page.goto() to ensure localStorage is set when app initializes
+    await page.addInitScript(() => {
+      localStorage.setItem('e2e-test-mode', 'active');
+      console.log('🔓 E2E test mode enabled - authentication bypassed');
+    });
+
     // Navigate to Angular URL
     await page.goto(angularUrl);
-    
+
     await use(page);
-    
+
     await context.close();
   },
 });
