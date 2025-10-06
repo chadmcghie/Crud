@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Consolidate three separate health check implementations into a single standardized ASP.NET Core Health Checks system following Kubernetes liveness/readiness patterns. Remove duplicate controllers (HealthController, ApiHealthController) and standardize on middleware-based health checks with three endpoints: /health (liveness), /health/ready (readiness), and /health/detailed (diagnostics).
