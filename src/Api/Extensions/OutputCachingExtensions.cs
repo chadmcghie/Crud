@@ -27,6 +27,39 @@ public static class OutputCachingExtensions
             return services; // Skip output caching configuration
         }
 
+        // IMPORTANT: Register custom cache store BEFORE AddOutputCache()
+        // so that both the middleware and invalidation service use the same instance
+        if (cachingSettings.UseRedis)
+        {
+            try
+            {
+                // Try to use existing Redis connection if available
+                services.AddSingleton<IOutputCacheStore>(serviceProvider =>
+                {
+                    var connectionMultiplexer = serviceProvider.GetService<IConnectionMultiplexer>();
+                    if (connectionMultiplexer != null && connectionMultiplexer.IsConnected)
+                    {
+                        return new RedisOutputCacheStore(connectionMultiplexer, serviceProvider.GetRequiredService<ILogger<RedisOutputCacheStore>>());
+                    }
+
+                    // Fall back to in-memory cache
+                    var logger = serviceProvider.GetRequiredService<ILogger<RedisOutputCacheStore>>();
+                    logger.LogWarning("Redis is not available for output caching. Falling back to in-memory cache.");
+                    return new MemoryOutputCacheStore(serviceProvider.GetRequiredService<IOptions<OutputCacheOptions>>());
+                });
+            }
+            catch
+            {
+                // Fall back to in-memory cache if Redis configuration fails
+                services.AddSingleton<IOutputCacheStore, MemoryOutputCacheStore>();
+            }
+        }
+        else
+        {
+            // Use in-memory cache store
+            services.AddSingleton<IOutputCacheStore, MemoryOutputCacheStore>();
+        }
+
         // Add output caching
         services.AddOutputCache(options =>
         {
@@ -70,38 +103,6 @@ public static class OutputCachingExtensions
             options.SizeLimit = 100 * 1024 * 1024; // 100MB
             options.MaximumBodySize = 10 * 1024 * 1024; // 10MB per response
         });
-
-        // Add Redis output cache store if Redis is configured
-        if (cachingSettings.UseRedis)
-        {
-            try
-            {
-                // Try to use existing Redis connection if available
-                services.AddSingleton<IOutputCacheStore>(serviceProvider =>
-                {
-                    var connectionMultiplexer = serviceProvider.GetService<IConnectionMultiplexer>();
-                    if (connectionMultiplexer != null && connectionMultiplexer.IsConnected)
-                    {
-                        return new RedisOutputCacheStore(connectionMultiplexer, serviceProvider.GetRequiredService<ILogger<RedisOutputCacheStore>>());
-                    }
-
-                    // Fall back to in-memory cache
-                    var logger = serviceProvider.GetRequiredService<ILogger<RedisOutputCacheStore>>();
-                    logger.LogWarning("Redis is not available for output caching. Falling back to in-memory cache.");
-                    return new MemoryOutputCacheStore(serviceProvider.GetRequiredService<IOptions<OutputCacheOptions>>());
-                });
-            }
-            catch
-            {
-                // Fall back to in-memory cache if Redis configuration fails
-                services.AddSingleton<IOutputCacheStore, MemoryOutputCacheStore>();
-            }
-        }
-        else
-        {
-            // Use in-memory cache store
-            services.AddSingleton<IOutputCacheStore, MemoryOutputCacheStore>();
-        }
 
         return services;
     }
