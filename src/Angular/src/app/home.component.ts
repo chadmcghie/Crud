@@ -309,6 +309,7 @@ import { Observable } from 'rxjs';
     }
   `]
 })
+// Test: Validate both frontend and backend tests run
 export class HomeComponent implements OnInit {
   authService = inject(AuthService);
   markdownService = inject(MarkdownService);
