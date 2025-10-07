@@ -9,8 +9,8 @@ const debugMode = process.env.DEBUG_E2E === 'true';
 export class PageHelpers {
   constructor(private page: Page) {}
 
-  // Add retry logic similar to API helpers
-  private async retryOperation<T>(
+  // Add retry logic similar to API helpers (public for use in tests)
+  async retryOperation<T>(
     operation: () => Promise<T>,
     maxRetries: number = 3,
     delayMs: number = 500,
@@ -41,16 +41,58 @@ export class PageHelpers {
     // Note: E2E test mode is now set in test fixture before page loads
     // No need to call addInitScript here as it's too late
 
-    await this.page.goto('/');
-    // Wait for the main app component to be fully loaded - this is more reliable than networkidle
-    await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({ timeout: 30000 });
-    // Wait for Angular to initialize and render the main content
-    await this.page.locator('a[routerLink="/people-list"]').first().waitFor({ state: 'visible', timeout: 15000 });
-    // Wait for the app to be interactive (links clickable)
-    await this.page.waitForFunction(() => {
-      const link = document.querySelector('a[routerLink="/people-list"]');
-      return link !== null;
-    });
+    // Wrap entire navigation in retry logic for CI reliability
+    await this.retryOperation(async () => {
+      // Navigate to app
+      const response = await this.page.goto('/', {
+        waitUntil: 'domcontentloaded',
+        timeout: isCI ? 60000 : 30000
+      });
+
+      if (!response || !response.ok()) {
+        throw new Error(`Navigation failed: ${response?.status() || 'no response'}`);
+      }
+
+      // Progressive wait strategy - each step validates app is loading properly
+
+      // Step 1: Wait for app-root to exist (Angular bootstrap started)
+      await this.page.locator('app-root').waitFor({
+        state: 'attached',
+        timeout: isCI ? 30000 : 15000
+      });
+
+      // Step 2: Wait for main heading (app template rendered)
+      await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({
+        state: 'visible',
+        timeout: isCI ? 30000 : 15000
+      });
+
+      // Step 3: Wait for Angular to fully initialize
+      await this.page.waitForFunction(() => {
+        // Check if Angular is bootstrapped and routing is ready
+        const hasAngular = typeof (window as any).ng !== 'undefined';
+        const hasRouterLink = document.querySelector('a[routerLink="/people-list"]') !== null;
+        return hasAngular || hasRouterLink;
+      }, { timeout: isCI ? 20000 : 10000 });
+
+      // Step 4: Wait for navigation links to be visible and interactive
+      const navLink = this.page.locator('a[routerLink="/people-list"]').first();
+      await navLink.waitFor({
+        state: 'visible',
+        timeout: isCI ? 30000 : 15000
+      });
+
+      // Step 5: Verify link is actually clickable (not obscured)
+      await expect(navLink).toBeVisible();
+
+      // Step 6: Short stability wait for Angular to settle (CI needs more time)
+      if (isCI) {
+        await this.page.waitForTimeout(1000);
+      } else {
+        await this.page.waitForTimeout(300);
+      }
+
+    }, 3, isCI ? 3000 : 1000, 'navigateToApp');
   }
 
   async switchToPeopleTab(): Promise<void> {
@@ -123,22 +165,42 @@ export class PageHelpers {
     await this.retryOperation(async () => {
       // Wait for submit button to be enabled (handle both Create and Update)
       await this.page.locator('button[type="submit"]:not([disabled])').first().waitFor({ state: 'visible', timeout: 5000 });
-      
+
       // Add small delay to ensure form is ready
       await this.page.waitForTimeout(100);
-      
+
+      // Set up network response listener BEFORE clicking submit
+      const responsePromise = this.page.waitForResponse(
+        response => response.url().includes('/api/roles') &&
+                   (response.request().method() === 'POST' || response.request().method() === 'PUT') &&
+                   response.ok(),
+        { timeout: 10000 }
+      );
+
       // Click the submit button
       await this.page.click('button[type="submit"]');
 
+      // Wait for API response to complete
+      try {
+        await responsePromise;
+      } catch (error) {
+        console.warn('No API response detected, continuing anyway');
+      }
+
       // Wait for navigation back to the roles-list after successful submission
       await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-      
+
       // Wait for the list component to load
       const rolesContent = this.page.locator('router-outlet, app-roles, main, .content').first();
       await rolesContent.waitFor({ state: 'visible', timeout: 5000 });
-      
-      // Give UI time to update with new data
-      await this.page.waitForTimeout(500);
+
+      // Wait for Angular to stabilize after navigation
+      await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+        // networkidle is flaky, don't fail on it
+      });
+
+      // Give UI time to update with new data (longer in CI)
+      await this.page.waitForTimeout(isCI ? 1000 : 500);
     }, 3, 1000, 'submitRoleForm');
   }
 
@@ -266,53 +328,147 @@ export class PageHelpers {
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         return checkboxes.length > 0;
       }, { timeout: 5000 });
-      // First, uncheck all roles
-      const checkboxes = await this.page.locator('input[type="checkbox"]').all();
-      for (const checkbox of checkboxes) {
-        if (await checkbox.isChecked()) {
-          await checkbox.uncheck();
-        }
-      }
-      
-      // Then check the specified roles
+
+      // Build map of desired role names to their checkbox IDs
+      const targetRoleIds = new Set<string>();
+      const roleNameToId = new Map<string, string>();
+
       for (const roleName of roleNames) {
-        // Use getByRole to find checkboxes by their accessible name
+        let roleId: string | null = null;
+
+        // Find by exact label text (using strong tag that contains role name)
         try {
-          const roleCheckbox = this.page.getByRole('checkbox', { name: new RegExp(roleName, 'i') });
-          await roleCheckbox.check();
-        } catch (error) {
-          console.warn(`Could not find or check checkbox for role: ${roleName}`, error);
-          // Fallback: try to find by text content
-          try {
-            const fallbackCheckbox = this.page.locator(`input[type="checkbox"]`).locator(`xpath=//input[@type='checkbox'][..//*[contains(text(), '${roleName}')]]`).first();
-            await fallbackCheckbox.check();
-          } catch (fallbackError) {
-            console.warn(`Fallback also failed for role: ${roleName}`, fallbackError);
+          // The label structure is: <label for="role-{id}"><strong>{{role.name}}</strong>...</label>
+          // We need to find the label that contains a strong tag with EXACT text match
+          const label = this.page.locator(`label:has(strong:text-is("${roleName}"))`).first();
+          const labelFor = await label.getAttribute('for');
+
+          if (labelFor) {
+            const checkbox = this.page.locator(`#${labelFor}`);
+            roleId = await checkbox.getAttribute('value');
+            if (roleId) {
+              targetRoleIds.add(roleId);
+              roleNameToId.set(roleName, roleId);
+              console.log(`✓ Mapped role "${roleName}" to ID ${roleId}`);
+            }
           }
+        } catch (error) {
+          console.warn(`Could not map role "${roleName}" to ID:`, error);
+        }
+
+        if (!roleId) {
+          throw new Error(`Failed to find checkbox for role: ${roleName}`);
         }
       }
+
+      // Get all checkboxes and their current state
+      const checkboxes = await this.page.locator('input[type="checkbox"]').all();
+      const checkboxData = await Promise.all(checkboxes.map(async (cb) => ({
+        element: cb,
+        id: await cb.getAttribute('value'),
+        checked: await cb.isChecked()
+      })));
+
+      // CRITICAL: We must ALWAYS trigger change events by unchecking ALL first, then checking desired ones
+      // This is because Angular's toggleRole() only fires on actual change events
+      // Simply calling .check() on an already-checked box doesn't fire the event!
+      console.log(`📋 Total checkboxes found: ${checkboxData.length}`);
+      console.log(`🎯 Target role IDs: ${Array.from(targetRoleIds).join(', ')}`);
+
+      // Step 1: Uncheck ALL checkboxes to clear selectedRoleIds Set
+      for (const { element, id, checked } of checkboxData) {
+        if (!id) continue;
+        if (checked) {
+          await element.uncheck();
+          console.log(`✓ Unchecked role ID ${id} (clearing all first)`);
+          await this.page.waitForTimeout(150);
+        }
+      }
+
+      // Step 2: Check only the desired checkboxes
+      for (const { element, id } of checkboxData) {
+        if (!id) continue;
+
+        const shouldBeChecked = targetRoleIds.has(id);
+        if (shouldBeChecked) {
+          await element.check();
+          console.log(`✓ Checked role ID ${id}`);
+          await this.page.waitForTimeout(150);
+        }
+      }
+
+      // Final wait for all Angular change detection to complete
+      await this.page.waitForTimeout(400);
     }
   }
 
   async submitPersonForm(): Promise<void> {
     // Wait for submit button to be enabled (handle both Create and Update)
     await this.page.locator('button[type="submit"]:not([disabled])').first().waitFor({ state: 'visible', timeout: 5000 });
-    
+
     // Add small delay to ensure form is ready
     await this.page.waitForTimeout(100);
-    
+
+    // Set up listeners for both request and response
+    const requestPromise = this.page.waitForRequest(
+      request => request.url().includes('/api/people') &&
+                 (request.method() === 'POST' || request.method() === 'PUT'),
+      { timeout: 10000 }
+    );
+
+    const responsePromise = this.page.waitForResponse(
+      response => response.url().includes('/api/people') &&
+                 (response.request().method() === 'POST' || response.request().method() === 'PUT'),
+      { timeout: 10000 }
+    );
+
     // Click the submit button (works for both Create and Update)
     await this.page.click('button[type="submit"]');
-    
+
+    // Wait for API request and response, log the payload
+    try {
+      const request = await requestPromise;
+      const requestBody = request.postDataJSON();
+      console.log(`📤 Submitting person with payload:`, JSON.stringify(requestBody));
+
+      const response = await responsePromise;
+      const status = response.status();
+
+      // Handle both 201 Created (with body) and 204 No Content (no body)
+      let responseBody = null;
+      if (status === 204) {
+        console.log(`📥 Received response (${status}): No Content`);
+      } else {
+        responseBody = await response.json();
+        console.log(`📥 Received response (${status}):`, JSON.stringify(responseBody));
+      }
+
+      if (!response.ok()) {
+        console.error(`❌ API call failed with status ${status}`);
+        throw new Error(`API call failed: ${status} - ${JSON.stringify(responseBody)}`);
+      }
+    } catch (error) {
+      console.warn('API response handling error:', error);
+      throw error;
+    }
+
     // Wait for navigation back to the people-list after successful submission
+    // The Angular component shows a success message for 2 seconds before navigating
+    // So we need to wait for the URL to change to /people-list
+    await this.page.waitForURL(/.*\/people-list/, { timeout: 15000 });
     await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+
     // Wait for the list component to load
     const peopleContent = this.page.locator('router-outlet, app-people, main, .content').first();
     await peopleContent.waitFor({ state: 'visible', timeout: 5000 });
-    
-    // Give UI time to update with new data
-    await this.page.waitForTimeout(500);
+
+    // Wait for Angular to stabilize after navigation
+    await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+      // networkidle is flaky, don't fail on it
+    });
+
+    // Give UI time to update with new data (longer in CI)
+    await this.page.waitForTimeout(isCI ? 1000 : 500);
   }
 
   async editPerson(personName: string): Promise<void> {
@@ -436,14 +592,31 @@ export class PageHelpers {
   }
 
   async clickRefreshButton(): Promise<void> {
+    // Set up response listener BEFORE clicking
+    const responsePromise = this.page.waitForResponse(
+      response => response.url().includes('/api/') && response.ok(),
+      { timeout: 8000 }
+    );
+
     await this.page.click('button:has-text("Refresh")');
-    // Wait for refresh to complete
-    await this.page.waitForResponse(response => 
-      response.url().includes('/api/') && response.ok(),
-      { timeout: 5000 }
-    ).catch(() => {
+
+    // Wait for API response to complete
+    try {
+      await responsePromise;
+      // Extra wait for Angular change detection to process the data
+      await this.page.waitForTimeout(isCI ? 800 : 400);
+    } catch (error) {
+      console.warn('No API response detected for refresh, waiting for UI update');
       // If no API call, wait for UI to update
-      return this.page.waitForTimeout(500);
+      await this.page.waitForTimeout(isCI ? 1000 : 500);
+    }
+
+    // Wait for any loading indicators to disappear
+    await this.page.waitForFunction(() => {
+      const loadingIndicators = document.querySelectorAll('.loading, .spinner, [aria-busy="true"]');
+      return loadingIndicators.length === 0;
+    }, { timeout: 3000 }).catch(() => {
+      // No loading indicators found, that's fine
     });
   }
 
