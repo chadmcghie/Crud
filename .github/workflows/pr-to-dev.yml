@@ -41,10 +41,31 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  # Wait for feature branch workflow to complete successfully (or skip if manually overridden)
+  # Check if PR is from Dependabot
+  check-actor:
+    name: Check if Dependabot PR
+    runs-on: ubuntu-latest
+    outputs:
+      is-dependabot: ${{ steps.check.outputs.is-dependabot }}
+
+    steps:
+    - name: Check if PR is from Dependabot
+      id: check
+      run: |
+        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
+          echo "✅ Dependabot PR detected - will skip feature workflow wait"
+          echo "is-dependabot=true" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️  Regular PR - will wait for feature workflow"
+          echo "is-dependabot=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Wait for feature branch workflow to complete successfully (or skip if manually overridden or Dependabot)
   wait-for-feature-workflow:
     name: Wait for Feature Workflow
     runs-on: ubuntu-latest
+    needs: check-actor
+    if: needs.check-actor.outputs.is-dependabot == 'false'
     outputs:
       should-run: ${{ steps.wait.outputs.should-run }}
       feature-sha: ${{ steps.wait.outputs.feature-sha }}
@@ -152,9 +173,13 @@ jobs:
   integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: wait-for-feature-workflow
-    # Run if feature workflow completed successfully OR manual override is active
-    if: needs.wait-for-feature-workflow.outputs.should-run == 'true' || github.event.inputs.run_integration_tests == 'true'
+    needs: [check-actor, wait-for-feature-workflow]
+    # Run if Dependabot PR OR feature workflow completed successfully OR manual override
+    if: |
+      always() &&
+      (needs.check-actor.outputs.is-dependabot == 'true' ||
+       needs.wait-for-feature-workflow.outputs.should-run == 'true' ||
+       github.event.inputs.run_integration_tests == 'true')
     timeout-minutes: 20
     
     steps:
@@ -212,9 +237,13 @@ jobs:
   smoke-tests:
     name: E2E Smoke Tests
     runs-on: ubuntu-latest
-    needs: wait-for-feature-workflow
-    # Run if feature workflow completed successfully OR manual override is active
-    if: needs.wait-for-feature-workflow.outputs.should-run == 'true' || github.event.inputs.run_integration_tests == 'true'
+    needs: [check-actor, wait-for-feature-workflow]
+    # Run if Dependabot PR OR feature workflow completed successfully OR manual override
+    if: |
+      always() &&
+      (needs.check-actor.outputs.is-dependabot == 'true' ||
+       needs.wait-for-feature-workflow.outputs.should-run == 'true' ||
+       github.event.inputs.run_integration_tests == 'true')
     timeout-minutes: 15
 
     steps:

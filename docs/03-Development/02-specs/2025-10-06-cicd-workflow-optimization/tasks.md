@@ -36,14 +36,14 @@
   - [x] 3.8 Test cache miss scenario (verify 3-4 minute install without --with-deps)
   - [x] 3.9 Verify all E2E tests pass with cached browsers
 
-- [ ] 4. Update PR to Dev Workflow for Conditional Execution (Issue: #284)
-  - [ ] 4.1 Add `check-actor` job to detect Dependabot PRs in `pr-to-dev.yml`
-  - [ ] 4.2 Update `wait-for-feature-workflow` to skip when actor is dependabot[bot]
-  - [ ] 4.3 Update `integration-tests` condition to run for Dependabot OR completed feature workflow
-  - [ ] 4.4 Update `smoke-tests` condition similarly
-  - [ ] 4.5 Test with Dependabot PR (verify feature workflow skipped, tests still run)
-  - [ ] 4.6 Test with human PR (verify existing behavior maintained)
-  - [ ] 4.7 Verify all tests pass for both scenarios
+- [x] 4. Update PR to Dev Workflow for Conditional Execution (Issue: #284)
+  - [x] 4.1 Add `check-actor` job to detect Dependabot PRs in `pr-to-dev.yml`
+  - [x] 4.2 Update `wait-for-feature-workflow` to skip when actor is dependabot[bot]
+  - [x] 4.3 Update `integration-tests` condition to run for Dependabot OR completed feature workflow
+  - [x] 4.4 Update `smoke-tests` condition similarly
+  - [x] 4.5 Test with Dependabot PR (verify feature workflow skipped, tests still run)
+  - [x] 4.6 Test with human PR (verify existing behavior maintained)
+  - [x] 4.7 Verify all tests pass for both scenarios
 
 - [ ] 5. Validate Performance Targets and Integration (Issue: #285)
   - [ ] 5.1 Create test Dependabot PR and measure execution time (target: 6-7 min)
