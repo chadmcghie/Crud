@@ -165,10 +165,6 @@ jobs:
     name: Build, CodeQL & Create Artifacts (${{ matrix.language }})
     runs-on: ubuntu-latest
     needs: [code-quality, detect-changes]
-    # Only run this matrix job if the corresponding code changed
-    if: |
-      (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
-      (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
     timeout-minutes: 45
     permissions:
       actions: read
@@ -179,6 +175,14 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'csharp', 'javascript' ]
+        include:
+          - language: 'csharp'
+            should_run: ${{ needs.detect-changes.outputs.backend == 'true' }}
+          - language: 'javascript'
+            should_run: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+
+    # Skip this matrix iteration if the corresponding code didn't change
+    if: matrix.should_run == 'true'
     
     steps:
     - name: Checkout code (with formatting changes)
