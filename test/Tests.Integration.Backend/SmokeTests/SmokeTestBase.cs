@@ -130,7 +130,7 @@ public abstract class SmokeTestBase : IDisposable
     /// <summary>
     /// Validates that a response indicates healthy status
     /// </summary>
-    protected static void ValidateHealthyResponse(HttpResponseMessage response, string environment, string endpoint)
+    protected static void ValidateHealthyResponse(HttpResponseMessage response)
     {
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
 

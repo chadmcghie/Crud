@@ -33,7 +33,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         {
             var response = await client.GetAsync("/health");
 
-            ValidateHealthyResponse(response, environment, "/health");
+            ValidateHealthyResponse(response);
 
             // Validate response content indicates healthy status
             var content = await response.Content.ReadAsStringAsync();
@@ -64,7 +64,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         {
             var response = await client.GetAsync("/health/detailed");
 
-            ValidateHealthyResponse(response, environment, "/health/detailed");
+            ValidateHealthyResponse(response);
 
             var content = await response.Content.ReadAsStringAsync();
             Assert.False(string.IsNullOrEmpty(content));
@@ -129,7 +129,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         {
             var response = await client.GetAsync("/health");
 
-            ValidateHealthyResponse(response, environment, "/health");
+            ValidateHealthyResponse(response);
 
             var content = await response.Content.ReadAsStringAsync();
 
@@ -158,7 +158,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
             using var client = CreateClientForEnvironment(environment);
 
             var response = await client.GetAsync("/health");
-            ValidateHealthyResponse(response, environment, "/health");
+            ValidateHealthyResponse(response);
 
             _output.WriteLine($"Health check completed for {environment}: {totalStopwatch.ElapsedMilliseconds}ms elapsed");
         }

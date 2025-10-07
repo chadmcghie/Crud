@@ -84,7 +84,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
             Assert.True(totalEnvironmentTime < 30);
 
             // Performance targets per category
-            ValidateCategoryPerformance(categoryResults, environment);
+            ValidateCategoryPerformance(categoryResults);
         }
 
         // Generate performance report
@@ -115,7 +115,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         return stopwatch.Elapsed;
     }
 
-    private void ValidateCategoryPerformance(Dictionary<string, TimeSpan> categoryResults, string environment)
+    private void ValidateCategoryPerformance(Dictionary<string, TimeSpan> categoryResults)
     {
         // Performance targets for each category
         var performanceTargets = new Dictionary<string, int>
