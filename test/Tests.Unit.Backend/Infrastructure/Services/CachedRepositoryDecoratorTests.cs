@@ -1,7 +1,7 @@
 using App.Abstractions;
 using App.Interfaces;
 using Domain.Entities;
-using FluentAssertions;
+
 using Infrastructure.Services.Caching;
 using Moq;
 using Xunit;
@@ -66,7 +66,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetAsync(id);
 
         // Assert
-        result.Should().Be(cachedRole);
+        Assert.Equal(cachedRole, result);
         _mockRepository.Verify(x => x.GetAsync(id, It.IsAny<CancellationToken>()), Times.Never);
         _mockCacheService.Verify(x => x.GetAsync<Role>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -95,7 +95,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetAsync(id);
 
         // Assert
-        result.Should().Be(role);
+        Assert.Equal(role, result);
         _mockRepository.Verify(x => x.GetAsync(id, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.GetAsync<Role>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.SetAsync(cacheKey, role, It.IsAny<CacheEntryOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -124,7 +124,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetAsync(id);
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
         _mockRepository.Verify(x => x.GetAsync(id, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.SetAsync(It.IsAny<string>(), It.IsAny<Role>(), It.IsAny<CacheEntryOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -152,7 +152,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.ListAsync();
 
         // Assert
-        result.Should().BeEquivalentTo(roles);
+        Assert.Equal(roles, result);
         _mockRepository.Verify(x => x.ListAsync(It.IsAny<CancellationToken>()), Times.Never);
         _mockCacheService.Verify(x => x.GetAsync<IReadOnlyList<Role>>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -184,7 +184,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.ListAsync();
 
         // Assert
-        result.Should().BeEquivalentTo(roles);
+        Assert.Equal(roles, result);
         _mockRepository.Verify(x => x.ListAsync(It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.GetAsync<IReadOnlyList<Role>>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.SetAsync<IReadOnlyList<Role>>(cacheKey, roles, It.IsAny<CacheEntryOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -213,7 +213,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.AddAsync(role);
 
         // Assert
-        result.Should().Be(role);
+        Assert.Equal(role, result);
         _mockRepository.Verify(x => x.AddAsync(role, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.RemoveAsync(entityCacheKey, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.RemoveAsync(listCacheKey, It.IsAny<CancellationToken>()), Times.Once);
@@ -295,7 +295,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetByNameAsync(name);
 
         // Assert
-        result.Should().Be(role);
+        Assert.Equal(role, result);
         _mockRepository.Verify(x => x.GetByNameAsync(name, It.IsAny<CancellationToken>()), Times.Never);
         _mockCacheService.Verify(x => x.GetAsync<Role>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -324,7 +324,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetByNameAsync(name);
 
         // Assert
-        result.Should().Be(role);
+        Assert.Equal(role, result);
         _mockRepository.Verify(x => x.GetByNameAsync(name, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.GetAsync<Role>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.SetAsync(cacheKey, role, It.IsAny<CacheEntryOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -353,7 +353,7 @@ public class CachedRepositoryDecoratorTests
         var result = await _decorator.GetByNameAsync(name);
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
         _mockRepository.Verify(x => x.GetByNameAsync(name, It.IsAny<CancellationToken>()), Times.Once);
         _mockCacheService.Verify(x => x.SetAsync(It.IsAny<string>(), It.IsAny<Role>(), It.IsAny<CacheEntryOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -425,7 +425,8 @@ public class CachedRepositoryDecoratorTests
         await _decorator.GetAsync(id);
 
         // Assert
-        capturedOptions.Should().NotBeNull();
-        capturedOptions!.AbsoluteExpirationRelativeToNow.Should().Be(TimeSpan.FromMinutes(15)); // Default TTL for entities
+        Assert.NotNull(capturedOptions);
+        Assert.Equal(TimeSpan.FromMinutes(15), capturedOptions!.AbsoluteExpirationRelativeToNow); // Default TTL for entities
     }
 }
+

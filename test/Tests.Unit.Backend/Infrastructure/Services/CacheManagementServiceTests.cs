@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
-using FluentAssertions;
 using Infrastructure.Services.Caching;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -55,7 +54,7 @@ public class CacheManagementServiceTests
         var result = await _service.KeyExistsAsync(key);
 
         // Assert
-        result.Should().Be(expectedExists);
+        Assert.Equal(expectedExists, result);
         _mockCacheService.Verify(c => c.ExistsAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -79,7 +78,7 @@ public class CacheManagementServiceTests
         var result = await _service.GetKeyCountAsync();
 
         // Assert
-        result.Should().Be(0);
+        Assert.Equal(0, result);
     }
 
     [Fact]
@@ -92,7 +91,7 @@ public class CacheManagementServiceTests
         var result = await _service.GetKeysAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -135,7 +134,7 @@ public class CacheManagementServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RemoveKeyAsync(key));
-        exception.Should().Be(expectedException);
+        Assert.Equal(expectedException, exception);
     }
 
     [Fact]
@@ -149,7 +148,7 @@ public class CacheManagementServiceTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.KeyExistsAsync(key));
-        exception.Should().Be(expectedException);
+        Assert.Equal(expectedException, exception);
     }
 
     [Fact]

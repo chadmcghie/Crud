@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Net;
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,8 +70,7 @@ public class ContractTestSuiteVerification : ContractTestBase
             _output.WriteLine($"Total time for {environment}: {totalEnvironmentTime:F2} seconds");
 
             // Validate per-environment constraint (reasonable time for contract tests)
-            totalEnvironmentTime.Should().BeLessThan(120,
-              $"{environment} environment should complete all contract tests within 2 minutes");
+            Assert.True(totalEnvironmentTime < 120);
         }
 
         overallStopwatch.Stop();
@@ -88,8 +86,7 @@ public class ContractTestSuiteVerification : ContractTestBase
         PrintContractTestResults(results, regressionResult, overallStopwatch.Elapsed);
 
         // Validate overall constraints
-        overallStopwatch.Elapsed.TotalMinutes.Should().BeLessThan(10,
-          "All contract tests should complete within 10 minutes total");
+        Assert.True(overallStopwatch.Elapsed.TotalMinutes < 10);
 
         // Validate all tests passed
         var failedTests = results.Values
@@ -102,11 +99,7 @@ public class ContractTestSuiteVerification : ContractTestBase
             failedTests.Add(regressionResult);
         }
 
-        if (failedTests.Any())
-        {
-            var failureMessages = failedTests.Select(f => f.ErrorMessage).Where(m => m != null);
-            throw new InvalidOperationException($"Contract test failures detected:\n{string.Join("\n", failureMessages)}");
-        }
+        Assert.Empty(failedTests);
 
         _output.WriteLine($"\n=== CONTRACT TEST SUITE VERIFICATION COMPLETED ===");
         _output.WriteLine($"Total execution time: {overallStopwatch.Elapsed.TotalSeconds:F2} seconds");
@@ -155,12 +148,11 @@ public class ContractTestSuiteVerification : ContractTestBase
         // Validate individual test results
         foreach (var result in testResults)
         {
-            result.Success.Should().BeTrue($"{result.Category} should pass in {environment}: {result.ErrorMessage}");
+            Assert.True(result.Success);
         }
 
         // Validate timing constraints
-        overallStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(60,
-          $"Contract tests should complete within 60 seconds in {environment}");
+        Assert.True(overallStopwatch.Elapsed.TotalSeconds < 60);
 
         _output.WriteLine($"Environment {environment} contract validation completed in {overallStopwatch.Elapsed.TotalSeconds:F2} seconds");
         _output.WriteLine($"✓ All contract categories passed in {environment}");
@@ -256,7 +248,7 @@ public class ContractTestSuiteVerification : ContractTestBase
         var coveragePercentage = (coverageAreas.Values.Count(c => c) * 100.0) / coverageAreas.Count;
         _output.WriteLine($"\nOverall Coverage: {coveragePercentage:F1}%");
 
-        coveragePercentage.Should().Be(100, "Contract test suite should provide 100% coverage of critical areas");
+        Assert.Equal(100, coveragePercentage);
 
         _output.WriteLine("✓ Contract test suite provides comprehensive coverage");
     }
@@ -296,8 +288,7 @@ public class ContractTestSuiteVerification : ContractTestBase
                 var status = actual <= target ? "✓" : "✗";
                 _output.WriteLine($"  {status} {category}: {actual.TotalSeconds:F2}s (target: {target.TotalSeconds:F0}s)");
 
-                actual.Should().BeLessOrEqualTo(target,
-                  $"{category} should complete within {target.TotalSeconds:F0} seconds");
+                Assert.True(actual <= target);
             }
         }
 
@@ -340,9 +331,8 @@ public class ContractTestSuiteVerification : ContractTestBase
         foreach (var endpoint in endpoints)
         {
             var response = await client.GetAsync(endpoint);
-            response.StatusCode.Should().Be(HttpStatusCode.OK, $"API endpoint {endpoint} should be accessible in {environment}");
-            response.Content.Headers.ContentType?.MediaType.Should().Be("application/json",
-              $"API endpoint {endpoint} should return JSON in {environment}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         }
     }
 
@@ -352,12 +342,14 @@ public class ContractTestSuiteVerification : ContractTestBase
 
         // Test basic middleware pipeline
         var response = await client.GetAsync("/health");
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.True(response.StatusCode == HttpStatusCode.OK ||
+                   response.StatusCode == HttpStatusCode.ServiceUnavailable);
 
         // Test CORS middleware
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
         var corsResponse = await client.GetAsync("/health");
-        corsResponse.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.True(corsResponse.StatusCode == HttpStatusCode.OK ||
+                   corsResponse.StatusCode == HttpStatusCode.ServiceUnavailable);
     }
 
     private Task ValidateServiceInterfaceContractsForEnvironment(string environment)
@@ -366,14 +358,11 @@ public class ContractTestSuiteVerification : ContractTestBase
         using var scope = factory.Services.CreateScope();
 
         // Validate core services
-        scope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
-          .Should().NotBeNull($"Database context should be available in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
 
-        scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
-          .Should().NotBeNull($"Configuration should be available in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>());
 
-        scope.ServiceProvider.GetRequiredService<MediatR.IMediator>()
-          .Should().NotBeNull($"MediatR should be available in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<MediatR.IMediator>());
 
         return Task.CompletedTask;
     }
@@ -386,14 +375,11 @@ public class ContractTestSuiteVerification : ContractTestBase
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
         // Validate required configuration
-        configuration.GetConnectionString("DefaultConnection")
-          .Should().NotBeNullOrEmpty($"Connection string should be configured in {environment}");
+        Assert.False(string.IsNullOrEmpty(configuration.GetConnectionString("DefaultConnection")));
 
-        configuration["DatabaseProvider"]
-          .Should().Be("SQLite", $"Database provider should be SQLite in {environment}");
+        Assert.Equal("SQLite", configuration["DatabaseProvider"]);
 
-        configuration["Logging:LogLevel:Default"]
-          .Should().NotBeNullOrEmpty($"Log level should be configured in {environment}");
+        Assert.False(string.IsNullOrEmpty(configuration["Logging:LogLevel:Default"]));
 
         return Task.CompletedTask;
     }
@@ -429,8 +415,11 @@ public class ContractTestSuiteVerification : ContractTestBase
         var baselineEndpoints = endpointsByEnvironment.Values.First();
         foreach (var (environment, endpoints) in endpointsByEnvironment.Skip(1))
         {
-            endpoints.Should().BeEquivalentTo(baselineEndpoints,
-              $"Environment {environment} should have the same API endpoints as baseline");
+            Assert.Equal(baselineEndpoints.Count, endpoints.Count);
+            foreach (var endpoint in baselineEndpoints)
+            {
+                Assert.Contains(endpoint, endpoints);
+            }
         }
     }
 

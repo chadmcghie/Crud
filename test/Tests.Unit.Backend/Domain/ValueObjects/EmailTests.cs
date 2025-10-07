@@ -1,5 +1,4 @@
 using Domain.ValueObjects;
-using FluentAssertions;
 using Xunit;
 
 namespace Tests.Unit.Backend.Domain.ValueObjects
@@ -17,8 +16,8 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var email = new Email(validEmail);
 
             // Assert
-            email.Should().NotBeNull();
-            email.Value.Should().Be(validEmail.ToLowerInvariant());
+            Assert.NotNull(email);
+            Assert.Equal(validEmail.ToLowerInvariant(), email.Value);
         }
 
         [Theory]
@@ -27,12 +26,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
         [InlineData(null)]
         public void Constructor_ShouldThrow_WhenEmailIsNullOrEmpty(string invalidEmail)
         {
-            // Act
-            var action = () => new Email(invalidEmail);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Email cannot be empty*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new Email(invalidEmail));
+            Assert.Contains("Email cannot be empty", ex.Message);
         }
 
         [Theory]
@@ -44,12 +40,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
         [InlineData("user@example")]
         public void Constructor_ShouldThrow_WhenEmailFormatIsInvalid(string invalidEmail)
         {
-            // Act
-            var action = () => new Email(invalidEmail);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Email format is invalid*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new Email(invalidEmail));
+            Assert.Contains("Email format is invalid", ex.Message);
         }
 
         [Fact]
@@ -58,12 +51,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             // Arrange
             var longEmail = new string('a', 250) + "@example.com";
 
-            // Act
-            var action = () => new Email(longEmail);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Email cannot exceed 256 characters*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new Email(longEmail));
+            Assert.Contains("Email cannot exceed 256 characters", ex.Message);
         }
 
         [Fact]
@@ -74,9 +64,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var email2 = new Email("USER@EXAMPLE.COM");
 
             // Act & Assert
-            email1.Should().Be(email2);
-            email1.GetHashCode().Should().Be(email2.GetHashCode());
-            (email1 == email2).Should().BeTrue();
+            Assert.Equal(email2, email1);
+            Assert.Equal(email2.GetHashCode(), email1.GetHashCode());
+            Assert.True(email1 == email2);
         }
 
         [Fact]
@@ -87,9 +77,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var email2 = new Email("user2@example.com");
 
             // Act & Assert
-            email1.Should().NotBe(email2);
-            email1.GetHashCode().Should().NotBe(email2.GetHashCode());
-            (email1 != email2).Should().BeTrue();
+            Assert.NotEqual(email2, email1);
+            Assert.NotEqual(email2.GetHashCode(), email1.GetHashCode());
+            Assert.True(email1 != email2);
         }
 
         [Fact]
@@ -102,7 +92,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var result = email.ToString();
 
             // Assert
-            result.Should().Be("user@example.com");
+            Assert.Equal("user@example.com", result);
         }
 
         [Fact]
@@ -115,7 +105,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             string value = email;
 
             // Assert
-            value.Should().Be("user@example.com");
+            Assert.Equal("user@example.com", value);
         }
 
         [Fact]
@@ -128,7 +118,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             Email email = value;
 
             // Assert
-            email.Value.Should().Be("user@example.com");
+            Assert.Equal("user@example.com", email.Value);
         }
     }
 }

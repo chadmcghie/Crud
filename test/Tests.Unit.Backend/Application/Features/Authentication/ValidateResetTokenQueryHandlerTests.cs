@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using App.Features.Authentication;
 using Domain.Entities.Authentication;
 using Domain.Interfaces;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -43,10 +42,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.IsExpired.Should().BeFalse();
-        result.IsUsed.Should().BeFalse();
-        result.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(1), TimeSpan.FromSeconds(5));
+        Assert.True(result.IsValid);
+        Assert.False(result.IsExpired);
+        Assert.False(result.IsUsed);
+        Assert.True(Math.Abs((result.ExpiresAt!.Value - DateTime.UtcNow.AddHours(1)).TotalSeconds) < 5);
     }
 
     [Fact]
@@ -65,10 +64,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.IsExpired.Should().BeTrue();
-        result.IsUsed.Should().BeFalse();
-        result.ExpiresAt.Should().Be(token.ExpiresAt);
+        Assert.False(result.IsValid);
+        Assert.True(result.IsExpired);
+        Assert.False(result.IsUsed);
+        Assert.Equal(token.ExpiresAt, result.ExpiresAt);
     }
 
     [Fact]
@@ -88,10 +87,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.IsExpired.Should().BeFalse();
-        result.IsUsed.Should().BeTrue();
-        result.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(1), TimeSpan.FromSeconds(5));
+        Assert.False(result.IsValid);
+        Assert.False(result.IsExpired);
+        Assert.True(result.IsUsed);
+        Assert.True(Math.Abs((result.ExpiresAt!.Value - DateTime.UtcNow.AddHours(1)).TotalSeconds) < 5);
     }
 
     [Fact]
@@ -108,10 +107,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.IsExpired.Should().BeFalse();
-        result.IsUsed.Should().BeFalse();
-        result.ExpiresAt.Should().BeNull();
+        Assert.False(result.IsValid);
+        Assert.False(result.IsExpired);
+        Assert.False(result.IsUsed);
+        Assert.Null(result.ExpiresAt);
     }
 
     [Theory]
@@ -127,10 +126,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.IsExpired.Should().BeFalse();
-        result.IsUsed.Should().BeFalse();
-        result.ExpiresAt.Should().BeNull();
+        Assert.False(result.IsValid);
+        Assert.False(result.IsExpired);
+        Assert.False(result.IsUsed);
+        Assert.Null(result.ExpiresAt);
     }
 
     [Fact]
@@ -147,10 +146,10 @@ public class ValidateResetTokenQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.IsExpired.Should().BeFalse();
-        result.IsUsed.Should().BeFalse();
-        result.ExpiresAt.Should().BeNull();
+        Assert.False(result.IsValid);
+        Assert.False(result.IsExpired);
+        Assert.False(result.IsUsed);
+        Assert.Null(result.ExpiresAt);
     }
 
     [Fact]

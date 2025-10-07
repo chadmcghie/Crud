@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Dtos;
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,7 +80,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No API schema regressions should be detected across environments");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No API response schema regressions detected");
     }
@@ -131,7 +130,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No service registration regressions should be detected");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No service registration regressions detected");
     }
@@ -188,7 +187,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No configuration contract regressions should be detected");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No configuration contract regressions detected");
     }
@@ -240,7 +239,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No middleware behavior regressions should be detected");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No middleware behavior regressions detected");
     }
@@ -283,7 +282,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No health check contract regressions should be detected");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No health check contract regressions detected");
     }
@@ -326,7 +325,7 @@ public class ContractRegressionDetectionTests : ContractTestBase
             }
         }
 
-        regressions.Should().BeEmpty("No database schema regressions should be detected");
+        Assert.Empty(regressions);
 
         _output.WriteLine("\n✓ No database schema regressions detected");
     }

@@ -1,5 +1,4 @@
 using Domain.Interfaces;
-using FluentAssertions;
 using Infrastructure.Services;
 using Moq;
 
@@ -29,7 +28,7 @@ public class BCryptPasswordHasherTests
         var hashedPassword = _passwordHasher.HashPassword(password);
 
         // Assert
-        hashedPassword.Should().Be(expectedHash);
+        Assert.Equal(expectedHash, hashedPassword);
         _mockPasswordHasher.Verify(x => x.HashPassword(password), Times.Once);
     }
 
@@ -46,8 +45,8 @@ public class BCryptPasswordHasherTests
         var hash2 = _passwordHasher.HashPassword(password);
 
         // Assert
-        hash1.Should().Be("$2a$11$hash1");
-        hash2.Should().Be("$2a$11$hash1");
+        Assert.Equal("$2a$11$hash1", hash1);
+        Assert.Equal("$2a$11$hash1", hash2);
         _mockPasswordHasher.Verify(x => x.HashPassword(password), Times.Exactly(2));
     }
 
@@ -60,9 +59,8 @@ public class BCryptPasswordHasherTests
             .Throws(new ArgumentException("Password cannot be empty"));
 
         // Act & Assert
-        var act = () => _passwordHasher.HashPassword(password);
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Password cannot be empty");
+        var exception = Assert.Throws<ArgumentException>(() => _passwordHasher.HashPassword(password));
+        Assert.Equal("Password cannot be empty", exception.Message);
     }
 
     [Fact]
@@ -74,9 +72,8 @@ public class BCryptPasswordHasherTests
             .Throws(new ArgumentNullException("password"));
 
         // Act & Assert
-        var act = () => _passwordHasher.HashPassword(password!);
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("password");
+        var exception = Assert.Throws<ArgumentNullException>(() => _passwordHasher.HashPassword(password!));
+        Assert.Equal("password", exception.ParamName);
     }
 
     [Fact]
@@ -92,7 +89,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword(password, hashedPassword);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
         _mockPasswordHasher.Verify(x => x.VerifyPassword(password, hashedPassword), Times.Once);
     }
 
@@ -109,7 +106,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword(wrongPassword, hashedPassword);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
         _mockPasswordHasher.Verify(x => x.VerifyPassword(wrongPassword, hashedPassword), Times.Once);
     }
 
@@ -125,7 +122,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword("", hashedPassword);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -140,7 +137,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword(null!, hashedPassword);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -155,7 +152,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword(password, null!);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -171,7 +168,7 @@ public class BCryptPasswordHasherTests
         var result = _passwordHasher.VerifyPassword(password, invalidHash);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Theory]
@@ -193,8 +190,8 @@ public class BCryptPasswordHasherTests
         var verifyResult = _passwordHasher.VerifyPassword(password, hashedPassword);
 
         // Assert
-        hashedPassword.Should().Be(expectedHash);
-        verifyResult.Should().BeTrue();
+        Assert.Equal(expectedHash, hashedPassword);
+        Assert.True(verifyResult);
         _mockPasswordHasher.Verify(x => x.HashPassword(password), Times.Once);
         _mockPasswordHasher.Verify(x => x.VerifyPassword(password, expectedHash), Times.Once);
     }

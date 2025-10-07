@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
@@ -45,8 +44,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
-            content2.Should().Contain("New Person");
+            Assert.NotEqual(content1, content2);
+            Assert.Contains("New Person", content2);
         });
     }
 
@@ -89,11 +88,11 @@ public class CacheInvalidationTests : IntegrationTestBase
             var listContent2 = await listResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            entityContent2.Should().NotBe(entityContent1, "Entity cache should be invalidated after PUT");
-            entityContent2.Should().Contain("Updated Name");
+            Assert.NotEqual(entityContent1, entityContent2);
+            Assert.Contains("Updated Name", entityContent2);
 
-            listContent2.Should().NotBe(listContent1, "List cache should be invalidated after PUT");
-            listContent2.Should().Contain("Updated Name");
+            Assert.NotEqual(listContent1, listContent2);
+            Assert.Contains("Updated Name", listContent2);
         });
     }
 
@@ -127,8 +126,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var listContent2 = await listResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            listContent2.Should().NotBe(listContent1, "List cache should be invalidated after DELETE");
-            listContent2.Should().NotContain("Person to Delete");
+            Assert.NotEqual(listContent1, listContent2);
+            Assert.DoesNotContain("Person to Delete", listContent2);
         });
     }
 
@@ -162,8 +161,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
-            content2.Should().Contain("New Role");
+            Assert.NotEqual(content1, content2);
+            Assert.Contains("New Role", content2);
         });
     }
 
@@ -198,8 +197,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
-            content2.Should().Contain("New Wall");
+            Assert.NotEqual(content1, content2);
+            Assert.Contains("New Wall", content2);
         });
     }
 
@@ -234,8 +233,8 @@ public class CacheInvalidationTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert
-            content2.Should().NotBe(content1, "Cache should be invalidated after POST");
-            content2.Should().Contain("New Window");
+            Assert.NotEqual(content1, content2);
+            Assert.Contains("New Window", content2);
         });
     }
 
@@ -278,9 +277,9 @@ public class CacheInvalidationTests : IntegrationTestBase
             var rolesContent2 = await rolesResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            peopleContent2.Should().NotBe(peopleContent1, "People cache should be invalidated");
-            peopleContent2.Should().Contain("New Person");
-            rolesContent2.Should().Be(rolesContent1, "Roles cache should NOT be invalidated");
+            Assert.NotEqual(peopleContent1, peopleContent2);
+            Assert.Contains("New Person", peopleContent2);
+            Assert.Equal(rolesContent1, rolesContent2);
         });
     }
 }

@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Api.Services;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
@@ -50,11 +49,10 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await userClient.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.NotModified,
-                "Server should return 304 when ETag matches");
+            Assert.Equal(HttpStatusCode.NotModified, response2.StatusCode);
 
             var content = await response2.Content.ReadAsStringAsync();
-            content.Should().BeEmpty("304 response should have no body");
+            Assert.Empty(content);
         });
     }
 
@@ -92,12 +90,11 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await userClient.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.OK,
-                "Server should return 200 when ETag doesn't match");
+            Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
             var content = await response2.Content.ReadAsStringAsync();
-            content.Should().NotBeEmpty("200 response should have body");
-            content.Should().Contain("Updated Person");
+            Assert.NotEmpty(content);
+            Assert.Contains("Updated Person", content);
         });
     }
 
@@ -129,11 +126,10 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await userClient.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.NotModified,
-                "Server should return 304 when resource hasn't been modified");
+            Assert.Equal(HttpStatusCode.NotModified, response2.StatusCode);
 
             var content = await response2.Content.ReadAsStringAsync();
-            content.Should().BeEmpty("304 response should have no body");
+            Assert.Empty(content);
         });
     }
 
@@ -174,12 +170,11 @@ public class ConditionalRequestTests : IntegrationTestBase
             var response2 = await userClient.SendAsync(request);
 
             // Assert
-            response2.StatusCode.Should().Be(HttpStatusCode.OK,
-                "Server should return 200 when resource has been modified");
+            Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
 
             var content = await response2.Content.ReadAsStringAsync();
-            content.Should().NotBeEmpty("200 response should have body");
-            content.Should().Contain("Updated Description");
+            Assert.NotEmpty(content);
+            Assert.Contains("Updated Description", content);
         });
     }
 
@@ -205,8 +200,7 @@ public class ConditionalRequestTests : IntegrationTestBase
             var hasLastModified = response.Content.Headers.LastModified != null;
             var hasExpires = response.Content.Headers.Expires != null;
 
-            (hasCacheControl || hasETag || hasLastModified || hasExpires).Should().BeTrue(
-                "Response should include at least one cache-related header");
+            Assert.True(hasCacheControl || hasETag || hasLastModified || hasExpires);
         });
     }
 }

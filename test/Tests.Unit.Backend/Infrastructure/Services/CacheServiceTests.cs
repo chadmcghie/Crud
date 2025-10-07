@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
-using FluentAssertions;
+
 using Infrastructure.Services.Caching;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -40,8 +40,8 @@ public class CacheServiceTests
             var result = await _mockCacheService.Object.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(expectedValue);
+            Assert.NotNull(result);
+            Assert.Equal(expectedValue, result);
             _mockCacheService.Verify(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -58,7 +58,7 @@ public class CacheServiceTests
             var result = await _mockCacheService.Object.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -104,7 +104,7 @@ public class CacheServiceTests
             var result = await _mockCacheService.Object.ExistsAsync(key);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -120,7 +120,7 @@ public class CacheServiceTests
             var result = await _mockCacheService.Object.ExistsAsync(key);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -146,8 +146,8 @@ public class CacheServiceTests
                 options);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(expectedValue);
+            Assert.NotNull(result);
+            Assert.Equal(expectedValue, result);
         }
 
         [Fact]
@@ -183,11 +183,11 @@ public class CacheServiceTests
             var result = await _mockCacheService.Object.GetManyAsync<TestCacheItem>(keys);
 
             // Assert
-            result.Should().HaveCount(3);
-            result["key1"].Should().NotBeNull();
-            result["key1"]!.Id.Should().Be(1);
-            result["key2"].Should().NotBeNull();
-            result["key3"].Should().BeNull();
+            Assert.Equal(3, result.Count);
+            Assert.NotNull(result["key1"]);
+            Assert.Equal(1, result["key1"]!.Id);
+            Assert.NotNull(result["key2"]);
+            Assert.Null(result["key3"]);
         }
 
         [Fact]
@@ -242,8 +242,8 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(value);
+            Assert.NotNull(result);
+            Assert.Equal(value, result);
         }
 
         [Fact]
@@ -256,7 +256,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -278,8 +278,8 @@ public class CacheServiceTests
             var resultAfterExpiry = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            resultBeforeExpiry.Should().NotBeNull();
-            resultAfterExpiry.Should().BeNull();
+            Assert.NotNull(resultBeforeExpiry);
+            Assert.Null(resultAfterExpiry);
         }
 
         [Fact]
@@ -304,16 +304,16 @@ public class CacheServiceTests
             var result2 = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Should still be cached due to sliding expiration
-            result2.Should().NotBeNull();
+            Assert.NotNull(result2);
 
             // Wait without accessing
             await Task.Delay(2500);
             var result3 = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result1.Should().NotBeNull();
-            result2.Should().NotBeNull();
-            result3.Should().BeNull(); // Should have expired
+            Assert.NotNull(result1);
+            Assert.NotNull(result2);
+            Assert.Null(result3); // Should have expired
         }
 
         [Fact]
@@ -329,7 +329,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -343,7 +343,7 @@ public class CacheServiceTests
             var result = await _cacheService.ExistsAsync(key);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -356,7 +356,7 @@ public class CacheServiceTests
             var result = await _cacheService.ExistsAsync(key);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -378,8 +378,8 @@ public class CacheServiceTests
             var result = await _cacheService.GetOrSetAsync(key, factory, new CacheEntryOptions());
 
             // Assert
-            result.Should().BeEquivalentTo(cachedValue);
-            factoryCalled.Should().BeFalse();
+            Assert.Equal(cachedValue, result);
+            Assert.False(factoryCalled);
         }
 
         [Fact]
@@ -401,9 +401,9 @@ public class CacheServiceTests
             var cachedResult = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeEquivalentTo(newValue);
-            cachedResult.Should().BeEquivalentTo(newValue);
-            factoryCalled.Should().BeTrue();
+            Assert.Equal(newValue, result);
+            Assert.Equal(newValue, cachedResult);
+            Assert.True(factoryCalled);
         }
 
         private class TestCacheItem
@@ -449,9 +449,9 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.Id.Should().Be(value.Id);
-            result.Name.Should().Be(value.Name);
+            Assert.NotNull(result);
+            Assert.Equal(value.Id, result!.Id);
+            Assert.Equal(value.Name, result.Name);
         }
 
         [Fact]
@@ -468,7 +468,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -526,7 +526,7 @@ public class CacheServiceTests
             var result = await _cacheService.ExistsAsync(key);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -580,11 +580,11 @@ public class CacheServiceTests
             var result = await _cacheService.GetManyAsync<TestCacheItem>(keys);
 
             // Assert
-            result.Should().HaveCount(3);
-            result["key1"].Should().NotBeNull();
-            result["key1"]!.Id.Should().Be(1);
-            result["key2"].Should().NotBeNull();
-            result["key3"].Should().BeNull();
+            Assert.Equal(3, result.Count);
+            Assert.NotNull(result["key1"]);
+            Assert.Equal(1, result["key1"]!.Id);
+            Assert.NotNull(result["key2"]);
+            Assert.Null(result["key3"]);
         }
 
         private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> items)
@@ -637,7 +637,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeEquivalentTo(value);
+            Assert.Equal(value, result);
             _mockPrimaryCache.Verify(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()), Times.Once);
             _mockFallbackCache.Verify(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -661,7 +661,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeEquivalentTo(value);
+            Assert.Equal(value, result);
             _mockFallbackCache.Verify(x => x.GetAsync<TestCacheItem>(key, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -736,7 +736,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetOrSetAsync(key, factory, options);
 
             // Assert
-            result.Should().BeEquivalentTo(value);
+            Assert.Equal(value, result);
             _mockPrimaryCache.Verify(x => x.SetAsync(key, value, options, It.IsAny<CancellationToken>()), Times.Once);
             _mockFallbackCache.Verify(x => x.SetAsync(key, value, options, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -778,8 +778,8 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(value);
+            Assert.NotNull(result);
+            Assert.Equal(value, result);
         }
 
         [Fact]
@@ -806,8 +806,13 @@ public class CacheServiceTests
             var results = await Task.WhenAll(tasks);
 
             // Assert
-            factoryCallCount.Should().Be(1); // Factory should only be called once
-            results.Should().AllBeEquivalentTo(results[0]); // All results should be the same
+            Assert.Equal(1, factoryCallCount); // Factory should only be called once
+            // All results should be the same
+            foreach (var result in results)
+            {
+                Assert.Equal(results[0]!.Id, result!.Id);
+                Assert.Equal(results[0]!.Name, result!.Name);
+            }
         }
 
         [Fact]
@@ -826,8 +831,8 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(value);
+            Assert.NotNull(result);
+            Assert.Equal(value, result);
         }
 
         [Fact]
@@ -843,7 +848,7 @@ public class CacheServiceTests
             var result = await _cacheService.GetAsync<TestCacheItem>(key);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         private class TestCacheItem
@@ -853,3 +858,5 @@ public class CacheServiceTests
         }
     }
 }
+
+

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Reflection;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -56,8 +55,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
             _output.WriteLine($"Total time for {environment}: {totalEnvironmentTime:F2} seconds");
 
             // Validate per-environment time constraint (30 seconds)
-            totalEnvironmentTime.Should().BeLessThan(30,
-              $"{environment} environment should complete all smoke tests within 30 seconds");
+            Assert.True(totalEnvironmentTime < 30);
         }
 
         overallStopwatch.Stop();
@@ -66,8 +64,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         PrintSmokeTestResults(results, overallStopwatch.Elapsed);
 
         // Validate overall constraints
-        overallStopwatch.Elapsed.TotalMinutes.Should().BeLessThan(5,
-          "All smoke tests should complete within 5 minutes total");
+        Assert.True(overallStopwatch.Elapsed.TotalMinutes < 5);
 
         _output.WriteLine($"\n=== SMOKE TEST EXECUTION COMPLETED ===");
         _output.WriteLine($"Total execution time: {overallStopwatch.Elapsed.TotalSeconds:F2} seconds");
@@ -81,16 +78,16 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
 
         // Test /health endpoint
         var healthResponse = await client.GetAsync("/health");
-        healthResponse.StatusCode.Should().BeOneOf(
-          System.Net.HttpStatusCode.OK,
-          System.Net.HttpStatusCode.ServiceUnavailable
+        Assert.True(
+            healthResponse.StatusCode == System.Net.HttpStatusCode.OK ||
+            healthResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
         );
 
         // Test /health/detailed endpoint
         var detailedHealthResponse = await client.GetAsync("/health/detailed");
-        detailedHealthResponse.StatusCode.Should().BeOneOf(
-          System.Net.HttpStatusCode.OK,
-          System.Net.HttpStatusCode.ServiceUnavailable
+        Assert.True(
+            detailedHealthResponse.StatusCode == System.Net.HttpStatusCode.OK ||
+            detailedHealthResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
         );
 
         stopwatch.Stop();
@@ -107,11 +104,11 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         // Test login endpoint
         var loginRequest = new { Email = "test@example.com", Password = "Test123!" };
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
-        loginResponse.StatusCode.Should().NotBe(System.Net.HttpStatusCode.NotFound);
+        Assert.NotEqual(System.Net.HttpStatusCode.NotFound, loginResponse.StatusCode);
 
         // Test auth/me endpoint
         var meResponse = await client.GetAsync("/api/auth/me");
-        meResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, meResponse.StatusCode);
 
         stopwatch.Stop();
         _output.WriteLine($"  ✓ Authentication: {stopwatch.ElapsedMilliseconds}ms");
@@ -131,7 +128,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         foreach (var endpoint in endpoints)
         {
             var response = await authenticatedClient.GetAsync(endpoint);
-            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
 
         stopwatch.Stop();
@@ -147,14 +144,14 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
 
         // Test error handling
         var errorResponse = await client.GetAsync("/api/nonexistent");
-        errorResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, errorResponse.StatusCode);
 
         // Test CORS (with origin header)
         client.DefaultRequestHeaders.Add("Origin", "http://localhost:4200");
         var corsResponse = await client.GetAsync("/health");
-        corsResponse.StatusCode.Should().BeOneOf(
-          System.Net.HttpStatusCode.OK,
-          System.Net.HttpStatusCode.ServiceUnavailable
+        Assert.True(
+            corsResponse.StatusCode == System.Net.HttpStatusCode.OK ||
+            corsResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
         );
 
         stopwatch.Stop();
@@ -220,8 +217,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         _output.WriteLine($"Environment {environment} completed in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
 
         // Assert time constraint
-        stopwatch.Elapsed.TotalSeconds.Should().BeLessThan(30,
-          $"{environment} environment should complete all checks within 30 seconds");
+        Assert.True(stopwatch.Elapsed.TotalSeconds < 30);
     }
 
     [Fact]
@@ -259,7 +255,7 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         // This could be extended to write to a file for CI/CD consumption
         // File.WriteAllText("smoke-test-config.json", reportJson);
 
-        report.Environments.Should().HaveCount(3, "Should test 3 environments");
-        report.TestCategories.Should().HaveCount(4, "Should have 4 test categories");
+        Assert.Equal(3, report.Environments.Length);
+        Assert.Equal(4, report.TestCategories.Length);
     }
 }

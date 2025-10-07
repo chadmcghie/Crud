@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Api;
 using App.Features.Authentication;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -40,21 +39,21 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
         var registerContent = await registerResponse.Content.ReadAsStringAsync();
         var registerResult = JsonSerializer.Deserialize<TokenResponse>(registerContent, _jsonOptions);
 
-        registerResult.Should().NotBeNull();
-        registerResult!.AccessToken.Should().NotBeNullOrEmpty();
-        registerResult.RefreshToken.Should().NotBeNullOrEmpty();
+        Assert.NotNull(registerResult);
+        Assert.False(string.IsNullOrEmpty(registerResult!.AccessToken));
+        Assert.False(string.IsNullOrEmpty(registerResult.RefreshToken));
 
         // Step 2: Access protected endpoint with token
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", registerResult.AccessToken);
 
         var meResponse = await _client.GetAsync("/api/auth/me");
-        meResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
 
         // Step 3: Login with same credentials
         var loginCommand = new LoginCommand
@@ -64,13 +63,13 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginCommand);
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
         var loginContent = await loginResponse.Content.ReadAsStringAsync();
         var loginResult = JsonSerializer.Deserialize<TokenResponse>(loginContent, _jsonOptions);
 
-        loginResult.Should().NotBeNull();
-        loginResult!.AccessToken.Should().NotBeNullOrEmpty();
+        Assert.NotNull(loginResult);
+        Assert.False(string.IsNullOrEmpty(loginResult!.AccessToken));
 
         // Step 4: Refresh token
         var refreshCommand = new RefreshTokenCommand
@@ -79,21 +78,21 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
-        refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
 
         var refreshContent = await refreshResponse.Content.ReadAsStringAsync();
         var refreshResult = JsonSerializer.Deserialize<TokenResponse>(refreshContent, _jsonOptions);
 
-        refreshResult.Should().NotBeNull();
-        refreshResult!.AccessToken.Should().NotBeNullOrEmpty();
-        refreshResult.AccessToken.Should().NotBe(loginResult.AccessToken); // New token
+        Assert.NotNull(refreshResult);
+        Assert.False(string.IsNullOrEmpty(refreshResult!.AccessToken));
+        Assert.NotEqual(loginResult.AccessToken, refreshResult.AccessToken); // New token
 
         // Step 5: Logout
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", refreshResult.AccessToken);
 
         var logoutResponse = await _client.PostAsync("/api/auth/logout", null);
-        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, logoutResponse.StatusCode);
 
         // Step 6: Verify old refresh token no longer works
         var oldRefreshCommand = new RefreshTokenCommand
@@ -102,7 +101,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var oldRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", oldRefreshCommand);
-        oldRefreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, oldRefreshResponse.StatusCode);
     }
 
     [Fact]
@@ -117,7 +116,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var response = await _client.PostAsJsonAsync("/api/auth/register", command);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -132,7 +131,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var response = await _client.PostAsJsonAsync("/api/auth/register", command);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -150,12 +149,12 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
 
         // First registration should succeed
         var response1 = await _client.PostAsJsonAsync("/api/auth/register", command);
-        response1.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
         // Second registration with same email should fail
         command.FirstName = "Second";
         var response2 = await _client.PostAsJsonAsync("/api/auth/register", command);
-        response2.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response2.StatusCode);
     }
 
     [Fact]
@@ -168,7 +167,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var response = await _client.PostAsJsonAsync("/api/auth/login", command);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -178,7 +177,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         _client.DefaultRequestHeaders.Authorization = null;
 
         var response = await _client.GetAsync("/api/auth/me");
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -196,7 +195,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerCommand);
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
         var content = await registerResponse.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<TokenResponse>(content, _jsonOptions);
@@ -208,7 +207,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
-        refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
     }
 
     [Fact]
@@ -224,7 +223,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         };
 
         var userResponse = await _client.PostAsJsonAsync("/api/auth/register", userCommand);
-        userResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, userResponse.StatusCode);
 
         var userContent = await userResponse.Content.ReadAsStringAsync();
         var userResult = JsonSerializer.Deserialize<TokenResponse>(userContent, _jsonOptions);
@@ -235,7 +234,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
 
         // Access user endpoint should work
         var meResponse = await _client.GetAsync("/api/auth/me");
-        meResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
 
         // If we had admin-only endpoints, we would test that regular users can't access them
         // For now, we just verify the authentication works
@@ -268,12 +267,12 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
             };
 
             var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
-            refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
 
             var refreshContent = await refreshResponse.Content.ReadAsStringAsync();
             var refreshResult = JsonSerializer.Deserialize<TokenResponse>(refreshContent, _jsonOptions);
 
-            refreshResult!.RefreshToken.Should().NotBe(currentRefreshToken); // New token each time
+            Assert.NotEqual(currentRefreshToken, refreshResult!.RefreshToken); // New token each time
             currentRefreshToken = refreshResult.RefreshToken;
         }
     }
@@ -310,7 +309,7 @@ public class AuthenticationE2ETests : IClassFixture<WebApplicationFactory<Progra
         // All should succeed
         foreach (var response in responses)
         {
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 

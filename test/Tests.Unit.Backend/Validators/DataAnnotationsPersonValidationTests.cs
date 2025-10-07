@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Api.Dtos;
-using FluentAssertions;
 
 namespace Tests.Unit.Backend.Validators;
 
@@ -20,7 +19,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name is required");
     }
@@ -36,7 +35,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name cannot exceed 200 characters");
     }
@@ -55,7 +54,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Where(vr => vr.MemberNames.Contains("Phone")).Should().BeEmpty();
+        Assert.Empty(validationResults.Where(vr => vr.MemberNames.Contains("Phone")));
     }
 
     [Theory]
@@ -71,7 +70,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("Phone") &&
             vr.ErrorMessage == "Phone number must be a valid format");
     }
@@ -87,7 +86,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("RoleIds") &&
             vr.ErrorMessage == "All role IDs must be valid non-empty GUIDs");
     }
@@ -103,7 +102,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().BeEmpty();
+        Assert.Empty(validationResults);
     }
 
     [Fact]
@@ -116,7 +115,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("FullName") &&
             vr.ErrorMessage == "Full name contains invalid characters");
     }
@@ -136,7 +135,7 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Where(vr => vr.MemberNames.Contains("FullName")).Should().BeEmpty();
+        Assert.Empty(validationResults.Where(vr => vr.MemberNames.Contains("FullName")));
     }
 
     [Fact]
@@ -151,9 +150,9 @@ public class DataAnnotationsPersonValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().Contain(vr => vr.MemberNames.Contains("FullName"));
-        validationResults.Should().Contain(vr => vr.MemberNames.Contains("Phone"));
-        validationResults.Should().Contain(vr => vr.MemberNames.Contains("RoleIds"));
+        Assert.Contains(validationResults, vr => vr.MemberNames.Contains("FullName"));
+        Assert.Contains(validationResults, vr => vr.MemberNames.Contains("Phone"));
+        Assert.Contains(validationResults, vr => vr.MemberNames.Contains("RoleIds"));
     }
 
     private static List<ValidationResult> ValidateObject(object obj)

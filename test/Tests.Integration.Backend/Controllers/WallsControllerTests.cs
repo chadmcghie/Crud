@@ -23,10 +23,10 @@ public class WallsControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync("/api/walls");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var walls = await ReadJsonAsync<List<WallResponse>>(response);
-            walls.Should().NotBeNull();
-            walls.Should().BeEmpty();
+            Assert.NotNull(walls);
+            Assert.Empty(walls);
         });
     }
 
@@ -54,24 +54,24 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWall = await ReadJsonAsync<WallResponse>(response);
 
-        createdWall.Should().NotBeNull();
-        createdWall!.Id.Should().NotBeEmpty();
-        createdWall.Name.Should().Be("Exterior Wall");
-        createdWall.Description.Should().Be("Main exterior wall");
-        createdWall.Length.Should().Be(10.5);
-        createdWall.Height.Should().Be(3.0);
-        createdWall.Thickness.Should().Be(0.3);
-        createdWall.AssemblyType.Should().Be("Wood Frame");
-        createdWall.RValue.Should().Be(20.0);
-        createdWall.UValue.Should().Be(0.05);
-        createdWall.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        Assert.NotNull(createdWall);
+        Assert.NotEqual(Guid.Empty, createdWall!.Id);
+        Assert.Equal("Exterior Wall", createdWall.Name);
+        Assert.Equal("Main exterior wall", createdWall.Description);
+        Assert.Equal(10.5, createdWall.Length);
+        Assert.Equal(3.0, createdWall.Height);
+        Assert.Equal(0.3, createdWall.Thickness);
+        Assert.Equal("Wood Frame", createdWall.AssemblyType);
+        Assert.Equal(20.0, createdWall.RValue);
+        Assert.Equal(0.05, createdWall.UValue);
+        Assert.True((DateTime.UtcNow - createdWall.CreatedAt).TotalMinutes < 1);
 
         // Verify location header
-        response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.ToString().ToLowerInvariant().Should().Contain($"/api/walls/{createdWall.Id}".ToLowerInvariant());
+        Assert.NotNull(response.Headers.Location);
+        Assert.Contains($"/api/walls/{createdWall.Id}".ToLowerInvariant(), response.Headers.Location!.ToString().ToLowerInvariant());
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/walls", invalidRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/walls", invalidRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -134,13 +134,13 @@ public class WallsControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync("/api/walls");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var walls = await ReadJsonAsync<List<WallResponse>>(response);
 
-            walls.Should().NotBeNull();
-            walls.Should().HaveCount(2);
-            walls.Should().Contain(w => w.Name == "Wall 1");
-            walls.Should().Contain(w => w.Name == "Wall 2");
+            Assert.NotNull(walls);
+            Assert.Equal(2, walls.Count);
+            Assert.Contains(walls, w => w.Name == "Wall 1");
+            Assert.Contains(walls, w => w.Name == "Wall 2");
         });
     }
 
@@ -157,17 +157,17 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync($"/api/walls/{createdWall!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var wall = await ReadJsonAsync<WallResponse>(response);
 
-        wall.Should().NotBeNull();
-        wall!.Id.Should().Be(createdWall.Id);
-        wall.Name.Should().Be("Test Wall");
-        wall.Description.Should().Be("Test description");
-        wall.Length.Should().Be(12.0);
-        wall.Height.Should().Be(3.5);
-        wall.Thickness.Should().BeApproximately(0.4, 0.0001);
-        wall.AssemblyType.Should().Be("Concrete");
+        Assert.NotNull(wall);
+        Assert.Equal(createdWall.Id, wall!.Id);
+        Assert.Equal("Test Wall", wall.Name);
+        Assert.Equal("Test description", wall.Description);
+        Assert.Equal(12.0, wall.Length);
+        Assert.Equal(3.5, wall.Height);
+        Assert.Equal(0.4, wall.Thickness, 4);
+        Assert.Equal("Concrete", wall.AssemblyType);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync($"/api/walls/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -208,23 +208,23 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/walls/{createdWall!.Id}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the update
         var getResponse = await AuthenticatedGetAsync($"/api/walls/{createdWall.Id}");
         var updatedWall = await ReadJsonAsync<WallResponse>(getResponse);
 
-        updatedWall.Should().NotBeNull();
-        updatedWall!.Name.Should().Be("Updated Wall");
-        updatedWall.Description.Should().Be("Updated description");
-        updatedWall.Length.Should().Be(15.0);
-        updatedWall.Height.Should().Be(4.0);
-        updatedWall.Thickness.Should().BeApproximately(0.4, 0.0001);
-        updatedWall.AssemblyType.Should().Be("Steel Frame");
-        updatedWall.RValue.Should().Be(25.0);
-        updatedWall.UValue.Should().BeApproximately(0.04, 0.0001);
-        updatedWall.UpdatedAt.Should().NotBeNull();
-        updatedWall.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        Assert.NotNull(updatedWall);
+        Assert.Equal("Updated Wall", updatedWall!.Name);
+        Assert.Equal("Updated description", updatedWall.Description);
+        Assert.Equal(15.0, updatedWall.Length);
+        Assert.Equal(4.0, updatedWall.Height);
+        Assert.Equal(0.4, updatedWall.Thickness, 4);
+        Assert.Equal("Steel Frame", updatedWall.AssemblyType);
+        Assert.Equal(25.0, updatedWall.RValue);
+        Assert.Equal(0.04, updatedWall.UValue!.Value, 4);
+        Assert.NotNull(updatedWall.UpdatedAt);
+        Assert.True((DateTime.UtcNow - updatedWall.UpdatedAt.Value).TotalMinutes < 1);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/walls/{nonExistentId}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -255,11 +255,11 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/walls/{createdWall!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the wall is deleted
         var getResponse = await AuthenticatedGetAsync($"/api/walls/{createdWall.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/walls/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -299,18 +299,18 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWall = await ReadJsonAsync<WallResponse>(response);
 
-        createdWall.Should().NotBeNull();
-        createdWall!.Name.Should().Be("Simple Wall");
-        createdWall.Description.Should().BeNull();
-        createdWall.AssemblyDetails.Should().BeNull();
-        createdWall.RValue.Should().BeNull();
-        createdWall.UValue.Should().BeNull();
-        createdWall.MaterialLayers.Should().BeNull();
-        createdWall.Orientation.Should().BeNull();
-        createdWall.Location.Should().BeNull();
+        Assert.NotNull(createdWall);
+        Assert.Equal("Simple Wall", createdWall!.Name);
+        Assert.Null(createdWall.Description);
+        Assert.Null(createdWall.AssemblyDetails);
+        Assert.Null(createdWall.RValue);
+        Assert.Null(createdWall.UValue);
+        Assert.Null(createdWall.MaterialLayers);
+        Assert.Null(createdWall.Orientation);
+        Assert.Null(createdWall.Location);
     }
 
     [Fact]
@@ -337,10 +337,10 @@ public class WallsControllerTests : IntegrationTestBase
         var updatedWall = await ReadJsonAsync<WallResponse>(getResponse);
 
         // Assert
-        updatedWall.Should().NotBeNull();
-        updatedWall!.CreatedAt.Should().Be(createdAt); // CreatedAt should not change
-        updatedWall.UpdatedAt.Should().NotBeNull();
-        updatedWall.UpdatedAt.Should().BeAfter(createdAt); // UpdatedAt should be after CreatedAt
+        Assert.NotNull(updatedWall);
+        Assert.Equal(createdAt, updatedWall!.CreatedAt); // CreatedAt should not change
+        Assert.NotNull(updatedWall.UpdatedAt);
+        Assert.True(updatedWall.UpdatedAt > createdAt); // UpdatedAt should be after CreatedAt
     }
 
     [Fact]
@@ -367,17 +367,17 @@ public class WallsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/walls", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWall = await ReadJsonAsync<WallResponse>(response);
 
-        createdWall.Should().NotBeNull();
-        createdWall!.Length.Should().Be(12.5);
-        createdWall.Height.Should().Be(3.2);
-        createdWall.Thickness.Should().Be(0.35);
-        createdWall.RValue.Should().Be(22.5);
-        createdWall.UValue.Should().Be(0.044);
-        createdWall.MaterialLayers.Should().Be("Concrete, Foam Insulation, Concrete");
-        createdWall.Orientation.Should().Be("South-East");
-        createdWall.Location.Should().Be("Living Room");
+        Assert.NotNull(createdWall);
+        Assert.Equal(12.5, createdWall!.Length);
+        Assert.Equal(3.2, createdWall.Height);
+        Assert.Equal(0.35, createdWall.Thickness);
+        Assert.Equal(22.5, createdWall.RValue);
+        Assert.Equal(0.044, createdWall.UValue);
+        Assert.Equal("Concrete, Foam Insulation, Concrete", createdWall.MaterialLayers);
+        Assert.Equal("South-East", createdWall.Orientation);
+        Assert.Equal("Living Room", createdWall.Location);
     }
 }

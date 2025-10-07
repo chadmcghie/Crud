@@ -1,6 +1,5 @@
 using System.Net.Http;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
@@ -38,7 +37,7 @@ public class OutputCachingTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert - Responses should be identical
-            content1.Should().Be(content2, "Multiple requests should return identical data");
+            Assert.Equal(content2, content1);
         });
     }
 
@@ -65,7 +64,7 @@ public class OutputCachingTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert - Responses should be identical
-            content1.Should().Be(content2, "Multiple requests should return identical data");
+            Assert.Equal(content2, content1);
         });
     }
 
@@ -91,7 +90,7 @@ public class OutputCachingTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert - Responses should be identical
-            content1.Should().Be(content2, "Multiple requests should return identical data");
+            Assert.Equal(content2, content1);
         });
     }
 
@@ -117,7 +116,7 @@ public class OutputCachingTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert - Responses should be identical
-            content1.Should().Be(content2, "Multiple requests should return identical data");
+            Assert.Equal(content2, content1);
         });
     }
 
@@ -145,7 +144,7 @@ public class OutputCachingTests : IntegrationTestBase
             var content2 = await response2.Content.ReadAsStringAsync();
 
             // Assert - Responses should be identical
-            content1.Should().Be(content2, "Multiple requests for the same entity should return identical data");
+            Assert.Equal(content2, content1);
         });
     }
 }

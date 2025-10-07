@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Infrastructure.Resilience;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -22,7 +21,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetDatabaseRetryPolicy(_mockLogger.Object);
 
         // Assert
-        policy.Should().NotBeNull("database retry policy should be configured");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -32,7 +31,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetTestRetryPolicy(_mockLogger.Object);
 
         // Assert
-        policy.Should().NotBeNull("test retry policy should be configured for fast unit tests");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -42,7 +41,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetDatabaseTimeoutPolicy();
 
         // Assert
-        policy.Should().NotBeNull("database timeout policy should be configured");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -52,7 +51,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetDatabaseCircuitBreakerPolicy(_mockLogger.Object);
 
         // Assert
-        policy.Should().NotBeNull("database circuit breaker policy should be configured");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -62,7 +61,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetDatabaseBulkheadPolicy();
 
         // Assert
-        policy.Should().NotBeNull("database bulkhead policy should be configured");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -72,7 +71,7 @@ public class PollyResilienceTests
         var policy = PollyPolicies.GetComprehensiveDatabasePolicy(_mockLogger.Object);
 
         // Assert
-        policy.Should().NotBeNull("comprehensive database policy should combine all database policies");
+        Assert.NotNull(policy);
     }
 
     [Fact]
@@ -82,7 +81,7 @@ public class PollyResilienceTests
         var pollyPoliciesType = typeof(PollyPolicies);
 
         // Assert
-        pollyPoliciesType.Should().NotBeNull("PollyPolicies class should be accessible for testing");
-        pollyPoliciesType.IsClass.Should().BeTrue("PollyPolicies should be a static class");
+        Assert.NotNull(pollyPoliciesType);
+        Assert.True(pollyPoliciesType.IsClass);
     }
 }

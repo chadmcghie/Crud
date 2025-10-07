@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Api.Dtos;
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,7 @@ public class ApiContractValidationTests : ContractTestBase
         var roles = await ValidateJsonContract<List<RoleDto>>(getResponse);
         ValidateContractStructure(roles, rolesList =>
         {
-            rolesList.Should().NotBeNull("Roles list should be a valid array");
+            Assert.NotNull(rolesList);
             // Empty list is valid for initial state
         });
 
@@ -53,15 +52,14 @@ public class ApiContractValidationTests : ContractTestBase
         var createdRole = await ValidateJsonContract<RoleDto>(postResponse);
         ValidateContractStructure(createdRole, role =>
         {
-            role.Id.Should().NotBeEmpty("Role ID should be a valid GUID");
-            role.Name.Should().Be("ContractTestRole", "Role name should match request");
-            role.Description.Should().Be("Test role for contract validation", "Role description should match request");
+            Assert.NotEqual(Guid.Empty, role.Id);
+            Assert.Equal("ContractTestRole", role.Name);
+            Assert.Equal("Test role for contract validation", role.Description);
         });
 
         // Validate Location header contract
-        postResponse.Headers.Location.Should().NotBeNull("Created response should include Location header");
-        postResponse.Headers.Location!.ToString().Should().Contain("/api/roles/",
-          "Location header should follow REST convention");
+        Assert.NotNull(postResponse.Headers.Location);
+        Assert.Contains("/api/roles/", postResponse.Headers.Location!.ToString());
 
         _output.WriteLine($"✓ Roles API contract validated for {environment}");
     }
@@ -82,7 +80,7 @@ public class ApiContractValidationTests : ContractTestBase
         var people = await ValidateJsonContract<List<PersonResponse>>(getResponse);
         ValidateContractStructure(people, peopleList =>
         {
-            peopleList.Should().NotBeNull("People list should be a valid array");
+            Assert.NotNull(peopleList);
             // Empty list is valid for initial state
         });
 
@@ -94,15 +92,14 @@ public class ApiContractValidationTests : ContractTestBase
         var createdPerson = await ValidateJsonContract<PersonResponse>(postResponse);
         ValidateContractStructure(createdPerson, person =>
         {
-            person.Id.Should().NotBeEmpty("Person ID should be a valid GUID");
-            person.FullName.Should().Be("John Doe", "Full name should match request");
-            person.Phone.Should().Be("555-1234", "Phone should match request");
+            Assert.NotEqual(Guid.Empty, person.Id);
+            Assert.Equal("John Doe", person.FullName);
+            Assert.Equal("555-1234", person.Phone);
         });
 
         // Validate Location header contract
-        postResponse.Headers.Location.Should().NotBeNull("Created response should include Location header");
-        postResponse.Headers.Location!.ToString().Should().Contain("/api/people/",
-          "Location header should follow REST convention");
+        Assert.NotNull(postResponse.Headers.Location);
+        Assert.Contains("/api/people/", postResponse.Headers.Location!.ToString());
 
         _output.WriteLine($"✓ People API contract validated for {environment}");
     }
@@ -123,7 +120,7 @@ public class ApiContractValidationTests : ContractTestBase
         var walls = await ValidateJsonContract<List<WallResponse>>(getResponse);
         ValidateContractStructure(walls, wallsList =>
         {
-            wallsList.Should().NotBeNull("Walls list should be a valid array");
+            Assert.NotNull(wallsList);
         });
 
         // Test POST /api/walls contract
@@ -134,10 +131,10 @@ public class ApiContractValidationTests : ContractTestBase
         var createdWall = await ValidateJsonContract<WallResponse>(postResponse);
         ValidateContractStructure(createdWall, wall =>
         {
-            wall.Id.Should().NotBeEmpty("Wall ID should be a valid GUID");
-            wall.Name.Should().Be("Contract Test Wall", "Wall name should match request");
-            wall.Description.Should().Be("A wall for contract validation", "Wall description should match request");
-            wall.AssemblyType.Should().Be("Drywall", "Wall assembly type should match request");
+            Assert.NotEqual(Guid.Empty, wall.Id);
+            Assert.Equal("Contract Test Wall", wall.Name);
+            Assert.Equal("A wall for contract validation", wall.Description);
+            Assert.Equal("Drywall", wall.AssemblyType);
         });
 
         _output.WriteLine($"✓ Walls API contract validated for {environment}");
@@ -159,7 +156,7 @@ public class ApiContractValidationTests : ContractTestBase
         var windows = await ValidateJsonContract<List<WindowResponse>>(getResponse);
         ValidateContractStructure(windows, windowsList =>
         {
-            windowsList.Should().NotBeNull("Windows list should be a valid array");
+            Assert.NotNull(windowsList);
         });
 
         // Test POST /api/windows contract
@@ -170,10 +167,10 @@ public class ApiContractValidationTests : ContractTestBase
         var createdWindow = await ValidateJsonContract<WindowResponse>(postResponse);
         ValidateContractStructure(createdWindow, window =>
         {
-            window.Id.Should().NotBeEmpty("Window ID should be a valid GUID");
-            window.Name.Should().Be("Contract Test Window", "Window name should match request");
-            window.Description.Should().Be("A window for contract validation", "Window description should match request");
-            window.FrameType.Should().Be("Wood", "Window frame type should match request");
+            Assert.NotEqual(Guid.Empty, window.Id);
+            Assert.Equal("Contract Test Window", window.Name);
+            Assert.Equal("A window for contract validation", window.Description);
+            Assert.Equal("Wood", window.FrameType);
         });
 
         _output.WriteLine($"✓ Windows API contract validated for {environment}");
@@ -189,13 +186,11 @@ public class ApiContractValidationTests : ContractTestBase
 
         // Test GET /health contract (liveness check - returns text/plain)
         var healthResponse = await client.GetAsync("/health");
-        healthResponse.StatusCode.Should().Be(HttpStatusCode.OK,
-            "Health endpoint should return OK status in {0}", environment);
+        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
 
         var healthContent = await healthResponse.Content.ReadAsStringAsync();
-        healthContent.Should().NotBeNullOrEmpty("Health endpoint should return content");
-        healthContent.ToLower().Should().Contain("healthy",
-            "Health endpoint should indicate healthy status");
+        Assert.False(string.IsNullOrEmpty(healthContent));
+        Assert.Contains("healthy", healthContent.ToLower());
 
         // Test GET /health/detailed contract (detailed health)
         var detailedHealthResponse = await client.GetAsync("/health/detailed");
@@ -204,7 +199,7 @@ public class ApiContractValidationTests : ContractTestBase
         var detailedHealthData = await ValidateJsonContract<object>(detailedHealthResponse);
         ValidateContractStructure(detailedHealthData, health =>
         {
-            health.Should().NotBeNull("Detailed health data should not be null");
+            Assert.NotNull(health);
             // Detailed health data structure should be consistent
         });
 
@@ -228,7 +223,8 @@ public class ApiContractValidationTests : ContractTestBase
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
 
         // Login should either return Unauthorized or BadRequest depending on implementation
-        loginResponse.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.BadRequest);
+        Assert.True(loginResponse.StatusCode == HttpStatusCode.Unauthorized ||
+                   loginResponse.StatusCode == HttpStatusCode.BadRequest);
 
         _output.WriteLine($"✓ Auth API contract validated for {environment}");
     }
@@ -259,13 +255,11 @@ public class ApiContractValidationTests : ContractTestBase
                     using var client = CreateClientForEnvironment(environment);
                     var response = await client.GetAsync(endpoint);
 
-                    response.StatusCode.Should().Be(HttpStatusCode.OK,
-                        "Health endpoint should return OK status in {0}", environment);
-                    response.Content.Headers.ContentType?.MediaType.Should().Be("text/plain",
-                        "Health endpoint should return text/plain content type in {0}", environment);
+                    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                    Assert.Equal("text/plain", response.Content.Headers.ContentType?.MediaType);
 
                     var healthContent = await response.Content.ReadAsStringAsync();
-                    healthContent.Should().NotBeNullOrEmpty("Health endpoint should return content");
+                    Assert.False(string.IsNullOrEmpty(healthContent));
 
                     _output.WriteLine($"  ✓ {environment}: Contract validated");
                 }

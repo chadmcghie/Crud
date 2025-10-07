@@ -1,5 +1,4 @@
 using Domain.ValueObjects;
-using FluentAssertions;
 using Xunit;
 
 namespace Tests.Unit.Backend.Domain.ValueObjects
@@ -16,8 +15,8 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var passwordHash = new PasswordHash(hashValue);
 
             // Assert
-            passwordHash.Should().NotBeNull();
-            passwordHash.Value.Should().Be(hashValue);
+            Assert.NotNull(passwordHash);
+            Assert.Equal(hashValue, passwordHash.Value);
         }
 
         [Theory]
@@ -26,12 +25,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
         [InlineData(null)]
         public void Constructor_ShouldThrow_WhenHashIsNullOrEmpty(string invalidHash)
         {
-            // Act
-            var action = () => new PasswordHash(invalidHash);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Password hash cannot be empty*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new PasswordHash(invalidHash));
+            Assert.Contains("Password hash cannot be empty", ex.Message);
         }
 
         [Fact]
@@ -40,12 +36,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             // Arrange
             var shortHash = "tooshort";
 
-            // Act
-            var action = () => new PasswordHash(shortHash);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Password hash format is invalid*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new PasswordHash(shortHash));
+            Assert.Contains("Password hash format is invalid", ex.Message);
         }
 
         [Fact]
@@ -57,9 +50,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var passwordHash2 = new PasswordHash(hash);
 
             // Act & Assert
-            passwordHash1.Should().Be(passwordHash2);
-            passwordHash1.GetHashCode().Should().Be(passwordHash2.GetHashCode());
-            (passwordHash1 == passwordHash2).Should().BeTrue();
+            Assert.Equal(passwordHash2, passwordHash1);
+            Assert.Equal(passwordHash2.GetHashCode(), passwordHash1.GetHashCode());
+            Assert.True(passwordHash1 == passwordHash2);
         }
 
         [Fact]
@@ -70,9 +63,9 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var passwordHash2 = new PasswordHash("$2a$10$differenthashvalue123");
 
             // Act & Assert
-            passwordHash1.Should().NotBe(passwordHash2);
-            passwordHash1.GetHashCode().Should().NotBe(passwordHash2.GetHashCode());
-            (passwordHash1 != passwordHash2).Should().BeTrue();
+            Assert.NotEqual(passwordHash2, passwordHash1);
+            Assert.NotEqual(passwordHash2.GetHashCode(), passwordHash1.GetHashCode());
+            Assert.True(passwordHash1 != passwordHash2);
         }
 
         [Fact]
@@ -85,7 +78,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             var result = passwordHash.ToString();
 
             // Assert
-            result.Should().Be("***");
+            Assert.Equal("***", result);
         }
 
         [Fact]
@@ -99,7 +92,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             string value = passwordHash;
 
             // Assert
-            value.Should().Be(hash);
+            Assert.Equal(hash, value);
         }
 
         [Fact]
@@ -112,7 +105,7 @@ namespace Tests.Unit.Backend.Domain.ValueObjects
             PasswordHash passwordHash = hash;
 
             // Assert
-            passwordHash.Value.Should().Be(hash);
+            Assert.Equal(hash, passwordHash.Value);
         }
     }
 }

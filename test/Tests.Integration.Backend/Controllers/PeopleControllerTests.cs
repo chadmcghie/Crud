@@ -27,10 +27,10 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.GetAsync("/api/people");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var people = await ReadJsonAsync<List<PersonResponse>>(response);
-            people.Should().NotBeNull();
-            people.Should().BeEmpty();
+            Assert.NotNull(people);
+            Assert.Empty(people);
         });
     }
 
@@ -47,18 +47,18 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var createdPerson = await ReadJsonAsync<PersonResponse>(response);
 
-            createdPerson.Should().NotBeNull();
-            createdPerson!.Id.Should().NotBeEmpty();
-            createdPerson.FullName.Should().Be("John Doe");
-            createdPerson.Phone.Should().Be("123-456-7890");
-            createdPerson.Roles.Should().BeEmpty();
+            Assert.NotNull(createdPerson);
+            Assert.NotEqual(Guid.Empty, createdPerson!.Id);
+            Assert.Equal("John Doe", createdPerson.FullName);
+            Assert.Equal("123-456-7890", createdPerson.Phone);
+            Assert.Empty(createdPerson.Roles);
 
             // Verify Location header
-            response.Headers.Location.Should().NotBeNull();
-            response.Headers.Location!.ToString().ToLowerInvariant().Should().EndWith($"/api/people/{createdPerson.Id}".ToLowerInvariant());
+            Assert.NotNull(response.Headers.Location);
+            Assert.EndsWith($"/api/people/{createdPerson.Id}".ToLowerInvariant(), response.Headers.Location!.ToString().ToLowerInvariant());
         });
     }
 
@@ -75,7 +75,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.PostAsJsonAsync("/api/people", invalidRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         });
     }
 
@@ -107,14 +107,14 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var createdPerson = await ReadJsonAsync<PersonResponse>(response);
 
-            createdPerson.Should().NotBeNull();
-            createdPerson!.FullName.Should().Be("Jane Smith");
-            createdPerson.Roles.Should().HaveCount(2);
-            createdPerson.Roles.Should().Contain(r => r.Name == "Admin");
-            createdPerson.Roles.Should().Contain(r => r.Name == "User");
+            Assert.NotNull(createdPerson);
+            Assert.Equal("Jane Smith", createdPerson!.FullName);
+            Assert.Equal(2, createdPerson.Roles.Count());
+            Assert.Contains(createdPerson.Roles, r => r.Name == "Admin");
+            Assert.Contains(createdPerson.Roles, r => r.Name == "User");
         });
     }
 
@@ -131,12 +131,12 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var createdPerson = await ReadJsonAsync<PersonResponse>(response);
 
-            createdPerson.Should().NotBeNull();
-            createdPerson!.FullName.Should().Be("No Phone Person");
-            createdPerson.Phone.Should().BeNull();
+            Assert.NotNull(createdPerson);
+            Assert.Equal("No Phone Person", createdPerson!.FullName);
+            Assert.Null(createdPerson.Phone);
         });
     }
 
@@ -159,13 +159,13 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await userClient.GetAsync("/api/people");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var people = await ReadJsonAsync<List<PersonResponse>>(response);
 
-            people.Should().NotBeNull();
-            people.Should().HaveCount(2);
-            people.Should().Contain(p => p.FullName == "Person One");
-            people.Should().Contain(p => p.FullName == "Person Two");
+            Assert.NotNull(people);
+            Assert.Equal(2, people.Count);
+            Assert.Contains(people, p => p.FullName == "Person One");
+            Assert.Contains(people, p => p.FullName == "Person Two");
         });
     }
 
@@ -186,13 +186,13 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await userClient.GetAsync($"/api/people/{createdPerson!.Id}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var retrievedPerson = await ReadJsonAsync<PersonResponse>(response);
 
-            retrievedPerson.Should().NotBeNull();
-            retrievedPerson!.Id.Should().Be(createdPerson.Id);
-            retrievedPerson.FullName.Should().Be("Specific Person");
-            retrievedPerson.Phone.Should().Be("333-333-3333");
+            Assert.NotNull(retrievedPerson);
+            Assert.Equal(createdPerson.Id, retrievedPerson!.Id);
+            Assert.Equal("Specific Person", retrievedPerson.FullName);
+            Assert.Equal("333-333-3333", retrievedPerson.Phone);
         });
     }
 
@@ -209,7 +209,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await client.GetAsync($"/api/people/{nonExistentId}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         });
     }
 
@@ -231,15 +231,15 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await adminClient.PutAsJsonAsync($"/api/people/{createdPerson!.Id}", updateRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
             // Verify the update
             var getResponse = await adminClient.GetAsync($"/api/people/{createdPerson.Id}");
             var updatedPerson = await ReadJsonAsync<PersonResponse>(getResponse);
 
-            updatedPerson.Should().NotBeNull();
-            updatedPerson!.FullName.Should().Be("Updated Name");
-            updatedPerson.Phone.Should().Be("555-555-5555");
+            Assert.NotNull(updatedPerson);
+            Assert.Equal("Updated Name", updatedPerson!.FullName);
+            Assert.Equal("555-555-5555", updatedPerson.Phone);
         });
     }
 
@@ -276,18 +276,18 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await adminClient.PutAsJsonAsync($"/api/people/{createdPerson!.Id}", updateRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
             // Verify the roles were updated
             var getResponse = await adminClient.GetAsync($"/api/people/{createdPerson.Id}");
             var updatedPerson = await ReadJsonAsync<PersonResponse>(getResponse);
 
-            updatedPerson.Should().NotBeNull();
-            updatedPerson!.Roles.Should().HaveCount(2);
+            Assert.NotNull(updatedPerson);
+            Assert.Equal(2, updatedPerson!.Roles.Count());
             // Check by role ID instead of name (names have generated suffixes)
-            updatedPerson.Roles.Should().Contain(r => r.Id == role2.Id);
-            updatedPerson.Roles.Should().Contain(r => r.Id == role3!.Id);
-            updatedPerson.Roles.Should().NotContain(r => r.Id == role1!.Id);
+            Assert.Contains(updatedPerson.Roles, r => r.Id == role2.Id);
+            Assert.Contains(updatedPerson.Roles, r => r.Id == role3!.Id);
+            Assert.DoesNotContain(updatedPerson.Roles, r => r.Id == role1!.Id);
         });
     }
 
@@ -305,7 +305,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await adminClient.PutAsJsonAsync($"/api/people/{nonExistentId}", updateRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         });
     }
 
@@ -325,11 +325,11 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await adminClient.DeleteAsync($"/api/people/{createdPerson!.Id}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
             // Verify the person was deleted
             var getResponse = await adminClient.GetAsync($"/api/people/{createdPerson.Id}");
-            getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
         });
     }
 
@@ -347,7 +347,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
 
             // Assert
             // Idempotent DELETE returns 204 even for non-existent resources
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         });
     }
 
@@ -374,12 +374,12 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var retrievedPerson = await ReadJsonAsync<PersonResponse>(getResponse);
 
             // Assert
-            retrievedPerson.Should().NotBeNull();
-            retrievedPerson!.Roles.Should().HaveCount(1);
+            Assert.NotNull(retrievedPerson);
+            Assert.Single(retrievedPerson!.Roles);
             var personRole = retrievedPerson.Roles.First();
-            personRole.Id.Should().Be(role.Id);
-            personRole.Name.Should().Be("TestRole");
-            personRole.Description.Should().Be("Test role");
+            Assert.Equal(role.Id, personRole.Id);
+            Assert.Equal("TestRole", personRole.Name);
+            Assert.Equal("Test role", personRole.Description);
         });
     }
 
@@ -395,7 +395,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
                 var response = await Client.GetAsync("/api/people");
 
                 // Assert
-                response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             }
             finally
             {
@@ -417,7 +417,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await unauthenticatedClient.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         });
     }
 
@@ -438,7 +438,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await userClient.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert - Should get Unauthorized since no auth provided
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
+            Assert.Contains(response.StatusCode, new[] { HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden });
         }
         finally
         {
@@ -464,7 +464,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
             var response = await userClient.DeleteAsync($"/api/people/{testPersonId}");
 
             // Assert - Should get Unauthorized since no auth provided
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
+            Assert.Contains(response.StatusCode, new[] { HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden });
         }
         finally
         {

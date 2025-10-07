@@ -17,12 +17,12 @@ public class PersonTests
                 .Build();
 
             // Assert
-            person.Should().NotBeNull();
-            person.Id.Should().NotBeEmpty();
-            person.FullName.Should().Be("John Doe");
-            person.Phone.Should().Be("555-1234");
-            person.Roles.Should().NotBeNull();
-            person.Roles.Should().BeEmpty();
+            Assert.NotNull(person);
+            Assert.NotEqual(Guid.Empty, person.Id);
+            Assert.Equal("John Doe", person.FullName);
+            Assert.Equal("555-1234", person.Phone);
+            Assert.NotNull(person.Roles);
+            Assert.Empty(person.Roles);
         }
 
         [Fact]
@@ -35,9 +35,9 @@ public class PersonTests
                 .Build();
 
             // Assert
-            person.Should().NotBeNull();
-            person.FullName.Should().Be("Jane Doe");
-            person.Phone.Should().BeNull();
+            Assert.NotNull(person);
+            Assert.Equal("Jane Doe", person.FullName);
+            Assert.Null(person.Phone);
         }
 
         [Fact]
@@ -48,7 +48,7 @@ public class PersonTests
             var person2 = PersonTestDataBuilder.Default().Build();
 
             // Assert
-            person1.Id.Should().NotBe(person2.Id);
+            Assert.NotEqual(person2.Id, person1.Id);
         }
     }
 
@@ -67,9 +67,9 @@ public class PersonTests
                 .Build();
 
             // Assert
-            person.Roles.Should().HaveCount(2);
-            person.Roles.Should().Contain(role1);
-            person.Roles.Should().Contain(role2);
+            Assert.Equal(2, person.Roles.Count);
+            Assert.Contains(role1, person.Roles);
+            Assert.Contains(role2, person.Roles);
         }
 
         [Fact]
@@ -81,8 +81,8 @@ public class PersonTests
                 .Build();
 
             // Assert
-            person.Roles.Should().NotBeNull();
-            person.Roles.Should().BeEmpty();
+            Assert.NotNull(person.Roles);
+            Assert.Empty(person.Roles);
         }
     }
 
@@ -101,8 +101,9 @@ public class PersonTests
                 .WithFullName(invalidName)
                 .Build();
 
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Required input*was empty*");
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.Contains("Required input", ex.Message);
+            Assert.Contains("was empty", ex.Message);
         }
 
         [Fact]
@@ -116,8 +117,9 @@ public class PersonTests
                 .WithFullName(longFullName)
                 .Build();
 
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Input*too long*");
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.Contains("Input", ex.Message);
+            Assert.Contains("too long", ex.Message);
         }
     }
 }

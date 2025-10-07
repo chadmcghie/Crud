@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
@@ -38,18 +37,16 @@ public class HealthEndpointSmokeTests : SmokeTestBase
 
             // Validate response content indicates healthy status
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotBeNullOrEmpty($"/health should return content in {environment} environment");
+            Assert.False(string.IsNullOrEmpty(content));
 
             // Basic validation that it's a health check response
             // The exact format may vary, but it should indicate healthy status
-            content.ToLower().Should().Contain("healthy",
-          $"/health should indicate healthy status in {environment} environment");
+            Assert.Contains("healthy", content.ToLower());
 
         }, $"/health endpoint in {environment}");
 
         // Assert timing constraint for smoke tests
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"/health endpoint should respond within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"/health in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -70,22 +67,19 @@ public class HealthEndpointSmokeTests : SmokeTestBase
             ValidateHealthyResponse(response, environment, "/health/detailed");
 
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotBeNullOrEmpty($"/health/detailed should return content in {environment} environment");
+            Assert.False(string.IsNullOrEmpty(content));
 
             // Validate JSON response structure for detailed health endpoint
             var healthData = JsonSerializer.Deserialize<JsonElement>(content);
-            healthData.ValueKind.Should().Be(JsonValueKind.Object,
-              $"/health/detailed should return valid JSON object in {environment} environment");
+            Assert.Equal(JsonValueKind.Object, healthData.ValueKind);
 
             // Validate it has detailed health information
-            healthData.TryGetProperty("status", out _).Should().BeTrue(
-              $"/health/detailed should include status property in {environment} environment");
+            Assert.True(healthData.TryGetProperty("status", out _));
 
         }, $"/health/detailed endpoint in {environment}");
 
         // Assert timing constraint
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"/health/detailed endpoint should respond within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"/health/detailed in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -107,8 +101,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
 
             // Verify health check service is registered
             var healthCheckService = scope.ServiceProvider.GetService<HealthCheckService>();
-            healthCheckService.Should().NotBeNull(
-          $"HealthCheckService should be registered in {environment} environment");
+            Assert.NotNull(healthCheckService);
 
             // Verify health checks are configured
             var healthCheckPublisher = scope.ServiceProvider.GetService<IHealthCheckPublisher>();
@@ -120,8 +113,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         }, $"Health check service validation in {environment}");
 
         // Service registration should be very fast
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Health check service registration should be fast in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
     }
 
     [Theory]
@@ -143,15 +135,14 @@ public class HealthEndpointSmokeTests : SmokeTestBase
 
             // The health check should reflect the environment configuration
             // This validates that the application is using the correct environment settings
-            content.Should().NotBeNullOrEmpty();
+            Assert.False(string.IsNullOrEmpty(content));
 
             // Log the response for inspection (helpful for debugging)
             _output.WriteLine($"Health response in {environment}: {content.Substring(0, Math.Min(200, content.Length))}...");
 
         }, $"Environment-specific health check in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Environment-specific health check should complete quickly in {environment}");
+        Assert.True(executionTime.TotalSeconds < 10);
     }
 
     [Fact]
@@ -175,8 +166,7 @@ public class HealthEndpointSmokeTests : SmokeTestBase
         totalStopwatch.Stop();
 
         // Validate overall time constraint
-        totalStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(30,
-          "All environment health checks should complete within 30 seconds total");
+        Assert.True(totalStopwatch.Elapsed.TotalSeconds < 30);
 
         _output.WriteLine($"Total time for all environments: {totalStopwatch.Elapsed.TotalSeconds:F2} seconds");
     }

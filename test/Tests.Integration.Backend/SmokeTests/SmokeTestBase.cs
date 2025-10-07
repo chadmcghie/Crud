@@ -1,10 +1,10 @@
 using System.Diagnostics;
-using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace Tests.Integration.Backend.SmokeTests;
 
@@ -132,11 +132,9 @@ public abstract class SmokeTestBase : IDisposable
     /// </summary>
     protected static void ValidateHealthyResponse(HttpResponseMessage response, string environment, string endpoint)
     {
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK,
-          $"{endpoint} should return 200 OK in {environment} environment");
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
 
-        response.Content.Headers.ContentType?.MediaType.Should().NotBeNullOrEmpty(
-          $"{endpoint} should return content with media type in {environment} environment");
+        Assert.False(string.IsNullOrEmpty(response.Content.Headers.ContentType?.MediaType));
     }
 
     /// <summary>

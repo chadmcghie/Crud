@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Api;
 using App.Features.Authentication;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
@@ -42,14 +41,14 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var result = await ReadJsonAsync<TokenResponse>(response);
 
-            result.Should().NotBeNull();
-            result!.AccessToken.Should().NotBeNullOrEmpty();
-            result.RefreshToken.Should().NotBeNullOrEmpty();
-            result.ExpiresIn.Should().BeGreaterThan(0);
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result!.AccessToken));
+            Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+            Assert.True(result.ExpiresIn > 0);
         });
     }
 
@@ -69,13 +68,13 @@ public class AuthControllerTests : IntegrationTestBase
 
             // Register first time
             var firstResponse = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
-            firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, "First registration should succeed");
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
 
             // Act - Try to register with same email
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         });
     }
 
@@ -97,7 +96,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/register", command);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         });
     }
 
@@ -130,14 +129,14 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
 
-            result.Should().NotBeNull();
-            result!.AccessToken.Should().NotBeNullOrEmpty();
-            result.RefreshToken.Should().NotBeNullOrEmpty();
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result!.AccessToken));
+            Assert.False(string.IsNullOrEmpty(result.RefreshToken));
         });
     }
 
@@ -157,7 +156,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         });
     }
 
@@ -177,7 +176,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/auth/login", loginCommand);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         });
     }
 
@@ -218,15 +217,15 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<TokenResponse>(content, JsonOptions);
 
-            result.Should().NotBeNull();
-            result!.AccessToken.Should().NotBeNullOrEmpty();
-            result.RefreshToken.Should().NotBeNullOrEmpty();
-            result.RefreshToken.Should().NotBe(loginResult.RefreshToken); // Should be a new refresh token
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result!.AccessToken));
+            Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+            Assert.NotEqual(loginResult.RefreshToken, result.RefreshToken); // Should be a new refresh token
         });
     }
 
@@ -245,7 +244,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         });
     }
 
@@ -285,7 +284,7 @@ public class AuthControllerTests : IntegrationTestBase
             var logoutResponse = await Client.PostAsync("/api/auth/logout", null);
 
             // Assert
-            logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, logoutResponse.StatusCode);
 
             // Try to use the refresh token after logout - should fail
             var refreshCommand = new RefreshTokenCommand
@@ -293,7 +292,7 @@ public class AuthControllerTests : IntegrationTestBase
                 RefreshToken = loginResult!.RefreshToken!
             };
             var refreshResponse = await Client.PostAsJsonAsync("/api/auth/refresh", refreshCommand);
-            refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
         });
     }
 
@@ -306,7 +305,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.GetAsync("/api/auth/me");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         });
     }
 
@@ -345,7 +344,7 @@ public class AuthControllerTests : IntegrationTestBase
             var response = await Client.GetAsync("/api/auth/me");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         });
     }
 }

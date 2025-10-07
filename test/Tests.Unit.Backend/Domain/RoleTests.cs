@@ -17,10 +17,10 @@ public class RoleTests
                 .Build();
 
             // Assert
-            role.Should().NotBeNull();
-            role.Id.Should().NotBeEmpty();
-            role.Name.Should().Be("Administrator");
-            role.Description.Should().Be("System administrator role");
+            Assert.NotNull(role);
+            Assert.NotEqual(Guid.Empty, role.Id);
+            Assert.Equal("Administrator", role.Name);
+            Assert.Equal("System administrator role", role.Description);
         }
 
         [Fact]
@@ -33,9 +33,9 @@ public class RoleTests
                 .Build();
 
             // Assert
-            role.Should().NotBeNull();
-            role.Name.Should().Be("User");
-            role.Description.Should().BeNull();
+            Assert.NotNull(role);
+            Assert.Equal("User", role.Name);
+            Assert.Null(role.Description);
         }
 
         [Fact]
@@ -46,7 +46,7 @@ public class RoleTests
             var role2 = RoleTestDataBuilder.Default().Build();
 
             // Assert
-            role1.Id.Should().NotBe(role2.Id);
+            Assert.NotEqual(role2.Id, role1.Id);
         }
     }
 
@@ -65,8 +65,9 @@ public class RoleTests
                 .WithName(invalidName)
                 .Build();
 
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Required input*was empty*");
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.Contains("Required input", ex.Message);
+            Assert.Contains("was empty", ex.Message);
         }
 
         [Fact]
@@ -80,8 +81,9 @@ public class RoleTests
                 .WithName(longName)
                 .Build();
 
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Input*too long*");
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.Contains("Input", ex.Message);
+            Assert.Contains("too long", ex.Message);
         }
 
         [Fact]
@@ -95,8 +97,9 @@ public class RoleTests
                 .WithDescription(longDescription)
                 .Build();
 
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Input*too long*");
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.Contains("Input", ex.Message);
+            Assert.Contains("too long", ex.Message);
         }
     }
 }

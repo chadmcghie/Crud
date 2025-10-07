@@ -1,5 +1,4 @@
 using Domain.Entities.Authentication;
-using FluentAssertions;
 using Xunit;
 
 namespace Tests.Unit.Backend.Domain
@@ -18,14 +17,14 @@ namespace Tests.Unit.Backend.Domain
             var refreshToken = new RefreshToken(token, expiresAt, userId);
 
             // Assert
-            refreshToken.Should().NotBeNull();
-            refreshToken.Id.Should().NotBeEmpty();
-            refreshToken.Token.Should().Be(token);
-            refreshToken.UserId.Should().Be(userId);
-            refreshToken.ExpiresAt.Should().Be(expiresAt);
-            refreshToken.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            refreshToken.RevokedAt.Should().BeNull();
-            refreshToken.IsActive.Should().BeTrue();
+            Assert.NotNull(refreshToken);
+            Assert.NotEqual(Guid.Empty, refreshToken.Id);
+            Assert.Equal(token, refreshToken.Token);
+            Assert.Equal(userId, refreshToken.UserId);
+            Assert.Equal(expiresAt, refreshToken.ExpiresAt);
+            Assert.True((DateTime.UtcNow - refreshToken.CreatedAt).TotalSeconds < 1);
+            Assert.Null(refreshToken.RevokedAt);
+            Assert.True(refreshToken.IsActive);
         }
 
         [Theory]
@@ -38,12 +37,9 @@ namespace Tests.Unit.Backend.Domain
             var userId = Guid.NewGuid();
             var expiresAt = DateTime.UtcNow.AddDays(7);
 
-            // Act
-            var action = () => new RefreshToken(invalidToken, expiresAt, userId);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Token cannot be empty*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new RefreshToken(invalidToken, expiresAt, userId));
+            Assert.Contains("Token cannot be empty", ex.Message);
         }
 
         [Fact]
@@ -54,12 +50,9 @@ namespace Tests.Unit.Backend.Domain
             var userId = Guid.Empty;
             var expiresAt = DateTime.UtcNow.AddDays(7);
 
-            // Act
-            var action = () => new RefreshToken(token, expiresAt, userId);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("UserId cannot be empty*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new RefreshToken(token, expiresAt, userId));
+            Assert.Contains("UserId cannot be empty", ex.Message);
         }
 
         [Fact]
@@ -70,12 +63,9 @@ namespace Tests.Unit.Backend.Domain
             var userId = Guid.NewGuid();
             var expiresAt = DateTime.UtcNow.AddDays(-1);
 
-            // Act
-            var action = () => new RefreshToken(token, expiresAt, userId);
-
-            // Assert
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("Expiration date must be in the future*");
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new RefreshToken(token, expiresAt, userId));
+            Assert.Contains("Expiration date must be in the future", ex.Message);
         }
 
         [Fact]
@@ -89,7 +79,7 @@ namespace Tests.Unit.Backend.Domain
             );
 
             // Act & Assert
-            refreshToken.IsActive.Should().BeTrue();
+            Assert.True(refreshToken.IsActive);
         }
 
         [Fact]
@@ -104,7 +94,7 @@ namespace Tests.Unit.Backend.Domain
             refreshToken.Revoke();
 
             // Act & Assert
-            refreshToken.IsActive.Should().BeFalse();
+            Assert.False(refreshToken.IsActive);
         }
 
         [Fact]
@@ -119,7 +109,7 @@ namespace Tests.Unit.Backend.Domain
             System.Threading.Thread.Sleep(1500); // Wait for expiration
 
             // Act & Assert
-            refreshToken.IsActive.Should().BeFalse();
+            Assert.False(refreshToken.IsActive);
         }
 
         [Fact]
@@ -134,7 +124,7 @@ namespace Tests.Unit.Backend.Domain
             System.Threading.Thread.Sleep(1500); // Wait for expiration
 
             // Act & Assert
-            refreshToken.IsExpired.Should().BeTrue();
+            Assert.True(refreshToken.IsExpired);
         }
 
         [Fact]
@@ -148,7 +138,7 @@ namespace Tests.Unit.Backend.Domain
             );
 
             // Act & Assert
-            refreshToken.IsExpired.Should().BeFalse();
+            Assert.False(refreshToken.IsExpired);
         }
 
         [Fact]
@@ -165,9 +155,9 @@ namespace Tests.Unit.Backend.Domain
             refreshToken.Revoke();
 
             // Assert
-            refreshToken.RevokedAt.Should().NotBeNull();
-            refreshToken.RevokedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            refreshToken.IsActive.Should().BeFalse();
+            Assert.NotNull(refreshToken.RevokedAt);
+            Assert.True((DateTime.UtcNow - refreshToken.RevokedAt.Value).TotalSeconds < 1);
+            Assert.False(refreshToken.IsActive);
         }
 
         [Fact]
@@ -187,7 +177,7 @@ namespace Tests.Unit.Backend.Domain
             refreshToken.Revoke();
 
             // Assert
-            refreshToken.RevokedAt.Should().Be(firstRevokedAt);
+            Assert.Equal(firstRevokedAt, refreshToken.RevokedAt);
         }
 
         [Fact]
@@ -200,7 +190,7 @@ namespace Tests.Unit.Backend.Domain
             var refreshToken2 = new RefreshToken(token, DateTime.UtcNow.AddDays(7), userId);
 
             // Act & Assert
-            refreshToken1.Token.Should().Be(refreshToken2.Token);
+            Assert.Equal(refreshToken2.Token, refreshToken1.Token);
         }
 
         [Fact]
@@ -212,7 +202,7 @@ namespace Tests.Unit.Backend.Domain
             var refreshToken2 = new RefreshToken("token456", DateTime.UtcNow.AddDays(7), userId);
 
             // Act & Assert
-            refreshToken1.Token.Should().NotBe(refreshToken2.Token);
+            Assert.NotEqual(refreshToken2.Token, refreshToken1.Token);
         }
     }
 }

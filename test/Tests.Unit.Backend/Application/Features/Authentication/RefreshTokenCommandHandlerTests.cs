@@ -74,12 +74,12 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
-            result.AccessToken.Should().Be(newAccessToken);
-            result.RefreshToken.Should().Be(newRefreshTokenValue);
-            result.Email.Should().Be(user.Email.Value);
-            result.UserId.Should().Be(user.Id);
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(newAccessToken, result.AccessToken);
+            Assert.Equal(newRefreshTokenValue, result.RefreshToken);
+            Assert.Equal(user.Email.Value, result.Email);
+            Assert.Equal(user.Id, result.UserId);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u =>
@@ -110,11 +110,11 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Invalid refresh token");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Invalid refresh token", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateRefreshToken(), Times.Never);
@@ -151,11 +151,11 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Refresh token has expired");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Refresh token has expired", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateRefreshToken(), Times.Never);
@@ -193,11 +193,11 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Refresh token has been revoked");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Refresh token has been revoked", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateRefreshToken(), Times.Never);
@@ -236,11 +236,11 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Account is locked");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Account is locked", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateRefreshToken(), Times.Never);
@@ -275,9 +275,9 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Contain("Refresh token");
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Contains("Refresh token", result.Error);
 
             _mockUserRepository.Verify(x => x.GetByRefreshTokenAsync(
                 It.IsAny<string>(),
@@ -303,7 +303,7 @@ public class RefreshTokenCommandHandlerTests
             var exception = await Assert.ThrowsAsync<Exception>(
                 () => _handler.Handle(command, CancellationToken.None));
 
-            exception.Message.Should().Be("Database error");
+            Assert.Equal("Database error", exception.Message);
         }
 
         [Fact]
@@ -372,10 +372,10 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
-            result.RefreshToken.Should().Be(newRefreshTokenValue);
-            result.RefreshToken.Should().NotBe(command.RefreshToken);
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(newRefreshTokenValue, result.RefreshToken);
+            Assert.NotEqual(command.RefreshToken, result.RefreshToken);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u =>
@@ -439,8 +439,8 @@ public class RefreshTokenCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
+            Assert.NotNull(result);
+            Assert.True(result.Success);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u =>

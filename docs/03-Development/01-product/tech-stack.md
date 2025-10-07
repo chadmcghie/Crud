@@ -25,7 +25,7 @@
 - **Deployment Solution:** GitHub Actions CI/CD
 
 ## Testing
-- **Unit Testing:** xUnit with FluentAssertions
+- **Unit Testing:** xUnit
 - **Integration Testing:** WebApplicationFactory with TestContainers
 - **E2E Testing:** Playwright
 - **Code Coverage:** Coverlet
