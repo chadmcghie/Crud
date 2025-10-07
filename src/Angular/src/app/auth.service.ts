@@ -33,48 +33,7 @@ export class AuthService {
   private http = inject(HttpClient);
 
   constructor() {
-    // 🔍 DEBUG: AuthService constructor verification
-    console.log('🔍 AuthService Constructor Called - Timestamp:', new Date().toISOString());
-
-    // 🔍 DEBUG: Check what's in storage BEFORE E2E detection
-    console.log('🔍 PRE-E2E Storage Check:', {
-      localStorage_access_token: localStorage.getItem('access_token'),
-      sessionStorage_access_token: sessionStorage.getItem('access_token'),
-      localStorage_user: localStorage.getItem('user'),
-      sessionStorage_user: sessionStorage.getItem('user'),
-      localStorage_e2e_mode: localStorage.getItem('e2e-test-mode'),
-      document_e2e_attr: document.documentElement.getAttribute('data-e2e')
-    });
-
-    // E2E Testing: Auto-authenticate for E2E tests
-    // More comprehensive E2E detection for CI environments
-    const isE2EMode = this.isE2ETestEnvironment();
-    console.log('🔍 Final E2E Mode Decision:', isE2EMode);
-
-    if (isE2EMode) {
-      // Set the test mode flag for auth guards
-      localStorage.setItem('e2e-test-mode', 'active');
-
-      // Create mock authenticated user for E2E tests
-      const mockUser: User = {
-        id: 'e2e-test-user',
-        email: 'e2e@test.com',
-        roles: ['User', 'Admin']
-      };
-      this.currentUserSubject = new BehaviorSubject<User | null>(mockUser);
-      this.currentUser$ = this.currentUserSubject.asObservable();
-      console.log('🤖 E2E Mode: Auto-authenticated as mock user for testing');
-      console.log('🤖 E2E Detection: User agent =', navigator.userAgent);
-      console.log('🤖 E2E Detection: Host =', window.location.hostname);
-      console.log('🤖 E2E Detection: Port =', window.location.port);
-      console.log('🤖 E2E Mode: Mock user set to currentUserSubject');
-      console.log('🤖 E2E Mode: Test mode flag set in localStorage');
-      return;
-    } else {
-      console.log('🔍 E2E Mode NOT detected - proceeding with normal auth flow');
-    }
-
-    // Normal authentication flow
+    // Initialize authentication state from stored tokens
     const hasToken = !!(localStorage.getItem('access_token') || sessionStorage.getItem('access_token'));
     if (hasToken) {
       this.useLocalStorage = !!localStorage.getItem('access_token');
@@ -88,84 +47,6 @@ export class AuthService {
       this.validateStoredToken();
       this.scheduleTokenRefresh();
     }
-  }
-
-  private isE2ETestEnvironment(): boolean {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const currentPort = window.location.port;
-    const currentHost = window.location.hostname;
-
-    // CRITICAL: Exclude unit test ports FIRST to prevent regression loops
-    // Unit test ports (Karma typically uses 9876, 9877, etc.) - these should NEVER be E2E mode
-    const isUnitTestPort = currentPort.startsWith('987') || currentPort.startsWith('988');
-    if (isUnitTestPort) {
-      return false; // Immediately exclude unit tests
-    }
-
-    // CRITICAL: Check for e2e-test-mode flag set by Playwright addInitScript
-    // This is the PRIMARY way E2E tests signal their presence
-    const hasE2ETestModeFlag = localStorage.getItem('e2e-test-mode') === 'active';
-    if (hasE2ETestModeFlag) {
-      console.log('🔓 E2E Mode detected via localStorage flag');
-      return true;
-    }
-
-    // E2E-specific detection strategies
-    const isTestHost = currentHost === 'localhost' || currentHost === '127.0.0.1';
-
-    // Only consider E2E if we're on the actual Angular app port (4200) or no port specified
-    const isAngularAppPort = currentPort === '4200' || currentPort === '';
-
-    // Explicit E2E markers (highest priority)
-    const hasTestCookie = document.cookie.includes('e2e-test');
-    const hasTestQuery = window.location.search.includes('e2e=true');
-    const hasTestRunId = !!(window as { testRunId?: unknown }).testRunId || !!document.querySelector('[data-test-run-id]');
-    const hasE2EEnvMarker = window.location.search.includes('test=true') ||
-                           document.documentElement.getAttribute('data-e2e') === 'true';
-
-    // If we have explicit E2E markers, we're definitely in E2E mode
-    if (hasTestCookie || hasTestQuery || hasTestRunId || hasE2EEnvMarker) {
-      return true;
-    }
-
-    // Playwright-specific detection (only if not unit tests and on correct port)
-    const isPlaywright = userAgent.includes('playwright');
-    const hasPlaywrightUserAgent = userAgent.includes('headlesschrome') ||
-                                   (userAgent.includes('chrome') &&
-                                    (userAgent.includes('140.0.') || userAgent.includes('130.0.')));
-
-    // Check if this looks like a real E2E test scenario
-    // Must be: localhost + Angular port + headless browser (but not unit test port)
-    const isLikelyE2E = !isUnitTestPort &&
-                        isAngularAppPort &&
-                        isTestHost &&
-                        (userAgent.includes('headless') || userAgent.includes('chrome'));
-
-    // Final E2E determination - require either explicit markers OR proper E2E environment
-    const isE2E = isPlaywright || hasPlaywrightUserAgent ||
-                  (isLikelyE2E && window.navigator.webdriver === true) ||
-                  (isTestHost && isAngularAppPort && userAgent.includes('headless'));
-
-    // Always log detection results for debugging
-    console.log('🤖 E2E Detection Results:', {
-      userAgent: userAgent.substring(0, 80) + '...',
-      currentPort,
-      currentHost,
-      isUnitTestPort,
-      isAngularAppPort,
-      isPlaywright,
-      isTestHost,
-      hasTestCookie,
-      hasTestQuery,
-      hasTestRunId,
-      hasE2EEnvMarker,
-      hasPlaywrightUserAgent,
-      isLikelyE2E,
-      webdriver: window.navigator.webdriver,
-      final: isE2E
-    });
-
-    return isE2E;
   }
 
   login(email: string, password: string, rememberMe = false): Observable<AuthResponse> {
