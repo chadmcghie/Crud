@@ -60,12 +60,12 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
 
         // Assert - Application should still function with fallback configuration
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty(
-            $"Application should have fallback connection string in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         var databaseProvider = configuration.GetValue<string>("DatabaseProvider");
-        databaseProvider.Should().NotBeNullOrEmpty(
-            $"Application should have fallback database provider in {environment}");
+        Assert.NotNull(databaseProvider);
+        Assert.NotEmpty(databaseProvider);
     }
 
     /// <summary>
@@ -110,8 +110,8 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
         };
 
         // Assert - Should not throw unhandled exceptions
-        createFactoryWithInvalidConfig.Should().NotThrow(
-            $"Application should handle configuration errors gracefully in {environment}");
+        var exception = Record.Exception(createFactoryWithInvalidConfig);
+        Assert.Null(exception);
     }
 
     /// <summary>
@@ -152,14 +152,12 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
         var databaseProvider = configuration.GetValue<string>("DatabaseProvider", "SQLite");
 
         // Assert
-        connectionString.Should().NotBeNullOrEmpty(
-            $"Fallback connection string should be available in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
-        connectionString.Should().Contain(".db",
-            $"Fallback connection string should be valid SQLite format in {environment}");
+        Assert.Contains(".db", connectionString);
 
-        databaseProvider.Should().Be("SQLite",
-            $"Fallback database provider should be SQLite in {environment}");
+        Assert.Equal("SQLite", databaseProvider);
     }
 
     /// <summary>
@@ -199,17 +197,15 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
         // Assert
-        logger.Should().NotBeNull(
-            $"Logger should be available with fallback configuration in {environment}");
+        Assert.NotNull(logger);
 
         var logLevel = configuration["Logging:LogLevel:Default"];
-        logLevel.Should().NotBeNullOrEmpty(
-            $"Log level should have fallback value in {environment}");
+        Assert.NotNull(logLevel);
+        Assert.NotEmpty(logLevel);
 
         // Test that logging actually works
-        Action logAction = () => logger!.LogInformation("Test fallback logging in {Environment}", environment);
-        logAction.Should().NotThrow(
-            $"Logging should work with fallback configuration in {environment}");
+        var logException = Record.Exception(() => logger!.LogInformation("Test fallback logging in {Environment}", environment));
+        Assert.Null(logException);
     }
 
     /// <summary>
@@ -246,19 +242,8 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
 
         // Assert - Should either work with built-in defaults or fail with clear error
         // This test documents the expected behavior for completely missing configuration
-        if (environment == "Development")
-        {
-            // Development might be more tolerant of missing configuration
-            createFactoryWithEmptyConfig.Should().NotThrow(
-                "Development environment might have more fallback tolerance");
-        }
-        else
-        {
-            // Production environments should validate critical configuration is present
-            // The exact behavior depends on how the application is configured
-            createFactoryWithEmptyConfig.Should().NotThrow(
-                "Application should handle missing configuration gracefully, not crash");
-        }
+        var exception = Record.Exception(createFactoryWithEmptyConfig);
+        Assert.Null(exception);
     }
 
     /// <summary>
@@ -278,25 +263,23 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
 
         // Act & Assert - Validate that critical configuration is present and valid
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty(
-            $"Connection string validation should ensure it's present in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         var allowedHosts = configuration["AllowedHosts"];
-        allowedHosts.Should().NotBeNullOrEmpty(
-            $"AllowedHosts validation should ensure it's configured in {environment}");
+        Assert.NotNull(allowedHosts);
+        Assert.NotEmpty(allowedHosts);
 
         // Validate configuration format
         if (connectionString!.Contains("Data Source="))
         {
             // SQLite connection string format validation
-            connectionString.Should().Contain(".db",
-                $"SQLite connection string should have valid format in {environment}");
+            Assert.Contains(".db", connectionString);
         }
         else if (connectionString.Contains("Server="))
         {
             // SQL Server connection string format validation
-            connectionString.Should().Contain("Database=",
-                $"SQL Server connection string should have database name in {environment}");
+            Assert.Contains("Database=", connectionString);
         }
     }
 
@@ -320,15 +303,14 @@ public class ConfigurationErrorHandlingTests : IClassFixture<SqliteTestWebApplic
 
         // Act - Validate current configuration works
         var initialConnectionString = configuration.GetConnectionString("DefaultConnection");
-        initialConnectionString.Should().NotBeNullOrEmpty(
-            $"Initial configuration should be valid in {environment}");
+        Assert.NotNull(initialConnectionString);
+        Assert.NotEmpty(initialConnectionString);
 
         // Simulate configuration reload by accessing configuration again
         var reloadedConnectionString = configuration.GetConnectionString("DefaultConnection");
 
         // Assert
-        reloadedConnectionString.Should().Be(initialConnectionString,
-            $"Configuration should remain consistent during reload in {environment}");
+        Assert.Equal(initialConnectionString, reloadedConnectionString);
     }
 
     #region Helper Methods

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using App.Behaviors;
 using App.Interfaces;
 using App.Services;
-using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -54,8 +53,8 @@ public class CachingBehaviorTests
         var result = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        result.Should().Be(response);
-        called.Should().BeTrue();
+        Assert.Equal(response, result);
+        Assert.True(called);
         _cacheServiceMock.Verify(x => x.GetAsync<TestResponse>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -83,8 +82,8 @@ public class CachingBehaviorTests
         var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        result.Should().Be(cachedResponse);
-        called.Should().BeFalse();
+        Assert.Equal(cachedResponse, result);
+        Assert.False(called);
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public class CachingBehaviorTests
         var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        result.Should().Be(response);
+        Assert.Equal(response, result);
         _cacheServiceMock.Verify(x => x.GetAsync<TestResponse>(cacheKey, It.IsAny<CancellationToken>()), Times.Once);
         _cacheServiceMock.Verify(x => x.SetAsync(
             cacheKey,
@@ -167,7 +166,7 @@ public class CachingBehaviorTests
         var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        result.Should().Be(response);
+        Assert.Equal(response, result);
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -196,7 +195,7 @@ public class CachingBehaviorTests
         var result = await _behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
         _cacheServiceMock.Verify(x => x.SetAsync(
             It.IsAny<string>(),
             It.IsAny<TestResponse>(),

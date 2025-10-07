@@ -23,10 +23,10 @@ public class WindowsControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync("/api/windows");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var windows = await ReadJsonAsync<List<WindowResponse>>(response);
-            windows.Should().NotBeNull();
-            windows.Should().BeEmpty();
+            Assert.NotNull(windows);
+            Assert.Empty(windows);
         });
     }
 
@@ -63,26 +63,26 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWindow = await ReadJsonAsync<WindowResponse>(response);
 
-        createdWindow.Should().NotBeNull();
-        createdWindow!.Id.Should().NotBeEmpty();
-        createdWindow.Name.Should().Be("Living Room Window");
-        createdWindow.Description.Should().Be("Large south-facing window");
-        createdWindow.Width.Should().Be(1.5);
-        createdWindow.Height.Should().Be(2.0);
-        createdWindow.Area.Should().Be(3.0);
-        createdWindow.FrameType.Should().Be("Vinyl");
-        createdWindow.GlazingType.Should().Be("Double Pane");
-        createdWindow.UValue.Should().Be(0.3);
-        createdWindow.HasScreens.Should().Be(true);
-        createdWindow.HasStormWindows.Should().Be(false);
-        createdWindow.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        Assert.NotNull(createdWindow);
+        Assert.NotEqual(Guid.Empty, createdWindow!.Id);
+        Assert.Equal("Living Room Window", createdWindow.Name);
+        Assert.Equal("Large south-facing window", createdWindow.Description);
+        Assert.Equal(1.5, createdWindow.Width);
+        Assert.Equal(2.0, createdWindow.Height);
+        Assert.Equal(3.0, createdWindow.Area);
+        Assert.Equal("Vinyl", createdWindow.FrameType);
+        Assert.Equal("Double Pane", createdWindow.GlazingType);
+        Assert.Equal(0.3, createdWindow.UValue);
+        Assert.True(createdWindow.HasScreens);
+        Assert.False(createdWindow.HasStormWindows);
+        Assert.True((DateTime.UtcNow - createdWindow.CreatedAt).TotalMinutes < 1);
 
         // Verify location header
-        response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.ToString().ToLowerInvariant().Should().Contain($"/api/windows/{createdWindow.Id}".ToLowerInvariant());
+        Assert.NotNull(response.Headers.Location);
+        Assert.Contains($"/api/windows/{createdWindow.Id}".ToLowerInvariant(), response.Headers.Location!.ToString().ToLowerInvariant());
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/windows", invalidRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/windows", invalidRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -145,13 +145,13 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync("/api/windows");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var windows = await ReadJsonAsync<List<WindowResponse>>(response);
 
-        windows.Should().NotBeNull();
-        windows.Should().HaveCount(2);
-        windows.Should().Contain(w => w.Name == "Window 1");
-        windows.Should().Contain(w => w.Name == "Window 2");
+        Assert.NotNull(windows);
+        Assert.Equal(2, windows.Count);
+        Assert.Contains(windows, w => w.Name == "Window 1");
+        Assert.Contains(windows, w => w.Name == "Window 2");
     }
 
     [Fact]
@@ -167,18 +167,18 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync($"/api/windows/{createdWindow!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var window = await ReadJsonAsync<WindowResponse>(response);
 
-        window.Should().NotBeNull();
-        window!.Id.Should().Be(createdWindow.Id);
-        window.Name.Should().Be("Test Window");
-        window.Description.Should().Be("Test description");
-        window.Width.Should().Be(1.5);
-        window.Height.Should().Be(2.0);
-        window.Area.Should().Be(3.0);
-        window.FrameType.Should().Be("Aluminum");
-        window.GlazingType.Should().Be("Double Pane");
+        Assert.NotNull(window);
+        Assert.Equal(createdWindow.Id, window!.Id);
+        Assert.Equal("Test Window", window.Name);
+        Assert.Equal("Test description", window.Description);
+        Assert.Equal(1.5, window.Width);
+        Assert.Equal(2.0, window.Height);
+        Assert.Equal(3.0, window.Area);
+        Assert.Equal("Aluminum", window.FrameType);
+        Assert.Equal("Double Pane", window.GlazingType);
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync($"/api/windows/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -222,26 +222,26 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/windows/{createdWindow!.Id}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the update
         var getResponse = await AuthenticatedGetAsync($"/api/windows/{createdWindow.Id}");
         var updatedWindow = await ReadJsonAsync<WindowResponse>(getResponse);
 
-        updatedWindow.Should().NotBeNull();
-        updatedWindow!.Name.Should().Be("Updated Window");
-        updatedWindow.Description.Should().Be("Updated description");
-        updatedWindow.Width.Should().Be(2.0);
-        updatedWindow.Height.Should().Be(2.5);
-        updatedWindow.Area.Should().Be(5.0);
-        updatedWindow.FrameType.Should().Be("Vinyl");
-        updatedWindow.GlazingType.Should().Be("Triple Pane");
-        updatedWindow.UValue.Should().BeApproximately(0.2, 0.0001);
-        updatedWindow.SolarHeatGainCoefficient.Should().BeApproximately(0.3, 0.0001);
-        updatedWindow.HasScreens.Should().Be(true);
-        updatedWindow.HasStormWindows.Should().Be(true);
-        updatedWindow.UpdatedAt.Should().NotBeNull();
-        updatedWindow.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        Assert.NotNull(updatedWindow);
+        Assert.Equal("Updated Window", updatedWindow!.Name);
+        Assert.Equal("Updated description", updatedWindow.Description);
+        Assert.Equal(2.0, updatedWindow.Width);
+        Assert.Equal(2.5, updatedWindow.Height);
+        Assert.Equal(5.0, updatedWindow.Area);
+        Assert.Equal("Vinyl", updatedWindow.FrameType);
+        Assert.Equal("Triple Pane", updatedWindow.GlazingType);
+        Assert.Equal(0.2, updatedWindow.UValue!.Value, 4);
+        Assert.Equal(0.3, updatedWindow.SolarHeatGainCoefficient!.Value, 4);
+        Assert.True(updatedWindow.HasScreens);
+        Assert.True(updatedWindow.HasStormWindows);
+        Assert.NotNull(updatedWindow.UpdatedAt);
+        Assert.True((DateTime.UtcNow - updatedWindow.UpdatedAt.Value).TotalMinutes < 1);
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/windows/{nonExistentId}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -272,11 +272,11 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/windows/{createdWindow!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the window is deleted
         var getResponse = await AuthenticatedGetAsync($"/api/windows/{createdWindow.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
     [Fact]
@@ -289,7 +289,7 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/windows/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -325,26 +325,26 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWindow = await ReadJsonAsync<WindowResponse>(response);
 
-        createdWindow.Should().NotBeNull();
-        createdWindow!.Name.Should().Be("Simple Window");
-        createdWindow.Description.Should().BeNull();
-        createdWindow.FrameDetails.Should().BeNull();
-        createdWindow.GlazingDetails.Should().BeNull();
-        createdWindow.UValue.Should().BeNull();
-        createdWindow.SolarHeatGainCoefficient.Should().BeNull();
-        createdWindow.VisibleTransmittance.Should().BeNull();
-        createdWindow.AirLeakage.Should().BeNull();
-        createdWindow.EnergyStarRating.Should().BeNull();
-        createdWindow.NFRCRating.Should().BeNull();
-        createdWindow.Orientation.Should().BeNull();
-        createdWindow.Location.Should().BeNull();
-        createdWindow.InstallationType.Should().BeNull();
-        createdWindow.OperationType.Should().BeNull();
-        createdWindow.HasScreens.Should().BeNull();
-        createdWindow.HasStormWindows.Should().BeNull();
+        Assert.NotNull(createdWindow);
+        Assert.Equal("Simple Window", createdWindow!.Name);
+        Assert.Null(createdWindow.Description);
+        Assert.Null(createdWindow.FrameDetails);
+        Assert.Null(createdWindow.GlazingDetails);
+        Assert.Null(createdWindow.UValue);
+        Assert.Null(createdWindow.SolarHeatGainCoefficient);
+        Assert.Null(createdWindow.VisibleTransmittance);
+        Assert.Null(createdWindow.AirLeakage);
+        Assert.Null(createdWindow.EnergyStarRating);
+        Assert.Null(createdWindow.NFRCRating);
+        Assert.Null(createdWindow.Orientation);
+        Assert.Null(createdWindow.Location);
+        Assert.Null(createdWindow.InstallationType);
+        Assert.Null(createdWindow.OperationType);
+        Assert.Null(createdWindow.HasScreens);
+        Assert.Null(createdWindow.HasStormWindows);
     }
 
     [Fact]
@@ -380,18 +380,18 @@ public class WindowsControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/windows", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdWindow = await ReadJsonAsync<WindowResponse>(response);
 
-        createdWindow.Should().NotBeNull();
-        createdWindow!.UValue.Should().Be(0.15);
-        createdWindow.SolarHeatGainCoefficient.Should().Be(0.2);
-        createdWindow.VisibleTransmittance.Should().Be(0.65);
-        createdWindow.AirLeakage.Should().Be(0.05);
-        createdWindow.EnergyStarRating.Should().Be("Most Efficient");
-        createdWindow.NFRCRating.Should().Be("A++");
-        createdWindow.FrameDetails.Should().Be("Insulated fiberglass frame");
-        createdWindow.GlazingDetails.Should().Be("Low-E coating, krypton fill");
+        Assert.NotNull(createdWindow);
+        Assert.Equal(0.15, createdWindow!.UValue);
+        Assert.Equal(0.2, createdWindow.SolarHeatGainCoefficient);
+        Assert.Equal(0.65, createdWindow.VisibleTransmittance);
+        Assert.Equal(0.05, createdWindow.AirLeakage);
+        Assert.Equal("Most Efficient", createdWindow.EnergyStarRating);
+        Assert.Equal("A++", createdWindow.NFRCRating);
+        Assert.Equal("Insulated fiberglass frame", createdWindow.FrameDetails);
+        Assert.Equal("Low-E coating, krypton fill", createdWindow.GlazingDetails);
     }
 
     [Fact]
@@ -429,17 +429,17 @@ public class WindowsControllerTests : IntegrationTestBase
         var response2 = await AuthenticatedPostJsonAsync("/api/windows", createRequest2);
 
         // Assert
-        response1.StatusCode.Should().Be(HttpStatusCode.Created);
-        response2.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response1.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response2.StatusCode);
 
         var window1 = await ReadJsonAsync<WindowResponse>(response1);
         var window2 = await ReadJsonAsync<WindowResponse>(response2);
 
-        window1!.HasScreens.Should().Be(true);
-        window1.HasStormWindows.Should().Be(true);
+        Assert.True(window1!.HasScreens);
+        Assert.True(window1.HasStormWindows);
 
-        window2!.HasScreens.Should().Be(false);
-        window2.HasStormWindows.Should().Be(false);
+        Assert.False(window2!.HasScreens);
+        Assert.False(window2.HasStormWindows);
     }
 
     [Fact]
@@ -466,9 +466,9 @@ public class WindowsControllerTests : IntegrationTestBase
         var updatedWindow = await ReadJsonAsync<WindowResponse>(getResponse);
 
         // Assert
-        updatedWindow.Should().NotBeNull();
-        updatedWindow!.CreatedAt.Should().Be(createdAt); // CreatedAt should not change
-        updatedWindow.UpdatedAt.Should().NotBeNull();
-        updatedWindow.UpdatedAt.Should().BeAfter(createdAt); // UpdatedAt should be after CreatedAt
+        Assert.NotNull(updatedWindow);
+        Assert.Equal(createdAt, updatedWindow!.CreatedAt); // CreatedAt should not change
+        Assert.NotNull(updatedWindow.UpdatedAt);
+        Assert.True(updatedWindow.UpdatedAt > createdAt); // UpdatedAt should be after CreatedAt
     }
 }

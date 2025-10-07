@@ -43,8 +43,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var healthCheckService = serviceProvider.GetService<HealthCheckService>();
 
         // Assert
-        healthCheckService.Should().NotBeNull(
-            $"HealthCheckService should be registered in {environment} environment");
+        Assert.NotNull(healthCheckService);
     }
 
     /// <summary>
@@ -65,12 +64,10 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var response = await client.GetAsync("/health");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK,
-            $"/health endpoint should return OK in {environment} environment");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Healthy",
-            $"/health endpoint should return 'Healthy' status in {environment} environment");
+        Assert.Contains("Healthy", content);
     }
 
     /// <summary>
@@ -91,21 +88,18 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var response = await client.GetAsync("/health/detailed");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK,
-            $"/health/detailed endpoint should return OK in {environment} environment");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().NotBeNullOrEmpty(
-            $"/health/detailed endpoint should return health information in {environment} environment");
+        Assert.NotNull(content);
+        Assert.NotEmpty(content);
 
         // Validate JSON structure
         var healthInfo = JsonSerializer.Deserialize<JsonElement>(content);
-        healthInfo.TryGetProperty("status", out var statusProperty).Should().BeTrue(
-            $"/health/detailed should include status in {environment} environment");
+        Assert.True(healthInfo.TryGetProperty("status", out var statusProperty));
 
         var status = statusProperty.GetString();
-        status.Should().Be("Healthy",
-            $"/health/detailed should report Healthy status in {environment} environment");
+        Assert.Equal("Healthy", status);
     }
 
     /// <summary>
@@ -127,12 +121,13 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var healthCheckResult = await healthCheckService.CheckHealthAsync();
 
         // Assert
-        healthCheckResult.Status.Should().BeOneOf(HealthStatus.Healthy, HealthStatus.Degraded, HealthStatus.Unhealthy);
+        Assert.True(healthCheckResult.Status == HealthStatus.Healthy ||
+                    healthCheckResult.Status == HealthStatus.Degraded ||
+                    healthCheckResult.Status == HealthStatus.Unhealthy);
 
         // Note: Database health check registration depends on the application's health check configuration
         // This test validates the overall health check functionality
-        healthCheckResult.Entries.Should().NotBeNull(
-            $"Health check entries should be available in {environment} environment");
+        Assert.NotNull(healthCheckResult.Entries);
     }
 
     /// <summary>
@@ -159,8 +154,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
             if (healthInfo.TryGetProperty("entries", out var entries))
             {
                 // Validate that health checks provide environment context
-                entries.TryGetProperty("database", out var databaseEntry).Should().BeTrue(
-                    $"Database health check should be present in {environment}");
+                Assert.True(entries.TryGetProperty("database", out var databaseEntry));
 
                 if (databaseEntry.TryGetProperty("data", out var data))
                 {
@@ -191,11 +185,9 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         stopwatch.Stop();
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK,
-            $"Health check should succeed in {environment} environment");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000,
-            $"Health check should respond within 5 seconds in {environment} environment");
+        Assert.True(stopwatch.ElapsedMilliseconds < 5000);
     }
 
     /// <summary>
@@ -217,15 +209,13 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var healthCheckResult = await healthCheckService.CheckHealthAsync();
 
         // Assert
-        healthCheckResult.Entries.Should().NotBeEmpty(
-            $"Health checks should be registered in {environment} environment");
+        Assert.NotEmpty(healthCheckResult.Entries);
 
         // Validate expected health checks are present
         var expectedHealthChecks = new[] { "database" };
         foreach (var expectedCheck in expectedHealthChecks)
         {
-            healthCheckResult.Entries.Should().ContainKey(expectedCheck,
-                $"{expectedCheck} health check should be registered in {environment} environment");
+            Assert.True(healthCheckResult.Entries.ContainsKey(expectedCheck));
         }
     }
 
@@ -253,13 +243,11 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         // Assert - Validate health check infrastructure is working
         // In normal conditions, this should be healthy
         // In failure scenarios, it should properly report unhealthy status
-        healthCheckResult.Should().NotBeNull(
-            $"Health check should return result in {environment} environment");
+        Assert.NotNull(healthCheckResult);
 
         foreach (var entry in healthCheckResult.Entries)
         {
-            entry.Value.Should().NotBeNull(
-                $"Health check entry {entry.Key} should have valid result in {environment} environment");
+            Assert.NotNull(entry.Value.Description);
         }
     }
 

@@ -20,8 +20,8 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
-        response.Should().NotBeNull();
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.NotNull(response);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
-        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
@@ -44,8 +44,8 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync("/api/roles");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        // Note: CORS headers are typically added by middleware, 
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Note: CORS headers are typically added by middleware,
         // but in test environment they might not be present
     }
 
@@ -56,7 +56,7 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync("/api/nonexistent");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await adminClient.PatchAsync("/api/roles", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await adminClient.PostAsync("/api/roles", malformedJson);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -101,7 +101,11 @@ public class ApiHealthTests : IntegrationTestBase
 
         // Assert
         // Should either succeed or fail gracefully with appropriate status code
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.BadRequest, HttpStatusCode.RequestEntityTooLarge);
+        Assert.True(
+            response.StatusCode == HttpStatusCode.Created ||
+            response.StatusCode == HttpStatusCode.BadRequest ||
+            response.StatusCode == HttpStatusCode.RequestEntityTooLarge,
+            $"Expected status code to be Created, BadRequest, or RequestEntityTooLarge but was {response.StatusCode}");
     }
 
     [Fact]
@@ -127,13 +131,13 @@ public class ApiHealthTests : IntegrationTestBase
             var responses = await Task.WhenAll(tasks);
 
             // Assert
-            responses.Should().HaveCount(10);
-            responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
+            Assert.Equal(10, responses.Length);
+            Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
 
             // Verify all roles were created
             var getResponse = await AuthenticatedGetAsync("/api/roles");
             var roles = await ReadJsonAsync<List<object>>(getResponse);
-            roles.Should().HaveCount(10);
+            Assert.Equal(10, roles.Count);
         });
     }
 
@@ -151,7 +155,7 @@ public class ApiHealthTests : IntegrationTestBase
             var roleId = role?.Id ?? Guid.Empty;
 
             // Ensure role was created successfully
-            roleId.Should().NotBe(Guid.Empty, "Role must be created before testing");
+            Assert.NotEqual(Guid.Empty, roleId);
 
             var successfulCreations = 0;
             var names = new[] { "John Smith", "Jane Doe", "Bob Johnson", "Alice Brown", "Charlie Davis" };
@@ -194,17 +198,17 @@ public class ApiHealthTests : IntegrationTestBase
                     // SQLite database lock conflicts are expected under high concurrency
                     // This is a known limitation of SQLite
                     var content = await response.Content.ReadAsStringAsync();
-                    content.ToLower().Should().Contain("operation", "Conflict should be due to database operation issues");
+                    Assert.Contains("operation", content.ToLower());
                 }
             }
 
             // At least some requests should succeed (SQLite can handle some concurrency)
-            successfulCreations.Should().BeGreaterThan(0, "At least some concurrent requests should succeed");
+            Assert.True(successfulCreations > 0, "At least some concurrent requests should succeed");
 
             // Verify data consistency - count should match successful creations
             var getPeopleResponse = await AuthenticatedGetAsync("/api/people");
             var people = await ReadJsonAsync<List<object>>(getPeopleResponse);
-            people.Should().HaveCount(successfulCreations, "Database should contain exactly the number of successfully created people");
+            Assert.Equal(successfulCreations, people.Count);
         });
     }
 
@@ -219,8 +223,8 @@ public class ApiHealthTests : IntegrationTestBase
         var response = await AuthenticatedGetAsync(endpoint);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Theory]
@@ -260,10 +264,10 @@ public class ApiHealthTests : IntegrationTestBase
         }
 
         // Assert
-        response.StatusCode.Should().BeOneOf(
-            HttpStatusCode.OK,           // GET requests
-            HttpStatusCode.Created,      // Successful POST requests
-            HttpStatusCode.BadRequest    // POST requests with validation errors
-        );
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK ||
+            response.StatusCode == HttpStatusCode.Created ||
+            response.StatusCode == HttpStatusCode.BadRequest,
+            $"Expected status code to be OK, Created, or BadRequest but was {response.StatusCode}");
     }
 }

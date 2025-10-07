@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Specifications;
-using FluentAssertions;
 using Infrastructure.Data;
 using Infrastructure.Repositories.EntityFramework;
 using Microsoft.EntityFrameworkCore;
@@ -46,9 +45,9 @@ public class EfRepositoryTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Id.Should().NotBeEmpty();
-        result.FullName.Should().Be("John Doe");
+        Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.Equal("John Doe", result.FullName);
     }
 
     [Fact]
@@ -63,9 +62,9 @@ public class EfRepositoryTests : IDisposable
         var result = await _personRepository.GetByIdAsync(person.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("Jane Doe");
-        result.Phone.Should().Be("987-654-3210");
+        Assert.NotNull(result);
+        Assert.Equal("Jane Doe", result.FullName);
+        Assert.Equal("987-654-3210", result.Phone);
     }
 
     [Fact]
@@ -86,10 +85,10 @@ public class EfRepositoryTests : IDisposable
         var result = await _personRepository.FirstOrDefaultAsync(specification);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("Admin User");
-        result.Roles.Should().HaveCount(1);
-        result.Roles.First().Name.Should().Be("Admin");
+        Assert.NotNull(result);
+        Assert.Equal("Admin User", result.FullName);
+        Assert.Single(result.Roles);
+        Assert.Equal("Admin", result.Roles.First().Name);
     }
 
     [Fact]
@@ -106,8 +105,8 @@ public class EfRepositoryTests : IDisposable
         var result = await _personRepository.FirstOrDefaultAsync(specification);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("Test User");
+        Assert.NotNull(result);
+        Assert.Equal("Test User", result.FullName);
     }
 
     [Fact]
@@ -128,10 +127,10 @@ public class EfRepositoryTests : IDisposable
         var result = await _personRepository.FirstOrDefaultAsync(specification);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FullName.Should().Be("User With Role");
-        result.Roles.Should().HaveCount(1);
-        result.Roles.First().Name.Should().Be("User");
+        Assert.NotNull(result);
+        Assert.Equal("User With Role", result.FullName);
+        Assert.Single(result.Roles);
+        Assert.Equal("User", result.Roles.First().Name);
     }
 
     [Fact]
@@ -149,9 +148,9 @@ public class EfRepositoryTests : IDisposable
         var result = await _personRepository.ListAsync();
 
         // Assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(p => p.FullName == "Person One");
-        result.Should().Contain(p => p.FullName == "Person Two");
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, p => p.FullName == "Person One");
+        Assert.Contains(result, p => p.FullName == "Person Two");
     }
 
     [Fact]
@@ -169,7 +168,7 @@ public class EfRepositoryTests : IDisposable
         var count = await _personRepository.CountAsync();
 
         // Assert
-        count.Should().Be(2);
+        Assert.Equal(2, count);
     }
 
     public void Dispose()

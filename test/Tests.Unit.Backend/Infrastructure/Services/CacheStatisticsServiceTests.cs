@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Interfaces;
-using FluentAssertions;
 using Infrastructure.Services.Caching;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -34,11 +33,11 @@ public class CacheStatisticsServiceTests
         var result = await _service.GetCurrentStatisticsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.HitRatio.Should().Be(0.0);
-        result.TotalHits.Should().Be(0);
-        result.TotalMisses.Should().Be(0);
-        result.RedisConnected.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.Equal(0.0, result.HitRatio);
+        Assert.Equal(0, result.TotalHits);
+        Assert.Equal(0, result.TotalMisses);
+        Assert.False(result.RedisConnected);
     }
 
     [Fact]
@@ -84,12 +83,12 @@ public class CacheStatisticsServiceTests
         var result = await _service.GetCurrentStatisticsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.TotalHits.Should().Be(3);
-        result.TotalMisses.Should().Be(1);
-        result.HitRatio.Should().Be(0.75); // 3 hits out of 4 total operations
-        result.HitsByType.Should().ContainKey(cacheType);
-        result.MissesByType.Should().ContainKey(cacheType);
+        Assert.NotNull(result);
+        Assert.Equal(3, result.TotalHits);
+        Assert.Equal(1, result.TotalMisses);
+        Assert.Equal(0.75, result.HitRatio); // 3 hits out of 4 total operations
+        Assert.True(result.HitsByType.ContainsKey(cacheType));
+        Assert.True(result.MissesByType.ContainsKey(cacheType));
     }
 
     [Fact]
@@ -118,8 +117,8 @@ public class CacheStatisticsServiceTests
         var result = await _service.GetCurrentStatisticsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.AverageResponseTimeMs.Should().Be(150.0); // Average of 100 and 200
+        Assert.NotNull(result);
+        Assert.Equal(150.0, result.AverageResponseTimeMs); // Average of 100 and 200
     }
 
     [Fact]
@@ -132,8 +131,8 @@ public class CacheStatisticsServiceTests
         var result = await _service.GetCurrentStatisticsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.Uptime.Should().BeGreaterThan(TimeSpan.Zero);
+        Assert.NotNull(result);
+        Assert.True(result.Uptime > TimeSpan.Zero);
     }
 
     [Fact]
@@ -146,9 +145,9 @@ public class CacheStatisticsServiceTests
         var result = await _service.GetCurrentStatisticsAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.RedisConnected.Should().BeFalse();
-        result.KeyCount.Should().Be(0);
-        result.MemoryUsageMB.Should().Be(0.0);
+        Assert.NotNull(result);
+        Assert.False(result.RedisConnected);
+        Assert.Equal(0, result.KeyCount);
+        Assert.Equal(0.0, result.MemoryUsageMB);
     }
 }

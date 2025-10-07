@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace Tests.Integration.Backend.ContractTests;
 
@@ -154,13 +154,11 @@ public abstract class ContractTestBase : IDisposable
     /// </summary>
     protected static void ValidateResponseContract(HttpResponseMessage response, HttpStatusCode expectedStatusCode, string? expectedContentType = null)
     {
-        response.StatusCode.Should().Be(expectedStatusCode,
-          $"API contract should maintain consistent status codes across configurations");
+        Assert.Equal(expectedStatusCode, response.StatusCode);
 
         if (expectedContentType != null)
         {
-            response.Content.Headers.ContentType?.MediaType.Should().Be(expectedContentType,
-              $"API contract should maintain consistent content types across configurations");
+            Assert.Equal(expectedContentType, response.Content.Headers.ContentType?.MediaType);
         }
     }
 
@@ -169,16 +167,15 @@ public abstract class ContractTestBase : IDisposable
     /// </summary>
     protected static async Task<T> ValidateJsonContract<T>(HttpResponseMessage response) where T : class
     {
-        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json",
-          "JSON endpoints should maintain application/json content type contract");
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
 
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().NotBeNullOrWhiteSpace("Response should contain valid JSON content");
+        Assert.False(string.IsNullOrWhiteSpace(content));
 
         try
         {
             var result = JsonSerializer.Deserialize<T>(content, JsonOptions);
-            result.Should().NotBeNull($"Response should deserialize to {typeof(T).Name} contract");
+            Assert.NotNull(result);
             return result!;
         }
         catch (JsonException ex)
@@ -192,7 +189,7 @@ public abstract class ContractTestBase : IDisposable
     /// </summary>
     protected static void ValidateContractStructure<T>(T contract, Action<T> contractValidation) where T : class
     {
-        contract.Should().NotBeNull("Contract object should not be null");
+        Assert.NotNull(contract);
         contractValidation(contract);
     }
 
@@ -236,9 +233,8 @@ public abstract class ContractTestBase : IDisposable
             {
                 // Here we could add deep contract comparison logic
                 // For now, we ensure they're both valid instances of the same type
-                contract.Should().NotBeNull($"Contract in {environment} should match {firstEnvironment} environment");
-                contract.GetType().Should().Be(firstContract.GetType(),
-                  $"Contract type should be consistent across environments");
+                Assert.NotNull(contract);
+                Assert.Equal(firstContract.GetType(), contract.GetType());
             }
         }
 

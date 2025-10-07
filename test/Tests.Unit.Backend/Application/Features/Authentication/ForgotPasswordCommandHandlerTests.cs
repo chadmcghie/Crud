@@ -3,7 +3,6 @@ using App.Features.Authentication;
 using Domain.Entities.Authentication;
 using Domain.Interfaces;
 using Domain.ValueObjects;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -56,9 +55,9 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Error.Should().BeNull();
-        result.Message.Should().Contain("reset instructions");
+        Assert.True(result.Success);
+        Assert.Null(result.Error);
+        Assert.Contains("reset instructions", result.Message);
 
         _mockEmailService.Verify(x => x.SendPasswordResetEmailAsync(
             command.Email,
@@ -84,8 +83,8 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue(); // Return success for security (don't reveal if email exists)
-        result.Message.Should().Contain("reset instructions");
+        Assert.True(result.Success); // Return success for security (don't reveal if email exists)
+        Assert.Contains("reset instructions", result.Message);
 
         // Verify no email was sent and no token was created
         _mockEmailService.Verify(x => x.SendPasswordResetEmailAsync(
@@ -111,8 +110,8 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Contain("valid email");
+        Assert.False(result.Success);
+        Assert.Contains("valid email", result.Error);
     }
 
     [Fact]
@@ -125,8 +124,8 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Contain("valid email");
+        Assert.False(result.Success);
+        Assert.Contains("valid email", result.Error);
     }
 
     [Fact]
@@ -152,8 +151,8 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("We're unable to process your request at this time. Please try again later.");
+        Assert.False(result.Success);
+        Assert.Equal("We're unable to process your request at this time. Please try again later.", result.Error);
     }
 
     [Fact]
@@ -175,8 +174,8 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Contain("unable to process");
+        Assert.False(result.Success);
+        Assert.Contains("unable to process", result.Error);
     }
 
     [Fact]
@@ -203,7 +202,7 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue();
+        Assert.True(result.Success);
         _mockEmailService.Verify(x => x.SendPasswordResetEmailAsync(
             command.Email,
             It.IsAny<string>(),

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Api.Dtos;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
@@ -26,7 +25,7 @@ public class PersonConcurrencyTests : IntegrationTestBase
             var createResponse = await adminClient.PostAsJsonAsync("/api/people", createRequest);
 
             // Assert 1: Person created successfully
-            createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
             var createdPerson = await ReadJsonAsync<PersonResponse>(createResponse);
 
             // Act 2: Get person to check RowVersion

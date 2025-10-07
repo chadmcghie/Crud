@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Api.Dtos;
-using FluentAssertions;
 
 namespace Tests.Unit.Backend.Validators;
 
@@ -20,7 +19,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name is required");
     }
@@ -36,7 +35,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name cannot exceed 100 characters");
     }
@@ -56,7 +55,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Where(vr => vr.MemberNames.Contains("Name")).Should().BeEmpty();
+        Assert.Empty(validationResults.Where(vr => vr.MemberNames.Contains("Name")));
     }
 
     [Theory]
@@ -72,7 +71,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("Name") &&
             vr.ErrorMessage == "Role name can only contain letters, numbers, spaces, hyphens, underscores, and periods");
     }
@@ -88,7 +87,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().ContainSingle(vr =>
+        Assert.Single(validationResults, vr =>
             vr.MemberNames.Contains("Description") &&
             vr.ErrorMessage == "Description cannot exceed 500 characters");
     }
@@ -102,9 +101,9 @@ public class DataAnnotationsRoleValidationTests
         var request3 = new CreateRoleRequest("Admin", "   ");
 
         // Act & Assert
-        ValidateObject(request1).Where(vr => vr.MemberNames.Contains("Description")).Should().BeEmpty();
-        ValidateObject(request2).Where(vr => vr.MemberNames.Contains("Description")).Should().BeEmpty();
-        ValidateObject(request3).Where(vr => vr.MemberNames.Contains("Description")).Should().BeEmpty();
+        Assert.Empty(ValidateObject(request1).Where(vr => vr.MemberNames.Contains("Description")));
+        Assert.Empty(ValidateObject(request2).Where(vr => vr.MemberNames.Contains("Description")));
+        Assert.Empty(ValidateObject(request3).Where(vr => vr.MemberNames.Contains("Description")));
     }
 
     [Fact]
@@ -117,7 +116,7 @@ public class DataAnnotationsRoleValidationTests
         var validationResults = ValidateObject(request);
 
         // Assert
-        validationResults.Should().BeEmpty();
+        Assert.Empty(validationResults);
     }
 
     private static List<ValidationResult> ValidateObject(object obj)

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -34,18 +33,18 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify ApplicationDbContext contract
         var dbContext = scope.ServiceProvider.GetService<ApplicationDbContext>();
-        dbContext.Should().NotBeNull($"ApplicationDbContext should be available in {environment}");
+        Assert.NotNull(dbContext);
 
         // Verify database connection contract
         var canConnect = await dbContext!.Database.CanConnectAsync();
-        canConnect.Should().BeTrue($"Database should be connectable in {environment}");
+        Assert.True(canConnect);
 
         // Verify entity sets contract
-        dbContext.Users.Should().NotBeNull("Users DbSet should be available");
-        dbContext.Roles.Should().NotBeNull("Roles DbSet should be available");
-        dbContext.People.Should().NotBeNull("People DbSet should be available");
-        dbContext.Walls.Should().NotBeNull("Walls DbSet should be available");
-        dbContext.Windows.Should().NotBeNull("Windows DbSet should be available");
+        Assert.NotNull(dbContext.Users);
+        Assert.NotNull(dbContext.Roles);
+        Assert.NotNull(dbContext.People);
+        Assert.NotNull(dbContext.Walls);
+        Assert.NotNull(dbContext.Windows);
 
         _output.WriteLine($"✓ Database services contract validated for {environment}");
     }
@@ -61,20 +60,20 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify repository contracts
         var personRepository = scope.ServiceProvider.GetService<App.Abstractions.IPersonRepository>();
-        personRepository.Should().NotBeNull($"Person repository should be available in {environment}");
+        Assert.NotNull(personRepository);
 
         var roleRepository = scope.ServiceProvider.GetService<App.Abstractions.IRoleRepository>();
-        roleRepository.Should().NotBeNull($"Role repository should be available in {environment}");
+        Assert.NotNull(roleRepository);
 
         var wallRepository = scope.ServiceProvider.GetService<App.Abstractions.IWallRepository>();
-        wallRepository.Should().NotBeNull($"Wall repository should be available in {environment}");
+        Assert.NotNull(wallRepository);
 
         var windowRepository = scope.ServiceProvider.GetService<App.Abstractions.IWindowRepository>();
-        windowRepository.Should().NotBeNull($"Window repository should be available in {environment}");
+        Assert.NotNull(windowRepository);
 
         // Test repository contract behavior
         var roles = await roleRepository!.ListAsync();
-        roles.Should().NotBeNull("Repository ListAsync should return valid result");
+        Assert.NotNull(roles);
 
         _output.WriteLine($"✓ Repository services contract validated for {environment}");
     }
@@ -90,17 +89,17 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify logging contract
         var loggerFactory = scope.ServiceProvider.GetService<ILoggerFactory>();
-        loggerFactory.Should().NotBeNull($"LoggerFactory should be available in {environment}");
+        Assert.NotNull(loggerFactory);
 
         var logger = scope.ServiceProvider.GetService<ILogger<ServiceInterfaceContractTests>>();
-        logger.Should().NotBeNull($"Generic logger should be available in {environment}");
+        Assert.NotNull(logger);
 
         // Test logging contract behavior
         logger!.LogInformation("Contract test message for {Environment}", environment);
 
         // Verify logger can handle different log levels
         var canLogError = logger!.IsEnabled(LogLevel.Error);
-        canLogError.Should().BeTrue("Error logging should be enabled across all environments");
+        Assert.True(canLogError);
 
         // Configuration-specific logging level validation
         var expectedMinLevel = environment switch
@@ -129,18 +128,18 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify configuration contract
         var configuration = scope.ServiceProvider.GetService<IConfiguration>();
-        configuration.Should().NotBeNull($"IConfiguration should be available in {environment}");
+        Assert.NotNull(configuration);
 
         // Verify required configuration sections
         var connectionString = configuration!.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty($"Connection string should be available in {environment}");
+        Assert.False(string.IsNullOrEmpty(connectionString));
 
         var databaseProvider = configuration!["DatabaseProvider"];
-        databaseProvider.Should().NotBeNullOrEmpty($"Database provider should be configured in {environment}");
+        Assert.False(string.IsNullOrEmpty(databaseProvider));
 
         // Environment-specific configuration validation
         var logLevel = configuration["Logging:LogLevel:Default"];
-        logLevel.Should().NotBeNullOrEmpty($"Log level should be configured in {environment}");
+        Assert.False(string.IsNullOrEmpty(logLevel));
 
         var expectedLogLevel = environment switch
         {
@@ -150,7 +149,7 @@ public class ServiceInterfaceContractTests : ContractTestBase
             _ => "Information"
         };
 
-        logLevel.Should().Be(expectedLogLevel, $"Log level should match environment expectations for {environment}");
+        Assert.Equal(expectedLogLevel, logLevel);
 
         _output.WriteLine($"✓ Configuration services contract validated for {environment}");
 
@@ -168,19 +167,19 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify MediatR contract
         var mediator = scope.ServiceProvider.GetService<MediatR.IMediator>();
-        mediator.Should().NotBeNull($"MediatR should be available in {environment}");
+        Assert.NotNull(mediator);
 
         // Test MediatR contract behavior with a simple query
         try
         {
             var rolesQuery = new App.Features.Roles.ListRolesQuery();
             var roles = await mediator!.Send(rolesQuery);
-            roles.Should().NotBeNull("MediatR should process queries successfully");
+            Assert.NotNull(roles);
         }
         catch (Exception ex)
         {
             // It's okay if the query fails due to data setup, but MediatR should be functional
-            ex.Should().NotBeOfType<InvalidOperationException>("MediatR registration should be correct");
+            Assert.False(ex is InvalidOperationException);
         }
 
         _output.WriteLine($"✓ MediatR services contract validated for {environment}");
@@ -197,7 +196,7 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify memory cache contract (should be available in all environments)
         var memoryCache = scope.ServiceProvider.GetService<IMemoryCache>();
-        memoryCache.Should().NotBeNull($"Memory cache should be available in {environment}");
+        Assert.NotNull(memoryCache);
 
         // Test cache contract behavior
         var testKey = $"contract-test-{environment}-{Guid.NewGuid()}";
@@ -205,7 +204,7 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
         var retrievedValue = memoryCache!.Get<string>(testKey);
-        retrievedValue.Should().Be(testValue, "Memory cache should store and retrieve values correctly");
+        Assert.Equal(testValue, retrievedValue);
 
         _output.WriteLine($"✓ Caching services contract validated for {environment}");
 
@@ -223,15 +222,14 @@ public class ServiceInterfaceContractTests : ContractTestBase
 
         // Verify health check services contract
         var healthCheckService = scope.ServiceProvider.GetService<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService>();
-        healthCheckService.Should().NotBeNull($"Health check service should be available in {environment}");
+        Assert.NotNull(healthCheckService);
 
         // Test health check contract behavior
         var healthReport = await healthCheckService!.CheckHealthAsync();
-        healthReport.Should().NotBeNull("Health check should return a valid report");
-        healthReport.Status.Should().BeOneOf(
-          Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy,
-          Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded,
-          Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy);
+        Assert.NotNull(healthReport);
+        Assert.True(healthReport.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy ||
+                   healthReport.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded ||
+                   healthReport.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy);
 
         _output.WriteLine($"Health check status in {environment}: {healthReport.Status}");
         _output.WriteLine($"✓ Health check services contract validated for {environment}");
@@ -252,9 +250,9 @@ public class ServiceInterfaceContractTests : ContractTestBase
             var dbContext1 = scope1.ServiceProvider.GetService<ApplicationDbContext>();
             var dbContext2 = scope2.ServiceProvider.GetService<ApplicationDbContext>();
 
-            dbContext1.Should().NotBeNull("DbContext should be available in scope 1");
-            dbContext2.Should().NotBeNull("DbContext should be available in scope 2");
-            dbContext1.Should().NotBeSameAs(dbContext2, "DbContext should be scoped (different instances per scope)");
+            Assert.NotNull(dbContext1);
+            Assert.NotNull(dbContext2);
+            Assert.NotSame(dbContext2, dbContext1);
         }
 
         // Test singleton services contract (if any)
@@ -264,8 +262,8 @@ public class ServiceInterfaceContractTests : ContractTestBase
             var config1 = scope1.ServiceProvider.GetService<IConfiguration>();
             var config2 = scope2.ServiceProvider.GetService<IConfiguration>();
 
-            config1.Should().NotBeNull("Configuration should be available in scope 1");
-            config2.Should().NotBeNull("Configuration should be available in scope 2");
+            Assert.NotNull(config1);
+            Assert.NotNull(config2);
             // Configuration is typically singleton
         }
 

@@ -20,18 +20,18 @@ public class WindowTests
                 .Build();
 
             // Assert
-            window.Should().NotBeNull();
-            window.Id.Should().NotBeEmpty();
-            window.Name.Should().Be("Living Room Window");
-            window.Width.Should().Be(3.0);
-            window.Height.Should().Be(4.0);
-            window.Area.Should().Be(12.0);
-            window.FrameType.Should().Be("Vinyl");
-            window.GlazingType.Should().Be("Double");
-            window.UValue.Should().Be(0.30);
-            window.SolarHeatGainCoefficient.Should().Be(0.25);
-            window.VisibleTransmittance.Should().Be(0.70);
-            window.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.NotNull(window);
+            Assert.NotEqual(Guid.Empty, window.Id);
+            Assert.Equal("Living Room Window", window.Name);
+            Assert.Equal(3.0, window.Width);
+            Assert.Equal(4.0, window.Height);
+            Assert.Equal(12.0, window.Area);
+            Assert.Equal("Vinyl", window.FrameType);
+            Assert.Equal("Double", window.GlazingType);
+            Assert.Equal(0.30, window.UValue);
+            Assert.Equal(0.25, window.SolarHeatGainCoefficient);
+            Assert.Equal(0.70, window.VisibleTransmittance);
+            Assert.True((DateTime.UtcNow - window.CreatedAt).TotalSeconds < 1);
         }
 
         [Fact]
@@ -42,7 +42,7 @@ public class WindowTests
             var window2 = WindowTestDataBuilder.Default().Build();
 
             // Assert
-            window1.Id.Should().NotBe(window2.Id);
+            Assert.NotEqual(window2.Id, window1.Id);
         }
 
         [Fact]
@@ -56,8 +56,8 @@ public class WindowTests
 
             // Assert
             var afterCreation = DateTime.UtcNow;
-            window.CreatedAt.Should().BeOnOrAfter(beforeCreation);
-            window.CreatedAt.Should().BeOnOrBefore(afterCreation);
+            Assert.True(window.CreatedAt >= beforeCreation);
+            Assert.True(window.CreatedAt <= afterCreation);
         }
     }
 
@@ -72,9 +72,9 @@ public class WindowTests
                 .Build();
 
             // Assert
-            window.UValue.Should().Be(0.25);
-            window.SolarHeatGainCoefficient.Should().Be(0.30);
-            window.VisibleTransmittance.Should().Be(0.75);
+            Assert.Equal(0.25, window.UValue);
+            Assert.Equal(0.30, window.SolarHeatGainCoefficient);
+            Assert.Equal(0.75, window.VisibleTransmittance);
         }
 
         [Fact]
@@ -84,9 +84,9 @@ public class WindowTests
             var window = WindowTestDataBuilder.Default().Build();
 
             // Assert
-            window.AirLeakage.Should().Be(0.1);
-            window.EnergyStarRating.Should().Be("Yes");
-            window.NFRCRating.Should().Be("NFRC-12345");
+            Assert.Equal(0.1, window.AirLeakage);
+            Assert.Equal("Yes", window.EnergyStarRating);
+            Assert.Equal("NFRC-12345", window.NFRCRating);
         }
     }
 
@@ -99,9 +99,9 @@ public class WindowTests
             var window = WindowTestDataBuilder.Default().Build();
 
             // Assert
-            window.OperationType.Should().Be("Double-hung");
-            window.HasScreens.Should().BeTrue();
-            window.HasStormWindows.Should().BeFalse();
+            Assert.Equal("Double-hung", window.OperationType);
+            Assert.True(window.HasScreens);
+            Assert.False(window.HasStormWindows);
         }
     }
 }

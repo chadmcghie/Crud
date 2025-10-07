@@ -3,7 +3,6 @@ using System.Security.Claims;
 using App.Abstractions;
 using Domain.Entities.Authentication;
 using Domain.ValueObjects;
-using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -46,14 +45,15 @@ public class JwtTokenServiceTests
         var token = _jwtTokenService.GenerateAccessToken(_testUser);
 
         // Assert
-        token.Should().NotBeNullOrEmpty();
+        Assert.NotNull(token);
+        Assert.NotEmpty(token);
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var canRead = tokenHandler.CanReadToken(token);
-        canRead.Should().BeTrue();
+        Assert.True(canRead);
 
         var jwtToken = tokenHandler.ReadJwtToken(token);
-        jwtToken.Should().NotBeNull();
+        Assert.NotNull(jwtToken);
     }
 
     [Fact]
@@ -68,10 +68,10 @@ public class JwtTokenServiceTests
 
         var claims = jwtToken.Claims.ToList();
 
-        claims.Should().Contain(c => c.Type == "nameid" || c.Type == ClaimTypes.NameIdentifier);
-        claims.Should().Contain(c => (c.Type == "email" || c.Type == ClaimTypes.Email) && c.Value == _testUser.Email.Value);
-        claims.Should().Contain(c => (c.Type == "role" || c.Type == ClaimTypes.Role) && c.Value == "User");
-        claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti);
+        Assert.Contains(claims, c => c.Type == "nameid" || c.Type == ClaimTypes.NameIdentifier);
+        Assert.Contains(claims, c => (c.Type == "email" || c.Type == ClaimTypes.Email) && c.Value == _testUser.Email.Value);
+        Assert.Contains(claims, c => (c.Type == "role" || c.Type == ClaimTypes.Role) && c.Value == "User");
+        Assert.Contains(claims, c => c.Type == JwtRegisteredClaimNames.Jti);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class JwtTokenServiceTests
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
         var expectedExpiration = DateTime.UtcNow.AddMinutes(15);
-        jwtToken.ValidTo.Should().BeCloseTo(expectedExpiration, TimeSpan.FromSeconds(5));
+        Assert.True(Math.Abs((jwtToken.ValidTo - expectedExpiration).TotalSeconds) < 5);
     }
 
     [Fact]
@@ -98,17 +98,16 @@ public class JwtTokenServiceTests
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
-        jwtToken.Issuer.Should().Be("TestIssuer");
-        jwtToken.Audiences.Should().Contain("TestAudience");
+        Assert.Equal("TestIssuer", jwtToken.Issuer);
+        Assert.Contains("TestAudience", jwtToken.Audiences);
     }
 
     [Fact]
     public void GenerateAccessToken_WithNullUser_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act = () => _jwtTokenService.GenerateAccessToken(null!);
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("user");
+        var exception = Assert.Throws<ArgumentNullException>(() => _jwtTokenService.GenerateAccessToken(null!));
+        Assert.Equal("user", exception.ParamName);
     }
 
     [Fact]
@@ -118,11 +117,12 @@ public class JwtTokenServiceTests
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
         // Assert
-        refreshToken.Should().NotBeNullOrEmpty();
+        Assert.NotNull(refreshToken);
+        Assert.NotEmpty(refreshToken);
 
         // Verify it's a valid base64 string
         var canConvert = Convert.TryFromBase64String(refreshToken, new byte[64], out _);
-        canConvert.Should().BeTrue();
+        Assert.True(canConvert);
     }
 
     [Fact]
@@ -134,9 +134,9 @@ public class JwtTokenServiceTests
         var token3 = _jwtTokenService.GenerateRefreshToken();
 
         // Assert
-        token1.Should().NotBe(token2);
-        token1.Should().NotBe(token3);
-        token2.Should().NotBe(token3);
+        Assert.NotEqual(token1, token2);
+        Assert.NotEqual(token1, token3);
+        Assert.NotEqual(token2, token3);
     }
 
     [Fact]
@@ -149,13 +149,13 @@ public class JwtTokenServiceTests
         var claimsPrincipal = _jwtTokenService.ValidateToken(token);
 
         // Assert
-        claimsPrincipal.Should().NotBeNull();
-        claimsPrincipal!.Identity.Should().NotBeNull();
-        claimsPrincipal.Identity!.IsAuthenticated.Should().BeTrue();
+        Assert.NotNull(claimsPrincipal);
+        Assert.NotNull(claimsPrincipal.Identity);
+        Assert.True(claimsPrincipal.Identity.IsAuthenticated);
 
         var emailClaim = claimsPrincipal.FindFirst(ClaimTypes.Email);
-        emailClaim.Should().NotBeNull();
-        emailClaim!.Value.Should().Be(_testUser.Email.Value);
+        Assert.NotNull(emailClaim);
+        Assert.Equal(_testUser.Email.Value, emailClaim.Value);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class JwtTokenServiceTests
         var claimsPrincipal = _jwtTokenService.ValidateToken(invalidToken);
 
         // Assert
-        claimsPrincipal.Should().BeNull();
+        Assert.Null(claimsPrincipal);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class JwtTokenServiceTests
         var claimsPrincipal = _jwtTokenService.ValidateToken(tokenString);
 
         // Assert
-        claimsPrincipal.Should().BeNull();
+        Assert.Null(claimsPrincipal);
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public class JwtTokenServiceTests
         var claimsPrincipal = _jwtTokenService.ValidateToken(null!);
 
         // Assert
-        claimsPrincipal.Should().BeNull();
+        Assert.Null(claimsPrincipal);
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class JwtTokenServiceTests
         var claimsPrincipal = _jwtTokenService.ValidateToken("");
 
         // Assert
-        claimsPrincipal.Should().BeNull();
+        Assert.Null(claimsPrincipal);
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class JwtTokenServiceTests
         var expiry = _jwtTokenService.GetTokenExpiry(token);
 
         // Assert
-        expiry.Should().BeCloseTo(expectedExpiry, TimeSpan.FromSeconds(5));
+        Assert.True(Math.Abs((expiry - expectedExpiry).TotalSeconds) < 5);
     }
 
     [Fact]
@@ -242,8 +242,7 @@ public class JwtTokenServiceTests
         const string invalidToken = "invalid.token.here";
 
         // Act & Assert
-        var act = () => _jwtTokenService.GetTokenExpiry(invalidToken);
-        act.Should().Throw<Exception>();
+        Assert.Throws<ArgumentException>(() => _jwtTokenService.GetTokenExpiry(invalidToken));
     }
 
     [Fact]
@@ -260,7 +259,6 @@ public class JwtTokenServiceTests
             .Build();
 
         // Act & Assert
-        var act = () => new JwtTokenService(invalidConfig);
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(() => new JwtTokenService(invalidConfig));
     }
 }

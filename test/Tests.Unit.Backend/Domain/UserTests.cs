@@ -1,6 +1,5 @@
 using Domain.Entities.Authentication;
 using Domain.ValueObjects;
-using FluentAssertions;
 using Xunit;
 
 namespace Tests.Unit.Backend.Domain
@@ -18,16 +17,16 @@ namespace Tests.Unit.Backend.Domain
             var user = new User(email, passwordHash);
 
             // Assert
-            user.Should().NotBeNull();
-            user.Id.Should().NotBeEmpty();
-            user.Email.Should().Be(email);
-            user.PasswordHash.Should().Be(passwordHash);
-            user.Roles.Should().NotBeNull();
-            user.Roles.Should().Contain("User");
-            user.RefreshTokens.Should().NotBeNull();
-            user.RefreshTokens.Should().BeEmpty();
-            user.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.NotNull(user);
+            Assert.NotEqual(Guid.Empty, user.Id);
+            Assert.Equal(email, user.Email);
+            Assert.Equal(passwordHash, user.PasswordHash);
+            Assert.NotNull(user.Roles);
+            Assert.Contains("User", user.Roles);
+            Assert.NotNull(user.RefreshTokens);
+            Assert.Empty(user.RefreshTokens);
+            Assert.True((DateTime.UtcNow - user.CreatedAt).TotalSeconds < 1);
+            Assert.True((DateTime.UtcNow - user.UpdatedAt).TotalSeconds < 1);
         }
 
         [Fact]
@@ -42,12 +41,12 @@ namespace Tests.Unit.Backend.Domain
             var refreshToken = user.AddRefreshToken(token, expiresAt);
 
             // Assert
-            user.RefreshTokens.Should().HaveCount(1);
-            user.RefreshTokens.Should().Contain(refreshToken);
-            refreshToken.Token.Should().Be(token);
-            refreshToken.UserId.Should().Be(user.Id);
-            refreshToken.ExpiresAt.Should().Be(expiresAt);
-            refreshToken.IsActive.Should().BeTrue();
+            Assert.Single(user.RefreshTokens);
+            Assert.Contains(refreshToken, user.RefreshTokens);
+            Assert.Equal(token, refreshToken.Token);
+            Assert.Equal(user.Id, refreshToken.UserId);
+            Assert.Equal(expiresAt, refreshToken.ExpiresAt);
+            Assert.True(refreshToken.IsActive);
         }
 
         [Fact]
@@ -62,10 +61,10 @@ namespace Tests.Unit.Backend.Domain
             var result = user.RevokeRefreshToken(token);
 
             // Assert
-            result.Should().BeTrue();
-            refreshToken.IsActive.Should().BeFalse();
-            refreshToken.RevokedAt.Should().NotBeNull();
-            refreshToken.RevokedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.True(result);
+            Assert.False(refreshToken.IsActive);
+            Assert.NotNull(refreshToken.RevokedAt);
+            Assert.True((DateTime.UtcNow - refreshToken.RevokedAt.Value).TotalSeconds < 1);
         }
 
         [Fact]
@@ -78,7 +77,7 @@ namespace Tests.Unit.Backend.Domain
             var result = user.RevokeRefreshToken("nonexistentToken");
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -103,9 +102,9 @@ namespace Tests.Unit.Backend.Domain
             var result = user.GetActiveRefreshToken(activeToken);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.Token.Should().Be(activeToken);
-            result.IsActive.Should().BeTrue();
+            Assert.NotNull(result);
+            Assert.Equal(activeToken, result!.Token);
+            Assert.True(result.IsActive);
         }
 
         [Fact]
@@ -123,7 +122,7 @@ namespace Tests.Unit.Backend.Domain
             var result = user.GetActiveRefreshToken(expiredToken);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -136,9 +135,9 @@ namespace Tests.Unit.Backend.Domain
             user.AddRole("Admin");
 
             // Assert
-            user.Roles.Should().Contain("Admin");
-            user.Roles.Should().Contain("User");
-            user.Roles.Should().HaveCount(2);
+            Assert.Contains("Admin", user.Roles);
+            Assert.Contains("User", user.Roles);
+            Assert.Equal(2, user.Roles.Count);
         }
 
         [Fact]
@@ -151,8 +150,8 @@ namespace Tests.Unit.Backend.Domain
             user.AddRole("User");
 
             // Assert
-            user.Roles.Should().Contain("User");
-            user.Roles.Should().HaveCount(1);
+            Assert.Contains("User", user.Roles);
+            Assert.Single(user.Roles);
         }
 
         [Fact]
@@ -166,8 +165,8 @@ namespace Tests.Unit.Backend.Domain
             user.RemoveRole("Admin");
 
             // Assert
-            user.Roles.Should().NotContain("Admin");
-            user.Roles.Should().Contain("User");
+            Assert.DoesNotContain("Admin", user.Roles);
+            Assert.Contains("User", user.Roles);
         }
 
         [Fact]
@@ -183,8 +182,8 @@ namespace Tests.Unit.Backend.Domain
             user.UpdatePassword(newPasswordHash);
 
             // Assert
-            user.PasswordHash.Should().Be(newPasswordHash);
-            user.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+            Assert.Equal(newPasswordHash, user.PasswordHash);
+            Assert.True(user.UpdatedAt > originalUpdatedAt);
         }
 
         [Fact]
@@ -204,9 +203,9 @@ namespace Tests.Unit.Backend.Domain
             var removedCount = user.CleanupExpiredTokens();
 
             // Assert
-            removedCount.Should().Be(2);
-            user.RefreshTokens.Should().HaveCount(1);
-            user.RefreshTokens.First().Token.Should().Be("activeToken");
+            Assert.Equal(2, removedCount);
+            Assert.Single(user.RefreshTokens);
+            Assert.Equal("activeToken", user.RefreshTokens.First().Token);
         }
 
         private User CreateTestUser()

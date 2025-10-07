@@ -1,5 +1,4 @@
 using System.Net;
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -37,19 +36,18 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         // Validate database configuration contract per environment
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty($"Connection string should be configured in {environment}");
+        Assert.False(string.IsNullOrEmpty(connectionString));
 
         var databaseProvider = configuration["DatabaseProvider"];
-        databaseProvider.Should().Be("SQLite", $"Database provider should be SQLite for contract tests in {environment}");
+        Assert.Equal("SQLite", databaseProvider);
 
         // Environment-specific database naming contract
-        connectionString.Should().Contain($"CrudContract_{environment.Substring(0, 4)}",
-          $"Database should use environment-specific naming in {environment}");
+        Assert.Contains($"CrudContract_{environment.Substring(0, 4)}", connectionString);
 
         // Validate database accessibility contract
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var canConnect = await dbContext.Database.CanConnectAsync();
-        canConnect.Should().BeTrue($"Database should be accessible in {environment}");
+        Assert.True(canConnect);
 
         _output.WriteLine($"✓ Database configuration contract validated for {environment}");
     }
@@ -76,22 +74,18 @@ public class ConfigurationSpecificContractTests : ContractTestBase
             _ => "Information"
         };
 
-        configuredLogLevel.Should().Be(expectedLogLevel,
-          $"Log level should be {expectedLogLevel} in {environment} environment");
+        Assert.Equal(expectedLogLevel, configuredLogLevel);
 
         // Validate logging behavior contract
         var shouldLogInfo = environment == "Development";
         var shouldLogWarning = environment != "Production";
         var shouldLogError = true; // All environments should log errors
 
-        logger.IsEnabled(LogLevel.Information).Should().Be(shouldLogInfo,
-          $"Information logging should be {(shouldLogInfo ? "enabled" : "disabled")} in {environment}");
+        Assert.Equal(shouldLogInfo, logger.IsEnabled(LogLevel.Information));
 
-        logger.IsEnabled(LogLevel.Warning).Should().Be(shouldLogWarning,
-          $"Warning logging should be {(shouldLogWarning ? "enabled" : "disabled")} in {environment}");
+        Assert.Equal(shouldLogWarning, logger.IsEnabled(LogLevel.Warning));
 
-        logger.IsEnabled(LogLevel.Error).Should().Be(shouldLogError,
-          $"Error logging should be enabled in {environment}");
+        Assert.Equal(shouldLogError, logger.IsEnabled(LogLevel.Error));
 
         _output.WriteLine($"✓ Logging configuration contract validated for {environment}");
 
@@ -111,14 +105,14 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         // Caching configuration contract
         var useRedis = configuration["Caching:UseRedis"];
-        useRedis.Should().Be("false", $"Redis should be disabled for contract tests in {environment}");
+        Assert.Equal("false", useRedis);
 
         var outputCachingDisabled = configuration["OutputCaching:Disabled"];
-        outputCachingDisabled.Should().Be("false", $"Output caching should be enabled in {environment}");
+        Assert.Equal("false", outputCachingDisabled);
 
         // Validate memory cache availability contract
         var memoryCache = scope.ServiceProvider.GetService<IMemoryCache>();
-        memoryCache.Should().NotBeNull($"Memory cache should be available in {environment}");
+        Assert.NotNull(memoryCache);
 
         // Test caching behavior contract
         var testKey = $"config-contract-{environment}";
@@ -126,7 +120,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         memoryCache!.Set(testKey, testValue, TimeSpan.FromMinutes(1));
         var retrievedValue = memoryCache!.Get<string>(testKey);
-        retrievedValue.Should().Be(testValue, $"Caching should work consistently in {environment}");
+        Assert.Equal(testValue, retrievedValue);
 
         _output.WriteLine($"✓ Caching configuration contract validated for {environment}");
         return Task.CompletedTask;
@@ -142,7 +136,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         // Test error information disclosure contract
         var response = await client.GetAsync("/api/nonexistent/endpoint");
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
 
@@ -151,20 +145,18 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         {
             case "Development":
                 // Development may expose more detailed error information
-                content.Should().NotBeNullOrEmpty("Development should provide error information");
+                Assert.False(string.IsNullOrEmpty(content));
                 break;
 
             case "Testing":
                 // Testing should have moderate error information
-                content.Should().NotBeNullOrEmpty("Testing should provide error information");
+                Assert.False(string.IsNullOrEmpty(content));
                 break;
 
             case "Production":
                 // Production should minimize error information exposure
-                content.ToLower().Should().NotContain("stack trace",
-                  "Production should not expose stack traces");
-                content.ToLower().Should().NotContain("exception",
-                  "Production should not expose detailed exception information");
+                Assert.DoesNotContain("stack trace", content.ToLower());
+                Assert.DoesNotContain("exception", content.ToLower());
                 break;
         }
 
@@ -184,20 +176,19 @@ public class ConfigurationSpecificContractTests : ContractTestBase
 
         // Health check contract
         var healthReport = await healthCheckService.CheckHealthAsync();
-        healthReport.Should().NotBeNull($"Health check should be available in {environment}");
+        Assert.NotNull(healthReport);
 
         // Environment-specific health check expectations
         var expectedStatus = HealthStatus.Healthy; // Contract tests should always be healthy
 
-        healthReport.Status.Should().Be(expectedStatus,
-          $"Health check should report {expectedStatus} status in {environment}");
+        Assert.Equal(expectedStatus, healthReport.Status);
 
         // Validate health check entries
-        healthReport.Entries.Should().NotBeEmpty($"Health check should have entries in {environment}");
+        Assert.NotEmpty(healthReport.Entries);
 
         foreach (var (checkName, entry) in healthReport.Entries)
         {
-            entry.Status.Should().BeOneOf(HealthStatus.Healthy, HealthStatus.Degraded);
+            Assert.True(entry.Status == HealthStatus.Healthy || entry.Status == HealthStatus.Degraded);
 
             _output.WriteLine($"Health check '{checkName}' in {environment}: {entry.Status}");
         }
@@ -220,14 +211,11 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         var services = factory.Services;
 
         // All environments should have these core services
-        scope.ServiceProvider.GetService<ApplicationDbContext>()
-          .Should().NotBeNull($"ApplicationDbContext should be registered in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetService<ApplicationDbContext>());
 
-        scope.ServiceProvider.GetService<Microsoft.Extensions.Caching.Memory.IMemoryCache>()
-          .Should().NotBeNull($"Memory cache should be registered in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetService<Microsoft.Extensions.Caching.Memory.IMemoryCache>());
 
-        scope.ServiceProvider.GetService<MediatR.IMediator>()
-          .Should().NotBeNull($"MediatR should be registered in {environment}");
+        Assert.NotNull(scope.ServiceProvider.GetService<MediatR.IMediator>());
 
         // Environment-specific behavior validation
         switch (environment)
@@ -274,7 +262,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
         foreach (var setting in baseSettings)
         {
             var value = configuration[setting];
-            value.Should().NotBeNullOrEmpty($"Base setting '{setting}' should be configured in {environment}");
+            Assert.False(string.IsNullOrEmpty(value));
             _output.WriteLine($"{setting}: {value}");
         }
 
@@ -291,7 +279,7 @@ public class ConfigurationSpecificContractTests : ContractTestBase
             foreach (var setting in settings)
             {
                 var value = configuration[setting];
-                value.Should().NotBeNullOrEmpty($"Environment setting '{setting}' should be configured in {environment}");
+                Assert.False(string.IsNullOrEmpty(value));
             }
         }
 
@@ -335,23 +323,19 @@ public class ConfigurationSpecificContractTests : ContractTestBase
             }
 
             // All environments should use SQLite for contract tests
-            config["DatabaseProvider"].Should().Be("SQLite", $"Database provider should be consistent");
+            Assert.Equal("SQLite", config["DatabaseProvider"]);
 
             // All environments should have Redis disabled for contract tests
-            config["UseRedis"].Should().Be("false", $"Redis should be disabled for contract tests");
+            Assert.Equal("false", config["UseRedis"]);
 
             // Connection strings should be environment-specific
-            config["ConnectionString"].Should().Contain($"CrudContract_{env.Substring(0, 4)}",
-              $"Connection string should be environment-specific for {env}");
+            Assert.Contains($"CrudContract_{env.Substring(0, 4)}", config["ConnectionString"]);
         }
 
         // Validate environment-specific differences
-        configurationData["Development"]["LogLevel"].Should().Be("Information",
-          "Development should use Information log level");
-        configurationData["Testing"]["LogLevel"].Should().Be("Warning",
-          "Testing should use Warning log level");
-        configurationData["Production"]["LogLevel"].Should().Be("Error",
-          "Production should use Error log level");
+        Assert.Equal("Information", configurationData["Development"]["LogLevel"]);
+        Assert.Equal("Warning", configurationData["Testing"]["LogLevel"]);
+        Assert.Equal("Error", configurationData["Production"]["LogLevel"]);
 
         _output.WriteLine("\n✓ Configuration contracts are consistent yet appropriately distinct");
         return Task.CompletedTask;

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
@@ -82,11 +81,10 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
             var totalEnvironmentTime = environmentStopwatch.Elapsed.TotalSeconds;
             _output.WriteLine($"Total {environment} time: {totalEnvironmentTime:F2} seconds");
 
-            totalEnvironmentTime.Should().BeLessThan(30,
-              $"{environment} environment must complete all smoke tests within 30 seconds for deployment gate requirements");
+            Assert.True(totalEnvironmentTime < 30);
 
             // Performance targets per category
-            ValidateCategoryPerformance(categoryResults, environment);
+            ValidateCategoryPerformance(categoryResults);
         }
 
         // Generate performance report
@@ -117,7 +115,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         return stopwatch.Elapsed;
     }
 
-    private void ValidateCategoryPerformance(Dictionary<string, TimeSpan> categoryResults, string environment)
+    private void ValidateCategoryPerformance(Dictionary<string, TimeSpan> categoryResults)
     {
         // Performance targets for each category
         var performanceTargets = new Dictionary<string, int>
@@ -146,8 +144,7 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
             // Soft assertion - log warning but don't fail test for slight overruns
             if (actualTime > targetTime * 1.5) // Only fail if 50% over target
             {
-                actualTime.Should().BeLessThan(targetTime * 1.5,
-                  $"{categoryName} significantly exceeded performance target in {environment}");
+                Assert.True(actualTime < targetTime * 1.5);
             }
         }
     }
@@ -221,14 +218,11 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         overallStopwatch.Stop();
 
         // Individual performance assertions
-        healthTime.TotalSeconds.Should().BeLessThan(5,
-          $"Health checks should complete within 5 seconds in {environment}");
+        Assert.True(healthTime.TotalSeconds < 5);
 
-        authTime.TotalSeconds.Should().BeLessThan(8,
-          $"Authentication checks should complete within 8 seconds in {environment}");
+        Assert.True(authTime.TotalSeconds < 8);
 
-        overallStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(15,
-          $"Quick validation should complete within 15 seconds in {environment}");
+        Assert.True(overallStopwatch.Elapsed.TotalSeconds < 15);
 
         _output.WriteLine($"{environment} individual validation: {overallStopwatch.Elapsed.TotalSeconds:F2}s");
     }
@@ -268,12 +262,10 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         // Validate CI/CD constraints
         foreach (var (environment, time) in GetSupportedEnvironments().Zip(environmentTimes))
         {
-            time.Should().BeLessThan(maxEnvironmentTime,
-              $"{environment} should complete within CI/CD time budget");
+            Assert.True(time < maxEnvironmentTime);
         }
 
-        pipelineStopwatch.Elapsed.Should().BeLessThan(maxPipelineTime,
-          "Total pipeline smoke tests should complete within 5 minutes");
+        Assert.True(pipelineStopwatch.Elapsed < maxPipelineTime);
 
         _output.WriteLine($"Total CI/CD validation time: {pipelineStopwatch.Elapsed.TotalSeconds:F2}s");
         _output.WriteLine("✓ Smoke test suite is compatible with CI/CD pipeline requirements");
@@ -289,13 +281,13 @@ public class SmokeTestPerformanceValidation : SmokeTestBase
         var timeConstraint = TimeSpan.FromSeconds(30);
 
         // Requirements validation
-        supportedEnvironments.Should().Contain("Development", "Should test Development environment");
-        supportedEnvironments.Should().Contain("Testing", "Should test Testing environment");
-        supportedEnvironments.Should().Contain("Production", "Should test Production environment");
+        Assert.Contains("Development", supportedEnvironments);
+        Assert.Contains("Testing", supportedEnvironments);
+        Assert.Contains("Production", supportedEnvironments);
 
-        supportedEnvironments.Should().HaveCount(3, "Should test exactly 3 environments");
+        Assert.Equal(3, supportedEnvironments.Count);
 
-        timeConstraint.TotalSeconds.Should().Be(30, "Should enforce 30-second constraint");
+        Assert.Equal(30, timeConstraint.TotalSeconds);
 
         _output.WriteLine("✓ Configuration meets deployment gate requirements:");
         _output.WriteLine($"  - Environments: {string.Join(", ", supportedEnvironments)}");

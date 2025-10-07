@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
@@ -27,7 +26,6 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Moq" />
-    <Using Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>

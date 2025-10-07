@@ -1,5 +1,4 @@
 using App.Abstractions;
-using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -41,10 +40,11 @@ public class EmailServiceTests
         var resetToken = "test-reset-token-123";
 
         // Act
-        var act = async () => await _emailService.SendPasswordResetEmailAsync(email, resetToken);
+        var exception = await Record.ExceptionAsync(async () =>
+            await _emailService.SendPasswordResetEmailAsync(email, resetToken));
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(exception);
 
         _mockLogger.Verify(
             x => x.Log(
@@ -65,11 +65,9 @@ public class EmailServiceTests
     [InlineData("test@example.com", " ")]
     public async Task SendPasswordResetEmailAsync_WithInvalidParameters_ShouldThrowArgumentException(string email, string resetToken)
     {
-        // Act
-        var act = async () => await _emailService.SendPasswordResetEmailAsync(email, resetToken);
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _emailService.SendPasswordResetEmailAsync(email, resetToken));
     }
 
     [Fact]
@@ -79,12 +77,10 @@ public class EmailServiceTests
         var invalidEmail = "not-an-email";
         var resetToken = "test-reset-token-123";
 
-        // Act
-        var act = async () => await _emailService.SendPasswordResetEmailAsync(invalidEmail, resetToken);
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*valid email address*");
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _emailService.SendPasswordResetEmailAsync(invalidEmail, resetToken));
+        Assert.Contains("valid email address", exception.Message);
     }
 
     [Fact]
@@ -117,11 +113,9 @@ public class EmailServiceTests
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        // Act
-        var act = async () => await _emailService.SendPasswordResetEmailAsync(email, resetToken, cts.Token);
-
-        // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await _emailService.SendPasswordResetEmailAsync(email, resetToken, cts.Token));
     }
 
     [Fact]
@@ -137,10 +131,10 @@ public class EmailServiceTests
         var sentEmails = mockService.GetSentEmails();
 
         // Assert
-        sentEmails.Should().HaveCount(1);
-        sentEmails.First().To.Should().Be(email);
-        sentEmails.First().Subject.Should().Contain("Password Reset");
-        sentEmails.First().Body.Should().Contain(resetToken);
+        Assert.Single(sentEmails);
+        Assert.Equal(email, sentEmails.First().To);
+        Assert.Contains("Password Reset", sentEmails.First().Subject);
+        Assert.Contains(resetToken, sentEmails.First().Body);
     }
 
     [Fact]
@@ -157,8 +151,8 @@ public class EmailServiceTests
         var sentEmails = mockService.GetSentEmails();
 
         // Assert
-        sentEmails.First().Body.Should().Contain(expectedUrl);
-        sentEmails.First().Body.Should().Contain($"token={resetToken}");
+        Assert.Contains(expectedUrl, sentEmails.First().Body);
+        Assert.Contains($"token={resetToken}", sentEmails.First().Body);
     }
 
     [Fact]
@@ -175,7 +169,7 @@ public class EmailServiceTests
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(50); // Simulated delay
+        Assert.True(stopwatch.ElapsedMilliseconds > 50); // Simulated delay
     }
 }
 
@@ -214,11 +208,9 @@ public class EmailServiceMockingTests
             .Setup(x => x.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Email service unavailable"));
 
-        // Act
-        var act = async () => await mockEmailService.Object.SendPasswordResetEmailAsync(email, resetToken);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Email service unavailable");
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await mockEmailService.Object.SendPasswordResetEmailAsync(email, resetToken));
+        Assert.Equal("Email service unavailable", exception.Message);
     }
 }
