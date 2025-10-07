@@ -260,11 +260,8 @@ test.describe('People Management UI', () => {
 
     await pageHelpers.refreshPage();
 
-    // Switch to people tab and wait for data to load (proper action-with-response pattern)
-    await pageHelpers.waitForActionWithDataLoad(
-      () => pageHelpers.switchToPeopleTab(),
-      '/api/people'
-    );
+    // switchToPeopleTab already waits for networkidle (includes API data load)
+    await pageHelpers.switchToPeopleTab();
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
@@ -290,11 +287,8 @@ test.describe('People Management UI', () => {
 
     await pageHelpers.refreshPage();
 
-    // Switch to people tab and wait for data to load (proper action-with-response pattern)
-    await pageHelpers.waitForActionWithDataLoad(
-      () => pageHelpers.switchToPeopleTab(),
-      '/api/people'
-    );
+    // switchToPeopleTab already waits for networkidle (includes API data load)
+    await pageHelpers.switchToPeopleTab();
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
