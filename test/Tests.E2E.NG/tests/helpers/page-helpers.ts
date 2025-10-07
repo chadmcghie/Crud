@@ -808,6 +808,79 @@ export class PageHelpers {
   }
 
   /**
+   * Wait for an action that triggers API data loading
+   *
+   * Properly handles the Playwright pattern of setting up response listener
+   * BEFORE triggering the action that causes the request. This prevents race
+   * conditions where the API response completes before waitForResponse() is called.
+   *
+   * Follows Playwright best practice: listener → action → wait
+   *
+   * Usage:
+   * ```typescript
+   * // Wait for refresh button click to load data
+   * await helpers.waitForActionWithDataLoad(
+   *   () => helpers.clickRefreshButton(),
+   *   '/api/people'
+   * );
+   *
+   * // Wait for navigation that loads data
+   * await helpers.waitForActionWithDataLoad(
+   *   () => helpers.switchToPeopleTab(),
+   *   '/api/people'
+   * );
+   *
+   * // Wait for multiple endpoints
+   * await helpers.waitForActionWithDataLoad(
+   *   () => page.click('button.load-all'),
+   *   ['/api/people', '/api/roles']
+   * );
+   * ```
+   *
+   * @param action - The async action that triggers API requests
+   * @param endpoint - API endpoint(s) to wait for (string or array)
+   * @param options - Optional configuration
+   */
+  async waitForActionWithDataLoad(
+    action: () => Promise<void>,
+    endpoint: string | string[],
+    options?: {
+      timeout?: number;
+      waitForNetworkIdle?: boolean;
+    }
+  ): Promise<void> {
+    const timeout = options?.timeout || 20000;
+    const endpoints = Array.isArray(endpoint) ? endpoint : [endpoint];
+
+    try {
+      // Set up response listeners BEFORE action
+      // This is critical to avoid race conditions
+      const responsePromises = endpoints.map(ep =>
+        this.page.waitForResponse(
+          resp => resp.url().includes(ep) && resp.ok(),
+          { timeout }
+        )
+      );
+
+      // Execute the action that triggers requests
+      await action();
+
+      // Wait for all responses
+      await Promise.all(responsePromises);
+
+      // Optionally wait for network to settle
+      if (options?.waitForNetworkIdle !== false) {
+        await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+          // Network idle timeout is acceptable - data already loaded
+        });
+      }
+    } catch (error) {
+      console.error(`Action with data load failed for ${endpoints.join(', ')}:`, error);
+      throw new Error(`API data did not load within ${timeout}ms after action`);
+    }
+  }
+
+  /**
    * Wait for Angular component to be ready
    *
    * Waits for:

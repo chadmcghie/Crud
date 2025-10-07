@@ -171,10 +171,11 @@ test.describe('People Management UI', () => {
     await pageHelpers.switchToPeopleTab();
     
     // Wait for data to load and verify person exists before deletion - add extra synchronization
-    await pageHelpers.clickRefreshButton();
-
-    // Wait for data to load after refresh (replaces arbitrary 1000ms timeout)
-    await pageHelpers.waitForDataLoad('/api/people');
+    // Use proper action-with-response pattern to avoid race conditions
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.clickRefreshButton(),
+      '/api/people'
+    );
 
     await pageHelpers.verifyPersonExists(createdPerson.fullName);
     
@@ -211,11 +212,11 @@ test.describe('People Management UI', () => {
     // The person shouldn't be visible yet (page hasn't refreshed)
     await pageHelpers.verifyPersonNotExists(testPerson.fullName);
 
-    // Click refresh button
-    await pageHelpers.clickRefreshButton();
-
-    // Wait for data to load after refresh (replaces arbitrary 1000ms timeout)
-    await pageHelpers.waitForDataLoad('/api/people');
+    // Click refresh button and wait for data load (proper action-with-response pattern)
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.clickRefreshButton(),
+      '/api/people'
+    );
 
     // Now the person should be visible
     await pageHelpers.verifyPersonExists(testPerson.fullName);
@@ -258,11 +259,12 @@ test.describe('People Management UI', () => {
     await apiHelpers.createPerson(testPerson);
 
     await pageHelpers.refreshPage();
-    await pageHelpers.switchToPeopleTab();
 
-    // Wait for navigation and data loading (replaces arbitrary 1000ms timeout)
-    await pageHelpers.waitForNavigationComplete();
-    await pageHelpers.waitForDataLoad('/api/people');
+    // Switch to people tab and wait for data to load (proper action-with-response pattern)
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.switchToPeopleTab(),
+      '/api/people'
+    );
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
@@ -287,11 +289,12 @@ test.describe('People Management UI', () => {
     await apiHelpers.createPerson(testPerson);
 
     await pageHelpers.refreshPage();
-    await pageHelpers.switchToPeopleTab();
 
-    // Wait for navigation and data loading (replaces arbitrary 1000ms timeout)
-    await pageHelpers.waitForNavigationComplete();
-    await pageHelpers.waitForDataLoad('/api/people');
+    // Switch to people tab and wait for data to load (proper action-with-response pattern)
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.switchToPeopleTab(),
+      '/api/people'
+    );
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
