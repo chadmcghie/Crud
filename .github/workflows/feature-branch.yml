@@ -128,18 +128,53 @@ jobs:
         fi
 
   # ====================================
+  # PATH DETECTION: Detect what changed to optimize test execution
+  # ====================================
+  detect-changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    needs: code-quality
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Detect path changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          backend:
+            - 'src/Api/**'
+            - 'src/App/**'
+            - 'src/Domain/**'
+            - 'src/Infrastructure/**'
+            - 'test/Tests.Unit.Backend/**'
+            - 'test/Tests.Integration.Backend/**'
+          frontend:
+            - 'src/Angular/**'
+            - 'test/Tests.Integration.NG/**'
+
+  # ====================================
   # PHASE 2: BUILD, CODEQL & ARTIFACT CREATION (CLEAN CODE BUILT)
   # ====================================
   build-codeql-artifacts:
-    name: Build, CodeQL & Create Artifacts
+    name: Build, CodeQL & Create Artifacts (${{ matrix.language }})
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: [code-quality, detect-changes]
+    # Only run this matrix job if the corresponding code changed
+    if: |
+      (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
+      (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
     timeout-minutes: 45
     permissions:
       actions: read
       contents: read
       security-events: write
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -237,7 +272,8 @@ jobs:
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: build-codeql-artifacts
+    needs: [build-codeql-artifacts, detect-changes]
+    if: needs.detect-changes.outputs.backend == 'true'
     
     steps:
     - name: Checkout code
@@ -264,7 +300,8 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    needs: build-codeql-artifacts
+    needs: [build-codeql-artifacts, detect-changes]
+    if: needs.detect-changes.outputs.frontend == 'true'
     
     steps:
     - name: Checkout code
@@ -291,15 +328,35 @@ jobs:
   feature-branch-summary:
     name: Feature Branch Analysis Summary
     runs-on: ubuntu-latest
-    needs: [code-quality, build-codeql-artifacts, backend-unit-tests, frontend-unit-tests]
+    needs: [code-quality, detect-changes, build-codeql-artifacts, backend-unit-tests, frontend-unit-tests]
     if: always()
-    
+
     steps:
     - name: Create comprehensive summary
       run: |
         echo "## 🚀 Feature Branch Complete Analysis Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Integrated Build Strategy**: Code quality → Build + CodeQL + Artifacts → Parallel testing" >> $GITHUB_STEP_SUMMARY
+        echo "**Integrated Build Strategy**: Code quality → Path detection → Conditional build + tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### 🔍 Path Detection Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Code Area | Changed | Tests Executed |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|---------|----------------|" >> $GITHUB_STEP_SUMMARY
+
+        # Backend changes
+        if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ]; then
+          echo "| Backend | ✅ Yes | Backend unit tests + C# CodeQL |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Backend | ⏸️ No | ⏸️ Skipped (no backend changes) |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Frontend changes
+        if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+          echo "| Frontend | ✅ Yes | Frontend unit tests + JavaScript CodeQL |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Frontend | ⏸️ No | ⏸️ Skipped (no frontend changes) |" >> $GITHUB_STEP_SUMMARY
+        fi
+
         echo "" >> $GITHUB_STEP_SUMMARY
         
         echo "### Analysis Results" >> $GITHUB_STEP_SUMMARY
@@ -331,12 +388,25 @@ jobs:
         echo "- ✅ **Maximum Efficiency**: No rebuilds, CodeQL sees real compilation" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Overall status check
-        if [ "${{ needs.code-quality.result }}" == "success" ] && \
-           [ "${{ needs.build-codeql-artifacts.result }}" == "success" ] && \
-           [ "${{ needs.backend-unit-tests.result }}" == "success" ] && \
-           [ "${{ needs.frontend-unit-tests.result }}" == "success" ]; then
+        # Overall status check (success or skipped are both acceptable)
+        QUALITY_OK="${{ needs.code-quality.result == 'success' }}"
+        BUILD_OK="${{ needs.build-codeql-artifacts.result == 'success' }}"
+        BACKEND_OK="${{ needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests.result == 'skipped' }}"
+        FRONTEND_OK="${{ needs.frontend-unit-tests.result == 'success' || needs.frontend-unit-tests.result == 'skipped' }}"
+
+        if [ "$QUALITY_OK" == "true" ] && [ "$BUILD_OK" == "true" ] && [ "$BACKEND_OK" == "true" ] && [ "$FRONTEND_OK" == "true" ]; then
           echo "### ✅ All Analysis Complete - Ready for PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Optimization Impact:**" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.detect-changes.outputs.backend }}" == "false" ]; then
+            echo "- ⚡ Backend tests skipped (no backend changes detected)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.detect-changes.outputs.frontend }}" == "false" ]; then
+            echo "- ⚡ Frontend tests skipped (no frontend changes detected)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ] && [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+            echo "- ✅ Full test suite executed (both backend and frontend changed)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
           echo "1. Create PR to \`dev\`: Integration tests only (unit tests already completed)" >> $GITHUB_STEP_SUMMARY
@@ -346,12 +416,9 @@ jobs:
           echo "### ❌ Some Analysis Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please review the failed phases above and fix any issues before creating a PR." >> $GITHUB_STEP_SUMMARY
-          
+
           # Exit with error to fail the workflow
-          if [ "${{ needs.code-quality.result }}" != "success" ] || \
-             [ "${{ needs.build-codeql-artifacts.result }}" != "success" ] || \
-             [ "${{ needs.backend-unit-tests.result }}" != "success" ] || \
-             [ "${{ needs.frontend-unit-tests.result }}" != "success" ]; then
+          if [ "$QUALITY_OK" != "true" ] || [ "$BUILD_OK" != "true" ] || [ "$BACKEND_OK" != "true" ] || [ "$FRONTEND_OK" != "true" ]; then
             exit 1
           fi
         fi

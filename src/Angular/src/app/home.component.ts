@@ -310,6 +310,7 @@ import { Observable } from 'rxjs';
   `]
 })
 export class HomeComponent implements OnInit {
+  // Test comment for frontend-only path filtering validation
   authService = inject(AuthService);
   markdownService = inject(MarkdownService);
 
