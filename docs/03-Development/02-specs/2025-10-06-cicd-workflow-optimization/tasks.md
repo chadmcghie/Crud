@@ -25,16 +25,16 @@
   - [x] 2.8 Test with backend-only changes (verify frontend tests skipped)
   - [x] 2.9 Verify all tests still run when both backend and frontend change
 
-- [ ] 3. Add Playwright Browser Caching to All E2E Workflows (Issue: #283)
-  - [ ] 3.1 Add cache step using `actions/cache@v4` to `pr-to-dev.yml` E2E job
-  - [ ] 3.2 Configure cache key with `playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}`
-  - [ ] 3.3 Update Playwright install command to remove `--with-deps` flag in `pr-to-dev.yml`
-  - [ ] 3.4 Add cache step to `pr-to-main.yml` E2E job
-  - [ ] 3.5 Add cache step to `deploy-dev.yml` E2E job
-  - [ ] 3.6 Add cache step to `deploy-production.yml` E2E job
-  - [ ] 3.7 Test cache hit scenario (verify ~30 second restore)
-  - [ ] 3.8 Test cache miss scenario (verify 3-4 minute install without --with-deps)
-  - [ ] 3.9 Verify all E2E tests pass with cached browsers
+- [x] 3. Add Playwright Browser Caching to All E2E Workflows (Issue: #283)
+  - [x] 3.1 Add cache step using `actions/cache@v4` to `pr-to-dev.yml` E2E job
+  - [x] 3.2 Configure cache key with `playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}`
+  - [x] 3.3 Update Playwright install command to remove `--with-deps` flag in `pr-to-dev.yml`
+  - [x] 3.4 Add cache step to `pr-to-main.yml` E2E job
+  - [x] 3.5 Add cache step to `deploy-dev.yml` E2E job
+  - [x] 3.6 Add cache step to `deploy-production.yml` E2E job
+  - [x] 3.7 Test cache hit scenario (verify ~30 second restore)
+  - [x] 3.8 Test cache miss scenario (verify 3-4 minute install without --with-deps)
+  - [x] 3.9 Verify all E2E tests pass with cached browsers
 
 - [ ] 4. Update PR to Dev Workflow for Conditional Execution (Issue: #284)
   - [ ] 4.1 Add `check-actor` job to detect Dependabot PRs in `pr-to-dev.yml`

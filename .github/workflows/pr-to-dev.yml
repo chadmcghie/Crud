@@ -269,12 +269,26 @@ jobs:
         npm ci
         echo "✅ E2E dependencies installed"
 
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
     - name: Install Playwright browsers
       working-directory: ./test/Tests.E2E.NG
       run: |
         echo "🎭 Installing Playwright browsers..."
-        npx playwright install --with-deps chromium
-        echo "✅ Playwright browsers installed"
+        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Playwright browsers restored from cache"
+        else
+          echo "📥 Downloading Playwright browsers (no cache hit)..."
+          npx playwright install chromium
+          echo "✅ Playwright browsers installed"
+        fi
 
     - name: Set execute permissions for API binary
       run: |
