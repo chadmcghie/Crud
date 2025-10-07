@@ -14,16 +14,16 @@
   - [x] 1.7 Test workflow with simulated Dependabot PR
   - [x] 1.8 Verify workflow completes in 2-3 minutes target
 
-- [ ] 2. Implement Path Filtering in Feature Branch Workflow (Issue: #282)
-  - [ ] 2.1 Add `detect-changes` job using `dorny/paths-filter@v3` to `feature-branch.yml`
-  - [ ] 2.2 Configure filter patterns for backend and frontend paths
-  - [ ] 2.3 Update `backend-unit-tests` job with conditional execution based on detected changes
-  - [ ] 2.4 Update `frontend-unit-tests` job with conditional execution
-  - [ ] 2.5 Optimize CodeQL build matrix to be conditional on detected changes
-  - [ ] 2.6 Update summary job to display detected changes and skipped tests
-  - [ ] 2.7 Test with frontend-only changes (verify backend tests skipped)
-  - [ ] 2.8 Test with backend-only changes (verify frontend tests skipped)
-  - [ ] 2.9 Verify all tests still run when both backend and frontend change
+- [x] 2. Implement Path Filtering in Feature Branch Workflow (Issue: #282)
+  - [x] 2.1 Add `detect-changes` job using `dorny/paths-filter@v3` to `feature-branch.yml`
+  - [x] 2.2 Configure filter patterns for backend and frontend paths
+  - [x] 2.3 Update `backend-unit-tests` job with conditional execution based on detected changes
+  - [x] 2.4 Update `frontend-unit-tests` job with conditional execution
+  - [x] 2.5 Optimize CodeQL build matrix to be conditional on detected changes
+  - [x] 2.6 Update summary job to display detected changes and skipped tests
+  - [x] 2.7 Test with frontend-only changes (verify backend tests skipped)
+  - [x] 2.8 Test with backend-only changes (verify frontend tests skipped)
+  - [x] 2.9 Verify all tests still run when both backend and frontend change
 
 - [ ] 3. Add Playwright Browser Caching to All E2E Workflows (Issue: #283)
   - [ ] 3.1 Add cache step using `actions/cache@v4` to `pr-to-dev.yml` E2E job
