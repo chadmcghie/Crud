@@ -1,0 +1,240 @@
+name: Dependabot CI - Fast Dependency Validation
+
+# This workflow provides fast feedback for Dependabot PRs
+# Runs targeted unit tests based on dependency type in 2-3 minutes
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      simulate_dependabot:
+        description: 'Simulate Dependabot PR for testing'
+        required: false
+        default: false
+        type: boolean
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Only run this workflow for Dependabot PRs
+  check-actor:
+    name: Check if Dependabot PR
+    runs-on: ubuntu-latest
+    outputs:
+      is-dependabot: ${{ steps.check.outputs.is-dependabot }}
+
+    steps:
+    - name: Check if PR is from Dependabot
+      id: check
+      run: |
+        # Allow manual testing with workflow_dispatch
+        if [ "${{ github.event.inputs.simulate_dependabot }}" == "true" ]; then
+          echo "🧪 TEST MODE: Simulating Dependabot PR for testing"
+          echo "is-dependabot=true" >> $GITHUB_OUTPUT
+        elif [ "${{ github.actor }}" == "dependabot[bot]" ]; then
+          echo "✅ Dependabot PR detected - running fast validation"
+          echo "is-dependabot=true" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️  Not a Dependabot PR - skipping this workflow"
+          echo "is-dependabot=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Detect which type of dependencies changed
+  detect-changes:
+    name: Detect Dependency Type
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: needs.check-actor.outputs.is-dependabot == 'true'
+    outputs:
+      dotnet: ${{ steps.filter.outputs.dotnet }}
+      angular: ${{ steps.filter.outputs.angular }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      github-actions: ${{ steps.filter.outputs.github-actions }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Detect dependency changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          dotnet:
+            - '**/*.csproj'
+            - '**/packages.config'
+            - 'global.json'
+          angular:
+            - 'src/Angular/package.json'
+            - 'src/Angular/package-lock.json'
+          e2e:
+            - 'test/Tests.E2E.NG/package.json'
+            - 'test/Tests.E2E.NG/package-lock.json'
+          github-actions:
+            - '.github/workflows/**/*.yml'
+
+  # Run .NET unit tests if .NET dependencies changed
+  dotnet-unit-tests:
+    name: .NET Unit Tests
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.dotnet == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+
+    - name: Restore .NET dependencies
+      run: dotnet restore solutions/Crud.sln
+
+    - name: Build backend
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release
+
+    - name: Run backend unit tests
+      run: dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
+
+  # Run Angular unit tests if Angular dependencies changed
+  angular-unit-tests:
+    name: Angular Unit Tests
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.angular == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: npm ci
+
+    - name: Run Angular unit tests
+      working-directory: ./src/Angular
+      run: npm run test -- --watch=false --browsers=ChromeHeadless
+
+  # Run E2E test dependencies validation if E2E packages changed
+  e2e-unit-tests:
+    name: E2E Dependencies Validation
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.e2e == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'test/Tests.E2E.NG/package-lock.json'
+
+    - name: Install E2E dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: npm ci
+
+    - name: Validate Playwright installation
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "✅ E2E dependencies installed successfully"
+        npx playwright --version
+
+  # Summary job
+  dependabot-summary:
+    name: Dependabot Validation Summary
+    runs-on: ubuntu-latest
+    needs: [check-actor, detect-changes, dotnet-unit-tests, angular-unit-tests, e2e-unit-tests]
+    if: always() && needs.check-actor.outputs.is-dependabot == 'true'
+
+    steps:
+    - name: Create summary
+      run: |
+        echo "## 🤖 Dependabot Fast Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Strategy**: Run only unit tests relevant to changed dependencies for fast feedback (2-3 min target)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Detected Dependency Changes" >> $GITHUB_STEP_SUMMARY
+        echo "| Dependency Type | Changed | Tests Run |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------------|---------|-----------|" >> $GITHUB_STEP_SUMMARY
+
+        # .NET dependencies
+        if [ "${{ needs.detect-changes.outputs.dotnet }}" == "true" ]; then
+          DOTNET_STATUS="${{ needs.dotnet-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          echo "| .NET Dependencies | ✅ Yes | $DOTNET_STATUS |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| .NET Dependencies | ⏸️ No | ⏸️ Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Angular dependencies
+        if [ "${{ needs.detect-changes.outputs.angular }}" == "true" ]; then
+          ANGULAR_STATUS="${{ needs.angular-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          echo "| Angular Dependencies | ✅ Yes | $ANGULAR_STATUS |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Angular Dependencies | ⏸️ No | ⏸️ Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # E2E dependencies
+        if [ "${{ needs.detect-changes.outputs.e2e }}" == "true" ]; then
+          E2E_STATUS="${{ needs.e2e-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+          echo "| E2E Dependencies | ✅ Yes | $E2E_STATUS |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| E2E Dependencies | ⏸️ No | ⏸️ Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # GitHub Actions
+        if [ "${{ needs.detect-changes.outputs.github-actions }}" == "true" ]; then
+          echo "| GitHub Actions | ✅ Yes | ℹ️ No tests (workflow syntax validated) |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| GitHub Actions | ⏸️ No | ⏸️ Skipped |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Unit tests completed** - Fast validation done" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔄 **Integration tests** - Will run when PR workflow triggers" >> $GITHUB_STEP_SUMMARY
+        echo "- 🎯 **Smoke tests** - Will run on merge to dev" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Overall status
+        DOTNET_OK="${{ needs.detect-changes.outputs.dotnet != 'true' || needs.dotnet-unit-tests.result == 'success' }}"
+        ANGULAR_OK="${{ needs.detect-changes.outputs.angular != 'true' || needs.angular-unit-tests.result == 'success' }}"
+        E2E_OK="${{ needs.detect-changes.outputs.e2e != 'true' || needs.e2e-unit-tests.result == 'success' }}"
+
+        if [ "$DOTNET_OK" == "true" ] && [ "$ANGULAR_OK" == "true" ] && [ "$E2E_OK" == "true" ]; then
+          echo "### ✅ All Dependency Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Dependabot PR is ready for review. Integration and smoke tests will run automatically." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Some Tests Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the failed tests above. The dependency update may have introduced breaking changes." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi

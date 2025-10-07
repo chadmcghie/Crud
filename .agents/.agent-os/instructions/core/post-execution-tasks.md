@@ -207,7 +207,7 @@ Use the project-manager subagent to create a recap document in docs/03-Developme
 <recap_template>
   # [yyyy-mm-dd] Recap: Feature Name
 
-  This recaps what was built for the spec documented at docs/03-Development/specs/[spec-folder-name]/spec.md.
+  This recaps what was built for the spec documented at docs/03-Development/02-specs/[spec-folder-name]/spec.md.
 
   ## Recap
 
