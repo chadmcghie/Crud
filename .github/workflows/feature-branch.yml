@@ -237,7 +237,7 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
-      
+
     # Create artifacts only once (on the csharp matrix job) and only if backend changed
     - name: Create versioned artifact for downstream reuse
       if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
