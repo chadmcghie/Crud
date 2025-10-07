@@ -1,5 +1,6 @@
 namespace Domain.Enums
 {
+    // Test comment for backend-only path filtering validation
     public static class UserRole
     {
         public const string Admin = "Admin";
