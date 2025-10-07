@@ -172,7 +172,10 @@ test.describe('People Management UI', () => {
     
     // Wait for data to load and verify person exists before deletion - add extra synchronization
     await pageHelpers.clickRefreshButton();
-    await page.waitForTimeout(1000); // Allow time for refresh to complete
+
+    // Wait for data to load after refresh (replaces arbitrary 1000ms timeout)
+    await pageHelpers.waitForDataLoad('/api/people');
+
     await pageHelpers.verifyPersonExists(createdPerson.fullName);
     
     // Delete the person
@@ -210,7 +213,9 @@ test.describe('People Management UI', () => {
 
     // Click refresh button
     await pageHelpers.clickRefreshButton();
-    await page.waitForTimeout(1000); // Allow time for refresh to complete
+
+    // Wait for data to load after refresh (replaces arbitrary 1000ms timeout)
+    await pageHelpers.waitForDataLoad('/api/people');
 
     // Now the person should be visible
     await pageHelpers.verifyPersonExists(testPerson.fullName);
@@ -254,7 +259,10 @@ test.describe('People Management UI', () => {
 
     await pageHelpers.refreshPage();
     await pageHelpers.switchToPeopleTab();
-    await page.waitForTimeout(1000); // Allow time for navigation and data loading
+
+    // Wait for navigation and data loading (replaces arbitrary 1000ms timeout)
+    await pageHelpers.waitForNavigationComplete();
+    await pageHelpers.waitForDataLoad('/api/people');
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
@@ -280,7 +288,10 @@ test.describe('People Management UI', () => {
 
     await pageHelpers.refreshPage();
     await pageHelpers.switchToPeopleTab();
-    await page.waitForTimeout(1000); // Allow time for navigation and data loading
+
+    // Wait for navigation and data loading (replaces arbitrary 1000ms timeout)
+    await pageHelpers.waitForNavigationComplete();
+    await pageHelpers.waitForDataLoad('/api/people');
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded

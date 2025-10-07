@@ -148,10 +148,11 @@ test.describe('Full Workflow Integration Tests', () => {
     // Update API person via UI
     await pageHelpers.editPerson(apiPerson.fullName);
     await pageHelpers.fillPersonForm(apiPerson.fullName, '+1-555-9999', [uiRole.name]);
-    await pageHelpers.updatePersonForm();
 
-    // Wait for update to be reflected in backend
-    await pageHelpers.page.waitForTimeout(1000);
+    // Wait for form submission to complete (replaces arbitrary 1000ms timeout)
+    const submitPromise = pageHelpers.waitForFormSubmission('/api/people', 'PUT');
+    await pageHelpers.updatePersonForm();
+    await submitPromise;
 
     // Verify changes via API
     const updatedPerson = await apiHelpers.getPerson(apiPerson.id);
@@ -167,12 +168,11 @@ test.describe('Full Workflow Integration Tests', () => {
       const role = generateTestRole({ name: `Rapid Role ${i}` });
       const createdRole = await apiHelpers.createRole(role);
       createdRoles.push(createdRole);
-      // Small delay between creates to ensure each is committed
-      await pageHelpers.page.waitForTimeout(100);
+      // API response confirms each role is committed - no arbitrary delay needed
     }
 
-    // Wait to ensure all roles are fully committed to database
-    await pageHelpers.page.waitForTimeout(500);
+    // Database commits are confirmed by successful API responses above
+    // Removed arbitrary 500ms timeout
 
     // Verify all roles were created successfully via API
     const allRolesAfterCreation = await apiHelpers.getRoles();
@@ -220,11 +220,9 @@ test.describe('Full Workflow Integration Tests', () => {
       // Create sequentially with retry on 409 errors
       const createdPerson = await apiHelpers.createPerson(person);
       createdPeople.push(createdPerson);
-
-      // Small delay between creates
-      await pageHelpers.page.waitForTimeout(100);
+      // API response confirms person is committed - no arbitrary delay needed
     }
-    
+
     // Switch to people tab and verify all people appear
     await pageHelpers.switchToPeopleTab();
     await pageHelpers.clickRefreshButton();
@@ -263,8 +261,9 @@ test.describe('Full Workflow Integration Tests', () => {
 
     // Navigate back to list to check no role was created
     await page.click('a[href*="roles-list"], a[routerLink*="roles"]');
-    await page.waitForLoadState('domcontentloaded');
-    await pageHelpers.page.waitForTimeout(300);
+
+    // Wait for navigation to complete (replaces arbitrary 300ms timeout)
+    await pageHelpers.waitForNavigationComplete();
 
     // Verify no role was created (should be empty after beforeAll cleanup)
     const rolesAfterTest = await apiHelpers.getRoles();
