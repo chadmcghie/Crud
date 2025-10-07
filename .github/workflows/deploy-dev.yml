@@ -152,8 +152,30 @@ jobs:
     - name: Install E2E dependencies
       working-directory: ./test/Tests.E2E.NG
       run: |
+        echo "📦 Installing E2E test dependencies..."
         npm ci
-        npx playwright install --with-deps chromium
+        echo "✅ E2E dependencies installed"
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🎭 Installing Playwright browsers..."
+        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Playwright browsers restored from cache"
+        else
+          echo "📥 Downloading Playwright browsers (no cache hit)..."
+          npx playwright install chromium
+          echo "✅ Playwright browsers installed"
+        fi
 
     # Run FULL E2E test suite - comprehensive validation for dev environment
     - name: Run full E2E test suite in dev environment

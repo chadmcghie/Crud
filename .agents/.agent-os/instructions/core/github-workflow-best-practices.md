@@ -48,7 +48,7 @@ gh issue close 127 --comment "Completed as part of spec: ..."
 gh pr create --body "Closes #127
 
 Implementation details...
-Spec: docs/03-Development/specs/2025-01-15-feature-name/"
+Spec: docs/03-Development/02-specs/2025-01-15-feature-name/"
 ```
 
 ### Git Workflow Agent Updates
@@ -87,7 +87,7 @@ The `context-fetcher` agent should:
 
 ## Related
 - **GitHub Issue**: #177 - Issue Title
-- **Specification**: docs/03-Development/specs/2025-01-15-feature-name/
+- **Specification**: docs/03-Development/02-specs/2025-01-15-feature-name/
 
 **Closes #177**
 ```

@@ -146,7 +146,7 @@ Use the date-checker subagent to determine the current date in YYYY-MM-DD format
 
 ### Step 6: Spec Folder Creation
 
-Use the file-creator subagent to create directory: docs/03-Development/specs/YYYY-MM-DD-spec-name/ using the date from step 5.
+Use the file-creator subagent to create directory: docs/03-Development/02-specs/YYYY-MM-DD-spec-name/ using the date from step 5.
 
 Use kebab-case for spec name. Maximum 5 words in name.
 
@@ -172,7 +172,7 @@ Use kebab-case for spec name. Maximum 5 words in name.
 
 ### Step 7: Create spec.md
 
-Use the file-creator subagent to create the file: docs/03-Development/specs/YYYY-MM-DD-spec-name/spec.md using this template:
+Use the file-creator subagent to create the file: docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec.md using this template:
 
 <file_template>
   <header>
@@ -266,7 +266,7 @@ Use the file-creator subagent to create the file: docs/03-Development/specs/YYYY
 
 ### Step 8: Create spec-lite.md
 
-Use the file-creator subagent to create the file: docs/03-Development/specs/YYYY-MM-DD-spec-name/spec-lite.md for the purpose of establishing a condensed spec for efficient AI context usage.
+Use the file-creator subagent to create the file: docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec-lite.md for the purpose of establishing a condensed spec for efficient AI context usage.
 
 <file_template>
   <header>
@@ -302,7 +302,7 @@ Use the file-creator subagent to create the file: sub-specs/technical-spec.md us
   <header>
     # Technical Specification
 
-    This is the technical specification for the spec detailed in @docs/03-Development/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the technical specification for the spec detailed in @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -362,7 +362,7 @@ Use the file-creator subagent to create the file: sub-specs/database-schema.md O
   <header>
     # Database Schema
 
-    This is the database schema implementation for the spec detailed in @docs/03-Development/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the database schema implementation for the spec detailed in @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -405,7 +405,7 @@ Use the file-creator subagent to create file: sub-specs/api-spec.md ONLY IF API 
   <header>
     # API Specification
 
-    This is the API specification for the spec detailed in @docs/03-Development/specs/YYYY-MM-DD-spec-name/spec.md
+    This is the API specification for the spec detailed in @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec.md
   </header>
 </file_template>
 
@@ -450,9 +450,9 @@ Request user review of spec.md and all sub-specs files, waiting for approval or 
 <review_request>
   I've created the spec documentation:
 
-  - Spec Requirements: @docs/03-Development/specs/YYYY-MM-DD-spec-name/spec.md
-  - Spec Summary: @docs/03-Development/specs/YYYY-MM-DD-spec-name/spec-lite.md
-  - Technical Spec: @docs/03-Development/specs/YYYY-MM-DD-spec-name/sub-specs/technical-spec.md
+  - Spec Requirements: @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec.md
+  - Spec Summary: @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/spec-lite.md
+  - Technical Spec: @docs/03-Development/02-specs/YYYY-MM-DD-spec-name/sub-specs/technical-spec.md
   [LIST_OTHER_CREATED_SPECS]
 
   Please review and let me know if any changes are needed.
