@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import { resetDatabase } from '../setup/simple-database-utils';
+import { setupTestAuthentication, clearTestAuthentication } from '../helpers/test-auth-setup';
 
 /**
  * Simple test fixture with basic database cleanup
@@ -13,11 +14,12 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
       await resetDatabase(process.env.DATABASE_PATH);
     }
 
-    // CRITICAL: Enable E2E test mode BEFORE any navigation
-    // This must run before page.goto() to ensure localStorage is set when app initializes
-    await page.addInitScript(() => {
-      localStorage.setItem('e2e-test-mode', 'active');
-      console.log('🔓 E2E test mode enabled - authentication bypassed');
+    // Setup test authentication using the dedicated helper
+    await setupTestAuthentication(page, {
+      userId: 'e2e-test-user',
+      email: 'e2e@test.com',
+      roles: ['User', 'Admin'],
+      useLocalStorage: true
     });
 
     // Basic page setup with increased timeout for API operations
@@ -26,6 +28,9 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
 
     // Use the page
     await use(page);
+
+    // Clean up test authentication
+    await clearTestAuthentication(page);
   },
 
   // API URL from environment

@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { setupTestAuthentication } from '../tests/helpers/test-auth-setup';
 
 /**
  * Authentication helper for E2E tests
@@ -27,31 +28,15 @@ export class AuthHelper {
 
   /**
    * Enable E2E test mode for guard bypass
-   * Enhanced with error handling for CI environments
+   * Uses the new test-auth-setup helper
    */
   async enableE2EMode() {
-    try {
-      await this.page.evaluate(() => {
-        try {
-          localStorage.setItem('e2e-test-mode', 'active');
-          console.log('✅ E2E mode enabled via localStorage');
-        } catch (error) {
-          console.warn('⚠️ localStorage access denied, using fallback:', error.message);
-          // Fallback: Set on window object instead
-          (window as any).e2eTestMode = 'active';
-          // Also try sessionStorage as alternative
-          try {
-            sessionStorage.setItem('e2e-test-mode', 'active');
-            console.log('✅ E2E mode enabled via sessionStorage fallback');
-          } catch (sessionError) {
-            console.warn('⚠️ sessionStorage also failed:', sessionError.message);
-          }
-        }
-      });
-    } catch (pageError) {
-      console.warn('⚠️ E2E mode setup failed, continuing without it:', pageError.message);
-      // Continue test execution - auth bypass may work through other mechanisms
-    }
+    await setupTestAuthentication(this.page, {
+      userId: 'e2e-test-user',
+      email: 'e2e@test.com',
+      roles: ['User', 'Admin'],
+      useLocalStorage: true
+    });
   }
 
   /**

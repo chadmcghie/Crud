@@ -1,4 +1,5 @@
 import { test as base, APIRequestContext } from '@playwright/test';
+import { setupTestAuthentication, clearTestAuthentication } from '../helpers/test-auth-setup';
 
 export interface TestFixtures {
   apiContext: APIRequestContext;
@@ -99,17 +100,21 @@ export const test = base.extend<TestFixtures>({
     page.setDefaultNavigationTimeout(45000);
     page.setDefaultTimeout(15000);
 
-    // CRITICAL: Enable E2E test mode BEFORE navigation
-    // This must run before page.goto() to ensure localStorage is set when app initializes
-    await page.addInitScript(() => {
-      localStorage.setItem('e2e-test-mode', 'active');
-      console.log('🔓 E2E test mode enabled - authentication bypassed');
+    // Setup test authentication using the dedicated helper
+    await setupTestAuthentication(page, {
+      userId: 'e2e-test-user',
+      email: 'e2e@test.com',
+      roles: ['User', 'Admin'],
+      useLocalStorage: true
     });
 
     // NOTE: Do NOT navigate here - let individual tests navigate via pageHelpers.navigateToApp()
     // This ensures addInitScript runs on the actual test navigation, not a premature one
 
     await use(page);
+
+    // Clean up test authentication
+    await clearTestAuthentication(page);
 
     await context.close();
   },

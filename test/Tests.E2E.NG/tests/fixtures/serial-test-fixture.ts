@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import { resetDatabase, getDatabaseSize } from '../setup/database-utils';
+import { setupTestAuthentication, clearTestAuthentication } from '../helpers/test-auth-setup';
 import * as path from 'path';
 
 /**
@@ -15,48 +16,12 @@ const debugMode = process.env.DEBUG_E2E === 'true';
 export const test = base.extend<{ apiUrl: string; baseURL: string }>({
   // Environment-aware page setup with automatic database cleanup
   page: async ({ page }, use) => {
-    // AGGRESSIVE: Inject authentication tokens before Angular loads
-    await page.addInitScript(() => {
-      const injectionTimestamp = new Date().toISOString();
-      console.log('🔍 STORAGE INJECTION RUNNING - Timestamp:', injectionTimestamp);
-
-      // Create mock authenticated user matching auth.service.ts expectations
-      const mockUser = {
-        id: 'e2e-test-user',
-        email: 'e2e@test.com',
-        roles: ['User', 'Admin']
-      };
-
-      // Create mock JWT token (basic structure for timing calculations)
-      const mockTokenHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      const mockTokenPayload = btoa(JSON.stringify({
-        nameid: mockUser.id,
-        email: mockUser.email,
-        role: mockUser.roles,
-        exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
-      }));
-      const mockToken = `${mockTokenHeader}.${mockTokenPayload}.mock-signature`;
-
-      // Set authentication state in both localStorage and sessionStorage
-      localStorage.setItem('access_token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      sessionStorage.setItem('access_token', mockToken);
-      sessionStorage.setItem('user', JSON.stringify(mockUser));
-
-      // Set E2E test markers for additional detection
-      localStorage.setItem('e2e-test-mode', 'active');
-      localStorage.setItem('e2e-injection-timestamp', injectionTimestamp);
-      document.documentElement.setAttribute('data-e2e', 'true');
-
-      console.log('🔍 STORAGE INJECTION COMPLETE:', {
-        timestamp: injectionTimestamp,
-        mockUser: mockUser,
-        tokenLength: mockToken.length,
-        localStorage_set: !!localStorage.getItem('access_token'),
-        sessionStorage_set: !!sessionStorage.getItem('access_token'),
-        e2e_mode_set: localStorage.getItem('e2e-test-mode'),
-        document_attr_set: document.documentElement.getAttribute('data-e2e')
-      });
+    // Setup test authentication using the dedicated helper
+    await setupTestAuthentication(page, {
+      userId: 'e2e-test-user',
+      email: 'e2e@test.com',
+      roles: ['User', 'Admin'],
+      useLocalStorage: true
     });
 
     // Reset database via API before test with environment-specific handling
@@ -120,21 +85,8 @@ export const test = base.extend<{ apiUrl: string; baseURL: string }>({
     // Use the page
     await use(page);
 
-    // Clean up E2E auth tokens and test mode (only if page was used)
-    try {
-      await page.evaluate(() => {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.removeItem('e2e-test-mode');
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('access_token');
-          sessionStorage.removeItem('user');
-          document.documentElement.removeAttribute('data-e2e');
-        }
-      });
-    } catch (error) {
-      // Ignore localStorage access errors if page wasn't navigated to a valid domain
-    }
+    // Clean up test authentication
+    await clearTestAuthentication(page);
 
     // Optional: Log database size after test for monitoring
     if (process.env.DATABASE_PATH && process.env.DEBUG_DB) {
