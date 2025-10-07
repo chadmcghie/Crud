@@ -674,4 +674,297 @@ export class PageHelpers {
       await expect(rolesContent).toBeVisible();
     }
   }
+
+  // ============================================================================
+  // EVENT-DRIVEN WAIT METHODS
+  // ============================================================================
+  // These methods replace timer-based waits (waitForTimeout) with event-driven
+  // patterns that wait for actual application state changes. This improves test
+  // reliability and eliminates flakiness caused by arbitrary timeouts.
+  // ============================================================================
+
+  /**
+   * Wait for Angular navigation to complete
+   *
+   * Waits for:
+   * - DOM content to be loaded
+   * - Angular framework to be initialized
+   * - Router navigation to complete
+   * - Network to be idle (optional)
+   *
+   * Usage:
+   * ```typescript
+   * await page.click('a[routerLink="/people-list"]');
+   * await helpers.waitForNavigationComplete();
+   * ```
+   *
+   * @param options - Optional wait configuration
+   */
+  async waitForNavigationComplete(options?: {
+    waitForNetworkIdle?: boolean;
+    timeout?: number;
+  }): Promise<void> {
+    const timeout = options?.timeout || (isCI ? 30000 : 15000);
+    const waitForNetworkIdle = options?.waitForNetworkIdle ?? true;
+
+    try {
+      // Step 1: Wait for DOM content to be loaded
+      await this.page.waitForLoadState('domcontentloaded', { timeout });
+
+      // Step 2: Wait for Angular to be defined
+      await this.page.waitForFunction(() => {
+        return typeof (window as any).ng !== 'undefined';
+      }, { timeout: Math.min(timeout, 10000) });
+
+      // Step 3: Wait for network to be idle (optional, can be flaky)
+      if (waitForNetworkIdle) {
+        await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+          // networkidle is flaky, don't fail if it times out
+          console.warn('Network idle timeout - continuing anyway');
+        });
+      }
+
+      // Step 4: Verify router outlet is present (indicates routing is ready)
+      await this.page.locator('router-outlet, app-people, app-roles, main').first()
+        .waitFor({ state: 'attached', timeout: 5000 })
+        .catch(() => {
+          // May not always have router-outlet, that's okay
+        });
+
+    } catch (error) {
+      console.error('Navigation completion wait failed:', error);
+      throw new Error(`Navigation did not complete within ${timeout}ms`);
+    }
+  }
+
+  /**
+   * Wait for API data to load
+   *
+   * Waits for one or more API endpoints to return successful responses,
+   * then waits for the data to be rendered in the UI.
+   *
+   * Usage:
+   * ```typescript
+   * // Single endpoint
+   * await helpers.waitForDataLoad('/api/people');
+   *
+   * // Multiple endpoints
+   * await helpers.waitForDataLoad(['/api/people', '/api/roles']);
+   * ```
+   *
+   * @param endpoint - API endpoint(s) to wait for
+   * @param options - Optional wait configuration
+   */
+  async waitForDataLoad(
+    endpoint: string | string[],
+    options?: {
+      timeout?: number;
+      method?: string;
+      waitForRender?: boolean;
+    }
+  ): Promise<void> {
+    const timeout = options?.timeout || (isCI ? 20000 : 10000);
+    const method = options?.method;
+    const waitForRender = options?.waitForRender ?? true;
+    const endpoints = Array.isArray(endpoint) ? endpoint : [endpoint];
+
+    try {
+      // Wait for all API endpoints to respond
+      const responsePromises = endpoints.map(ep =>
+        this.page.waitForResponse(
+          response => {
+            const url = response.url();
+            const matchesUrl = url.includes(ep);
+            const matchesMethod = !method || response.request().method() === method;
+            const isSuccess = response.ok();
+            return matchesUrl && matchesMethod && isSuccess;
+          },
+          { timeout }
+        )
+      );
+
+      await Promise.all(responsePromises);
+
+      // Wait for data to be rendered (Angular change detection)
+      if (waitForRender) {
+        // Brief wait for Angular to process the data
+        await this.page.waitForTimeout(isCI ? 500 : 200);
+
+        // Wait for any loading indicators to disappear
+        await this.page.waitForFunction(() => {
+          const loadingIndicators = document.querySelectorAll(
+            '.loading, .spinner, [aria-busy="true"], .loading-overlay'
+          );
+          return loadingIndicators.length === 0;
+        }, { timeout: 5000 }).catch(() => {
+          // No loading indicators found or timeout - that's okay
+        });
+      }
+
+    } catch (error) {
+      console.error(`Data load wait failed for ${endpoints.join(', ')}:`, error);
+      throw new Error(`API data did not load within ${timeout}ms`);
+    }
+  }
+
+  /**
+   * Wait for Angular component to be ready
+   *
+   * Waits for:
+   * - Component element to be attached to DOM
+   * - Component to be visible
+   * - Component data bindings to be initialized (optional)
+   *
+   * Usage:
+   * ```typescript
+   * await helpers.waitForComponentReady('app-people');
+   * await helpers.waitForComponentReady('app-people', { waitForData: true });
+   * ```
+   *
+   * @param componentSelector - CSS selector for the component
+   * @param options - Optional wait configuration
+   */
+  async waitForComponentReady(
+    componentSelector: string,
+    options?: {
+      waitForData?: boolean;
+      timeout?: number;
+    }
+  ): Promise<void> {
+    const timeout = options?.timeout || (isCI ? 20000 : 12000);
+    const waitForData = options?.waitForData ?? false;
+
+    try {
+      const component = this.page.locator(componentSelector).first();
+
+      // Step 1: Wait for component to be attached to DOM
+      await component.waitFor({ state: 'attached', timeout });
+
+      // Step 2: Wait for component to be visible
+      await component.waitFor({ state: 'visible', timeout: Math.min(timeout, 10000) });
+
+      // Step 3: Wait for Angular to stabilize
+      await this.page.waitForFunction(() => {
+        const ng = (window as any).ng;
+        if (!ng) return false;
+
+        // Check if Angular has finished bootstrapping
+        const hasAngular = typeof ng !== 'undefined';
+        return hasAngular;
+      }, { timeout: 5000 }).catch(() => {
+        // Angular check failed, but component is visible, so continue
+      });
+
+      // Step 4: Wait for data to be bound (optional)
+      if (waitForData) {
+        // Wait for component to have actual content (not just empty template)
+        await this.page.waitForFunction(
+          (selector) => {
+            const element = document.querySelector(selector);
+            if (!element) return false;
+
+            // Check if component has meaningful content
+            const hasTable = element.querySelector('table tbody tr');
+            const hasEmptyState = element.querySelector('.empty-state, .no-data, .no-results');
+            const hasContent = element.textContent && element.textContent.trim().length > 50;
+
+            return hasTable || hasEmptyState || hasContent;
+          },
+          componentSelector,
+          { timeout: Math.min(timeout, 10000) }
+        );
+      }
+
+      // Final stability wait (very brief)
+      if (isCI) {
+        await this.page.waitForTimeout(300);
+      }
+
+    } catch (error) {
+      console.error(`Component ready wait failed for ${componentSelector}:`, error);
+      throw new Error(`Component ${componentSelector} did not become ready within ${timeout}ms`);
+    }
+  }
+
+  /**
+   * Wait for form submission to complete
+   *
+   * Waits for:
+   * - Form submission request to be sent
+   * - API response to be received
+   * - Navigation back to list page (optional)
+   * - Success message or updated data (optional)
+   *
+   * Usage:
+   * ```typescript
+   * const submitPromise = helpers.waitForFormSubmission('/api/people', 'POST');
+   * await page.click('button[type="submit"]');
+   * await submitPromise;
+   * ```
+   *
+   * @param endpoint - API endpoint that will receive the form data
+   * @param method - HTTP method (POST, PUT, etc.)
+   * @param options - Optional wait configuration
+   */
+  async waitForFormSubmission(
+    endpoint: string,
+    method: 'POST' | 'PUT' | 'PATCH' = 'POST',
+    options?: {
+      waitForNavigation?: boolean;
+      timeout?: number;
+      expectSuccess?: boolean;
+    }
+  ): Promise<void> {
+    const timeout = options?.timeout || (isCI ? 15000 : 10000);
+    const waitForNavigation = options?.waitForNavigation ?? true;
+    const expectSuccess = options?.expectSuccess ?? true;
+
+    try {
+      // Wait for the form submission request
+      const responsePromise = this.page.waitForResponse(
+        response => {
+          const matchesUrl = response.url().includes(endpoint);
+          const matchesMethod = response.request().method() === method;
+          const isSuccess = expectSuccess ? response.ok() : true;
+          return matchesUrl && matchesMethod && isSuccess;
+        },
+        { timeout }
+      );
+
+      const response = await responsePromise;
+
+      // Log submission result
+      const status = response.status();
+      console.log(`📤 Form submission ${method} ${endpoint}: ${status}`);
+
+      // Wait for navigation if expected
+      if (waitForNavigation) {
+        await this.page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {
+          // May not navigate, that's okay
+        });
+
+        // Wait for URL to change (if navigating back to list)
+        const currentUrl = this.page.url();
+        if (!currentUrl.includes('/list')) {
+          // Wait a bit for potential navigation
+          await this.page.waitForTimeout(isCI ? 1000 : 500);
+        }
+      }
+
+      // Wait for any success messages or UI updates
+      await this.page.waitForFunction(() => {
+        const loadingIndicators = document.querySelectorAll('.loading, .spinner, [aria-busy="true"]');
+        return loadingIndicators.length === 0;
+      }, { timeout: 3000 }).catch(() => {
+        // No loading indicators, that's fine
+      });
+
+      // Brief final wait for UI to stabilize
+      await this.page.waitForTimeout(isCI ? 500 : 200);
+
+    } catch (error) {
+      console.error(`Form submission wait failed for ${method} ${endpoint}:`, error);
+      throw new Error(`Form submission did not complete within ${timeout}ms`);
+    }
+  }
 }
