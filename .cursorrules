@@ -32,7 +32,7 @@ test/
 - **Backend**: .NET 8, Entity Framework Core, MediatR, AutoMapper
 - **Frontend**: Angular 20+, TypeScript, RxJS, Angular Material
 - **Mobile**: .NET MAUI with MVVM pattern
-- **Testing**: xUnit, Moq, FluentAssertions, Playwright
+- **Testing**: xUnit, Moq, Playwright
 - **Database**: In-memory (development), SQL Server/PostgreSQL (production)
 
 ## Development Guidelines
