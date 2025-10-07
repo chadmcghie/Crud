@@ -1,6 +1,7 @@
 using App.Abstractions;
 using Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace App.Features.People;
 
@@ -26,7 +27,7 @@ public class CreatePersonCommandHandler(IPersonRepository personRepository, IRol
     }
 }
 
-public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository) : IRequestHandler<UpdatePersonCommand>
+public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRoleRepository roleRepository, ILogger<UpdatePersonCommandHandler> logger) : IRequestHandler<UpdatePersonCommand>
 {
     public async Task Handle(UpdatePersonCommand request, CancellationToken cancellationToken)
     {
@@ -34,26 +35,40 @@ public class UpdatePersonCommandHandler(IPersonRepository personRepository, IRol
         var person = await personRepository.GetAsync(request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Person {request.Id} not found");
 
+        logger.LogInformation("UPDATE PERSON: Loaded person {PersonId} with {RoleCount} roles: {Roles}",
+            person.Id, person.Roles.Count, string.Join(", ", person.Roles.Select(r => $"{r.Name}({r.Id})")));
+
         // Update person properties using domain methods
         person.UpdateFullName(request.FullName);
         person.UpdatePhone(request.Phone);
 
         if (request.RoleIds != null)
         {
+            logger.LogInformation("UPDATE PERSON: Request has {RoleIdCount} role IDs: {RoleIds}",
+                request.RoleIds.Count(), string.Join(", ", request.RoleIds));
+
             // Load all required roles first to validate they exist
             var newRoles = new List<Role>();
             foreach (var roleId in request.RoleIds)
             {
                 var role = await roleRepository.GetAsync(roleId, cancellationToken)
                     ?? throw new ArgumentException($"Role {roleId} not found");
+                logger.LogInformation("UPDATE PERSON: Loaded role {RoleName}({RoleId})", role.Name, role.Id);
                 newRoles.Add(role);
             }
 
+            logger.LogInformation("UPDATE PERSON: About to call UpdateRoles with {NewRoleCount} roles", newRoles.Count);
+
             // Update roles using domain method
             person.UpdateRoles(newRoles);
+
+            logger.LogInformation("UPDATE PERSON: After UpdateRoles, person has {RoleCount} roles: {Roles}",
+                person.Roles.Count, string.Join(", ", person.Roles.Select(r => $"{r.Name}({r.Id})")));
         }
 
         await personRepository.UpdateAsync(person, cancellationToken);
+
+        logger.LogInformation("UPDATE PERSON: Completed update for person {PersonId}", person.Id);
     }
 }
 

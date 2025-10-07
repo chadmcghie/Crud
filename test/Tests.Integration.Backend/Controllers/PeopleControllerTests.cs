@@ -243,7 +243,7 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
         });
     }
 
-    [Fact(Skip = "TECHNICAL DEBT: EF Core + SQLite + Many-to-Many + Concurrency architectural incompatibility. See BI-2025-09-11-003 for complete analysis. 6 systematic fix attempts failed. Requires architectural review.")]
+    [Fact]
     public async Task PUT_People_Should_Update_Person_Roles()
     {
         await RunWithCleanDatabaseAsync(async () =>
@@ -284,9 +284,10 @@ public class PeopleControllerTests : IntegrationTestBase, IClassFixture<SmokeTes
 
             updatedPerson.Should().NotBeNull();
             updatedPerson!.Roles.Should().HaveCount(2);
-            updatedPerson.Roles.Should().Contain(r => r.Name == "TestUser");
-            updatedPerson.Roles.Should().Contain(r => r.Name == "TestManager");
-            updatedPerson.Roles.Should().NotContain(r => r.Name == "TestAdmin");
+            // Check by role ID instead of name (names have generated suffixes)
+            updatedPerson.Roles.Should().Contain(r => r.Id == role2.Id);
+            updatedPerson.Roles.Should().Contain(r => r.Id == role3!.Id);
+            updatedPerson.Roles.Should().NotContain(r => r.Id == role1!.Id);
         });
     }
 
