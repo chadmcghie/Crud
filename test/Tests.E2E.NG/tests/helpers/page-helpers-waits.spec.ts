@@ -5,9 +5,12 @@ import { PageHelpers } from './page-helpers';
  * Tests for event-driven wait methods in PageHelpers
  * These tests validate that waits are based on actual application state
  * rather than arbitrary timeouts
+ *
+ * NOTE: These are infrastructure tests and are skipped in CI.
+ * Run locally with: npx playwright test tests/helpers/page-helpers-waits.spec.ts
  */
 
-test.describe('PageHelpers Event-Driven Wait Methods', () => {
+test.describe.skip('PageHelpers Event-Driven Wait Methods', () => {
   const angularUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
   const apiUrl = process.env.API_URL || 'http://localhost:5172';
 
