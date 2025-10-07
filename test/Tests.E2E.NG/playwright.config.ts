@@ -65,8 +65,8 @@ export default defineConfig({
       url: 'http://localhost:5172/health/ready',  // Use readiness endpoint to ensure EF Core is warmed up
       timeout: isCI ? 120 * 1000 : 90 * 1000, // More time for CI environment
       reuseExistingServer: !isCI, // Reuse locally, fresh in CI
-      stdout: 'ignore', // Suppress output, check logs on failure
-      stderr: 'ignore', // Suppress errors, check logs on failure
+      stdout: 'pipe', // TEMPORARILY show output for debugging
+      stderr: 'pipe', // TEMPORARILY show errors for debugging
       env: {
         // EXPLICITLY Testing configuration only - never multi-config
         ASPNETCORE_ENVIRONMENT: 'Testing',
