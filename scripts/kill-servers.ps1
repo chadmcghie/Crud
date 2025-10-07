@@ -15,7 +15,10 @@ $killedProcesses = 0
 function Get-ProcessByPort {
     param([int]$Port)
 
-    if ($IsWindows) {
+    # Better Windows detection - check for Windows OS
+    $isWindowsOS = ($env:OS -eq 'Windows_NT') -or ($PSVersionTable.PSVersion.Major -le 5) -or ($PSVersionTable.Platform -eq 'Win32NT')
+
+    if ($isWindowsOS) {
         # Windows: Use Get-NetTCPConnection
         $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
         if ($connections) {
