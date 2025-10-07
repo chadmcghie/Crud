@@ -1,6 +1,122 @@
-# E2E Testing Patterns: Event-Driven vs setTimeout
+# E2E Testing Patterns: Best Practices
 
-This document outlines the refactoring from setTimeout-based delays to event-driven patterns in our E2E and unit tests.
+This document outlines best practices for E2E testing, including authentication setup, event-driven patterns, and avoiding setTimeout-based delays.
+
+## Table of Contents
+
+1. [Test Authentication Patterns](#test-authentication-patterns)
+2. [Angular Unit Tests - Event-Driven Patterns](#angular-unit-tests---event-driven-patterns)
+3. [E2E Tests - Playwright Event-Driven Patterns](#e2e-tests---playwright-event-driven-patterns)
+4. [Process Management - Promise.race Patterns](#process-management---promiserace-patterns)
+5. [API Helper Retry Logic](#api-helper-retry-logic)
+6. [Key Principles](#key-principles)
+
+## Test Authentication Patterns
+
+### ✅ Correct: Using setupTestAuthentication() Helper
+
+**As of 2025-10-07**, all E2E tests should use the dedicated `setupTestAuthentication()` helper from `tests/helpers/test-auth-setup.ts`. This approach:
+- Injects authentication before Angular loads using `page.addInitScript()`
+- Keeps test-specific code out of production Angular files
+- Provides consistent, reliable authentication across all tests
+- Better security (no test backdoors in production code)
+
+```typescript
+// ✅ GOOD: Proper test authentication setup
+import { setupTestAuthentication, clearTestAuthentication } from './helpers/test-auth-setup';
+
+test.beforeEach(async ({ page }) => {
+  // Set up authentication BEFORE navigating to the app
+  await setupTestAuthentication(page, {
+    userId: 'test-user-123',
+    email: 'test@example.com',
+    roles: ['User', 'Admin'],
+    tokenExpirySeconds: 3600
+  });
+
+  // Now navigate - Angular will see the auth tokens
+  await page.goto('/');
+});
+
+test.afterEach(async ({ page }) => {
+  // Clean up authentication state
+  await clearTestAuthentication(page);
+});
+```
+
+### ❌ Incorrect: Production Code E2E Detection
+
+**DO NOT** add E2E detection logic to production Angular services or components:
+
+```typescript
+// ❌ BAD: E2E detection in production code (REMOVED in cleanup)
+export class AuthService {
+  constructor() {
+    // NEVER DO THIS - pollutes production code with test logic
+    if (this.isE2ETestEnvironment()) {
+      this.autoAuthenticateE2EUser();
+    }
+  }
+
+  private isE2ETestEnvironment(): boolean {
+    // Checking user agent, ports, localStorage - BAD!
+    return navigator.userAgent.includes('Playwright') ||
+           localStorage.getItem('e2e-test-mode') === 'active';
+  }
+}
+```
+
+### ❌ Incorrect: Inline Test Authentication
+
+**DO NOT** manually inject authentication in test fixtures:
+
+```typescript
+// ❌ BAD: Inline authentication injection (DEPRECATED)
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('e2e-test-mode', 'active');
+    const mockUser = { id: 'test', email: 'test@test.com' };
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    // ... 40+ lines of manual token creation
+  });
+});
+```
+
+### Event-Driven Wait Methods
+
+Use the helper methods from `tests/helpers/page-helpers.ts` instead of `page.waitForTimeout()`:
+
+```typescript
+// ✅ GOOD: Event-driven wait methods
+import { PageHelpers } from './helpers/page-helpers';
+
+test('navigation test', async ({ page }) => {
+  const helpers = new PageHelpers(page);
+
+  // Wait for Angular navigation to complete
+  await helpers.waitForNavigationComplete();
+
+  // Wait for specific API data to load
+  await helpers.waitForDataLoad('/api/people');
+
+  // Wait for Angular component to be ready
+  await helpers.waitForComponentReady('app-people-list');
+
+  // Wait for form submission to complete
+  await helpers.waitForFormSubmission('/api/people', 'POST');
+});
+```
+
+```typescript
+// ❌ BAD: Arbitrary timeouts (REMOVED in cleanup)
+test('navigation test', async ({ page }) => {
+  await page.click('a[href="/people"]');
+  await page.waitForTimeout(500); // Arbitrary delay - FLAKY!
+
+  await page.fill('input#name', 'Test');
+  await page.waitForTimeout(1000); // Another arbitrary delay - FLAKY!
+});
+```
 
 ## Angular Unit Tests - Event-Driven Patterns
 
@@ -220,12 +336,51 @@ private async retryOperation<T>(operation: () => Promise<T>): Promise<T> {
 
 ## Migration Checklist
 
-- [x] ✅ Angular unit tests (auth.interceptor.spec.ts) - using fakeAsync/tick
-- [x] ✅ E2E test retry logic - using expect.toPass()
-- [x] ✅ Server polling patterns - using expect.toPass() 
-- [x] ✅ Process cleanup - using Promise.race
-- [x] ✅ API helper retry logic - simplified with linear backoff
+### Completed Refactorings
+
+- [x] ✅ **Test Authentication** (2025-10-07) - Created setupTestAuthentication() helper
+  - Removed 187 lines of E2E detection from production Angular code
+  - Removed isE2ETestEnvironment() from auth.service.ts
+  - Removed data-e2e-ready attributes from app.ts
+  - Removed TestAuthService from auth.guard.ts
+  - Updated all 4 test fixtures to use new helper
+
+- [x] ✅ **Event-Driven Waits** (2025-10-07) - Replaced 14 timer-based waits
+  - Created waitForNavigationComplete() method
+  - Created waitForDataLoad() method
+  - Created waitForComponentReady() method
+  - Created waitForFormSubmission() method
+  - Updated 6 test files to use event-driven patterns
+
+- [x] ✅ **Angular Unit Tests** - Using fakeAsync/tick for time-dependent tests
+
+- [x] ✅ **E2E Test Retry Logic** - Using expect.toPass() with deterministic intervals
+
+- [x] ✅ **Server Polling Patterns** - Using expect.toPass() instead of manual polling
+
+- [x] ✅ **Process Cleanup** - Using Promise.race for event-driven cleanup
+
+- [x] ✅ **API Helper Retry Logic** - Simplified with linear backoff
+
+### Future Improvements
+
 - [ ] 🔄 Consider RxJS TestScheduler for complex observable scenarios
 - [ ] 🔄 Add more examples as patterns are discovered
+- [ ] 🔄 Fix flaky person CRUD test (complete-user-workflows.spec.ts:69)
+- [ ] 🔄 Improve full-workflow.spec.ts database cleanup
 
-This refactoring makes tests more reliable, faster, and deterministic.
+## Benefits
+
+These refactorings make tests:
+- **More reliable** - No race conditions or timing dependencies
+- **Faster** - No arbitrary delays slowing down test execution
+- **More secure** - Zero test-specific code in production
+- **Easier to maintain** - Centralized test infrastructure
+- **Deterministic** - Predictable, reproducible results
+
+## References
+
+- E2E Cleanup Spec: `docs/03-development/specs/2025-10-07-e2e-test-cleanup/`
+- Implementation Summary: `docs/03-development/specs/2025-10-07-e2e-test-cleanup/IMPLEMENTATION_SUMMARY.md`
+- Test Auth Helper: `test/Tests.E2E.NG/tests/helpers/test-auth-setup.ts`
+- Page Helpers: `test/Tests.E2E.NG/tests/helpers/page-helpers.ts`
