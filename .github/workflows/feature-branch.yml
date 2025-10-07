@@ -175,14 +175,6 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'csharp', 'javascript' ]
-        include:
-          - language: 'csharp'
-            should_run: ${{ needs.detect-changes.outputs.backend == 'true' }}
-          - language: 'javascript'
-            should_run: ${{ needs.detect-changes.outputs.frontend == 'true' }}
-
-    # Skip this matrix iteration if the corresponding code didn't change
-    if: matrix.should_run == 'true'
     
     steps:
     - name: Checkout code (with formatting changes)
@@ -208,39 +200,47 @@ jobs:
         
     # Initialize CodeQL before build so it can observe compilation
     - name: Initialize CodeQL
+      # Only run CodeQL for the language if corresponding code changed
+      if: |
+        (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
+        (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        
+
     # Build the cleaned/formatted code - CodeQL observes this build
     - name: Restore .NET dependencies
-      if: matrix.language == 'csharp'
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
       run: |
         export PATH="$DOTNET_ROOT:$PATH"
         $DOTNET_ROOT/dotnet restore solutions/Crud.sln
-      
+
     - name: Build backend (clean code, single build)
-      if: matrix.language == 'csharp'
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
       run: |
         export PATH="$DOTNET_ROOT:$PATH"
         $DOTNET_ROOT/dotnet build solutions/Crud.sln --no-restore --configuration Release
-      
+
     - name: Build Angular app
-      if: matrix.language == 'javascript'
+      if: matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true'
       run: |
         cd src/Angular
         npm ci
         npm run build
-      
+
     # Perform CodeQL analysis on the build we just did
     - name: Perform CodeQL Analysis
+      # Only run CodeQL for the language if corresponding code changed
+      if: |
+        (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
+        (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
       
-    # Create artifacts only once (on the csharp matrix job)
+    # Create artifacts only once (on the csharp matrix job) and only if backend changed
     - name: Create versioned artifact for downstream reuse
-      if: matrix.language == 'csharp'
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
       run: |
         echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
         echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
@@ -252,14 +252,14 @@ jobs:
         echo "🎯 Artifact will be named: feature-build-${{ github.sha }}"
         
     - name: Verify appsettings files exist
-      if: matrix.language == 'csharp'
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
       run: |
         echo "📁 Verifying appsettings files before artifact upload:"
         ls -la src/Api/appsettings*.json
         echo "✅ All appsettings files found"
-      
+
     - name: Upload build artifacts for reuse in PRs
-      if: matrix.language == 'csharp'
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-build-${{ github.sha }}
