@@ -15,34 +15,36 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.navigateToApp();
   });
 
-  test('@extended should complete full role and person management workflow', async () => {
-    // Step 1: Create roles via UI
+  test('@extended should complete full role and person management workflow', async ({ }, testInfo) => {
+    // Step 1: Create roles via UI with unique names
     await pageHelpers.switchToRolesTab();
-    
-    const adminRole = generateTestRole({ name: 'Administrator', description: 'System administrator' });
-    const userRole = generateTestRole({ name: 'User', description: 'Regular user' });
-    
+
+    // Use generateTestRole without hardcoded names to ensure uniqueness
+    const adminRole = generateTestRole({ description: 'System administrator' }, testInfo.workerIndex);
+    const userRole = generateTestRole({ description: 'Regular user' }, testInfo.workerIndex);
+
     // Create admin role
     await pageHelpers.clickAddRole();
     await pageHelpers.fillRoleForm(adminRole.name, adminRole.description);
     await pageHelpers.submitRoleForm();
     await pageHelpers.verifyRoleExists(adminRole.name);
-    
+
     // Create user role
     await pageHelpers.clickAddRole();
     await pageHelpers.fillRoleForm(userRole.name, userRole.description);
     await pageHelpers.submitRoleForm();
     await pageHelpers.verifyRoleExists(userRole.name);
-    
+
     // Verify both roles exist via API
     const roles = await apiHelpers.getRoles();
-    expect(roles).toHaveLength(2);
-    
+    expect(roles.length).toBeGreaterThanOrEqual(2);
+
     // Step 2: Create people with roles via UI
     await pageHelpers.switchToPeopleTab();
-    
-    const adminPerson = generateTestPerson({ fullName: 'John Admin', phone: '+1-555-0001' });
-    const regularUser = generateTestPerson({ fullName: 'Jane User', phone: '+1-555-0002' });
+
+    // Use generateTestPerson without hardcoded names
+    const adminPerson = generateTestPerson({}, testInfo.workerIndex);
+    const regularUser = generateTestPerson({}, testInfo.workerIndex);
     
     // Create admin person with admin role
     await pageHelpers.clickAddPerson();
@@ -107,13 +109,13 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyEmptyState('roles');
   });
 
-  test('@extended should handle mixed UI and API operations', async () => {
-    // Create role via API
-    const apiRole = await apiHelpers.createRole(generateTestRole({ name: 'API Role' }));
-    
-    // Create role via UI
+  test('@extended should handle mixed UI and API operations', async ({ }, testInfo) => {
+    // Create role via API with unique name
+    const apiRole = await apiHelpers.createRole(generateTestRole({ description: 'Created via API' }, testInfo.workerIndex));
+
+    // Create role via UI with unique name
     await pageHelpers.switchToRolesTab();
-    const uiRole = generateTestRole({ name: 'UI Role' });
+    const uiRole = generateTestRole({ description: 'Created via UI' }, testInfo.workerIndex);
     await pageHelpers.clickAddRole();
     await pageHelpers.fillRoleForm(uiRole.name, uiRole.description);
     await pageHelpers.submitRoleForm();
@@ -125,13 +127,12 @@ test.describe('Full Workflow Integration Tests', () => {
     
     // Create person via API with API role
     const apiPerson = await apiHelpers.createPerson(generateTestPerson({
-      fullName: 'API Person',
       roleIds: [apiRole.id]
-    }));
-    
+    }, testInfo.workerIndex));
+
     // Create person via UI with UI role
     await pageHelpers.switchToPeopleTab();
-    const uiPerson = generateTestPerson({ fullName: 'UI Person' });
+    const uiPerson = generateTestPerson({}, testInfo.workerIndex);
     await pageHelpers.clickAddPerson();
     await pageHelpers.fillPersonForm(uiPerson.fullName, uiPerson.phone, [uiRole.name]);
     await pageHelpers.submitPersonForm();
@@ -160,11 +161,11 @@ test.describe('Full Workflow Integration Tests', () => {
     expect(updatedPerson.roles[0].name).toBe(uiRole.name);
   });
 
-  test('@extended should maintain data integrity during rapid operations', async () => {
+  test('@extended should maintain data integrity during rapid operations', async ({ }, testInfo) => {
     // Create roles sequentially (not rapidly) to avoid cleanup race conditions
     const createdRoles = [];
     for (let i = 0; i < 5; i++) {
-      const role = generateTestRole({ name: `Rapid Role ${i}` });
+      const role = generateTestRole({ description: `Sequential test role ${i}` }, testInfo.workerIndex);
       const createdRole = await apiHelpers.createRole(role);
       createdRoles.push(createdRole);
       // Small delay between creates to ensure each is committed
@@ -213,9 +214,8 @@ test.describe('Full Workflow Integration Tests', () => {
       }
 
       const person = generateTestPerson({
-        fullName: `Rapid Person ${suffixes[i]}`,
         roleIds: validRoleIds
-      });
+      }, testInfo.workerIndex);
 
       // Create sequentially with retry on 409 errors
       const createdPerson = await apiHelpers.createPerson(person);
