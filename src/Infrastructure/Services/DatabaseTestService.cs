@@ -234,12 +234,14 @@ public class DatabaseTestService : IDatabaseTestService
                 (DateTime.UtcNow - tokensStart).TotalMilliseconds, tokensCount);
 
             // Delete Users (authentication data)
+            // CRITICAL: Use raw SQL for Users to bypass soft-delete and unique constraints
+            // ExecuteDeleteAsync may not work properly with soft-deleted records and unique constraints
             _logger.LogDebug("Deleting Users for worker {WorkerIndex}...", workerIndex);
             var usersStart = DateTime.UtcNow;
-            await _context.Users.IgnoreQueryFilters().ExecuteDeleteAsync();
+            var usersDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Users");
             var usersCount = await _context.Users.IgnoreQueryFilters().CountAsync();
-            _logger.LogDebug("Deleted Users in {Ms}ms, remaining count: {Count}",
-                (DateTime.UtcNow - usersStart).TotalMilliseconds, usersCount);
+            _logger.LogDebug("Deleted {Count} Users in {Ms}ms, remaining count: {RemainingCount}",
+                usersDeleted, (DateTime.UtcNow - usersStart).TotalMilliseconds, usersCount);
 
             // Delete People (now that PersonRoles join table is empty)
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
