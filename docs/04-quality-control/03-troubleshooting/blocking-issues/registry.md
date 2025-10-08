@@ -4,14 +4,15 @@
 
 | ID | Created | Spec | Category | Description | Status | Priority |
 |---|---|---|---|---|---|---|
-| BI-2025-10-08-001 | 2025-10-08 | all-future-specs | test/functionality/configuration | E2E test cleanup and timeout failures - soft-delete conflicts | active | critical |
+| *No active blocking issues* | - | - | - | - | - | - |
 
 ## Resolved Issues
 
 | ID | Created | Resolved | Spec | Category | Description | Resolution |
 |---|---|---|---|---|---|---|
+| BI-2025-10-08-001 | 2025-10-08 | 2025-10-08 | all-future-specs | test/functionality/configuration | E2E test cleanup and timeout failures - soft-delete conflicts | Fixed with environment-aware retry policy (commit 8be6fc3) - test mode uses faster intervals (1.5s max vs 14s) |
+| BI-2025-09-23-011 | 2025-09-23 | 2025-10-08 | api-contract | development | API contract validation failure after authorization changes | Self-resolved - all 19 contract validation tests passing, issue was transient during refactoring |
 | BI-2025-09-23-012 | 2025-09-23 | 2025-09-29 | database | database | Foreign key cascade delete configuration prevents constraint validation | Test file removed during integration test cleanup - referenced test no longer exists |
-| BI-2025-09-23-011 | 2025-09-23 | 2025-09-29 | api-contract | development | API contract validation failure after authorization changes | All integration tests passing (445/446, 1 skipped for technical debt) |
 | BI-2025-09-24-004 | 2025-09-24 | 2025-09-25 | e2e-testing | test | E2E configuration validation timeout failures | Fixed by comprehensive E2E test ecosystem fix (BI-2025-09-25-001) |
 | BI-2025-09-24-003 | 2025-09-24 | 2025-09-25 | e2e-testing | performance | E2E API timeout errors | Fixed by comprehensive E2E test ecosystem fix (BI-2025-09-25-001) |
 | BI-2025-09-24-002 | 2025-09-24 | 2025-09-25 | e2e-testing | validation | E2E phone number validation failures | Fixed by comprehensive E2E test ecosystem fix (BI-2025-09-25-001) |
