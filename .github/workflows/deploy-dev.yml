@@ -56,9 +56,9 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/Angular/package-lock.json'
 
-    - name: Build backend for dev (Testing config)
+    - name: Build backend for dev (Release config)
       run: |
-        echo "🏗️ Building backend for dev environment with Testing configuration..."
+        echo "🏗️ Building backend for dev environment with Release configuration..."
         dotnet restore solutions/Crud.sln
         dotnet build solutions/Crud.sln --no-restore --configuration Release
         echo "✅ Backend build completed for dev environment"
