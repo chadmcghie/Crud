@@ -74,11 +74,9 @@ dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj
 
 # E2E tests (using Playwright webServer - see ADR-003)
 cd test/Tests.E2E.NG
-npm run test:webserver   # Recommended: Playwright manages servers
 npm run test:smoke       # 2-minute smoke tests only
 npm run test:critical    # 5-minute critical tests
-npm run test:headed      # Run with visible browser
-npm run test:serial      # Serial execution with single worker
+npm run test             # Run ALL E2E tests (~15-20 min)
 
 # Angular tests
 cd src/Angular && npm test
@@ -100,39 +98,39 @@ cd src/Angular && npm run lint
 
 ## E2E Testing Strategy
 
-⚠️ **CRITICAL: DO NOT CHANGE THE TEST COMMANDS** ⚠️
+### Test Levels
 
-The `test:smoke`, `test:critical`, and `test:extended` commands in `test/Tests.E2E.NG/package.json` require specific environment variables for CI compatibility. 
+E2E tests use Playwright's built-in webServer configuration (see `playwright.config.ts`). Tests are organized into three levels:
 
-**DO NOT "simplify" them by removing the environment variables** - this will break CI!
-
-### Why This Matters
-- The complex-looking commands with environment variables are REQUIRED
-- This has been broken and fixed multiple times - don't repeat the mistake
-- See GitHub issue #79 for plan to eliminate the problematic config entirely
-
-### Correct Commands (DO NOT CHANGE)
 ```bash
-# These commands use environment variables for proper configuration
-npm run test:smoke       # 2-minute smoke tests
-npm run test:critical    # 5-minute critical tests  
-npm run test:extended    # Extended test suite
+# Local development and CI/CD
+npm run test:smoke       # @smoke tagged tests (~2-3 min) - Critical user flows
+npm run test:critical    # @critical tagged tests (~5-10 min) - Production readiness validation
+npm run test             # ALL tests (~15-20 min) - Comprehensive validation
 ```
 
-### What NOT to Do
+### Manual Workflow Trigger
+
 ```bash
-# NEVER change to these "simpler" versions - THEY BREAK CI
-"test:smoke": "playwright test --grep @smoke"  # ❌ BROKEN IN CI
-"test:critical": "playwright test --grep @critical"  # ❌ BROKEN IN CI
+# Manually trigger full E2E tests on any branch
+gh workflow run "Manual E2E Tests" --ref branch-name -f branch=branch-name
 ```
 
-**UPDATE**: E2E tests use Playwright's built-in webServer configuration (now in the default `playwright.config.ts`). See `docs/02-Architecture/Decisions/0003-E2E-Testing-Database-Use-Playwrights-webServer.md` for details.
+### Pipeline Usage
 
-- **Playwright webServer**: Automatic server management, unique database per test run (built into `playwright.config.ts`)
-- Tests are tagged: `@smoke` (2 min), `@critical` (5 min), `@extended` (10 min)
-- Database isolation via unique filenames prevents locking issues
-- Serial execution strategy (`workers: 1`) for SQLite/EF Core compatibility
-- CI/CD uses same webServer configuration as local development
+- **PR to dev**: Runs `test:smoke` (2-3 min quick validation)
+- **PR to main**: Runs `test:critical` (5-10 min production readiness)
+- **Deploy to dev**: Runs `test` (15-20 min full suite)
+- **Deploy to production**: Runs `test:smoke` (2-3 min deployment validation)
+
+### Technical Details
+
+- **Playwright webServer**: Automatic server management, unique database per test run
+- **Database isolation**: Unique filenames prevent locking issues
+- **Serial execution**: `workers: 1` for SQLite/EF Core compatibility
+- **CI/CD**: Same webServer configuration as local development
+
+⚠️ **IMPORTANT**: The `test:smoke` and `test:critical` commands use environment variables for CI compatibility. Do not remove these variables from `package.json`.
 
 ## Health Checks
 
@@ -154,78 +152,17 @@ All endpoints use tag-based filtering (`"live"` and `"ready"` tags) on the `Data
 
 ## Project Structure
 
-### Source Code (`src/`)
-- `src/Domain/` - Business entities and logic (no dependencies)
-  - `Entities/` - Domain entities (Person, Role, Wall, Window, etc.)
-  - `Enums/` - Domain enumerations
-  - `Events/` - Domain events
-  - `Interfaces/` - Domain interfaces
-  - `Specifications/` - Domain specifications
-  - `Validators/` - Domain validators
-  - `ValueObjects/` - Domain value objects
-- `src/App/` - Application services, CQRS handlers, DTOs
-  - `Abstractions/` - Application abstractions
-  - `Behaviors/` - MediatR behaviors
-  - `Features/` - Feature-based organization (Authentication, People, Roles, Walls, Windows)
-  - `Interfaces/` - Application interfaces
-  - `Mappings/` - AutoMapper profiles
-  - `Models/` - Application models
-  - `Services/` - Application services
+- `src/Domain/` - Business entities and logic (no external dependencies)
+- `src/App/` - Application services, CQRS handlers, DTOs (depends only on Domain)
 - `src/Infrastructure/` - EF Core, repositories, external services
-  - `Data/` - DbContext and configurations
-  - `Migrations/` - Entity Framework migrations
-  - `Repositories/` - Repository implementations
-  - `Resilience/` - Polly resilience patterns
-  - `Services/` - Infrastructure services
 - `src/Api/` - ASP.NET Core Web API controllers
-  - `Controllers/` - API controllers
-  - `Dtos/` - Data transfer objects
-  - `Mappings/` - API mapping profiles
-  - `Middleware/` - Custom middleware
-  - `Validators/` - API validators
-- `src/Angular/` - Angular frontend application
-  - `src/app/` - Angular application code
-  - `src/assets/` - Static assets
-  - `public/` - Public assets
-  - `proxy.conf*.json` - Development proxy configurations
-
-### Test Projects (`test/`)
-- `test/Tests.Unit.Backend/` - xUnit, Moq, FluentAssertions
-  - `App/` - Application layer unit tests
-  - `Domain/` - Domain layer unit tests
-  - `Infrastructure/` - Infrastructure layer unit tests
-  - `TestData/` - Test data builders
-  - `Validators/` - Validator unit tests
+- `src/Angular/` - Angular 20 frontend application
+- `test/Tests.Unit.Backend/` - xUnit unit tests with Moq and FluentAssertions
 - `test/Tests.Integration.Backend/` - API integration tests with WebApplicationFactory
-  - `Api/` - API integration tests
-  - `Controllers/` - Controller integration tests
-  - `E2E/` - End-to-end integration tests
-  - `Infrastructure/` - Infrastructure integration tests
-- `test/Tests.Integration.NG/` - Angular integration tests with Karma
 - `test/Tests.E2E.NG/` - Playwright E2E tests
-  - `tests/` - E2E test files organized by feature
-  - `test-artifacts/` - Test artifacts and reports
-  - `test-results/` - Test execution results
-
-### Solutions (`solutions/`)
-- `solutions/Crud.sln` - Complete solution file
-- `solutions/Crud.Backend.sln` - Backend-only solution
-- `solutions/Crud.Angular.sln` - Angular-only solution
-
-### Documentation (`docs/`)
-- `docs/02-architecture/` - Architecture documentation and guidelines
-- `docs/03-development/` - Development guides, specs, and workflows
-- `docs/04-quality-control/` - Quality control and review documentation
-- `docs/08-archive/` - Archived documentation and historical references
-
-### Scripts (`scripts/`)
-- `scripts/LaunchApps.ps1` - Launch both API and Angular
-- `scripts/kill-servers.ps1` - Kill running servers
-
-### Configuration Files
-- `global.json` - .NET SDK version specification
-- `package-lock.json` - Root npm dependencies
-- `test-formatting.sh` - Test formatting script
+- `solutions/` - Solution files (Crud.sln, Crud.Backend.sln, Crud.Angular.sln)
+- `docs/` - Architecture, development guides, quality control documentation
+- `scripts/` - PowerShell automation scripts (LaunchApps.ps1, kill-servers.ps1)
 
 ## Database
 
@@ -269,7 +206,6 @@ All endpoints use tag-based filtering (`"live"` and `"ready"` tags) on the `Data
 
 - API ports: 5172 (HTTP), 7268 (HTTPS)
 - Angular port: 4200
-- E2E test fix discussion: @"docs/08-archive/04-task-summaries/2025-08-28-claude-task-e2e-test-serial-execution-fix.md"
 - Serial testing decision: @docs/02-Architecture/Decisions/0001-Serial-E2E-Testing.md
 - Dev branch is the default branch
 - No Failures Ever - We don't try and move past it.  We will troubleshoot and solve it.  Use additional tools if necessary.
