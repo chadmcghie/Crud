@@ -77,6 +77,50 @@ E2E tests are experiencing critical failures due to two interconnected issues:
 - src/Api/appsettings.Testing.json (configuration tuning)
 **Key Learning**: The problem is architectural - soft-delete pattern fundamentally conflicts with test isolation requirements
 
+### Attempt 4: [2025-10-08] - AWAITING CI VALIDATION
+**Hypothesis**: Smoke tests passing (65/65) suggests cleanup IS working. Investigation revealed the real problem was exponential backoff retry delays causing 10+ second waits.
+**Root Cause Found**: `PollyPolicies.GetDatabaseRetryPolicy()` uses exponential backoff (2^1=2s, 2^2=4s, 2^3=8s = 14s total) when SQLite encounters "busy" or "locked" errors during rapid operations. This is appropriate for production but unacceptable for tests.
+**Approach**:
+1. Modified `PollyPolicies.GetDatabaseRetryPolicy()` to detect Testing environment (`E2E_TEST_MODE=true`)
+2. In test mode: Use faster retry intervals (100ms, 200ms, 300ms, 400ms, 500ms = 1.5s max)
+3. In production: Keep exponential backoff (2s, 4s, 8s = 14s max)
+**Result**: All 6 tests in full-workflow.spec.ts now PASS locally (previously 1 failing)
+**Files Modified**:
+- src/Infrastructure/Resilience/PollyPolicies.cs (lines 69-102): Added environment-aware retry timing
+**Local Testing**: ✅ PASSING (6/6 tests in full-workflow.spec.ts)
+**CI Testing**: ⏳ REQUIRED BEFORE MARKING RESOLVED
+
+**⚠️ CRITICAL**: This fix MUST be validated in CI before marking as resolved. Local tests passing does NOT guarantee CI success, as these failures typically occur on slower CI infrastructure.
+
+**CI Validation Checklist**:
+- [ ] Push changes to feature branch (including workflow updates)
+- [ ] Trigger manual E2E test run on CI:
+  - Go to: GitHub Actions → "Manual E2E Tests" → "Run workflow"
+  - Set branch to: `fix/e2e-test-cleanup`
+  - Set test_file to: `tests/integration/full-workflow.spec.ts`
+  - Click "Run workflow"
+- [ ] Verify full-workflow.spec.ts passes in CI (all 6 tests)
+- [ ] Run again with test_file empty to verify no regression in full suite
+- [ ] If all CI tests pass, move issue to resolved/
+- [ ] If CI fails, document new findings and continue troubleshooting
+
+**How to Run Specific Test File in CI**:
+```bash
+# Manual trigger via GitHub UI:
+# 1. Go to: Actions → Manual E2E Tests → Run workflow
+# 2. Branch: fix/e2e-test-cleanup
+# 3. Test file: tests/integration/full-workflow.spec.ts
+# 4. Click Run workflow
+
+# Or via GitHub CLI:
+gh workflow run manual-e2e-tests.yml \
+  --ref fix/e2e-test-cleanup \
+  -f branch=fix/e2e-test-cleanup \
+  -f test_file=tests/integration/full-workflow.spec.ts
+```
+
+**Key Learning**: Always investigate WHY something is slow before increasing timeouts. The 10-second timeout was masking a 14-second retry policy that was inappropriate for tests.
+
 ## Strategic Changes (DO NOT ROLLBACK)
 List of improvements made during troubleshooting that must be preserved:
 - [x] File: src/Infrastructure/Services/DatabaseTestService.cs - Lines: 45-85 - Change: Added IgnoreQueryFilters() for accurate entity counting - Reason: Required for visibility into soft-deleted records

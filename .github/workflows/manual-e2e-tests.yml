@@ -8,6 +8,11 @@ on:
         required: false
         default: 'dev'
         type: string
+      test_file:
+        description: 'Specific test file to run (e.g., tests/integration/full-workflow.spec.ts) or leave empty for all tests'
+        required: false
+        default: ''
+        type: string
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -75,7 +80,14 @@ jobs:
         E2E_TEST_MODE: true
         DatabaseProvider: SQLite
         TEST_RESET_TOKEN: test-only-token
-      run: npx playwright test --reporter=list
+      run: |
+        if [ -n "${{ inputs.test_file }}" ]; then
+          echo "Running specific test file: ${{ inputs.test_file }}"
+          npx playwright test ${{ inputs.test_file }} --reporter=list
+        else
+          echo "Running all E2E tests"
+          npx playwright test --reporter=list
+        fi
       continue-on-error: true
 
     - name: Upload test results
@@ -103,6 +115,7 @@ jobs:
         echo "## E2E Test Results Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Branch:** ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Test File:** ${{ inputs.test_file || 'All tests' }}" >> $GITHUB_STEP_SUMMARY
         echo "**Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 

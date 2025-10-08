@@ -68,9 +68,14 @@ namespace Infrastructure.Resilience
 
         /// <summary>
         /// Database retry policy with exponential backoff
+        /// In Testing environment, uses much faster retries to avoid test timeouts
         /// </summary>
         public static IAsyncPolicy GetDatabaseRetryPolicy(ILogger? logger = null)
         {
+            // Check if we're in Testing environment (E2E tests set this)
+            var isTestEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Testing" ||
+                                   Environment.GetEnvironmentVariable("E2E_TEST_MODE") == "true";
+
             return Policy
                 .Handle<Exception>(ex =>
                 {
@@ -84,8 +89,10 @@ namespace Infrastructure.Resilience
                            message.Contains("locked"); // SQLite locked
                 })
                 .WaitAndRetryAsync(
-                    3, // Number of retries
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    isTestEnvironment ? 5 : 3, // More retries in test, but faster
+                    retryAttempt => isTestEnvironment
+                        ? TimeSpan.FromMilliseconds(100 * retryAttempt) // Test: 100ms, 200ms, 300ms, 400ms, 500ms = 1.5s max
+                        : TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), // Prod: 2s, 4s, 8s = 14s max
                     onRetry: (exception, timespan, retryCount, context) =>
                     {
                         logger?.LogWarning(exception,
