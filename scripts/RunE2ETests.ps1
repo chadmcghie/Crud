@@ -3,7 +3,7 @@
 # Cross-platform: Works on Windows, macOS, and Linux
 
 param(
-    [ValidateSet("smoke", "critical", "extended", "all")]
+    [ValidateSet("smoke", "critical", "all")]
     [string]$TestSuite = "all",
     [string]$ApiProject = ".\src\Api\Api.csproj",
     [string]$TestProject = ".\test\Tests.E2E.NG",
@@ -101,21 +101,7 @@ function Invoke-E2ETests {
         $testCommand = switch ($Suite.ToLower()) {
             "smoke" { "npm run test:smoke" }
             "critical" { "npm run test:critical" }
-            "extended" { "npm run test:extended" }
-            "all" {
-                Write-Host "📋 Running all test suites sequentially..." -ForegroundColor Yellow
-                # Run smoke first, then critical, then extended
-                & npm run test:smoke
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "✅ Smoke tests passed, running critical tests..." -ForegroundColor Green
-                    & npm run test:critical
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host "✅ Critical tests passed, running extended tests..." -ForegroundColor Green
-                        & npm run test:extended
-                    }
-                }
-                return
-            }
+            "all" { "npm run test" }
             default { "npm run test:smoke" }
         }
 

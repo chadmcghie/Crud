@@ -182,8 +182,8 @@ jobs:
       working-directory: ./test/Tests.E2E.NG
       run: |
         echo "🚀 Running FULL E2E test suite in dev environment..."
-        echo "Comprehensive validation - targeting 15-20 minutes with Testing configuration"
-        npm run test:extended  # Full test suite
+        echo "Comprehensive validation - ALL tests, targeting 15-20 minutes with Testing configuration"
+        npm run test  # Run ALL E2E tests (no filter)
       env:
         CI: true
         ASPNETCORE_ENVIRONMENT: Testing
