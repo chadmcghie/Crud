@@ -88,7 +88,6 @@ jobs:
           echo "Running all E2E tests"
           npx playwright test --reporter=list
         fi
-      continue-on-error: true
 
     - name: Upload test results
       if: always()
