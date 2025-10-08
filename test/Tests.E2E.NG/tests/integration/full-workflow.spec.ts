@@ -15,7 +15,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.navigateToApp();
   });
 
-  test('@extended should complete full role and person management workflow', async ({ }, testInfo) => {
+  test('@extended should complete full role and person management workflow', async ({ page }, testInfo) => {
     // Step 1: Create roles via UI with unique names
     await pageHelpers.switchToRolesTab();
 
@@ -109,7 +109,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.verifyEmptyState('roles');
   });
 
-  test('@extended should handle mixed UI and API operations', async ({ }, testInfo) => {
+  test('@extended should handle mixed UI and API operations', async ({ page }, testInfo) => {
     // Create role via API with unique name
     const apiRole = await apiHelpers.createRole(generateTestRole({ description: 'Created via API' }, testInfo.workerIndex));
 
@@ -161,7 +161,7 @@ test.describe('Full Workflow Integration Tests', () => {
     expect(updatedPerson.roles[0].name).toBe(uiRole.name);
   });
 
-  test('@extended should maintain data integrity during rapid operations', async ({ }, testInfo) => {
+  test('@extended should maintain data integrity during rapid operations', async ({ page }, testInfo) => {
     // Create roles sequentially (not rapidly) to avoid cleanup race conditions
     const createdRoles = [];
     for (let i = 0; i < 5; i++) {

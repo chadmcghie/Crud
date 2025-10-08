@@ -306,13 +306,8 @@ test.describe('People Management UI', () => {
     // Wait for form to be ready using our new wait helper
     await waitForComponentReady(page, 'app-people form');
 
-    // Find role checkbox - try multiple selector strategies
-    // Most Angular forms use label/checkbox combinations
-    const roleCheckbox = page.locator('input[type="checkbox"]')
-      .filter({ has: page.locator(`text="${role2.name}"`) })
-      .or(page.locator(`label:has-text("${role2.name}") input[type="checkbox"]`))
-      .or(page.locator(`input[type="checkbox"][name*="role"]`).nth(1))
-      .first();
+    // Find role checkbox using label association
+    const roleCheckbox = page.locator(`label:has-text("${role2.name}") input[type="checkbox"]`);
 
     // Wait for checkbox to be ready and check it
     await roleCheckbox.waitFor({ state: 'visible', timeout: 10000 });
@@ -331,12 +326,8 @@ test.describe('People Management UI', () => {
     // Wait for form to be ready
     await waitForComponentReady(page, 'app-people form');
 
-    // Uncheck first role - use same strategy as above
-    const role1Checkbox = page.locator('input[type="checkbox"]')
-      .filter({ has: page.locator(`text="${role1.name}"`) })
-      .or(page.locator(`label:has-text("${role1.name}") input[type="checkbox"]`))
-      .or(page.locator(`input[type="checkbox"][name*="role"]`).nth(0))
-      .first();
+    // Uncheck first role using label association
+    const role1Checkbox = page.locator(`label:has-text("${role1.name}") input[type="checkbox"]`);
     await role1Checkbox.waitFor({ state: 'visible', timeout: 10000 });
     await role1Checkbox.uncheck();
 
