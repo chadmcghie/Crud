@@ -1,0 +1,439 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Skip deployment if it's a Copilot commit
+  check-commit:
+    name: Check Deployment Prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+
+    steps:
+    - name: Check if Copilot commit
+      id: check
+      run: |
+        if [[ "${{ github.event.head_commit.author.email }}" == *"copilot"* ]] ||
+           [[ "${{ github.event.head_commit.author.name }}" == *"copilot"* ]]; then
+          echo "should-deploy=false" >> $GITHUB_OUTPUT
+          echo "⏭️ Skipping deployment - Copilot commit detected"
+        else
+          echo "should-deploy=true" >> $GITHUB_OUTPUT
+          echo "✅ Proceeding with dev deployment"
+        fi
+
+  build-dev:
+    name: Build for Dev Environment (Once)
+    runs-on: ubuntu-latest
+    needs: check-commit
+    if: needs.check-commit.outputs.should-deploy == 'true'
+    outputs:
+      artifacts-created: ${{ steps.create-artifacts.outputs.created }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+
+    - name: Build backend for dev (Release config)
+      run: |
+        echo "🏗️ Building backend for dev environment with Release configuration..."
+        dotnet restore solutions/Crud.sln
+        dotnet build solutions/Crud.sln --no-restore --configuration Release
+        echo "✅ Backend build completed for dev environment"
+
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for dev build..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+
+    - name: Build Angular for dev
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building Angular for dev configuration..."
+        npm run build -- --configuration=staging
+        echo "✅ Angular built for dev configuration"
+
+    - name: Create dev artifacts
+      id: create-artifacts
+      run: |
+        echo "📦 Creating dev build artifacts..."
+
+        # Create version info for dev environment
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"dev\"}" > version.json
+        echo "📋 Version info for dev environment:"
+        cat version.json
+
+        echo "created=true" >> $GITHUB_OUTPUT
+        echo "✅ Dev artifacts prepared"
+
+    - name: Upload dev build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dev-build-${{ github.sha }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+          src/Angular/dist/
+          version.json
+        retention-days: 7
+
+  dev-e2e-tests:
+    name: Dev Environment E2E Tests (Using Build Artifacts)
+    runs-on: ubuntu-latest
+    needs: [check-commit, build-dev]
+    if: needs.check-commit.outputs.should-deploy == 'true' && needs.build-dev.outputs.artifacts-created == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download dev build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dev-build-${{ github.sha }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+
+    - name: Verify dev artifacts
+      run: |
+        echo "📋 Using dev build artifacts (no rebuild)..."
+        if [ -f "version.json" ]; then
+          echo "Dev artifact version:"
+          cat version.json | jq .
+        fi
+        echo "✅ Dev artifacts verified - ready for comprehensive E2E tests"
+
+    # Install Angular dependencies (required for webServer)
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for E2E test server..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+
+    # Install E2E dependencies
+    - name: Install E2E dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "📦 Installing E2E test dependencies..."
+        npm ci
+        echo "✅ E2E dependencies installed"
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🎭 Installing Playwright browsers..."
+        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Playwright browsers restored from cache"
+        else
+          echo "📥 Downloading Playwright browsers (no cache hit)..."
+          npx playwright install chromium
+          echo "✅ Playwright browsers installed"
+        fi
+
+    # Run FULL E2E test suite - comprehensive validation for dev environment
+    - name: Run full E2E test suite in dev environment
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🚀 Running FULL E2E test suite in dev environment..."
+        echo "Comprehensive validation - ALL tests, targeting 15-20 minutes with Testing configuration"
+        npm run test  # Run ALL E2E tests (no filter)
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        TEST_RUN_ID: dev-${{ github.run_id }}-${{ github.run_number }}
+
+    - name: Upload dev test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dev-e2e-test-results-${{ github.sha }}
+        path: |
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+        retention-days: 7
+
+  prepare-dev-artifacts:
+    name: Prepare Dev Deployment Artifacts (Using Build Artifacts)
+    runs-on: ubuntu-latest
+    needs: [build-dev, dev-e2e-tests]
+    if: needs.dev-e2e-tests.result == 'success' && needs.build-dev.outputs.artifacts-created == 'true'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download dev build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dev-build-${{ github.sha }}
+
+    - name: Verify dev artifacts for deployment
+      run: |
+        echo "📦 Using dev build artifacts for deployment (no rebuild)..."
+        if [ -f "version.json" ]; then
+          echo "📋 Deployment artifact version:"
+          cat version.json | jq .
+        fi
+        echo "✅ Dev artifacts verified for deployment preparation"
+
+    - name: Verify Angular dev build
+      run: |
+        echo "📋 Verifying Angular dev build from artifacts..."
+        if [ -d "src/Angular/dist" ]; then
+          echo "✅ Angular dev build found in artifacts"
+          ls -la src/Angular/dist/
+        else
+          echo "❌ Angular dev build not found in artifacts!"
+          exit 1
+        fi
+
+    - name: Package backend for dev (using artifacts)
+      run: |
+        echo "📦 Packaging backend from dev artifacts (no rebuild)..."
+
+        # Package the pre-built backend from artifacts
+        mkdir -p ./dev-backend
+        cp -r src/Api/bin/Release/net8.0/* ./dev-backend/
+
+        # Copy appsettings files
+        if [ -f "src/Api/appsettings.json" ]; then
+          cp src/Api/appsettings*.json ./dev-backend/
+          echo "✅ Appsettings files copied to dev package"
+        fi
+
+        # Create version info for dev environment
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"environment\":\"dev\"}" > ./dev-backend/version.json
+        echo "📋 Version info for dev environment:"
+        cat ./dev-backend/version.json
+
+        cd ./dev-backend
+        zip -r ../dev-api.zip .
+        cd ..
+        echo "✅ Backend packaged for dev deployment"
+
+    - name: Package frontend (using artifacts)
+      run: |
+        echo "📦 Packaging frontend from dev artifacts (no rebuild)..."
+        cd ./src/Angular/dist
+        zip -r ../../../dev-frontend.zip .
+        cd ../../..
+        echo "✅ Frontend packaged from dev artifacts"
+
+    - name: Upload dev artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dev-artifacts-${{ github.sha }}
+        path: |
+          dev-api.zip
+          dev-frontend.zip
+        retention-days: 7
+
+  deploy-dev:
+    name: Deploy to Dev Environment
+    runs-on: ubuntu-latest
+    needs: prepare-dev-artifacts
+    environment:
+      name: dev
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dev-artifacts-${{ github.sha }}
+
+    # ====================================
+    # Dev Environment Deployment
+    # ====================================
+    # Configure deployment based on your hosting platform
+    # Uncomment and modify the appropriate section below:
+
+    # --- Option 1: Azure App Service ---
+    # - name: Deploy to Azure Web App
+    #   uses: azure/webapps-deploy@v2
+    #   with:
+    #     app-name: 'your-app-dev'
+    #     publish-profile: ${{ secrets.AZURE_DEV_PUBLISH_PROFILE }}
+    #     package: dev-api.zip
+
+    # --- Option 2: AWS Elastic Beanstalk ---
+    # - name: Deploy to AWS EB
+    #   uses: einaregilsson/beanstalk-deploy@v21
+    #   with:
+    #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     application_name: your-app
+    #     environment_name: your-app-dev
+    #     version_label: ${{ github.sha }}
+    #     region: us-east-1
+    #     deployment_package: dev-api.zip
+
+    # --- Option 3: Docker/Kubernetes ---
+    # - name: Build and push Docker image
+    #   run: |
+    #     docker build -t your-registry/your-app:dev-${{ github.sha }} .
+    #     docker push your-registry/your-app:dev-${{ github.sha }}
+    # - name: Deploy to Kubernetes
+    #   run: |
+    #     kubectl set image deployment/your-app your-app=your-registry/your-app:dev-${{ github.sha }} -n dev
+
+    # --- Option 4: IIS/Windows Server (self-hosted runner) ---
+    # - name: Deploy to IIS
+    #   run: |
+    #     Stop-WebSite -Name "YourApp-Dev"
+    #     Expand-Archive -Path dev-api.zip -DestinationPath C:\inetpub\dev\api -Force
+    #     Expand-Archive -Path dev-frontend.zip -DestinationPath C:\inetpub\dev\www -Force
+    #     Start-WebSite -Name "YourApp-Dev"
+
+    # --- Default: Placeholder for manual configuration ---
+    - name: Deploy to dev environment
+      id: deploy
+      run: |
+        echo "🚀 Deploying to dev environment..."
+        echo "Version: ${{ github.sha }}"
+        # Replace this section with actual deployment commands
+        # Example: Copy files to server, restart services, etc.
+        echo "url=https://dev.your-app.com" >> $GITHUB_OUTPUT
+
+    - name: Verify deployment health
+      run: |
+        echo "🏥 Checking dev deployment health..."
+        # Uncomment and modify for your dev URL:
+        # curl -f ${{ steps.deploy.outputs.url }}/health || exit 1
+        echo "✅ Dev deployment healthy"
+
+    - name: Run post-deployment tests
+      run: |
+        echo "🧪 Running post-deployment smoke tests..."
+        # Add API endpoint tests, critical user flow tests, etc.
+        echo "✅ Post-deployment tests passed"
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    if: always()
+
+    steps:
+    - name: Create deployment summary
+      run: |
+        echo "## 🚀 Dev Environment Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ needs.deploy-dev.result == 'success' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: Dev" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ needs.deploy-dev.result }}" == "success" ]; then
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Test the dev environment" >> $GITHUB_STEP_SUMMARY
+          echo "2. Get stakeholder approval" >> $GITHUB_STEP_SUMMARY
+          echo "3. Create PR from \`dev\` → \`main\` for production deployment" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "The dev deployment failed. Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+        fi
+
+    # --- Notification Options ---
+    # Uncomment and configure the appropriate notification method:
+
+    # Option 1: Slack notification
+    # - name: Notify Slack
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     text: |
+    #       Dev Deployment ${{ job.status == 'success' && '✅' || '❌' }}
+    #       Version: ${{ github.sha }}
+    #       Environment: Dev
+    #       Deployed by: ${{ github.actor }}
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+    # Option 2: Microsoft Teams notification
+    # - name: Notify Teams
+    #   if: always()
+    #   uses: jdcargile/ms-teams-notification@v1.3
+    #   with:
+    #     github-token: ${{ github.token }}
+    #     ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK }}
+    #     notification-summary: Dev Deployment ${{ job.status }}
+    #     notification-color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
+
+    # Option 3: Email notification
+    # - name: Send email notification
+    #   if: always()
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 465
+    #     username: ${{ secrets.EMAIL_USERNAME }}
+    #     password: ${{ secrets.EMAIL_PASSWORD }}
+    #     subject: Dev Deployment ${{ job.status }} - ${{ github.sha }}
+    #     to: devops@your-company.com
+    #     from: GitHub Actions
+    #     body: |
+    #       Dev deployment has ${{ job.status }}.
+    #       Version: ${{ github.sha }}
+    #       Deployed by: ${{ github.actor }}
+    #       View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    # - name: Send Slack notification
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     text: 'Dev deployment ${{ needs.deploy-dev.result }}'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}

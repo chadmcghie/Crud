@@ -1,0 +1,85 @@
+{
+  "protected_changes": [
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "src/Angular/src/app/auth.service.ts",
+      "lines": [100, 103],
+      "hash": "current-working-tree",
+      "change_description": "Unit test port exclusion logic",
+      "reason": "Prevents unit tests from incorrectly entering E2E authentication mode",
+      "created": "2025-09-25 18:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "src/Angular/src/app/auth.service.ts",
+      "lines": [131, 134],
+      "hash": "current-working-tree",
+      "change_description": "Refined E2E detection logic",
+      "reason": "More precise targeting of E2E environments vs unit tests",
+      "created": "2025-09-25 18:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "test/Tests.Unit.Backend/Infrastructure/Services/BCryptPasswordHasherTests.cs",
+      "lines": [1, 202],
+      "hash": "current-working-tree",
+      "change_description": "Mocked IPasswordHasher interface for unit tests",
+      "reason": "Eliminates slow cryptographic operations - tests business logic not BCrypt library",
+      "created": "2025-09-25 19:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-09-25-001",
+      "file": "test/Tests.Unit.Backend/Infrastructure/PollyResilienceTests.cs",
+      "lines": [1, 92],
+      "hash": "current-working-tree",
+      "change_description": "Converted to configuration testing only",
+      "reason": "Eliminates slow retry delays - tests policy configuration not Polly execution",
+      "created": "2025-09-25 19:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-10-08-001",
+      "file": "src/Infrastructure/Services/DatabaseTestService.cs",
+      "lines": [45, 85],
+      "hash": "b13e1c0",
+      "change_description": "Added IgnoreQueryFilters() for accurate entity counting",
+      "reason": "Required for visibility into soft-deleted records during test verification",
+      "created": "2025-10-08 10:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-10-08-001",
+      "file": "test/Tests.E2E.NG/tests/helpers/page-helpers.ts",
+      "lines": [200, 388],
+      "hash": "b13e1c0",
+      "change_description": "Event-driven wait methods implementation",
+      "reason": "Eliminates flaky timer-based waits, improves test reliability",
+      "created": "2025-10-08 10:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-10-08-001",
+      "file": "test/Tests.E2E.NG/tests/setup/test-fixture.ts",
+      "lines": [106, 150],
+      "hash": "b13e1c0",
+      "change_description": "Database state verification with retry logic",
+      "reason": "Provides essential visibility into cleanup failures for debugging",
+      "created": "2025-10-08 10:00",
+      "do_not_modify": true
+    },
+    {
+      "issue_id": "BI-2025-10-08-001",
+      "file": "test/Tests.E2E.NG/tests/helpers/page-helpers-waits.spec.ts",
+      "lines": [1, 379],
+      "hash": "b13e1c0",
+      "change_description": "Comprehensive wait pattern tests",
+      "reason": "Documents and validates proper wait strategies for E2E tests",
+      "created": "2025-10-08 10:00",
+      "do_not_modify": true
+    }
+  ],
+  "last_updated": "2025-10-08T10:00:00Z"
+}

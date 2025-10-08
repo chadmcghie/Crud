@@ -32,7 +32,7 @@ test/
 - **Backend**: .NET 8, Entity Framework Core, MediatR, AutoMapper
 - **Frontend**: Angular 20+, TypeScript, RxJS, Angular Material
 - **Mobile**: .NET MAUI with MVVM pattern
-- **Testing**: xUnit, Moq, FluentAssertions, Playwright
+- **Testing**: xUnit, Moq, Playwright
 - **Database**: In-memory (development), SQL Server/PostgreSQL (production)
 
 ## Development Guidelines
@@ -81,16 +81,16 @@ Each project has its own `.cursorrules` file with specific guidelines:
 - `test/Tests.*.cursorrules` - Testing strategies and patterns
 
 ## Getting Started
-1. Clone the repository and open `Crud.All.sln`
+1. Clone the repository and open `Crud.sln`
 2. Restore NuGet packages and npm dependencies
 3. Review the documentation in the `docs/` directory
 4. Follow the project-specific guidelines in each `.cursorrules` file
 5. Run tests to ensure everything is working correctly
 
 ## Documentation
-- [Big Picture](docs/01-Getting%20Started/Big%20Picture.md) - High-level overview
-- [Architecture Guidelines](docs/Architecture%20Guidelines.md) - Design principles
-- [Testing Strategy](docs/05-Quality%20Control/Testing/1-Testing%20Strategy.md) - Testing approach
+- [Big Picture](docs/01-overview/1-big-picture.md) - High-level overview
+- [Architecture Guidelines](docs/02-architecture/1-architecture-guidelines.md) - Design principles
+- [Testing Strategy](docs/04-quality-control/1-testing-strategy/1-testing-strategy.md) - Testing approach
 
 ## Contributing
 1. Follow the established architecture patterns

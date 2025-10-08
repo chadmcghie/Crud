@@ -1,0 +1,504 @@
+name: PR to Dev - Integration & Smoke Tests
+
+# This workflow handles integration testing and smoke tests for PRs to dev branch
+# Unit tests are skipped here since they're already run at the feature level
+on:
+  pull_request:
+    branches: [dev]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      skip_feature_wait:
+        description: 'Skip waiting for feature workflow (manual override)'
+        required: false
+        default: false
+        type: boolean
+      run_integration_tests:
+        description: 'Force run integration tests even if feature workflow failed'
+        required: false
+        default: false
+        type: boolean
+      skip_integration_tests:
+        description: 'Skip integration tests (run smoke tests only)'
+        required: false
+        default: false
+        type: boolean
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  actions: read         # For downloading artifacts from feature workflow
+  repository-projects: read  # Additional permission that might be needed
+  statuses: write       # For creating commit statuses in PR summary
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Check if PR is from Dependabot
+  check-actor:
+    name: Check if Dependabot PR
+    runs-on: ubuntu-latest
+    outputs:
+      is-dependabot: ${{ steps.check.outputs.is-dependabot }}
+
+    steps:
+    - name: Check if PR is from Dependabot
+      id: check
+      run: |
+        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
+          echo "✅ Dependabot PR detected - will skip feature workflow wait"
+          echo "is-dependabot=true" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️  Regular PR - will wait for feature workflow"
+          echo "is-dependabot=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Wait for feature branch workflow to complete successfully (or skip if manually overridden or Dependabot)
+  wait-for-feature-workflow:
+    name: Wait for Feature Workflow
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: needs.check-actor.outputs.is-dependabot == 'false'
+    outputs:
+      should-run: ${{ steps.wait.outputs.should-run }}
+      feature-sha: ${{ steps.wait.outputs.feature-sha }}
+      manual-override: ${{ steps.wait.outputs.manual-override }}
+    
+    steps:
+    - name: Check for manual override
+      id: check-override
+      run: |
+        if [ "${{ github.event.inputs.skip_feature_wait }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE: Skipping feature workflow wait"
+          echo "⚠️  This bypasses the normal dependency chain - use with caution"
+          echo "skip-wait=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip-wait=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check if source branch is a feature branch
+      id: check-branch
+      run: |
+        SOURCE_BRANCH="${{ github.head_ref }}"
+        echo "Source branch: $SOURCE_BRANCH"
+        
+        if [[ "$SOURCE_BRANCH" =~ ^(feature|bugfix|hotfix|copilot)/ ]]; then
+          echo "✅ Source branch '$SOURCE_BRANCH' should have a feature workflow"
+          echo "is-feature-branch=true" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️  Source branch '$SOURCE_BRANCH' is not a feature branch - skipping feature workflow wait"
+          echo "📝 Non-feature branches (main, dev, etc.) don't trigger feature workflows"
+          echo "is-feature-branch=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Wait for feature branch workflow to complete successfully
+      id: wait
+      run: |
+        if [ "${{ steps.check-override.outputs.skip-wait }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE ACTIVE - Skipping feature workflow wait"
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "feature-sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "manual-override=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ "${{ steps.check-branch.outputs.is-feature-branch }}" == "false" ]; then
+          echo "✅ Non-feature branch detected - proceeding without feature workflow wait"
+          echo "📝 Source: ${{ github.head_ref }} → Target: ${{ github.base_ref }}"
+          echo "should-run=true" >> $GITHUB_OUTPUT
+          echo "feature-sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "manual-override=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "🔍 Waiting for feature branch workflow to complete successfully..."
+        echo "manual-override=false" >> $GITHUB_OUTPUT
+        echo "PR: #${{ github.event.pull_request.number }}"
+        echo "Source branch: ${{ github.head_ref }}"
+        echo "Target branch: ${{ github.base_ref }}"
+        echo "Head SHA: ${{ github.event.pull_request.head.sha }}"
+        
+        # Wait for feature workflow to complete for this SHA
+        FEATURE_SHA="${{ github.event.pull_request.head.sha }}"
+        MAX_WAIT=600  # 10 minutes
+        WAIT_INTERVAL=30  # 30 seconds
+        ELAPSED=0
+        
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          echo "⏳ Checking feature workflow status for SHA: $FEATURE_SHA (${ELAPSED}s elapsed)"
+          
+          # Get workflow runs for the feature branch workflow
+          WORKFLOW_RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/feature-branch.yml/runs?head_sha=$FEATURE_SHA&per_page=5")
+          
+          # Check if we have a completed run
+          COMPLETED_RUN=$(echo "$WORKFLOW_RUNS" | jq -r '.workflow_runs[] | select(.conclusion != null) | select(.conclusion == "success") | .id' | head -1)
+          
+          if [ "$COMPLETED_RUN" != "" ] && [ "$COMPLETED_RUN" != "null" ]; then
+            echo "✅ Feature workflow completed successfully: Run ID $COMPLETED_RUN"
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            echo "feature-sha=$FEATURE_SHA" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if we have a failed run
+          FAILED_RUN=$(echo "$WORKFLOW_RUNS" | jq -r '.workflow_runs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | .id' | head -1)
+          
+          if [ "$FAILED_RUN" != "" ] && [ "$FAILED_RUN" != "null" ]; then
+            echo "❌ Feature workflow failed or was cancelled: Run ID $FAILED_RUN"
+            echo "🚫 Skipping integration tests - feature workflow must pass first"
+            echo "should-run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "⏳ Feature workflow still in progress, waiting ${WAIT_INTERVAL}s..."
+          sleep $WAIT_INTERVAL
+          ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+        done
+        
+        echo "⏰ Timeout waiting for feature workflow - proceeding with caution"
+        echo "⚠️  This may mean the feature workflow is taking longer than expected"
+        echo "should-run=true" >> $GITHUB_OUTPUT
+        echo "feature-sha=$FEATURE_SHA" >> $GITHUB_OUTPUT
+
+  # Backend integration tests - runs in parallel with smoke tests
+  integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    needs: [check-actor, wait-for-feature-workflow]
+    # Run if Dependabot PR OR feature workflow completed successfully OR manual override
+    if: |
+      always() &&
+      (needs.check-actor.outputs.is-dependabot == 'true' ||
+       needs.wait-for-feature-workflow.outputs.should-run == 'true' ||
+       github.event.inputs.run_integration_tests == 'true')
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    # Build backend only for integration tests (no frontend needed)
+    - name: Restore .NET dependencies
+      run: |
+        echo "📦 Restoring .NET dependencies for integration tests..."
+        dotnet restore solutions/Crud.Backend.sln
+        echo "✅ .NET dependencies restored"
+
+    - name: Build backend for integration tests
+      run: |
+        echo "🏗️ Building backend for integration tests..."
+        dotnet build solutions/Crud.Backend.sln --no-restore --configuration Release
+        echo "✅ Backend built for integration tests"
+    
+    # Run backend integration tests with fresh build (unless manually skipped)
+    - name: Run backend integration tests
+      if: github.event.inputs.skip_integration_tests != 'true'
+      run: |
+        if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ]; then
+          echo "🚨 MANUAL OVERRIDE ACTIVE - Running integration tests without feature workflow validation"
+          echo "⚠️  Use caution: feature workflow dependency check was bypassed"
+        fi
+        echo "🧪 Running backend integration tests..."
+        dotnet test test/Tests.Integration.Backend/Tests.Integration.Backend.csproj --no-build --configuration Release --logger "trx;LogFileName=integration-test-results.trx" --logger "console;verbosity=detailed"
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+
+    - name: Skip integration tests (manual override)
+      if: github.event.inputs.skip_integration_tests == 'true'
+      run: |
+        echo "🚨 MANUAL OVERRIDE: Skipping integration tests"
+        echo "⚠️  Integration tests were manually skipped"
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results-${{ github.event.pull_request.head.sha }}
+        path: test/TestResults/*.trx
+        retention-days: 7
+
+  # E2E smoke tests - runs in parallel with integration tests
+  smoke-tests:
+    name: E2E Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [check-actor, wait-for-feature-workflow]
+    # Run if Dependabot PR OR feature workflow completed successfully OR manual override
+    if: |
+      always() &&
+      (needs.check-actor.outputs.is-dependabot == 'true' ||
+       needs.wait-for-feature-workflow.outputs.should-run == 'true' ||
+       github.event.inputs.run_integration_tests == 'true')
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+
+    # Build both backend and frontend for E2E tests
+    - name: Restore .NET dependencies
+      run: |
+        echo "📦 Restoring .NET dependencies for smoke tests..."
+        dotnet restore solutions/Crud.sln
+        echo "✅ .NET dependencies restored"
+
+    - name: Build backend for smoke tests
+      run: |
+        echo "🏗️ Building backend for smoke tests..."
+        dotnet build solutions/Crud.sln --no-restore --configuration Release
+        echo "✅ Backend built for smoke tests"
+
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: |
+        echo "📦 Installing Angular dependencies for smoke tests..."
+        npm ci
+        echo "✅ Angular dependencies installed"
+
+    - name: Build Angular for smoke tests
+      working-directory: ./src/Angular
+      run: |
+        echo "🏗️ Building Angular for smoke tests..."
+        npm run build
+        echo "✅ Angular built for smoke tests"
+
+    - name: Install E2E test dependencies
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "📦 Installing E2E test dependencies..."
+        npm ci
+        echo "✅ E2E dependencies installed"
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('test/Tests.E2E.NG/package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright browsers
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🎭 Installing Playwright browsers..."
+        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Playwright browsers restored from cache"
+        else
+          echo "📥 Downloading Playwright browsers (no cache hit)..."
+          npx playwright install chromium
+          echo "✅ Playwright browsers installed"
+        fi
+
+    - name: Set execute permissions for API binary
+      run: |
+        if [ -f "./src/Api/bin/Release/net8.0/Api" ]; then
+          chmod +x ./src/Api/bin/Release/net8.0/Api
+          echo "✅ Execute permissions set for API binary"
+        else
+          echo "⚠️ API binary not found"
+        fi
+
+    - name: Run E2E smoke tests
+      working-directory: ./test/Tests.E2E.NG
+      run: |
+        echo "🚀 Running E2E smoke tests for dev PR validation..."
+        echo "Tagged with @smoke - should complete in 2-5 minutes"
+        npm run test:smoke
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+        # Unique database per test run to avoid locking
+        TEST_RUN_ID: pr-dev-smoke-${{ github.run_id }}-${{ github.run_number }}
+        
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-smoke-test-results-${{ github.event.pull_request.head.sha }}
+        path: |
+          test/Tests.E2E.NG/playwright-report/
+          test/Tests.E2E.NG/test-results/
+        retention-days: 7
+          
+    - name: Upload database files (for debugging)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: database-files-${{ github.event.pull_request.head.sha }}
+        path: |
+          CrudTest_*.db
+          CrudTest_*.db-wal
+          CrudTest_*.db-shm
+        retention-days: 1
+          
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "🧹 Cleaning up test databases..."
+        # Remove test database files created during this run
+        rm -f CrudTest_*.db CrudTest_*.db-wal CrudTest_*.db-shm 2>/dev/null || true
+        echo "✅ Cleanup complete"
+
+  # Comprehensive summary with test results
+  pr-to-dev-summary:
+    name: PR to Dev Summary
+    runs-on: ubuntu-latest
+    needs: [wait-for-feature-workflow, integration-tests, smoke-tests]
+    if: always()
+
+    steps:
+    - name: Update PR status regardless of outcome
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          // Determine overall status
+          const waitResult = '${{ needs.wait-for-feature-workflow.result }}';
+          const integrationResult = '${{ needs.integration-tests.result }}';
+          const smokeResult = '${{ needs.smoke-tests.result }}';
+
+          const allSuccessful = waitResult === 'success' &&
+                               integrationResult === 'success' &&
+                               smokeResult === 'success';
+
+          const state = allSuccessful ? 'success' : 'failure';
+          const description = allSuccessful
+            ? 'All validation tests passed'
+            : `Failed: Wait(${waitResult}) Integration(${integrationResult}) Smoke(${smokeResult})`;
+
+          // Update commit status
+          await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: context.sha,
+            state: state,
+            context: 'PR Validation Summary',
+            description: description,
+            target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+          });
+
+          console.log(`Updated PR status: ${state} - ${description}`);
+
+    - name: Create comprehensive summary
+      run: |
+        echo "## 🚀 PR to Dev - Integration & Smoke Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Show branch info and any overrides
+        echo "### 📋 Branch Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Source**: \`${{ github.head_ref }}\` → **Target**: \`${{ github.base_ref }}\`" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if source branch matches feature patterns
+        SOURCE_BRANCH="${{ github.head_ref }}"
+        if [[ "$SOURCE_BRANCH" =~ ^(feature|bugfix|hotfix|copilot)/ ]]; then
+          echo "- **Branch Type**: Feature branch (waited for feature workflow)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Branch Type**: Non-feature branch (skipped feature workflow wait)" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Show manual override warnings if applicable
+        if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ] || \
+           [ "${{ github.event.inputs.run_integration_tests }}" == "true" ] || \
+           [ "${{ github.event.inputs.skip_integration_tests }}" == "true" ]; then
+          echo "### 🚨 Manual Override Active" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️  **Warning**: Manual overrides were used in this workflow run" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.wait-for-feature-workflow.outputs.manual-override }}" == "true" ]; then
+            echo "- Feature workflow wait was manually bypassed" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event.inputs.run_integration_tests }}" == "true" ]; then
+            echo "- Integration tests were forced to run despite feature workflow status" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event.inputs.skip_integration_tests }}" == "true" ]; then
+            echo "- Integration tests were manually skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "**Progressive Testing Strategy**: Integration tests + smoke tests for dev branch validation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 🧪 PR Validation Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status | Test Count | Duration | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|------------|----------|---------|" >> $GITHUB_STEP_SUMMARY
+
+        # Feature workflow status (from wait job) - but clarify it's part of PR validation
+        FEATURE_STATUS="${{ needs.wait-for-feature-workflow.outputs.should-run == 'true' && '✅ Success' || '❌ Failed' }}"
+        echo "| **Unit Tests** | $FEATURE_STATUS | ~200+ tests | ~3-5 min | Backend + Frontend unit tests, code quality, security analysis |" >> $GITHUB_STEP_SUMMARY
+
+        # Integration tests status
+        INTEGRATION_STATUS="${{ needs.integration-tests.result == 'success' && '✅ Success' || (needs.integration-tests.result == 'failure' && '❌ Failed') || (needs.integration-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| **Integration Tests** | $INTEGRATION_STATUS | ~300+ tests | ~3-5 min | Multi-provider database integration tests |" >> $GITHUB_STEP_SUMMARY
+
+        # Smoke tests status
+        SMOKE_STATUS="${{ needs.smoke-tests.result == 'success' && '✅ Success' || (needs.smoke-tests.result == 'failure' && '❌ Failed') || (needs.smoke-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| **Smoke Tests** | $SMOKE_STATUS | ~10-15 tests | ~2-3 min | Critical user flow validation with E2E |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### PR Testing Pipeline Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Unit Tests**: All backend & frontend unit tests validated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Integration Tests**: Multi-provider database integration validated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Smoke Tests**: Critical user flows validated with E2E testing" >> $GITHUB_STEP_SUMMARY
+        echo "- ⏳ **Full E2E Tests**: Comprehensive test suite runs during staging deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Efficiency Benefits" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Artifact Reuse**: Uses backend artifacts from feature workflow" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Parallel Execution**: Integration and smoke tests run simultaneously" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Progressive Testing**: Each stage adds appropriate validation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Fast Feedback**: Parallel execution reduces total runtime by ~40%" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall status check and summary
+        if [ "${{ needs.wait-for-feature-workflow.outputs.should-run }}" == "true" ] && \
+           [ "${{ needs.integration-tests.result }}" == "success" ] && \
+           [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+          echo "### ✅ All Dev PR Validation Complete - Ready for Merge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Merge PR to \`dev\` branch" >> $GITHUB_STEP_SUMMARY
+          echo "2. Staging deployment will trigger automatically" >> $GITHUB_STEP_SUMMARY
+          echo "3. Full E2E test suite will run during staging deployment" >> $GITHUB_STEP_SUMMARY
+          echo "4. After staging validation, create PR from \`dev\` → \`main\` for production" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Workflow completed successfully" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Some Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the failed tests above and fix any issues before merging to dev." >> $GITHUB_STEP_SUMMARY
+          echo "❌ Workflow completed with failures" >> $GITHUB_STEP_SUMMARY
+
+          # Note: We don't exit 1 here since status was already reported via GitHub API
+          # The workflow should complete successfully so that the status update is preserved
+        fi

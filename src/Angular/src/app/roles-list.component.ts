@@ -1,5 +1,6 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ApiService, RoleDto } from './api.service';
 
 @Component({
@@ -170,19 +171,26 @@ import { ApiService, RoleDto } from './api.service';
   `]
 })
 export class RolesListComponent implements OnInit {
+  private api = inject(ApiService);
+  private router = inject(Router);
+  
   roles: RoleDto[] = [];
   @Output() editRole = new EventEmitter<RoleDto>();
   @Output() addRole = new EventEmitter<void>();
-
-  constructor(private api: ApiService) {}
 
   ngOnInit() {
     this.loadRoles();
   }
 
   loadRoles() {
-    this.api.listRoles().subscribe(roles => {
-      this.roles = roles;
+    this.api.listRoles().subscribe({
+      next: (roles) => {
+        this.roles = roles;
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+        this.roles = [];
+      }
     });
   }
 
@@ -191,17 +199,28 @@ export class RolesListComponent implements OnInit {
   }
 
   onAddRole() {
-    this.addRole.emit();
+    // Navigate to the roles form for adding a new role
+    this.router.navigate(['/roles']);
   }
 
   onEditRole(role: RoleDto) {
-    this.editRole.emit(role);
+    // Navigate to the roles form for editing the role
+    this.router.navigate(['/roles'], { queryParams: { edit: role.id } });
   }
 
   onDeleteRole(role: RoleDto) {
     if (confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
-      this.api.deleteRole(role.id).subscribe(() => {
-        this.loadRoles(); // Refresh the list
+      this.api.deleteRole(role.id).subscribe({
+        next: () => {
+          // Add slight delay to ensure cache invalidation completes
+          setTimeout(() => {
+            this.loadRoles(); // Refresh the list
+          }, 100);
+        },
+        error: (error) => {
+          console.error('Error deleting role:', error);
+          // Could show user-friendly error message here
+        }
       });
     }
   }

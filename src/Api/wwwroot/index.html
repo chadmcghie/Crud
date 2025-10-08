@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD API - Static File Compression Test</title>
+    <link rel="stylesheet" href="css/test.css">
+    <style>
+        .compression-info {
+            background: #e8f4fd;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>CRUD API - Static File Compression</h1>
+            <p>Testing static file compression with Gzip and Brotli</p>
+        </header>
+        
+        <div class="compression-info">
+            <h2>Compression Features</h2>
+            <ul class="feature-list">
+                <li>Automatic Gzip compression for CSS, JavaScript, and HTML files</li>
+                <li>Brotli compression support for better compression ratios</li>
+                <li>Content-Type based compression rules</li>
+                <li>Configurable compression levels and thresholds</li>
+                <li>HTTPS compression enabled</li>
+                <li>Performance monitoring and metrics</li>
+            </ul>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>CSS Compression</h3>
+                <p>Stylesheets are compressed to reduce bandwidth usage. This test CSS file contains common styles and should achieve 60-80% compression.</p>
+                <button class="button" onclick="testCssCompression()">Test CSS Compression</button>
+            </div>
+            
+            <div class="card">
+                <h3>JavaScript Compression</h3>
+                <p>JavaScript files benefit significantly from compression due to repetitive code patterns and whitespace.</p>
+                <button class="button" onclick="testJsCompression()">Test JS Compression</button>
+            </div>
+            
+            <div class="card">
+                <h3>HTML Compression</h3>
+                <p>HTML documents with proper structure compress well, especially with repeated elements and whitespace.</p>
+                <button class="button" onclick="testHtmlCompression()">Test HTML Compression</button>
+            </div>
+        </div>
+        
+        <div id="results" style="margin-top: 30px;">
+            <!-- Test results will appear here -->
+        </div>
+    </div>
+
+    <script src="js/test.js"></script>
+    <script>
+        function testCssCompression() {
+            fetch('css/test.css')
+                .then(response => {
+                    document.getElementById('results').innerHTML = 
+                        '<div class="compression-info"><h3>CSS Compression Test</h3>' +
+                        '<p>Content-Encoding: ' + (response.headers.get('content-encoding') || 'none') + '</p>' +
+                        '<p>Content-Length: ' + (response.headers.get('content-length') || 'unknown') + '</p></div>';
+                })
+                .catch(error => console.error('CSS test failed:', error));
+        }
+        
+        function testJsCompression() {
+            fetch('js/test.js')
+                .then(response => {
+                    document.getElementById('results').innerHTML = 
+                        '<div class="compression-info"><h3>JavaScript Compression Test</h3>' +
+                        '<p>Content-Encoding: ' + (response.headers.get('content-encoding') || 'none') + '</p>' +
+                        '<p>Content-Length: ' + (response.headers.get('content-length') || 'unknown') + '</p></div>';
+                })
+                .catch(error => console.error('JS test failed:', error));
+        }
+        
+        function testHtmlCompression() {
+            fetch('index.html')
+                .then(response => {
+                    document.getElementById('results').innerHTML = 
+                        '<div class="compression-info"><h3>HTML Compression Test</h3>' +
+                        '<p>Content-Encoding: ' + (response.headers.get('content-encoding') || 'none') + '</p>' +
+                        '<p>Content-Length: ' + (response.headers.get('content-length') || 'unknown') + '</p></div>';
+                })
+                .catch(error => console.error('HTML test failed:', error));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+name: Manual E2E Tests
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      branch:
+        description: 'Branch to test (default: dev)'
+        required: false
+        default: 'dev'
+        type: string
+      test_file:
+        description: 'Specific test file to run (e.g., tests/integration/full-workflow.spec.ts) or leave empty for all tests'
+        required: false
+        default: ''
+        type: string
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  manual-e2e-tests:
+    name: Manual E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          src/Angular/package-lock.json
+          test/Tests.E2E.NG/package-lock.json
+
+    - name: Restore .NET dependencies
+      run: dotnet restore solutions/Crud.sln --verbosity quiet
+
+    - name: Build .NET solution
+      run: dotnet build solutions/Crud.sln --no-restore --configuration Release --verbosity minimal --nologo
+
+    - name: Install Angular dependencies
+      working-directory: src/Angular
+      run: npm ci --silent
+
+    - name: Build Angular application
+      working-directory: src/Angular
+      run: npm run build --silent
+
+    - name: Install E2E test dependencies
+      working-directory: test/Tests.E2E.NG
+      run: npm ci --silent
+
+    - name: Install Playwright browsers
+      working-directory: test/Tests.E2E.NG
+      run: npx playwright install chromium --quiet 2>/dev/null || npx playwright install chromium
+
+    - name: Run E2E tests
+      id: run-tests
+      working-directory: test/Tests.E2E.NG
+      env:
+        CI: true
+        ASPNETCORE_ENVIRONMENT: Testing
+        API_PORT: 5172
+        ANGULAR_PORT: 4200
+        API_URL: http://localhost:5172
+        ANGULAR_URL: http://localhost:4200
+        BYPASS_AUTHORIZATION_FOR_E2E: true
+        E2E_TEST_MODE: true
+        DatabaseProvider: SQLite
+        TEST_RESET_TOKEN: test-only-token
+      run: |
+        if [ -n "${{ inputs.test_file }}" ]; then
+          echo "Running specific test file: ${{ inputs.test_file }}"
+          npx playwright test ${{ inputs.test_file }} --reporter=list
+        else
+          echo "Running all E2E tests"
+          npx playwright test --reporter=list
+        fi
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-test-results-${{ github.run_number }}
+        path: |
+          test/Tests.E2E.NG/test-results/
+          test/Tests.E2E.NG/playwright-report/
+        retention-days: 7
+
+    - name: Upload test artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-test-artifacts-${{ github.run_number }}
+        path: test/Tests.E2E.NG/test-results/artifacts/
+        retention-days: 7
+
+    - name: Generate test summary
+      if: always()
+      working-directory: test/Tests.E2E.NG
+      run: |
+        echo "## E2E Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Test File:** ${{ inputs.test_file || 'All tests' }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.run-tests.outcome }}" == "success" ]; then
+          echo "### ✅ All Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "::notice title=Tests Passed::E2E tests completed successfully"
+        else
+          echo "### ❌ Tests Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the uploaded artifacts for detailed failure information." >> $GITHUB_STEP_SUMMARY
+          echo "::error title=Tests Failed::E2E tests failed - check artifacts for details"
+        fi
+
+        # Extract test counts if available
+        if [ -f "test-results/.last-run.json" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Statistics:**" >> $GITHUB_STEP_SUMMARY
+          jq -r '"- Total: \(.stats.expected // 0)\n- Passed: \(.stats.passed // 0)\n- Failed: \(.stats.failed // 0)\n- Skipped: \(.stats.skipped // 0)"' test-results/.last-run.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Statistics not available" >> $GITHUB_STEP_SUMMARY
+        fi

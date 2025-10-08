@@ -1,0 +1,52 @@
+version: 2
+updates:
+  # .NET dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@chadmcghie"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Node.js dependencies for Angular
+  - package-ecosystem: "npm"
+    directory: "/src/Angular"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@chadmcghie"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Node.js dependencies for E2E tests
+  - package-ecosystem: "npm"
+    directory: "/test/Tests.E2E.NG"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@chadmcghie"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "@chadmcghie"
+    commit-message:
+      prefix: "chore"
+      include: "scope"

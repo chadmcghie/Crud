@@ -1,0 +1,428 @@
+name: Feature Branch
+
+on:
+  push:
+    branches: 
+      - 'feature/**'
+      - 'fix/**'
+      - 'copilot/**'
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write  # For auto-formatting commits
+  actions: read    # For CodeQL actions
+  security-events: write  # For CodeQL security analysis results
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  # ====================================
+  # PHASE 1: CODE QUALITY & LINTING (CLEAN CODE FIRST)
+  # ====================================
+  code-quality:
+    name: Code Quality & Auto-Format
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        ref: ${{ github.ref_name }}
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    - name: Auto-format Backend Code
+      run: |
+        echo "🎨 Auto-formatting C# code with dotnet format..."
+        echo "PATH: $PATH"
+        echo "DOTNET_ROOT: $DOTNET_ROOT"
+        which dotnet || echo "dotnet not found in PATH"
+        # Ensure dotnet is in PATH
+        export PATH="$DOTNET_ROOT:$PATH"
+        dotnet --info
+        echo "Current directory: $(pwd)"
+        echo "Solution file exists: $(ls -la solutions/Crud.sln)"
+        echo "Running dotnet format:"
+        dotnet format solutions/Crud.sln
+        echo "✅ Formatting complete"
+        
+    - name: Frontend Linting
+      working-directory: ./src/Angular
+      run: |
+        echo "🔍 Running Angular linting..."
+        npm ci
+        npm run lint
+        
+    - name: Commit and Push Formatting Changes
+      run: |
+        echo "📝 Checking for formatting changes..."
+        
+        # Configure git
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Add all changes including line ending normalization
+        git add -A --renormalize
+        
+        # Check if there are any staged changes
+        if ! git diff --staged --quiet; then
+          echo "✨ Formatting changes detected, committing..."
+          git commit -m "style: auto-format code with dotnet format [skip ci]"
+          
+          # Push changes
+          git push origin HEAD:${{ github.ref_name }}
+          echo "✅ Formatting changes pushed successfully"
+          
+          # IMPORTANT: Pull the changes back to update our local working copy
+          echo "🔄 Pulling formatting changes back to working copy..."
+          git pull origin ${{ github.ref_name }}
+        else
+          echo "✅ No formatting changes needed - code is already properly formatted"
+        fi
+        
+    - name: Verify Final Formatting
+      run: |
+        echo "🔍 Verifying that all code is now properly formatted..."
+        # Ensure dotnet is in PATH
+        export PATH="$DOTNET_ROOT:$PATH"
+        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
+        if [ $? -ne 0 ]; then
+          echo "❌ ERROR: Code still has formatting issues after auto-format!"
+          echo "This should not happen. Please check the workflow configuration."
+          exit 1
+        fi
+        echo "✅ All code is properly formatted and ready for build!"
+        
+    - name: Check for common code issues
+      run: |
+        echo "🔍 Checking for common issues..."
+        # Check for console.log in TypeScript files (except test files)
+        if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=test --exclude-dir=tests src/Angular; then
+          echo "⚠️ Warning: console.log statements found in production code"
+        fi
+        
+        # Check for TODO comments that should be addressed
+        if grep -r "TODO" --include="*.cs" --include="*.ts" --exclude-dir=node_modules src/; then
+          echo "ℹ️ Info: TODO comments found - consider addressing them"
+        fi
+
+  # ====================================
+  # PATH DETECTION: Detect what changed to optimize test execution
+  # ====================================
+  detect-changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    needs: code-quality
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Detect path changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          backend:
+            - 'src/Api/**'
+            - 'src/App/**'
+            - 'src/Domain/**'
+            - 'src/Infrastructure/**'
+            - 'test/Tests.Unit.Backend/**'
+            - 'test/Tests.Integration.Backend/**'
+          frontend:
+            - 'src/Angular/**'
+            - 'test/Tests.Integration.NG/**'
+
+  # ====================================
+  # PHASE 2: BUILD, CODEQL & ARTIFACT CREATION (CLEAN CODE BUILT)
+  # ====================================
+  build-codeql-artifacts:
+    name: Build, CodeQL & Create Artifacts (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    needs: [code-quality, detect-changes]
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp', 'javascript' ]
+    
+    steps:
+    - name: Checkout code (with formatting changes)
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        ref: ${{ github.ref_name }}
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    # Initialize CodeQL before build so it can observe compilation
+    - name: Initialize CodeQL
+      # Only run CodeQL for the language if corresponding code changed
+      if: |
+        (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
+        (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+
+    # Build the cleaned/formatted code - CodeQL observes this build
+    - name: Restore .NET dependencies
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
+      run: |
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet restore solutions/Crud.sln
+
+    - name: Build backend (clean code, single build)
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
+      run: |
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet build solutions/Crud.sln --no-restore --configuration Release
+
+    - name: Build Angular app
+      if: matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true'
+      run: |
+        cd src/Angular
+        npm ci
+        npm run build
+
+    # Perform CodeQL analysis on the build we just did
+    - name: Perform CodeQL Analysis
+      # Only run CodeQL for the language if corresponding code changed
+      if: |
+        (matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true') ||
+        (matrix.language == 'javascript' && needs.detect-changes.outputs.frontend == 'true')
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+    # Create artifacts only once (on the csharp matrix job) and only if backend changed
+    - name: Create versioned artifact for downstream reuse
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
+      run: |
+        echo "VERSION=${{ github.sha }}" >> $GITHUB_ENV
+        echo "BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+        # Package with version info for artifact traceability
+        echo "🏗️ Creating artifact with comprehensive version info..."
+        echo "{\"version\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"workflow\":\"feature-branch-complete\",\"includesFormatting\":\"true\",\"artifactName\":\"feature-build-${{ github.sha }}\",\"triggerEvent\":\"${{ github.event_name }}\"}" > version.json
+        echo "📋 Artifact version info:"
+        cat version.json | jq .
+        echo "🎯 Artifact will be named: feature-build-${{ github.sha }}"
+        
+    - name: Verify appsettings files exist
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
+      run: |
+        echo "📁 Verifying appsettings files before artifact upload:"
+        ls -la src/Api/appsettings*.json
+        echo "✅ All appsettings files found"
+
+    - name: Upload build artifacts for reuse in PRs
+      if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+        path: |
+          src/*/bin/Release/
+          test/*/bin/Release/
+          src/Api/appsettings*.json
+          version.json
+        retention-days: 7  # Shorter retention for feature artifacts
+
+  # ====================================
+  # PHASE 3: PARALLEL TESTING (using artifacts)
+  # ====================================
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build-codeql-artifacts, detect-changes]
+    if: needs.detect-changes.outputs.backend == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: 'src/**/*.csproj'
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: feature-build-${{ github.sha }}
+      
+    - name: Run backend unit tests
+      run: |
+        echo "🧪 Running backend unit tests on clean, formatted code..."
+        export PATH="$DOTNET_ROOT:$PATH"
+        $DOTNET_ROOT/dotnet test test/Tests.Unit.Backend/Tests.Unit.Backend.csproj --no-build --configuration Release
+
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build-codeql-artifacts, detect-changes]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'src/Angular/package-lock.json'
+        
+    - name: Install Angular dependencies
+      working-directory: ./src/Angular
+      run: npm ci
+      
+    - name: Run Angular unit tests
+      working-directory: ./src/Angular
+      run: npm run test -- --watch=false --browsers=ChromeHeadless
+
+  # ====================================
+  # PHASE 4: SUMMARY & NOTIFICATION
+  # ====================================
+  feature-branch-summary:
+    name: Feature Branch Analysis Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, detect-changes, build-codeql-artifacts, backend-unit-tests, frontend-unit-tests]
+    if: always()
+
+    steps:
+    - name: Create comprehensive summary
+      run: |
+        echo "## 🚀 Feature Branch Complete Analysis Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Integrated Build Strategy**: Code quality → Path detection → Conditional build + tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### 🔍 Path Detection Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Code Area | Changed | Tests Executed |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|---------|----------------|" >> $GITHUB_STEP_SUMMARY
+
+        # Backend changes
+        if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ]; then
+          echo "| Backend | ✅ Yes | Backend unit tests + C# CodeQL |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Backend | ⏸️ No | ⏸️ Skipped (no backend changes) |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Frontend changes
+        if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+          echo "| Frontend | ✅ Yes | Frontend unit tests + JavaScript CodeQL |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Frontend | ⏸️ No | ⏸️ Skipped (no frontend changes) |" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Phase | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Code quality status
+        QUALITY_STATUS="${{ needs.code-quality.result == 'success' && '✅ Success' || (needs.code-quality.result == 'failure' && '❌ Failed') || (needs.code-quality.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Code Quality & Linting | $QUALITY_STATUS | Auto-formatting and linting |" >> $GITHUB_STEP_SUMMARY
+        
+        # Build, CodeQL and artifacts status
+        BUILD_STATUS="${{ needs.build-codeql-artifacts.result == 'success' && '✅ Success' || (needs.build-codeql-artifacts.result == 'failure' && '❌ Failed') || (needs.build-codeql-artifacts.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Build + CodeQL + Artifacts | $BUILD_STATUS | Single build with CodeQL analysis and artifact creation |" >> $GITHUB_STEP_SUMMARY
+        
+        # Backend tests status
+        BACKEND_STATUS="${{ needs.backend-unit-tests.result == 'success' && '✅ Success' || (needs.backend-unit-tests.result == 'failure' && '❌ Failed') || (needs.backend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Backend Unit Tests | $BACKEND_STATUS | C# unit tests (parallel, uses artifacts) |" >> $GITHUB_STEP_SUMMARY
+        
+        # Frontend tests status
+        FRONTEND_STATUS="${{ needs.frontend-unit-tests.result == 'success' && '✅ Success' || (needs.frontend-unit-tests.result == 'failure' && '❌ Failed') || (needs.frontend-unit-tests.result == 'cancelled' && '⏹️ Cancelled') || '⏸️ Skipped' }}"
+        echo "| Frontend Unit Tests | $FRONTEND_STATUS | Angular unit tests (parallel) |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### Integrated Build Strategy Benefits" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Code Quality First**: Formatting changes are part of the build" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Single Build**: Only one compilation with clean, formatted code" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **CodeQL Integration**: Security analysis observes the actual build process" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Parallel Testing**: Backend and frontend tests run simultaneously using artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Maximum Efficiency**: No rebuilds, CodeQL sees real compilation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall status check (success or skipped are both acceptable)
+        QUALITY_OK="${{ needs.code-quality.result == 'success' }}"
+        BUILD_OK="${{ needs.build-codeql-artifacts.result == 'success' }}"
+        BACKEND_OK="${{ needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests.result == 'skipped' }}"
+        FRONTEND_OK="${{ needs.frontend-unit-tests.result == 'success' || needs.frontend-unit-tests.result == 'skipped' }}"
+
+        if [ "$QUALITY_OK" == "true" ] && [ "$BUILD_OK" == "true" ] && [ "$BACKEND_OK" == "true" ] && [ "$FRONTEND_OK" == "true" ]; then
+          echo "### ✅ All Analysis Complete - Ready for PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Optimization Impact:**" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.detect-changes.outputs.backend }}" == "false" ]; then
+            echo "- ⚡ Backend tests skipped (no backend changes detected)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.detect-changes.outputs.frontend }}" == "false" ]; then
+            echo "- ⚡ Frontend tests skipped (no frontend changes detected)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ] && [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ]; then
+            echo "- ✅ Full test suite executed (both backend and frontend changed)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Create PR to \`dev\`: Integration tests only (unit tests already completed)" >> $GITHUB_STEP_SUMMARY
+          echo "2. After merge to \`dev\`: E2E tests run during staging deployment" >> $GITHUB_STEP_SUMMARY
+          echo "3. PR to \`main\`: Integration tests + production safety checks" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Some Analysis Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the failed phases above and fix any issues before creating a PR." >> $GITHUB_STEP_SUMMARY
+
+          # Exit with error to fail the workflow
+          if [ "$QUALITY_OK" != "true" ] || [ "$BUILD_OK" != "true" ] || [ "$BACKEND_OK" != "true" ] || [ "$FRONTEND_OK" != "true" ]; then
+            exit 1
+          fi
+        fi

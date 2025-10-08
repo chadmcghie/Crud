@@ -1,52 +1,539 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Api.Configuration;
+using Api.Extensions;
+using Api.HealthChecks;
+using Api.Middleware;
 using App;
 using Infrastructure;
-using static System.Net.Mime.MediaTypeNames;
+using Infrastructure.Resilience;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Polly;
+using Serilog;
+
 
 namespace Api
 {
-    public class Program
+    /// <summary>
+    /// DateTime converter that round-trips as UTC and writes "Z".
+    /// </summary>
+    public sealed class UtcDateTimeConverter : JsonConverter<DateTime>
     {
-        public static void Main(string[] args)
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            // System.Text.Json handles ISO 8601 including "Z" correctly here
+            var dt = reader.GetDateTime();
+            return dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
+        }
 
-            builder.Services.AddApplication();
-            builder.Services.AddInfrastructureInMemory();
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAngular", policy =>
-                {
-                    policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-            });
-            builder.Services.AddControllers();            
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            
-            builder.Services.AddMediatR(services => services.RegisterServicesFromAssembly(typeof(Program).Assembly));            
-            builder.Services.AddAutoMapper(
-                cfg => { },
-                typeof(App.DependencyInjection).Assembly, 
-                typeof(Infrastructure.DependencyInjection).Assembly
-                );
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            var utc = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+            writer.WriteStringValue(utc.ToString("O")); // "O" adds Z for UTC
+        }
+    }
 
-            var app = builder.Build();
-            
-            if (app.Environment.IsDevelopment())
+    /// <summary>
+    /// Nullable variant of UtcDateTimeConverter.
+    /// </summary>
+    public sealed class UtcNullableDateTimeConverter : JsonConverter<DateTime?>
+    {
+        public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Null)
+                return null;
+            var dt = reader.GetDateTime();
+            return dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+        {
+            if (!value.HasValue)
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                writer.WriteNullValue();
+                return;
             }
 
-            app.UseHttpsRedirection();
-            app.UseCors("AllowAngular");
-            app.UseAuthorization();
-            app.MapControllers();
+            var utc = value.Value.Kind == DateTimeKind.Utc ? value.Value : value.Value.ToUniversalTime();
+            writer.WriteStringValue(utc.ToString("O"));
+        }
+    }
 
-            app.Run();
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            // 1) Bootstrap Serilog from configuration before building the host
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
+                    .Build())
+                .CreateLogger();
+
+            try
+            {
+                Log.Information("Starting Crud API application");
+
+                var builder = WebApplication.CreateBuilder(args);
+
+                // Replace default logging with Serilog (unless disabled for tests)
+                // Contract tests set DISABLE_SERILOG_FOR_TESTS environment variable
+                var disableSerilog = Environment.GetEnvironmentVariable("DISABLE_SERILOG_FOR_TESTS") == "true";
+                if (!disableSerilog)
+                {
+                    builder.Host.UseSerilog();
+                }
+
+                // 2) Observability: OpenTelemetry (logs/traces/metrics)
+                builder.Services.AddOpenTelemetry()
+                    .ConfigureResource(r => r
+                        .AddService(serviceName: "Crud.Api", serviceVersion: "1.0.0")
+                        .AddAttributes(new Dictionary<string, object>
+                        {
+                            ["deployment.environment"] = builder.Environment.EnvironmentName
+                        }))
+                    .WithTracing(t => t
+                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddConsoleExporter())
+                    .WithMetrics(m => m
+                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation());
+
+                // 3) App & Infra
+                builder.Services.AddApplication();
+
+                // 4) Response Compression
+                builder.Services.AddResponseCompressionServices();
+
+                builder.Services.AddHttpClient("default")
+                    .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
+
+                var databaseProvider = (builder.Configuration.GetValue<string>("DatabaseProvider") ?? "SQLite").Trim();
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+                // DIAGNOSTIC: Log database configuration for startup debugging
+                Log.Information("🔍 STARTUP DEBUG: DatabaseProvider={DatabaseProvider}", databaseProvider);
+                Log.Information("🔍 STARTUP DEBUG: Initial ConnectionString={ConnectionString}", connectionString);
+                Log.Information("🔍 STARTUP DEBUG: Environment={Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+
+                // E2E test isolation helpers (only for SQLite)
+                var workerDatabase = Environment.GetEnvironmentVariable("WORKER_DATABASE");
+                var workerIndex = Environment.GetEnvironmentVariable("WORKER_INDEX");
+
+                if (databaseProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Information("🔍 STARTUP DEBUG: SQLite provider detected");
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_DATABASE={WorkerDatabase}", workerDatabase);
+                    Log.Information("🔍 STARTUP DEBUG: WORKER_INDEX={WorkerIndex}", workerIndex);
+
+                    if (!string.IsNullOrWhiteSpace(workerDatabase))
+                    {
+                        connectionString = $"Data Source={workerDatabase}";
+                        Log.Information("🔍 STARTUP DEBUG: Using worker-specific SQLite database: {WorkerDatabase}", workerDatabase);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(workerIndex))
+                    {
+                        var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        var workerDbName = $"CrudAppTest_Worker{workerIndex}_{ts}.db";
+                        connectionString = $"Data Source={workerDbName}";
+                        Log.Information("🔍 STARTUP DEBUG: Auto-generated worker SQLite database for worker {WorkerIndex}: {WorkerDbName}", workerIndex, workerDbName);
+                        Log.Information("🔍 STARTUP DEBUG: Final ConnectionString={ConnectionString}", connectionString);
+                    }
+                    else
+                    {
+                        Log.Information("🔍 STARTUP DEBUG: Using default connection string: {ConnectionString}", connectionString);
+                    }
+
+                    var tenantPrefix = Environment.GetEnvironmentVariable("TENANT_PREFIX");
+                    if (!string.IsNullOrWhiteSpace(tenantPrefix))
+                    {
+                        Log.Information("🏢 Tenant-based isolation prefix: {TenantPrefix}", tenantPrefix);
+                    }
+                }
+
+                bool usingEfProvider = false;
+
+                switch (databaseProvider.ToLowerInvariant())
+                {
+                    case "sqlserver":
+                        if (string.IsNullOrWhiteSpace(connectionString))
+                            throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQL Server.");
+                        builder.Services.AddInfrastructureEntityFrameworkSqlServer(connectionString);
+                        Log.Information("Using SQL Server provider");
+                        usingEfProvider = true;
+                        break;
+
+                    case "sqlite":
+                        if (string.IsNullOrWhiteSpace(connectionString))
+                            throw new InvalidOperationException("Connection string 'DefaultConnection' is required for SQLite.");
+
+                        Log.Information("🔍 STARTUP DEBUG: About to register SQLite services with connection: {ConnectionString}", connectionString);
+                        try
+                        {
+                            builder.Services.AddInfrastructureEntityFrameworkSqlite(connectionString);
+                            Log.Information("🔍 STARTUP DEBUG: ✅ Successfully registered SQLite services");
+                            usingEfProvider = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("🔍 STARTUP DEBUG: ❌ Failed to register SQLite services: {Error}", ex.Message);
+                            Log.Error("🔍 STARTUP DEBUG: Full exception: {Exception}", ex);
+                            throw;
+                        }
+                        Log.Information("Using SQLite provider with connection: {ConnectionString}", connectionString);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException($"Unsupported database provider: {databaseProvider}");
+                }
+
+                // 4) CORS, Controllers, and other services
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowAngular", policy =>
+                    {
+                        policy.WithOrigins(
+                                "http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200",
+                                "http://localhost:4210", "http://localhost:4220", "http://localhost:4230",
+                                "http://localhost:4240", "http://localhost:4250", "http://localhost:4260"
+                              )
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
+                    });
+                });
+
+                // Add caching services
+                builder.Services.AddCachingServices(builder.Configuration);
+
+                // Add cached repository decorators (only if using EF provider)
+                if (usingEfProvider)
+                {
+                    builder.Services.AddCachedRepositories();
+                }
+
+                // Add output caching
+                builder.Services.AddApiOutputCaching(builder.Configuration);
+
+                // Configure JWT Authentication
+                var jwtSecret = builder.Configuration["Jwt:Secret"];
+                var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+                var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+                if (string.IsNullOrEmpty(jwtSecret))
+                {
+                    Log.Warning("JWT Secret not configured. Using default for development.");
+                    jwtSecret = "ThisIsADevelopmentSecretKeyThatShouldBeReplacedInProduction123!";
+                }
+
+                if (string.IsNullOrEmpty(jwtIssuer))
+                {
+                    jwtIssuer = "CrudApi";
+                }
+
+                if (string.IsNullOrEmpty(jwtAudience))
+                {
+                    jwtAudience = "CrudApiUsers";
+                }
+
+                builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtIssuer,
+                        ValidAudience = jwtAudience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                        ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            // Allow the token to be read from cookies as well
+                            var token = context.Request.Cookies["accessToken"];
+                            if (!string.IsNullOrEmpty(token))
+                            {
+                                context.Token = token;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
+
+                // Add authorization policies
+                builder.Services.AddAuthorization(options =>
+                {
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+
+                    // Check if authorization bypass is explicitly enabled for E2E tests
+                    var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTHORIZATION_FOR_E2E") == "true";
+
+                    if (isTestEnvironment && bypassAuth)
+                    {
+                        // In Testing environment with E2E bypass enabled, bypass all authorization for E2E tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireAssertion(context => true));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireAssertion(context => true));
+
+                        // Set fallback policy to allow all for E2E tests
+                        options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                            .RequireAssertion(context => true)
+                            .Build();
+                    }
+                    else
+                    {
+                        // Normal authorization policies for production and integration tests
+                        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                        options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+                    }
+                });
+
+                // Add rate limiting for password reset endpoint
+                builder.Services.AddRateLimiter(options =>
+                {
+                    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                    // Password reset rate limit: 3 requests per 15 minutes per IP (disabled in Testing environment)
+                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+                    var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
+                    var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
+
+                    options.AddPolicy("PasswordReset", context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = permitLimit,
+                                Window = window,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0
+                            }));
+
+                    // Global rate limit as fallback
+                    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                        RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 100,
+                                Window = TimeSpan.FromMinutes(1),
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 10
+                            }));
+                });
+
+                // Register the conditional request filter
+                builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+
+                // Register cache invalidation service
+                builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
+
+                builder.Services.AddControllers(options =>
+                    {
+                        // Add conditional request filter globally
+                        options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                    })
+                    .AddJsonOptions(options =>
+                    {
+                        // Configure DateTime serialization to include UTC "Z" suffix
+                        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                        // Configure property naming to camelCase
+                        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                        // Add custom DateTime converters to ensure UTC "Z" suffix
+                        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+                        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
+                    });
+
+                builder.Services.AddEndpointsApiExplorer();
+
+                // Configure Swagger with JWT support
+                builder.Services.AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo
+                    {
+                        Title = "Crud API",
+                        Version = "v1",
+                        Description = "A CRUD API with JWT authentication"
+                    });
+
+                    // Add JWT Authentication
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                    {
+                        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.ApiKey,
+                        Scheme = "Bearer"
+                    });
+
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            Array.Empty<string>()
+                        }
+                    });
+                });
+
+                builder.Services.AddHealthChecks()
+                    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready", "live" });
+
+                builder.Services.AddAutoMapper(
+                    cfg => { },
+                    typeof(Program).Assembly,
+                    typeof(App.DependencyInjection).Assembly,
+                    typeof(Infrastructure.DependencyInjection).Assembly
+                );
+
+                var app = builder.Build();
+
+                // Ensure database is created for Entity Framework providers
+                if (usingEfProvider)
+                {
+                    await app.Services.EnsureDatabaseAsync();
+                    Log.Information("Database ensured successfully");
+                }
+
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
+                    Log.Information("Swagger UI enabled for development environment");
+                }
+
+                app.UseHttpsRedirection();
+                app.UseResponseCompression();
+                app.UseStaticFiles(); // Serve static files with compression
+                app.UseMiddleware<CompressionPerformanceMiddleware>();
+                app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+                app.UseCors("AllowAngular");
+                app.UseRateLimiter();
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                // Add output caching middleware (if not disabled)
+                var outputCachingDisabled = app.Configuration.GetValue<bool>("OutputCaching:Disabled");
+                if (!outputCachingDisabled)
+                {
+                    app.UseMiddleware<Api.Middleware.ConditionalRequestMiddleware>(); // Must run before output cache
+                    app.UseOutputCache();
+                }
+
+                // Note: Conditional request support (ETag/If-None-Match, Last-Modified/If-Modified-Since) 
+                // is handled automatically by ASP.NET Core when controllers set proper headers
+
+                // Note: Cache status and HTTP headers are handled within controllers
+                // to avoid conflicts with response streaming
+
+                app.MapControllers();
+
+                // Health check endpoints following Kubernetes liveness/readiness pattern
+                app.MapHealthChecks("/health", new HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("live")
+                });
+
+                app.MapHealthChecks("/health/ready", new HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("ready")
+                });
+
+                app.MapHealthChecks("/health/detailed", new HealthCheckOptions
+                {
+                    Predicate = _ => true,
+                    ResponseWriter = WriteDetailedHealthResponse
+                });
+
+                Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
+                Log.Information("🔍 STARTUP DEBUG: Listening URLs will be: {Urls}", string.Join(", ", app.Urls));
+                await app.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal("🔍 STARTUP DEBUG: ❌❌❌ APPLICATION CRASHED DURING STARTUP ❌❌❌");
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Type: {ExceptionType}", ex.GetType().Name);
+                Log.Fatal("🔍 STARTUP DEBUG: Exception Message: {ExceptionMessage}", ex.Message);
+                Log.Fatal("🔍 STARTUP DEBUG: Stack Trace: {StackTrace}", ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Log.Fatal("🔍 STARTUP DEBUG: Inner Exception: {InnerException}", ex.InnerException);
+                }
+                Log.Fatal(ex, "Application terminated unexpectedly");
+                throw;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+
+        /// <summary>
+        /// Custom response writer for detailed health check endpoint
+        /// Provides comprehensive diagnostic information including environment, database provider, and application metadata
+        /// </summary>
+        private static Task WriteDetailedHealthResponse(HttpContext context, HealthReport report)
+        {
+            context.Response.ContentType = "application/json";
+
+            var environment = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+
+            var result = JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                environment = environment.EnvironmentName,
+                databaseProvider = configuration["DatabaseProvider"] ?? "SQLite",
+                timestamp = DateTime.UtcNow.ToString("O"),
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    duration = e.Value.Duration.TotalMilliseconds,
+                    description = e.Value.Description,
+                    exception = e.Value.Exception?.Message
+                }),
+                application = new
+                {
+                    name = "CRUD API",
+                    version = "1.0.0",
+                    framework = ".NET 8"
+                }
+            }, new JsonSerializerOptions { WriteIndented = true });
+
+            return context.Response.WriteAsync(result);
         }
     }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -34,12 +34,16 @@ export interface UpdatePersonRequest {
 export class ApiService {
   // Use relative base URL so dev server proxy can forward to API
   private baseUrl = '/api';
-
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   // Roles
   listRoles(): Observable<RoleDto[]> {
-    return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`);
+    return this.http.get<RoleDto[]>(`${this.baseUrl}/roles`, {
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
+  }
+  getRole(id: string): Observable<RoleDto> {
+    return this.http.get<RoleDto>(`${this.baseUrl}/roles/${id}`);
   }
   createRole(req: CreateRoleRequest): Observable<RoleDto> {
     return this.http.post<RoleDto>(`${this.baseUrl}/roles`, req);
@@ -53,7 +57,12 @@ export class ApiService {
 
   // People
   listPeople(): Observable<PersonResponse[]> {
-    return this.http.get<PersonResponse[]>(`${this.baseUrl}/people`);
+    return this.http.get<PersonResponse[]>(`${this.baseUrl}/people`, {
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
+  }
+  getPerson(id: string): Observable<PersonResponse> {
+    return this.http.get<PersonResponse>(`${this.baseUrl}/people/${id}`);
   }
   createPerson(req: CreatePersonRequest): Observable<PersonResponse> {
     return this.http.post<PersonResponse>(`${this.baseUrl}/people`, req);

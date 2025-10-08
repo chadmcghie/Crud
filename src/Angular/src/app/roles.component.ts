@@ -1,8 +1,10 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api.service';
+import { CustomValidators } from './validators/custom-validators';
 
 @Component({
   selector: 'app-roles',
@@ -24,7 +26,9 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
             [class.error]="isFieldInvalid('name')"
           />
           <div class="error-message" *ngIf="isFieldInvalid('name')">
-            Role name is required
+            <span *ngIf="form.get('name')?.errors?.['required']">Role name is required</span>
+            <span *ngIf="form.get('name')?.errors?.['invalidRoleName']">{{ form.get('name')?.errors?.['invalidRoleName'] }}</span>
+            <span *ngIf="form.get('name')?.errors?.['maxLength']">{{ form.get('name')?.errors?.['maxLength'] }}</span>
           </div>
         </div>
 
@@ -36,8 +40,12 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
             formControlName="description" 
             class="form-control textarea"
             rows="3"
+            [class.error]="isFieldInvalid('description')"
           ></textarea>
-          <div class="help-text">
+          <div class="error-message" *ngIf="isFieldInvalid('description')">
+            <span *ngIf="form.get('description')?.errors?.['maxlength']">Description cannot exceed 500 characters</span>
+          </div>
+          <div class="help-text" *ngIf="!isFieldInvalid('description')">
             Provide a brief description of this role's responsibilities and permissions.
           </div>
         </div>
@@ -52,6 +60,9 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
           <button type="button" class="btn btn-outline" (click)="onReset()" [disabled]="isSubmitting">
             Reset
           </button>
+        </div>
+        <div class="error-alert" *ngIf="error">
+          {{ error }}
         </div>
       </form>
     </div>
@@ -182,6 +193,16 @@ import { ApiService, RoleDto, CreateRoleRequest, UpdateRoleRequest } from './api
       background: #28a745;
       color: white;
     }
+    
+    .error-alert {
+      margin-top: 16px;
+      padding: 12px;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      color: #721c24;
+      font-size: 14px;
+    }
   `]
 })
 export class RolesComponent implements OnInit, OnChanges {
@@ -191,18 +212,46 @@ export class RolesComponent implements OnInit, OnChanges {
 
   form: FormGroup;
   isSubmitting = false;
+  error: string | null = null;
+  
+  private api = inject(ApiService);
+  private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
-  constructor(private api: ApiService, private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
-      name: ['', Validators.required],
-      description: ['']
+      name: ['', [Validators.required, CustomValidators.roleName()]],
+      description: ['', [Validators.maxLength(500)]]
     });
   }
 
   ngOnInit() {
-    if (this.editingRole) {
-      this.populateFormForEdit();
-    }
+    // Check for edit query parameter
+    this.route.queryParams.subscribe(params => {
+      if (params['edit']) {
+        const roleId = params['edit'];
+        this.loadRoleForEdit(roleId);
+      } else {
+        this.editingRole = null;
+        this.resetForm();
+      }
+    });
+  }
+
+  private loadRoleForEdit(roleId: string) {
+    this.api.getRole(roleId).subscribe({
+      next: (role: RoleDto) => {
+        this.editingRole = role;
+        this.populateFormForEdit();
+      },
+      error: (error: unknown) => {
+        console.error('Error loading role for edit:', error);
+        this.error = 'Failed to load role data';
+        // Navigate back to the list if role not found
+        this.router.navigate(['/roles-list']);
+      }
+    });
   }
 
   ngOnChanges() {
@@ -246,23 +295,29 @@ export class RolesComponent implements OnInit, OnChanges {
         this.api.updateRole(this.editingRole.id, payload).subscribe({
           next: () => {
             this.isSubmitting = false;
-            this.roleSaved.emit(this.editingRole!);
+            this.error = null;
+            // Navigate back to the list after successful update
+            this.router.navigate(['/roles-list']);
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error updating role:', error);
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
       } else {
         // Create new role
         this.api.createRole(payload).subscribe({
-          next: (role: RoleDto) => {
+          next: (_role: RoleDto) => {
             this.isSubmitting = false;
-            this.roleSaved.emit(role);
+            this.error = null;
             this.resetForm();
+            // Navigate back to the list after successful creation
+            this.router.navigate(['/roles-list']);
           },
-          error: (error: any) => {
+          error: (error: unknown) => {
             console.error('Error creating role:', error);
+            this.handleApiError(error);
             this.isSubmitting = false;
           }
         });
@@ -271,7 +326,8 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   onCancel() {
-    this.cancelled.emit();
+    // Navigate back to the list
+    this.router.navigate(['/roles-list']);
   }
 
   onReset() {
@@ -279,6 +335,63 @@ export class RolesComponent implements OnInit, OnChanges {
   }
 
   private resetForm() {
-    this.form.reset();
+    this.form.reset({
+      name: '',
+      description: ''
+    });
+    this.error = null;
+  }
+
+  private handleApiError(error: unknown) {
+    console.error('Roles API error details:', error);
+
+    const httpError = error as {
+      status: number;
+      message?: string;
+      error?: {
+        error?: string;
+        errors?: Record<string, string[]>;
+        detail?: string;
+        title?: string;
+      }
+    };
+
+    // Handle network/connection errors
+    if (httpError.status === 0) {
+      this.error = 'Unable to connect to the API server. Please make sure the backend is running on port 5172.';
+      return;
+    }
+
+    if (httpError.status === 404) {
+      this.error = 'Roles API endpoint not found. Please check if the backend roles controller is properly configured.';
+      return;
+    }
+
+    if (httpError.status === 401) {
+      this.error = 'Authentication failed. Please log in again.';
+      return;
+    }
+
+    if (httpError.status === 403) {
+      this.error = 'Access denied. You may not have permission to manage roles.';
+      return;
+    }
+
+    // Handle validation errors
+    if (httpError.error?.errors) {
+      const errors = httpError.error.errors;
+      const errorMessages = Object.keys(errors).map(key =>
+        `${key}: ${errors[key].join(', ')}`
+      ).join('; ');
+      this.error = errorMessages;
+    } else if (httpError.error?.detail) {
+      this.error = httpError.error.detail;
+    } else if (httpError.error?.title) {
+      this.error = httpError.error.title;
+    } else if (httpError.message) {
+      this.error = `Network error: ${httpError.message}`;
+    } else {
+      this.error = `An error occurred (HTTP ${httpError.status}). Please check your input and try again.`;
+    }
   }
 }

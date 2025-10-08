@@ -1,5 +1,6 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ApiService, PersonResponse } from './api.service';
 
 @Component({
@@ -193,13 +194,14 @@ import { ApiService, PersonResponse } from './api.service';
   `]
 })
 export class PeopleListComponent implements OnInit {
+  private api = inject(ApiService);
+  private router = inject(Router);
+  
   people: PersonResponse[] = [];
   isLoading = false;
   error: string | null = null;
   @Output() editPerson = new EventEmitter<PersonResponse>();
   @Output() addPerson = new EventEmitter<void>();
-
-  constructor(private api: ApiService) {}
 
   ngOnInit() {
     this.loadPeople();
@@ -228,18 +230,23 @@ export class PeopleListComponent implements OnInit {
   }
 
   onAddPerson() {
-    this.addPerson.emit();
+    // Navigate to the people form for adding a new person
+    this.router.navigate(['/people']);
   }
 
   onEditPerson(person: PersonResponse) {
-    this.editPerson.emit(person);
+    // Navigate to the people form for editing the person  
+    this.router.navigate(['/people'], { queryParams: { edit: person.id } });
   }
 
   onDeletePerson(person: PersonResponse) {
     if (confirm(`Are you sure you want to delete ${person.fullName}?`)) {
       this.api.deletePerson(person.id).subscribe({
         next: () => {
-          this.loadPeople(); // Refresh the list
+          // Add slight delay to ensure cache invalidation completes
+          setTimeout(() => {
+            this.loadPeople(); // Refresh the list
+          }, 100);
         },
         error: (error) => {
           console.error('Error deleting person:', error);
