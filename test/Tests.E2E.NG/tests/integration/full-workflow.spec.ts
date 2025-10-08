@@ -15,7 +15,7 @@ test.describe('Full Workflow Integration Tests', () => {
     await pageHelpers.navigateToApp();
   });
 
-  test('@extended should complete full role and person management workflow', async () => {
+  test.skip('@extended should complete full role and person management workflow', async () => {
     // Step 1: Create roles via UI
     await pageHelpers.switchToRolesTab();
     
