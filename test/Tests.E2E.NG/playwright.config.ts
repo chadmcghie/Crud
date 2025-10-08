@@ -251,7 +251,7 @@ export default defineConfig({
   ],
 
   /* Global setup and teardown */
-  globalSetup: './global-setup.ts',
+  // globalSetup: './global-setup.ts', // REMOVED: Playwright's webServer handles lifecycle; tests create their own users
   // globalTeardown: './tests/setup/webserver-teardown.ts',
 
   /* Metadata */
