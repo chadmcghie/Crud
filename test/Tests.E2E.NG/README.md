@@ -2,16 +2,9 @@
 
 This directory contains end-to-end tests for the CRUD application using Playwright.
 
-## Test Configuration Strategies
-
-### 1. WebServer Configuration (Recommended) ✅
+## Test Configuration
 
 Uses Playwright's built-in `webServer` feature for automatic server management.
-
-**Run locally:**
-```bash
-npm run test:webserver
-```
 
 **Benefits:**
 - Automatic server lifecycle management
@@ -26,41 +19,26 @@ npm run test:webserver
 - Database is cleaned up after tests complete
 - Servers are reused locally, fresh in CI
 
-### 2. Serial Configuration (Legacy)
-
-Uses custom global setup with manual server management.
-
-**Run locally:**
-```bash
-npm run test:serial
-```
-
-**Note:** This approach is being phased out due to SQLite locking issues in CI.
-
 ## Available Scripts
 
 ```bash
-# Recommended approach
-npm run test:webserver      # Run with Playwright webServer config
+# Test execution
+npm run test              # Run ALL E2E tests (~15-20 min)
+npm run test:smoke        # Run only smoke tests (@smoke tag, ~2-3 min)
+npm run test:critical     # Run critical tests (@critical tag, ~5-10 min)
 
-# Legacy approaches
-npm run test:serial         # Serial execution with custom setup
-npm run test:fast          # Fast mode (assumes servers running)
-
-# Other useful commands
-npm run test:smoke         # Run only smoke tests (@smoke tag)
-npm run test:critical      # Run critical tests (@critical tag)
-npm run test:headed        # Run tests with browser visible
-npm run test:ui            # Open Playwright UI mode
-npm run test:debug         # Run tests in debug mode
+# Utility commands
+npm run report            # Show test report
+npm run install-browsers  # Install Playwright browsers
+npm run clean             # Clean test results
 ```
 
 ## Test Categories
 
 Tests are tagged for selective execution:
-- `@smoke` - Quick validation tests (< 2 minutes)
-- `@critical` - Important feature tests (< 5 minutes)
-- `@extended` - Comprehensive tests (< 10 minutes)
+- `@smoke` - Quick validation tests (~2-3 minutes)
+- `@critical` - Important feature tests (~5-10 minutes)
+- Untagged tests are included in the full suite (~15-20 minutes)
 
 ## Architecture Decision
 
@@ -108,9 +86,9 @@ Check the uploaded artifacts:
 
 3. **Use fixtures**: Leverage the `database-fixture.ts` for automatic cleanup.
 
-4. **Monitor test duration**: Keep smoke tests under 2 minutes, critical under 5.
+4. **Monitor test duration**: Keep smoke tests under 3 minutes, critical under 10 minutes.
 
-5. **Debug locally first**: Use `npm run test:headed` to see what's happening.
+5. **Debug locally first**: Use `npx playwright test --headed` or `--debug` to see what's happening.
 
 ## Migration from Legacy Setup
 
@@ -123,7 +101,7 @@ If you have custom test configurations:
 ## Contributing
 
 When adding new tests:
-1. Tag appropriately (@smoke, @critical, @extended)
+1. Tag appropriately (@smoke, @critical) if needed for selective execution
 2. Ensure tests are independent
 3. Use the webServer configuration
 4. Add to appropriate spec file category
