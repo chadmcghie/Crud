@@ -2,75 +2,47 @@ import { test, expect } from '../setup/test-fixture';
 import { PageHelpers } from '../helpers/page-helpers';
 import { ApiHelpers } from '../helpers/api-helpers';
 import { generateTestRole, testRoles } from '../helpers/test-data';
+import { initializeTestLogger } from '../helpers/test-logger';
 
 test.describe('Roles Management UI', () => {
   let pageHelpers: PageHelpers;
   let apiHelpers: ApiHelpers;
-  const testStartTime = Date.now();
 
   test.beforeEach(async ({ page, apiContext }, testInfo) => {
-    const testElapsedTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
-    console.log(`\n🧪 [${testElapsedTime}s] Starting test: ${testInfo.title}`);
+    // Initialize logger for this test
+    const logger = initializeTestLogger(testInfo);
+    logger.testStart();
 
-    pageHelpers = new PageHelpers(page);
-    apiHelpers = new ApiHelpers(apiContext, 0, process.env.API_URL || 'http://localhost:5172');
+    pageHelpers = new PageHelpers(page, logger);
+    apiHelpers = new ApiHelpers(apiContext, testInfo.workerIndex, process.env.API_URL || 'http://localhost:5172');
 
     // Log database state BEFORE cleanup
     try {
-      const peopleCount = (await apiHelpers.getPeople()).length;
-      const rolesCount = (await apiHelpers.getRoles()).length;
-      console.log(`📊 PRE-cleanup DB state: ${peopleCount} people, ${rolesCount} roles`);
-    } catch (e) {
-      console.warn('Could not get pre-cleanup DB state:', e);
+      const people = await apiHelpers.getPeople();
+      const roles = await apiHelpers.getRoles();
+      logger.logDatabaseState({
+        peopleCount: people.length,
+        rolesCount: roles.length
+      }, 'before');
+    } catch (error) {
+      logger.warn('Could not get pre-cleanup database state', error);
     }
 
-    // Clean up any existing data
+    // Clean up any existing data (cleanup-before pattern)
     if (apiHelpers) {
       try {
         await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-        // Wait for cleanup to complete by checking API response
-        await page.waitForResponse(
-          response => response.url().includes('/api/') && response.ok(),
-          { timeout: 2000 }
-        ).catch(() => {
-          // If no API response, just continue
-        });
+        logger.info('Database cleaned successfully');
       } catch (error) {
-        console.warn('Failed to cleanup before test:', error);
+        logger.warn('Failed to cleanup before test', error);
       }
     }
-    
+
     // Navigate to the app and switch to roles tab
     await pageHelpers.navigateToApp();
     await pageHelpers.switchToRolesTab();
-    
-    // Wait for the roles content to be fully loaded and interactive
-    await page.waitForFunction(() => {
-      const rolesContent = document.querySelector('app-roles-list');
-      const buttons = document.querySelectorAll('button');
-      return rolesContent && buttons.length > 0;
-    }, { timeout: 5000 });
-  });
 
-  test.afterEach(async ({}, testInfo) => {
-    // Log database state AFTER test
-    try {
-      const peopleCount = (await apiHelpers.getPeople()).length;
-      const rolesCount = (await apiHelpers.getRoles()).length;
-      console.log(`📊 POST-test DB state: ${peopleCount} people, ${rolesCount} roles`);
-    } catch (e) {
-      console.warn('Could not get post-test DB state:', e);
-    }
-
-    // Clean up after each test
-    if (apiHelpers) {
-      try {
-        await apiHelpers.cleanupAll(true); // Force immediate cleanup for UI tests
-        console.log(`✅ Cleanup completed for: ${testInfo.title}`);
-      } catch (error) {
-        console.warn('Failed to cleanup after test:', error);
-      }
-    }
+    logger.info('Test setup complete');
   });
 
   test('should display empty state when no roles exist', async ({ page }) => {
@@ -92,7 +64,7 @@ test.describe('Roles Management UI', () => {
     expect(roleCount).toBe(1);
   });
 
-  test.skip('should create multiple roles', async ({ page }) => {
+  test('should create multiple roles', async ({ page }) => {
     for (let i = 0; i < testRoles.length; i++) {
       const role = testRoles[i];
       

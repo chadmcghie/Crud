@@ -1,5 +1,7 @@
 // Page object helpers for Angular UI interactions
 import { Page, Locator, expect } from '@playwright/test';
+import { waitForAngularReady, waitForComponentReady, waitForNavigationComplete } from './angular-wait-helpers';
+import { TestLogger, PerformanceTimer } from './test-logger';
 
 // Environment detection for adaptive behavior
 const isCI = !!process.env.CI;
@@ -7,7 +9,13 @@ const isWindows = process.platform === 'win32';
 const debugMode = process.env.DEBUG_E2E === 'true';
 
 export class PageHelpers {
-  constructor(private page: Page) {}
+  private logger: TestLogger;
+  private timer: PerformanceTimer;
+
+  constructor(private page: Page, logger?: TestLogger) {
+    this.logger = logger || new TestLogger();
+    this.timer = new PerformanceTimer(this.logger);
+  }
 
   // Add retry logic similar to API helpers (public for use in tests)
   async retryOperation<T>(
@@ -38,8 +46,8 @@ export class PageHelpers {
 
   // Navigation helpers
   async navigateToApp(): Promise<void> {
-    // Note: E2E test mode is now set in test fixture before page loads
-    // No need to call addInitScript here as it's too late
+    this.logger.info('Navigating to application');
+    const startTime = Date.now();
 
     // Wrap entire navigation in retry logic for CI reliability
     await this.retryOperation(async () => {
@@ -53,88 +61,54 @@ export class PageHelpers {
         throw new Error(`Navigation failed: ${response?.status() || 'no response'}`);
       }
 
-      // Progressive wait strategy - each step validates app is loading properly
-
-      // Step 1: Wait for app-root to exist (Angular bootstrap started)
-      await this.page.locator('app-root').waitFor({
-        state: 'attached',
-        timeout: isCI ? 30000 : 15000
+      // Use unified Angular wait helper
+      await waitForAngularReady(this.page, {
+        timeout: isCI ? 30000 : 15000,
+        requireDataReady: false, // Don't require data on initial load
+        logDebug: debugMode
       });
 
-      // Step 2: Wait for main heading (app template rendered)
+      // Wait for main heading to confirm app loaded
       await this.page.locator('h1:has-text("CRUD Template Application")').first().waitFor({
         state: 'visible',
         timeout: isCI ? 30000 : 15000
       });
 
-      // Step 3: Wait for Angular to fully initialize
-      await this.page.waitForFunction(() => {
-        // Check if Angular is bootstrapped and routing is ready
-        const hasAngular = typeof (window as any).ng !== 'undefined';
-        const hasRouterLink = document.querySelector('a[routerLink="/people-list"]') !== null;
-        return hasAngular || hasRouterLink;
-      }, { timeout: isCI ? 20000 : 10000 });
-
-      // Step 4: Wait for navigation links to be visible and interactive
+      // Verify navigation links are ready
       const navLink = this.page.locator('a[routerLink="/people-list"]').first();
-      await navLink.waitFor({
-        state: 'visible',
-        timeout: isCI ? 30000 : 15000
-      });
-
-      // Step 5: Verify link is actually clickable (not obscured)
       await expect(navLink).toBeVisible();
 
-      // Step 6: Short stability wait for Angular to settle (CI needs more time)
-      if (isCI) {
-        await this.page.waitForTimeout(1000);
-      } else {
-        await this.page.waitForTimeout(300);
-      }
-
     }, 3, isCI ? 3000 : 1000, 'navigateToApp');
+
+    this.logger.logTiming('Navigate to app', Date.now() - startTime);
   }
 
   async switchToPeopleTab(): Promise<void> {
+    this.logger.logNavigation('current', 'people-list');
+
     await this.page.click('a[routerLink="/people-list"]');
 
-    // Use working navigation pattern - wait for Angular stability
-    await this.page.waitForLoadState('networkidle');
-    await this.page.waitForFunction(() => {
-      return typeof (window as any).ng !== 'undefined';
-    }, { timeout: 10000 });
+    // Wait for navigation and component to be ready
+    await waitForNavigationComplete(this.page);
+    await waitForComponentReady(this.page, 'app-people-list', {
+      timeout: isCI ? 20000 : 12000
+    });
 
-    // Environment-optimized component detection timeouts
-    const componentTimeout = isCI ? 20000 : 12000;
-    const peopleContent = this.page.locator('router-outlet, app-people, main, .content, h1, h2, h3').first();
-    await peopleContent.waitFor({ state: 'visible', timeout: componentTimeout });
-
-    // Environment-specific stability waits
-    if (isCI) {
-      await this.page.waitForTimeout(1500); // Longer stability wait in CI
-    } else if (isWindows) {
-      await this.page.waitForTimeout(500); // Brief wait on Windows for rendering
-    }
+    this.logger.debug('Switched to People tab');
   }
 
   async switchToRolesTab(): Promise<void> {
+    this.logger.logNavigation('current', 'roles-list');
+
     await this.page.click('a[routerLink="/roles-list"]');
 
-    // Use working navigation pattern - wait for Angular stability
-    await this.page.waitForLoadState('networkidle');
-    await this.page.waitForFunction(() => {
-      return typeof (window as any).ng !== 'undefined';
-    }, { timeout: 10000 });
+    // Wait for navigation and component to be ready
+    await waitForNavigationComplete(this.page);
+    await waitForComponentReady(this.page, 'app-roles-list', {
+      timeout: isCI ? 20000 : 12000
+    });
 
-    // Multi-selector strategy for component detection - protected pattern
-    const timeout = process.env.CI ? 15000 : 10000;
-    const rolesContent = this.page.locator('router-outlet, app-roles, main, .content, h1, h2, h3').first();
-    await rolesContent.waitFor({ state: 'visible', timeout });
-
-    // Additional wait for component to be fully interactive in CI
-    if (process.env.CI) {
-      await this.page.waitForTimeout(1000); // Brief stability wait
-    }
+    this.logger.debug('Switched to Roles tab');
   }
 
   // Role management helpers
