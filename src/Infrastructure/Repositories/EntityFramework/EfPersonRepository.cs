@@ -50,59 +50,35 @@ public class EfPersonRepository : IPersonRepository
     {
         try
         {
-            _logger.LogWarning("🔍 REPO UPDATE: Starting UpdateAsync for person {PersonId}", person.Id);
-            _logger.LogWarning("🔍 REPO UPDATE: Person has {RoleCount} roles: {Roles}",
-                person.Roles.Count, string.Join(", ", person.Roles.Select(r => $"{r.Name}({r.Id})")));
+            // SIMPLER APPROACH: Load the tracked entity and update it directly
+            // This ensures EF Core properly tracks all changes including many-to-many
+            var trackedPerson = await _context.People
+                .Include(p => p.Roles)
+                .FirstOrDefaultAsync(p => p.Id == person.Id, ct);
 
-            // Ensure entity is properly tracked with its navigation properties
-            var entry = _context.Entry(person);
-            _logger.LogWarning("🔍 REPO UPDATE: Person entity state BEFORE attach: {State}", entry.State);
-
-            if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+            if (trackedPerson == null)
             {
-                _logger.LogWarning("🔍 REPO UPDATE: Person was DETACHED, attaching now");
-                // If detached, attach and load existing roles to properly track many-to-many changes
-                _context.People.Attach(person);
-                await entry.Collection(p => p.Roles).LoadAsync(ct);
-                entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-                _logger.LogWarning("🔍 REPO UPDATE: After LoadAsync, person has {RoleCount} roles", person.Roles.Count);
+                throw new InvalidOperationException($"Person with ID {person.Id} not found in database.");
             }
 
-            _logger.LogWarning("🔍 REPO UPDATE: Person entity state AFTER attach: {State}", entry.State);
+            // Update scalar properties using domain methods
+            trackedPerson.UpdateFullName(person.FullName);
+            trackedPerson.UpdatePhone(person.Phone);
 
-            // Ensure all role entities in the person's collection are tracked by this context
-            foreach (var role in person.Roles)
-            {
-                var roleEntry = _context.Entry(role);
-                _logger.LogWarning("🔍 REPO UPDATE: Role {RoleName}({RoleId}) state: {State}",
-                    role.Name, role.Id, roleEntry.State);
+            // Get the new roles from DB (ensure they're tracked)
+            var newRoleIds = person.Roles.Select(r => r.Id).ToHashSet();
+            var newRoles = await _context.Roles
+                .Where(r => newRoleIds.Contains(r.Id))
+                .ToListAsync(ct);
 
-                if (roleEntry.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
-                {
-                    _logger.LogWarning("🔍 REPO UPDATE: Role {RoleName} was DETACHED, attaching", role.Name);
-                    _context.Attach(role);
-                }
-            }
+            // Update roles using domain method on the TRACKED entity
+            trackedPerson.UpdateRoles(newRoles);
 
-            // CRITICAL FIX: Force EF Core to detect changes in the many-to-many collection
-            _logger.LogWarning("🔍 REPO UPDATE: Calling DetectChanges()");
-            _context.ChangeTracker.DetectChanges();
-
-            // Log what changes EF Core detected
-            var changes = _context.ChangeTracker.Entries()
-                .Where(e => e.State != Microsoft.EntityFrameworkCore.EntityState.Unchanged)
-                .Select(e => $"{e.Entity.GetType().Name} ({e.State})")
-                .ToList();
-            _logger.LogWarning("🔍 REPO UPDATE: ChangeTracker detected {ChangeCount} changes: {Changes}",
-                changes.Count, string.Join(", ", changes));
-
-            _logger.LogWarning("🔍 REPO UPDATE: Calling SaveChangesAsync");
-            var saved = await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
-            _logger.LogWarning("🔍 REPO UPDATE: SaveChanges returned {SavedCount} rows affected", saved);
+            await _context.SaveChangesWithRetryAsync(cancellationToken: ct);
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "🔍 REPO UPDATE: DbUpdateException occurred!");
+            _logger.LogError(ex, "Failed to update person {PersonId}", person.Id);
             throw new InvalidOperationException("Failed to update person. Please check that all referenced roles exist.", ex);
         }
     }

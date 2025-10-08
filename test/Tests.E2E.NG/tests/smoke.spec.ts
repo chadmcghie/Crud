@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/serial-test-fixture';
+import { PageHelpers } from './helpers/page-helpers';
 
 /**
  * Smoke Test Suite
@@ -42,14 +43,15 @@ test.describe('@smoke Application Health Checks', () => {
   });
 
   test('@smoke Navigation menu is visible', async ({ page, baseURL }) => {
+    const helpers = new PageHelpers(page);
     await page.goto(baseURL);
 
-    // Wait for the app to load and be E2E ready
+    // Wait for the app to load and navigation to be ready
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
-    await page.waitForSelector('[data-e2e-ready="true"]', { timeout: 15000 });
+    await page.waitForSelector('nav.nav-links', { timeout: 15000 });
 
-    // Additional wait for auth state to stabilize
-    await page.waitForTimeout(2000);
+    // Wait for navigation to complete and app to be ready (replaces arbitrary 2000ms timeout)
+    await helpers.waitForNavigationComplete({ waitForNetworkIdle: false });
 
     // Check for navigation links - use nav context to avoid duplicate elements
     const peopleLink = page.locator('nav a[routerLink="/people-list"]');
@@ -97,11 +99,11 @@ test.describe('@smoke People Module', () => {
       return typeof (window as any).ng !== 'undefined';
     }, { timeout: 10000 });
 
+    // The component should be ready after Angular initialization and networkidle
+    // (removed arbitrary 1000ms timeout - event-driven waits above are sufficient)
+
     // Look for add button with comprehensive selectors
     const addButton = page.locator('button, a, .button, .add-button').filter({ hasText: /add|new|create/i }).first();
-
-    // Wait for page to fully load before looking for button
-    await page.waitForTimeout(1000);
 
     // Try to find and click the add button, if it exists
     try {

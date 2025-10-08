@@ -63,4 +63,25 @@ public abstract class BaseEntity : ISoftDeletable
         DeletedBy = null;
         MarkAsUpdated();
     }
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object based on Id.
+    /// This is critical for HashSet operations in collections like UpdateRoles.
+    /// </summary>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not BaseEntity other)
+            return false;
+        if (ReferenceEquals(this, other))
+            return true;
+        if (GetType() != other.GetType())
+            return false;
+        return Id.Equals(other.Id);
+    }
+
+    /// <summary>
+    /// Returns a hash code for the current object based on Id.
+    /// This is critical for HashSet operations in collections like UpdateRoles.
+    /// </summary>
+    public override int GetHashCode() => Id.GetHashCode();
 }

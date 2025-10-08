@@ -52,11 +52,11 @@ test.describe('People Management UI', () => {
     }
   });
 
-  test('should display empty state when no people exist', async ({ page }) => {
+  test('@critical should display empty state when no people exist', async ({ page }) => {
     await pageHelpers.verifyEmptyState('people');
   });
 
-  test('should create a new person successfully', async ({ page }) => {
+  test('@critical should create a new person successfully', async ({ page }) => {
     const testPerson = generateTestPerson();
 
     // Try to find and click the add button like smoke tests do
@@ -92,7 +92,7 @@ test.describe('People Management UI', () => {
     }
   });
 
-  test('should create multiple people', async ({ page }) => {
+  test('@extended should create multiple people', async ({ page }) => {
     for (let i = 0; i < testPeople.length; i++) {
       const person = testPeople[i];
       
@@ -107,7 +107,7 @@ test.describe('People Management UI', () => {
     expect(personCount).toBe(testPeople.length);
   });
 
-  test('should validate required fields', async ({ page }) => {
+  test('@critical should validate required fields', async ({ page }) => {
     await pageHelpers.clickAddPerson();
     
     // Try to submit without filling required fields
@@ -119,7 +119,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifySubmitButtonEnabled();
   });
 
-  test('should create person with roles', async ({ page }) => {
+  test('@extended should create person with roles', async ({ page }) => {
     // First create some roles
     const role1 = await apiHelpers.createRole(generateTestRole());
     const role2 = await apiHelpers.createRole(generateTestRole());
@@ -140,7 +140,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonHasRole(testPerson.fullName, role2.name);
   });
 
-  test('should edit an existing person', async ({ page }) => {
+  test('@critical should edit an existing person', async ({ page }) => {
     // First create a person via API
     const originalPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(originalPerson);
@@ -161,7 +161,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonNotExists(originalPerson.fullName);
   });
 
-  test('should delete a person', async ({ page }) => {
+  test('@critical should delete a person', async ({ page }) => {
     // First create a person via API
     const testPerson = generateTestPerson();
     const createdPerson = await apiHelpers.createPerson(testPerson);
@@ -171,8 +171,12 @@ test.describe('People Management UI', () => {
     await pageHelpers.switchToPeopleTab();
     
     // Wait for data to load and verify person exists before deletion - add extra synchronization
-    await pageHelpers.clickRefreshButton();
-    await page.waitForTimeout(1000); // Allow time for refresh to complete
+    // Use proper action-with-response pattern to avoid race conditions
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.clickRefreshButton(),
+      '/api/people'
+    );
+
     await pageHelpers.verifyPersonExists(createdPerson.fullName);
     
     // Delete the person
@@ -190,7 +194,7 @@ test.describe('People Management UI', () => {
     }
   });
 
-  test('should handle person creation with only required fields', async ({ page }) => {
+  test('@extended should handle person creation with only required fields', async ({ page }) => {
     const testPerson = generateTestPerson({ phone: undefined });
     
     await pageHelpers.clickAddPerson();
@@ -200,7 +204,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('should refresh the people list', async ({ page }) => {
+  test('@extended should refresh the people list', async ({ page }) => {
     // Create a person via API (simulating external change)
     const testPerson = generateTestPerson();
     await apiHelpers.createPerson(testPerson);
@@ -208,15 +212,17 @@ test.describe('People Management UI', () => {
     // The person shouldn't be visible yet (page hasn't refreshed)
     await pageHelpers.verifyPersonNotExists(testPerson.fullName);
 
-    // Click refresh button
-    await pageHelpers.clickRefreshButton();
-    await page.waitForTimeout(1000); // Allow time for refresh to complete
+    // Click refresh button and wait for data load (proper action-with-response pattern)
+    await pageHelpers.waitForActionWithDataLoad(
+      () => pageHelpers.clickRefreshButton(),
+      '/api/people'
+    );
 
     // Now the person should be visible
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('should handle form cancellation', async ({ page }) => {
+  test('@extended should handle form cancellation', async ({ page }) => {
     await pageHelpers.clickAddPerson();
     
     // Fill some data
@@ -233,7 +239,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonNotExists(testPerson.fullName);
   });
 
-  test('should handle form reset', async ({ page }) => {
+  test('@extended should handle form reset', async ({ page }) => {
     await pageHelpers.clickAddPerson();
     
     // Fill some data
@@ -248,13 +254,14 @@ test.describe('People Management UI', () => {
     await expect(page.locator('input#phone')).toHaveValue('');
   });
 
-  test('should display person information correctly in table', async ({ page }) => {
+  test('@extended should display person information correctly in table', async ({ page }) => {
     const testPerson = generateTestPerson();
     await apiHelpers.createPerson(testPerson);
 
     await pageHelpers.refreshPage();
+
+    // switchToPeopleTab already waits for networkidle (includes API data load)
     await pageHelpers.switchToPeopleTab();
-    await page.waitForTimeout(1000); // Allow time for navigation and data loading
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
@@ -274,13 +281,14 @@ test.describe('People Management UI', () => {
     await expect(personRow.locator('button:has-text("Delete")')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should show no roles assigned when person has no roles', async ({ page }) => {
+  test('@extended should show no roles assigned when person has no roles', async ({ page }) => {
     const testPerson = generateTestPerson();
     await apiHelpers.createPerson(testPerson);
 
     await pageHelpers.refreshPage();
+
+    // switchToPeopleTab already waits for networkidle (includes API data load)
     await pageHelpers.switchToPeopleTab();
-    await page.waitForTimeout(1000); // Allow time for navigation and data loading
 
     const personRow = page.locator(`tr:has-text("${testPerson.fullName}")`).first();
     await personRow.waitFor({ state: 'visible', timeout: 10000 }); // Ensure row is loaded
@@ -353,7 +361,7 @@ test.describe('People Management UI', () => {
     await expect(personRow.locator('td').nth(2)).not.toContainText(role1.name);
   });
 
-  test('should maintain data integrity across tab switches', async ({ page }) => {
+  test('@extended should maintain data integrity across tab switches', async ({ page }) => {
     // Create a person
     const testPerson = generateTestPerson();
     await pageHelpers.clickAddPerson();
@@ -368,7 +376,7 @@ test.describe('People Management UI', () => {
     await pageHelpers.verifyPersonExists(testPerson.fullName);
   });
 
-  test('should show message when no roles are available', async ({ page }) => {
+  test('@extended should show message when no roles are available', async ({ page }) => {
     await pageHelpers.clickAddPerson();
     
     // Should show message about no roles being available - use more flexible selector

@@ -10,7 +10,7 @@ import * as path from 'path';
  */
 
 test.describe('@critical Test Suite Coverage Verification', () => {
-  test('@critical Should have comprehensive API endpoint coverage', async ({ page, apiUrl }) => {
+  test('@meta @critical Should have comprehensive API endpoint coverage', async ({ page, apiUrl }) => {
     // Define required API endpoints that must be tested
     const requiredEndpoints = [
       { endpoint: '/health', category: 'health' },
@@ -56,7 +56,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     console.log('API Coverage Results:', coverageResults);
   });
 
-  test('@critical Should have proper test categorization', async () => {
+  test('@meta @critical Should have proper test categorization', async () => {
     // Scan test files for proper tagging
     const testDir = path.join(__dirname, '..');
     const testFiles = await findTestFiles(testDir);
@@ -101,7 +101,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     console.log('Test Categorization Stats:', categoryStats);
   });
 
-  test('@critical Should verify user journey completeness', async ({ page, baseURL, apiUrl }) => {
+  test('@meta @critical Should verify user journey completeness', async ({ page, baseURL, apiUrl }) => {
     // Verify that complete user journeys are covered
     const journeyChecklist = {
       appLoad: false,
@@ -185,7 +185,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     console.log('User Journey Coverage:', journeyChecklist);
   });
 
-  test('@critical Should maintain performance standards', async ({ page, baseURL, apiUrl }) => {
+  test('@meta @critical Should maintain performance standards', async ({ page, baseURL, apiUrl }) => {
     const performanceMetrics = {
       pageLoadTime: 0,
       apiResponseTime: 0,
@@ -220,7 +220,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     console.log('Performance Metrics:', performanceMetrics);
   });
 
-  test('@extended Should validate configuration compliance', async ({ page, apiUrl }) => {
+  test('@meta @extended Should validate configuration compliance', async ({ page, apiUrl }) => {
     // Verify Testing configuration compliance
     const configChecklist = {
       testingEnvironment: false,
@@ -255,7 +255,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
     console.log('Configuration Compliance:', configChecklist);
   });
 
-  test('@smoke Should have reliable test execution patterns', async ({ page, baseURL }) => {
+  test('@meta @smoke Should have reliable test execution patterns', async ({ page, baseURL }) => {
     // Test reliability patterns are working
     const reliabilityChecklist = {
       deterministicWaiting: false,
@@ -302,7 +302,7 @@ test.describe('@critical Test Suite Coverage Verification', () => {
 });
 
 test.describe('@extended Test Suite Quality Metrics', () => {
-  test.skip('@extended Should provide comprehensive coverage metrics', async () => {
+  test.skip('@meta @extended Should provide comprehensive coverage metrics', async () => {
     // Calculate coverage statistics
     const testDir = path.join(__dirname, '..');
     const testFiles = await findTestFiles(testDir);

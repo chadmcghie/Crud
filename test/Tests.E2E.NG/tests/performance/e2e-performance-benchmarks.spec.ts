@@ -15,7 +15,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     perfHelpers = new PerformanceOptimizedHelpers(page, request, apiUrl);
   });
 
-  test('@extended Page load performance meets targets', async ({ page, baseURL }) => {
+  test('@performance @extended Page load performance meets targets', async ({ page, baseURL }) => {
     const startTime = Date.now();
 
     await page.goto(baseURL);
@@ -36,7 +36,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     });
   });
 
-  test('@extended Navigation performance across modules', async ({ page, baseURL }) => {
+  test('@performance @extended Navigation performance across modules', async ({ page, baseURL }) => {
     await page.goto(baseURL);
     await page.waitForSelector('h1:has-text("CRUD Template Application")', { timeout: 10000 });
 
@@ -57,7 +57,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     expect(rolesNavTime).toBeLessThan(1000);
   });
 
-  test('@extended API operation performance benchmarks', async ({ page, apiUrl, request }) => {
+  test('@performance @extended API operation performance benchmarks', async ({ page, apiUrl, request }) => {
     // Benchmark individual API operations
     const operations = [
       {
@@ -85,7 +85,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     }
   });
 
-  test.skip('@extended Bulk data handling performance', async ({ page, request, apiUrl, baseURL }) => {
+  test.skip('@performance @extended Bulk data handling performance', async ({ page, request, apiUrl, baseURL }) => {
     const startTime = Date.now();
 
     // Create multiple people to test bulk performance
@@ -143,7 +143,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
     });
   });
 
-  test.skip('@extended Database operation performance', async ({ page, apiUrl, request }) => {
+  test.skip('@performance @extended Database operation performance', async ({ page, apiUrl, request }) => {
     // Test database performance with concurrent operations
     const startTime = Date.now();
 
@@ -175,7 +175,7 @@ test.describe('@extended E2E Performance Benchmarks', () => {
 });
 
 test.describe('@critical Performance Regression Detection', () => {
-  test.skip('@critical Critical user path performance baseline', async ({ page, baseURL, apiUrl }) => {
+  test.skip('@performance @critical Critical user path performance baseline', async ({ page, baseURL, apiUrl }) => {
     // This test establishes baseline performance for the most critical user path
     const startTime = Date.now();
 
@@ -200,7 +200,7 @@ test.describe('@critical Performance Regression Detection', () => {
     console.log(`Critical user path completed in ${totalTime}ms`);
   });
 
-  test('@critical Smoke test execution time benchmark', async ({ page, apiUrl }) => {
+  test('@performance @critical Smoke test execution time benchmark', async ({ page, apiUrl }) => {
     // This test measures how long it takes to run essential smoke tests
     const operations = [
       () => page.request.get(`${apiUrl}/health`),

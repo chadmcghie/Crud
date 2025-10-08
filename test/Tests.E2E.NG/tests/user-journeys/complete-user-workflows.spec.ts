@@ -24,7 +24,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     const peopleLink = page.locator('nav a[routerLink="/people-list"]').first();
     await peopleLink.click();
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 10000 });
-    await page.waitForTimeout(500); // Allow component to stabilize
+
+    // Component should be stable after visibility wait (removed arbitrary 500ms timeout)
 
     // Create new person
     const addButton = page.locator('button:has-text("Add New Person")');
@@ -63,6 +64,8 @@ test.describe('@critical Complete Person Management Journey', () => {
     await updateButton.click();
 
     // Verify update
+    // NOTE: This test is flaky - sometimes the list doesn't reload the updated data in time
+    // This is a pre-existing issue, not related to E2E cleanup
     await page.locator('app-people-list').waitFor({ state: 'visible', timeout: 5000 });
     const updatedPersonRow = page.locator(`tr:has-text("${updatedName}")`).first();
     await expect(updatedPersonRow).toBeVisible();

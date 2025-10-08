@@ -24,8 +24,8 @@ test.describe('Password Reset Flow @smoke', () => {
     });
     expect(registerResponse.ok()).toBeTruthy();
 
-    // Add a small delay to avoid rate limiting issues
-    await page.waitForTimeout(1000);
+    // API response confirms user is registered - no delay needed
+    // (removed arbitrary 1000ms timeout for rate limiting)
 
     // Step 2: Navigate to forgot password page
     await page.goto(`${baseUrl}/forgot-password`);

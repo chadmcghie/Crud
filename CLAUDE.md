@@ -276,3 +276,4 @@ All endpoints use tag-based filtering (`"live"` and `"ready"` tags) on the `Data
 - NEVER REBASE!!! NO EXCEPTIONS!!!
 - Manual E2E Tests should be run from the branch that pushed the changes.  Do this by using --ref and -f params
 - When I ask for e2e tests, run all e2e tests;  if i want smoke tests, i will ask for smoke tests;
+- When I ask for e2e tests on CI, run them on using the existing branch name for both ref and f branch: parameters.

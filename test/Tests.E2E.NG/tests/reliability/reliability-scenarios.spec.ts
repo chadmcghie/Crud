@@ -97,7 +97,9 @@ test.describe('@smoke Reliability - Baseline Validation', () => {
     // Test error recovery - navigate to invalid route programmatically
     try {
       await page.goto(`${baseURL}/invalid-route`);
-      await page.waitForTimeout(1000); // Brief wait to see if Angular handles it
+
+      // Angular should handle invalid routes (removed arbitrary 1000ms timeout)
+      // The checks below will verify if Angular handled it correctly
 
       // Check if we're redirected or if we stayed on invalid route
       const currentUrl = page.url();

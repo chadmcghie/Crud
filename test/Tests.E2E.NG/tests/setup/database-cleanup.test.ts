@@ -20,7 +20,7 @@ test.describe('Simplified Database Cleanup', () => {
     }
   });
 
-  test('should delete database file if exists', async () => {
+  test('@meta should delete database file if exists', async () => {
     // Create a test database file
     await fs.writeFile(testDbPath, 'test database content');
     
@@ -36,7 +36,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(existsAfter).toBe(false);
   });
 
-  test('should handle non-existent file gracefully', async () => {
+  test('@meta should handle non-existent file gracefully', async () => {
     const nonExistentPath = path.join(tempDir, 'non-existent.db');
     
     // Try to delete non-existent file
@@ -46,7 +46,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(result).toBe(false);
   });
 
-  test('should create fresh database file', async () => {
+  test('@meta should create fresh database file', async () => {
     // Ensure file doesn't exist
     await fs.unlink(testDbPath).catch(() => {});
     
@@ -58,7 +58,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(stats.size).toBe(0);
   });
 
-  test('should reset database with delete and recreate', async () => {
+  test('@meta should reset database with delete and recreate', async () => {
     // Create initial database with content
     await fs.writeFile(testDbPath, 'old content');
     
@@ -71,7 +71,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(content).toBe('');
   });
 
-  test('should provide unique database names per test run', async () => {
+  test('@meta should provide unique database names per test run', async () => {
     const createUniqueDatabasePath = () => {
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(7);
@@ -85,7 +85,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(db1).not.toBe(db2);
   });
 
-  test('should clean up old test databases', async () => {
+  test('@meta should clean up old test databases', async () => {
     // Create test databases with different ages
     const oldDbPath = path.join(tempDir, 'TestDB_old.db');
     const newDbPath = path.join(tempDir, 'TestDB_new.db');
@@ -107,7 +107,7 @@ test.describe('Simplified Database Cleanup', () => {
     expect(remainingTestDbs.length).toBe(0);
   });
 
-  test('should ensure directory exists before creating database', async () => {
+  test('@meta should ensure directory exists before creating database', async () => {
     const nestedPath = path.join(tempDir, 'nested', 'dir', 'test.db');
     const dir = path.dirname(nestedPath);
     
@@ -122,7 +122,7 @@ test.describe('Simplified Database Cleanup', () => {
     await fs.rmdir(path.join(tempDir, 'nested'), { recursive: true }).catch(() => {});
   });
 
-  test('should handle concurrent database operations', async () => {
+  test('@meta should handle concurrent database operations', async () => {
     const operations = [];
     
     // Simulate concurrent operations
