@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Controllers;
 using App.Models;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.Integration.Backend.Infrastructure;
@@ -26,14 +25,14 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.GetAsync("/api/database/status");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             // Basic validation that the response contains expected properties
-            content.Should().Contain("environment");
-            content.Should().Contain("canConnect");
-            content.Should().Contain("peopleCount");
-            content.Should().Contain("rolesCount");
+            Assert.Contains("environment", content);
+            Assert.Contains("canConnect", content);
+            Assert.Contains("peopleCount", content);
+            Assert.Contains("rolesCount", content);
         });
     }
 
@@ -49,11 +48,11 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/database/seed", seedRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().Contain("Database seeded successfully");
-            content.Should().Contain("\"workerIndex\":1");
+            Assert.Contains("Database seeded successfully", content);
+            Assert.Contains("\"workerIndex\":1", content);
         });
     }
 
@@ -66,16 +65,16 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.GetAsync("/api/database/validate-pre-test?workerIndex=1");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var result = JsonSerializer.Deserialize<DatabaseValidationResult>(content, options);
 
-            result.Should().NotBeNull();
-            result!.WorkerIndex.Should().Be(1);
-            result.ValidationType.Should().Be("PreTest");
-            result.Stats.Should().NotBeNull();
+            Assert.NotNull(result);
+            Assert.Equal(1, result!.WorkerIndex);
+            Assert.Equal("PreTest", result.ValidationType);
+            Assert.NotNull(result.Stats);
         });
     }
 
@@ -92,12 +91,12 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/database/reset", resetRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().Contain("Database reset successfully");
-            content.Should().Contain("\"workerIndex\":1");
-            content.Should().Contain("duration");
+            Assert.Contains("Database reset successfully", content);
+            Assert.Contains("\"workerIndex\":1", content);
+            Assert.Contains("duration", content);
         });
     }
 
@@ -114,7 +113,7 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.PostAsJsonAsync("/api/database/reset", resetRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         });
     }
 
@@ -127,11 +126,11 @@ public class DatabaseControllerTests : IntegrationTestBase
             var response = await Client.GetAsync("/api/database/verify-integrity?workerIndex=1");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().Contain("isValid");
-            content.Should().Contain("\"workerIndex\":1");
+            Assert.Contains("isValid", content);
+            Assert.Contains("\"workerIndex\":1", content);
         });
     }
 }

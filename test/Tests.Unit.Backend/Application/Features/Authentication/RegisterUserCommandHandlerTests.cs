@@ -71,12 +71,12 @@ public class RegisterUserCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
-            result.AccessToken.Should().Be(accessToken);
-            result.RefreshToken.Should().Be(refreshTokenValue);
-            result.Email.Should().Be(command.Email);
-            result.UserId.Should().NotBeEmpty();
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(accessToken, result.AccessToken);
+            Assert.Equal(refreshTokenValue, result.RefreshToken);
+            Assert.Equal(command.Email, result.Email);
+            Assert.NotEqual(Guid.Empty, result.UserId);
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.Is<User>(u =>
@@ -120,11 +120,11 @@ public class RegisterUserCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Email already exists");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Email already exists", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(),
@@ -152,8 +152,8 @@ public class RegisterUserCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Success.Should().BeFalse();
-            result.Error.Should().Contain("format is invalid");
+            Assert.False(result.Success);
+            Assert.Contains("format is invalid", result.Error);
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(),
@@ -209,7 +209,7 @@ public class RegisterUserCommandHandlerTests
             var exception = await Assert.ThrowsAsync<Exception>(
                 () => _handler.Handle(command, CancellationToken.None));
 
-            exception.Message.Should().Be("Database error");
+            Assert.Equal("Database error", exception.Message);
         }
 
         [Theory]
@@ -231,9 +231,9 @@ public class RegisterUserCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Contain("Password");
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Contains("Password", result.Error);
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(),
@@ -280,9 +280,9 @@ public class RegisterUserCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue(); // Should succeed with defaults
-            result.AccessToken.Should().Be("access_token");
+            Assert.NotNull(result);
+            Assert.True(result.Success); // Should succeed with defaults
+            Assert.Equal("access_token", result.AccessToken);
 
             _mockUserRepository.Verify(x => x.AddAsync(
                 It.IsAny<User>(),

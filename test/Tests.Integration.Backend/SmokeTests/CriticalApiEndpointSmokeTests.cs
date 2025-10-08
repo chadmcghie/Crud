@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
@@ -50,22 +49,19 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
                 var response = await authenticatedClient.GetAsync(endpoint);
 
                 // Endpoint should be accessible and return OK
-                response.StatusCode.Should().Be(HttpStatusCode.OK,
-              $"{endpoint} should be accessible in {environment} environment");
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
                 // Should return JSON content
-                response.Content.Headers.ContentType?.MediaType.Should().Be("application/json",
-              $"{endpoint} should return JSON in {environment} environment");
+                Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
 
                 var content = await response.Content.ReadAsStringAsync();
-                content.Should().NotBeNullOrEmpty($"{endpoint} should return content in {environment}");
+                Assert.False(string.IsNullOrEmpty(content));
 
                 // Validate JSON structure
                 try
                 {
                     var jsonResponse = JsonSerializer.Deserialize<JsonElement>(content);
-                    jsonResponse.ValueKind.Should().Be(JsonValueKind.Array,
-                  $"{endpoint} should return JSON array in {environment} environment");
+                    Assert.Equal(JsonValueKind.Array, jsonResponse.ValueKind);
                 }
                 catch (JsonException ex)
                 {
@@ -78,8 +74,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
         }, $"Core CRUD endpoints in {environment}");
 
         // All endpoints should be tested within time limit
-        executionTime.TotalSeconds.Should().BeLessThan(15,
-          $"All core endpoints should be accessible within 15 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 15);
 
         _output.WriteLine($"Core endpoints in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -100,25 +95,24 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
 
             // Test GET (list)
             var getResponse = await authenticatedClient.GetAsync("/api/roles");
-            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
             // Test POST (create) with minimal data
             var createRequest = new { Name = $"SmokeTestRole_{environment}_{Guid.NewGuid().ToString("N")[..8]}" };
             var postResponse = await authenticatedClient.PostAsJsonAsync("/api/roles", createRequest);
 
             // Should either succeed or return validation error
-            postResponse.StatusCode.Should().BeOneOf(
-          HttpStatusCode.Created,
-          HttpStatusCode.BadRequest // Validation errors acceptable
-        );
+            Assert.True(
+                postResponse.StatusCode == HttpStatusCode.Created ||
+                postResponse.StatusCode == HttpStatusCode.BadRequest
+            );
 
             if (postResponse.StatusCode == HttpStatusCode.Created)
             {
                 var content = await postResponse.Content.ReadAsStringAsync();
                 var createdRole = JsonSerializer.Deserialize<JsonElement>(content);
 
-                createdRole.TryGetProperty("id", out var idProperty).Should().BeTrue(
-              $"Created role should have ID in {environment}");
+                Assert.True(createdRole.TryGetProperty("id", out var idProperty));
 
                 _output.WriteLine($"✓ Role created successfully in {environment}");
             }
@@ -129,8 +123,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
 
         }, $"Roles CRUD operations in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Roles CRUD test should complete within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"Roles CRUD in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -151,11 +144,11 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
 
             // Test GET (list)
             var getResponse = await authenticatedClient.GetAsync("/api/people");
-            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
             var content = await getResponse.Content.ReadAsStringAsync();
             var peopleArray = JsonSerializer.Deserialize<JsonElement>(content);
-            peopleArray.ValueKind.Should().Be(JsonValueKind.Array);
+            Assert.Equal(JsonValueKind.Array, peopleArray.ValueKind);
 
             _output.WriteLine($"✓ People endpoint accessible and returns array in {environment}");
 
@@ -164,18 +157,17 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
             var postResponse = await authenticatedClient.PostAsJsonAsync("/api/people", createRequest);
 
             // Should respond appropriately (either success or validation error)
-            postResponse.StatusCode.Should().BeOneOf(
-          HttpStatusCode.Created,
-          HttpStatusCode.BadRequest,
-          HttpStatusCode.UnprocessableEntity
-        );
+            Assert.True(
+                postResponse.StatusCode == HttpStatusCode.Created ||
+                postResponse.StatusCode == HttpStatusCode.BadRequest ||
+                postResponse.StatusCode == HttpStatusCode.UnprocessableEntity
+            );
 
             _output.WriteLine($"✓ People POST endpoint responds appropriately in {environment}");
 
         }, $"People operations in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"People operations should complete within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"People operations in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -196,26 +188,22 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
 
             // Test 404 handling
             var notFoundResponse = await authenticatedClient.GetAsync("/api/nonexistent");
-            notFoundResponse.StatusCode.Should().Be(HttpStatusCode.NotFound,
-          $"Non-existent endpoints should return 404 in {environment}");
+            Assert.Equal(HttpStatusCode.NotFound, notFoundResponse.StatusCode);
 
             // Test invalid method
             var invalidMethodResponse = await authenticatedClient.PatchAsync("/api/roles", null);
-            invalidMethodResponse.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed,
-          $"Invalid methods should return 405 in {environment}");
+            Assert.Equal(HttpStatusCode.MethodNotAllowed, invalidMethodResponse.StatusCode);
 
             // Test malformed JSON
             var malformedContent = new StringContent("{ invalid json", System.Text.Encoding.UTF8, "application/json");
             var malformedResponse = await authenticatedClient.PostAsync("/api/roles", malformedContent);
-            malformedResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest,
-          $"Malformed JSON should return 400 in {environment}");
+            Assert.Equal(HttpStatusCode.BadRequest, malformedResponse.StatusCode);
 
             _output.WriteLine($"✓ Error handling working correctly in {environment}");
 
         }, $"Error handling in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(8,
-          $"Error handling tests should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 8);
 
         _output.WriteLine($"Error handling in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -247,8 +235,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
             // All requests should succeed
             foreach (var response in responses)
             {
-                response.StatusCode.Should().Be(HttpStatusCode.OK,
-              $"Concurrent requests should succeed in {environment}");
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             }
 
             _output.WriteLine($"✓ Handled 5 concurrent requests successfully in {environment}");
@@ -256,8 +243,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
         }, $"API responsiveness in {environment}");
 
         // Performance threshold for smoke tests
-        executionTime.TotalSeconds.Should().BeLessThan(8,
-          $"API responsiveness test should complete within 8 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 8);
 
         _output.WriteLine($"API responsiveness in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -282,7 +268,10 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
             foreach (var endpoint in coreEndpoints)
             {
                 var response = await authenticatedClient.GetAsync(endpoint);
-                response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Unauthorized);
+                Assert.True(
+                    response.StatusCode == HttpStatusCode.OK ||
+                    response.StatusCode == HttpStatusCode.Unauthorized
+                );
             }
 
             _output.WriteLine($"Critical endpoints validated for {environment}: {totalStopwatch.ElapsedMilliseconds}ms elapsed");
@@ -291,8 +280,7 @@ public class CriticalApiEndpointSmokeTests : SmokeTestBase
         totalStopwatch.Stop();
 
         // Validate overall time constraint
-        totalStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(30,
-          "All environment critical endpoint tests should complete within 30 seconds total");
+        Assert.True(totalStopwatch.Elapsed.TotalSeconds < 30);
 
         _output.WriteLine($"Total critical endpoints test time: {totalStopwatch.Elapsed.TotalSeconds:F2} seconds");
     }

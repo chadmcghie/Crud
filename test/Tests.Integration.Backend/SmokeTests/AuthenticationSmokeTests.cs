@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using App.Features.Authentication;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,14 +42,14 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
 
             // Should either succeed or return a validation error (but endpoint should be available)
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,
-          HttpStatusCode.Created,
-          HttpStatusCode.BadRequest // Validation errors are acceptable in smoke tests
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.Created ||
+                response.StatusCode == HttpStatusCode.BadRequest
+            );
 
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotBeNullOrEmpty($"Registration response should have content in {environment}");
+            Assert.False(string.IsNullOrEmpty(content));
 
             // If successful, response should be JSON
             if (response.IsSuccessStatusCode)
@@ -58,20 +57,18 @@ public class AuthenticationSmokeTests : SmokeTestBase
                 try
                 {
                     var jsonResponse = JsonSerializer.Deserialize<JsonElement>(content);
-                    jsonResponse.ValueKind.Should().Be(JsonValueKind.Object,
-                  $"Successful registration should return JSON object in {environment}");
+                    Assert.Equal(JsonValueKind.Object, jsonResponse.ValueKind);
                 }
                 catch (JsonException)
                 {
                     // If not JSON, at least verify we got a response
-                    content.Length.Should().BeGreaterThan(0);
+                    Assert.True(content.Length > 0);
                 }
             }
 
         }, $"Registration endpoint in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Registration should complete within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"Registration in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -96,16 +93,14 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
 
             // Should return unauthorized for invalid credentials
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
-          $"Login with invalid credentials should return 401 in {environment} environment");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             // Content might be empty for 401 responses, that's acceptable
 
         }, $"Login endpoint (invalid credentials) in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Login attempt should complete within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"Login (invalid) in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -130,23 +125,20 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
 
             // Should not return method not allowed or not found (endpoint should exist)
-            response.StatusCode.Should().NotBe(HttpStatusCode.MethodNotAllowed,
-          $"Login endpoint should accept POST method in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.MethodNotAllowed, response.StatusCode);
 
-            response.StatusCode.Should().NotBe(HttpStatusCode.NotFound,
-          $"Login endpoint should exist in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
 
             // Expected responses: Unauthorized (user doesn't exist) or BadRequest (validation)
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.Unauthorized,
-          HttpStatusCode.BadRequest,
-          HttpStatusCode.OK // If the user happens to exist
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.BadRequest ||
+                response.StatusCode == HttpStatusCode.OK
+            );
 
         }, $"Login endpoint structure test in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Login structure test should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"Login structure in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -165,13 +157,11 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.GetAsync("/api/auth/me");
 
             // Should return unauthorized without authentication token
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
-          $"/api/auth/me should require authentication in {environment} environment");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
         }, $"Auth/me endpoint (no auth) in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Auth/me without token should be very fast in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Auth/me (no auth) in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -195,22 +185,19 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.PostAsJsonAsync("/api/auth/refresh", refreshRequest);
 
             // Endpoint should exist (not return 404 or 405)
-            response.StatusCode.Should().NotBe(HttpStatusCode.NotFound,
-          $"Refresh endpoint should exist in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
 
-            response.StatusCode.Should().NotBe(HttpStatusCode.MethodNotAllowed,
-          $"Refresh endpoint should accept POST in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.MethodNotAllowed, response.StatusCode);
 
             // Should return bad request or unauthorized for invalid token
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.BadRequest,
-          HttpStatusCode.Unauthorized
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.BadRequest ||
+                response.StatusCode == HttpStatusCode.Unauthorized
+            );
 
         }, $"Refresh endpoint test in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Refresh endpoint test should be fast in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Refresh endpoint in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -229,23 +216,20 @@ public class AuthenticationSmokeTests : SmokeTestBase
             var response = await client.PostAsync("/api/auth/logout", null);
 
             // Endpoint should exist and accept requests
-            response.StatusCode.Should().NotBe(HttpStatusCode.NotFound,
-          $"Logout endpoint should exist in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
 
-            response.StatusCode.Should().NotBe(HttpStatusCode.MethodNotAllowed,
-          $"Logout endpoint should accept POST in {environment} environment");
+            Assert.NotEqual(HttpStatusCode.MethodNotAllowed, response.StatusCode);
 
             // Should return OK or Unauthorized (depending on whether auth is required)
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,
-          HttpStatusCode.NoContent,
-          HttpStatusCode.Unauthorized
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.NoContent ||
+                response.StatusCode == HttpStatusCode.Unauthorized
+            );
 
         }, $"Logout endpoint test in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Logout endpoint test should be fast in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Logout endpoint in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -270,10 +254,10 @@ public class AuthenticationSmokeTests : SmokeTestBase
             };
 
             var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
-            loginResponse.StatusCode.Should().NotBe(HttpStatusCode.NotFound);
+            Assert.NotEqual(HttpStatusCode.NotFound, loginResponse.StatusCode);
 
             var meResponse = await client.GetAsync("/api/auth/me");
-            meResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            Assert.Equal(HttpStatusCode.Unauthorized, meResponse.StatusCode);
 
             _output.WriteLine($"Auth endpoints validated for {environment}: {totalStopwatch.ElapsedMilliseconds}ms elapsed");
         }
@@ -281,8 +265,7 @@ public class AuthenticationSmokeTests : SmokeTestBase
         totalStopwatch.Stop();
 
         // Validate overall time constraint
-        totalStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(30,
-          "All environment authentication tests should complete within 30 seconds total");
+        Assert.True(totalStopwatch.Elapsed.TotalSeconds < 30);
 
         _output.WriteLine($"Total authentication test time: {totalStopwatch.Elapsed.TotalSeconds:F2} seconds");
     }

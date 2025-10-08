@@ -1,5 +1,4 @@
 using Domain.Entities.Authentication;
-using FluentAssertions;
 using Xunit;
 
 namespace Tests.Unit.Backend.Domain;
@@ -17,17 +16,18 @@ public class PasswordResetTokenTests
         var token = PasswordResetToken.Create(userId, expiresAt);
 
         // Assert
-        token.Should().NotBeNull();
-        token.Id.Should().NotBeEmpty();
-        token.Token.Should().NotBeNullOrEmpty();
-        token.Token.Length.Should().BeGreaterOrEqualTo(32); // Minimum secure token length
-        token.UserId.Should().Be(userId);
-        token.ExpiresAt.Should().Be(expiresAt);
-        token.IsUsed.Should().BeFalse();
-        token.UsedAt.Should().BeNull();
-        token.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        token.IsExpired.Should().BeFalse();
-        token.IsValid.Should().BeTrue();
+        Assert.NotNull(token);
+        Assert.NotEqual(Guid.Empty, token.Id);
+        Assert.NotNull(token.Token);
+        Assert.NotEmpty(token.Token);
+        Assert.True(token.Token.Length >= 32); // Minimum secure token length
+        Assert.Equal(userId, token.UserId);
+        Assert.Equal(expiresAt, token.ExpiresAt);
+        Assert.False(token.IsUsed);
+        Assert.Null(token.UsedAt);
+        Assert.True((DateTime.UtcNow - token.CreatedAt).TotalSeconds < 1);
+        Assert.False(token.IsExpired);
+        Assert.True(token.IsValid);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class PasswordResetTokenTests
         var token2 = PasswordResetToken.Create(userId, expiresAt);
 
         // Assert
-        token1.Token.Should().NotBe(token2.Token);
+        Assert.NotEqual(token2.Token, token1.Token);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class PasswordResetTokenTests
         var token = PasswordResetToken.Create(userId);
 
         // Assert
-        token.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(1), TimeSpan.FromSeconds(1));
+        Assert.True((token.ExpiresAt - DateTime.UtcNow.AddHours(1)).TotalSeconds < 1);
     }
 
     [Fact]
@@ -65,12 +65,9 @@ public class PasswordResetTokenTests
         var userId = Guid.Empty;
         var expiresAt = DateTime.UtcNow.AddHours(1);
 
-        // Act
-        var action = () => PasswordResetToken.Create(userId, expiresAt);
-
-        // Assert
-        action.Should().Throw<ArgumentException>()
-            .WithMessage("UserId cannot be empty*");
+        // Act & Assert
+        var ex = Assert.Throws<ArgumentException>(() => PasswordResetToken.Create(userId, expiresAt));
+        Assert.Contains("UserId cannot be empty", ex.Message);
     }
 
     [Fact]
@@ -80,12 +77,9 @@ public class PasswordResetTokenTests
         var userId = Guid.NewGuid();
         var expiresAt = DateTime.UtcNow.AddHours(-1);
 
-        // Act
-        var action = () => PasswordResetToken.Create(userId, expiresAt);
-
-        // Assert
-        action.Should().Throw<ArgumentException>()
-            .WithMessage("Expiration date must be in the future*");
+        // Act & Assert
+        var ex = Assert.Throws<ArgumentException>(() => PasswordResetToken.Create(userId, expiresAt));
+        Assert.Contains("Expiration date must be in the future", ex.Message);
     }
 
     [Fact]
@@ -99,7 +93,7 @@ public class PasswordResetTokenTests
         );
 
         // Act & Assert
-        token.IsExpired.Should().BeTrue();
+        Assert.True(token.IsExpired);
     }
 
     [Fact]
@@ -109,7 +103,7 @@ public class PasswordResetTokenTests
         var token = PasswordResetToken.Create(Guid.NewGuid(), DateTime.UtcNow.AddHours(1));
 
         // Act & Assert
-        token.IsExpired.Should().BeFalse();
+        Assert.False(token.IsExpired);
     }
 
     [Fact]
@@ -119,7 +113,7 @@ public class PasswordResetTokenTests
         var token = PasswordResetToken.Create(Guid.NewGuid(), DateTime.UtcNow.AddHours(1));
 
         // Act & Assert
-        token.IsValid.Should().BeTrue();
+        Assert.True(token.IsValid);
     }
 
     [Fact]
@@ -130,8 +124,8 @@ public class PasswordResetTokenTests
         token.MarkAsUsed();
 
         // Act & Assert
-        token.IsValid.Should().BeFalse();
-        token.IsUsed.Should().BeTrue();
+        Assert.False(token.IsValid);
+        Assert.True(token.IsUsed);
     }
 
     [Fact]
@@ -145,7 +139,7 @@ public class PasswordResetTokenTests
         );
 
         // Act & Assert
-        token.IsValid.Should().BeFalse();
+        Assert.False(token.IsValid);
     }
 
     [Fact]
@@ -158,10 +152,10 @@ public class PasswordResetTokenTests
         token.MarkAsUsed();
 
         // Assert
-        token.IsUsed.Should().BeTrue();
-        token.UsedAt.Should().NotBeNull();
-        token.UsedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        token.IsValid.Should().BeFalse();
+        Assert.True(token.IsUsed);
+        Assert.NotNull(token.UsedAt);
+        Assert.True((DateTime.UtcNow - token.UsedAt.Value).TotalSeconds < 1);
+        Assert.False(token.IsValid);
     }
 
     [Fact]
@@ -177,7 +171,7 @@ public class PasswordResetTokenTests
         token.MarkAsUsed();
 
         // Assert
-        token.UsedAt.Should().Be(firstUsedAt);
+        Assert.Equal(firstUsedAt, token.UsedAt);
     }
 
     [Fact]
@@ -190,9 +184,9 @@ public class PasswordResetTokenTests
         token.Expire();
 
         // Assert
-        token.IsExpired.Should().BeTrue();
-        token.IsValid.Should().BeFalse();
-        token.ExpiresAt.Should().BeBefore(DateTime.UtcNow);
+        Assert.True(token.IsExpired);
+        Assert.False(token.IsValid);
+        Assert.True(token.ExpiresAt < DateTime.UtcNow);
     }
 
     [Fact]
@@ -206,7 +200,7 @@ public class PasswordResetTokenTests
         var isValid = token.ValidateToken(tokenString);
 
         // Assert
-        isValid.Should().BeTrue();
+        Assert.True(isValid);
     }
 
     [Fact]
@@ -219,7 +213,7 @@ public class PasswordResetTokenTests
         var isValid = token.ValidateToken("different-token");
 
         // Assert
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Fact]
@@ -236,7 +230,7 @@ public class PasswordResetTokenTests
         var isValid = token.ValidateToken("test-token");
 
         // Assert
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Fact]
@@ -251,7 +245,7 @@ public class PasswordResetTokenTests
         var isValid = token.ValidateToken(tokenString);
 
         // Assert
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Theory]
@@ -267,7 +261,7 @@ public class PasswordResetTokenTests
         var isValid = token.ValidateToken(invalidToken);
 
         // Assert
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Fact]
@@ -297,6 +291,6 @@ public class PasswordResetTokenTests
         // Assert - Times should be similar (within reasonable margin)
         // This is a basic timing attack protection test
         var timeDifference = Math.Abs(sw1.ElapsedMilliseconds - sw2.ElapsedMilliseconds);
-        timeDifference.Should().BeLessThan(50); // Reasonable threshold for constant-time comparison
+        Assert.True(timeDifference < 50); // Reasonable threshold for constant-time comparison
     }
 }

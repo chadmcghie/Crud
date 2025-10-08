@@ -171,10 +171,12 @@ After ALL tasks in tasks.md have been implemented (typically tasks 1-5 or howeve
   ACTION: execute all steps in the post-execution-tasks.md process_flow.
   **IMPORTANT**: This includes:
     - Running full test suite
+    - Architecture and standards review
     - Git workflow (commit, push, PR)
-    - Verifying task completion
+    - Verifying task completion and closing GitHub issues
     - Updating roadmap (if applicable)
     - Creating recap document
+    - Creating completed.md file in spec folder
     - Generating completion summary
     - Playing notification sound
   

@@ -4,7 +4,6 @@ using System.Text.Json;
 using Api;
 using App.Features.Authentication;
 using Domain.Entities.Authentication;
-using FluentAssertions;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,12 +51,12 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/forgot-password", request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
+            Assert.False(string.IsNullOrEmpty(result.GetProperty("message").GetString()));
         });
     }
 
@@ -76,12 +75,12 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/forgot-password", request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("error").GetString().Should().Contain("format");
+            Assert.Contains("format", result.GetProperty("error").GetString());
         });
     }
 
@@ -100,13 +99,13 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/forgot-password", request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
             // Should return success to prevent email enumeration
-            result.GetProperty("message").GetString().Should().Contain("If the email exists");
+            Assert.Contains("If the email exists", result.GetProperty("message").GetString());
         });
     }
 
@@ -132,7 +131,7 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            token.Should().NotBeNull();
+            Assert.NotNull(token);
 
             var validateRequest = new ValidateResetTokenQuery
             {
@@ -143,14 +142,14 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/validate-reset-token", validateRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("isValid").GetBoolean().Should().BeTrue();
-            result.GetProperty("isExpired").GetBoolean().Should().BeFalse();
-            result.GetProperty("isUsed").GetBoolean().Should().BeFalse();
+            Assert.True(result.GetProperty("isValid").GetBoolean());
+            Assert.False(result.GetProperty("isExpired").GetBoolean());
+            Assert.False(result.GetProperty("isUsed").GetBoolean());
         });
     }
 
@@ -169,12 +168,12 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/validate-reset-token", request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("isValid").GetBoolean().Should().BeFalse();
+            Assert.False(result.GetProperty("isValid").GetBoolean());
         });
     }
 
@@ -200,7 +199,7 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            token.Should().NotBeNull();
+            Assert.NotNull(token);
 
             var resetRequest = new ResetPasswordCommand
             {
@@ -212,16 +211,16 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/reset-password", resetRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("message").GetString().Should().Contain("successfully");
+            Assert.Contains("successfully", result.GetProperty("message").GetString());
 
             // Verify token is marked as used
             await dbContext.Entry(token).ReloadAsync();
-            token.IsUsed.Should().BeTrue();
+            Assert.True(token.IsUsed);
         });
     }
 
@@ -241,12 +240,12 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/reset-password", request);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("error").GetString().Should().Contain("Invalid");
+            Assert.Contains("Invalid", result.GetProperty("error").GetString());
         });
     }
 
@@ -272,7 +271,7 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            token.Should().NotBeNull();
+            Assert.NotNull(token);
 
             var resetRequest = new ResetPasswordCommand
             {
@@ -284,12 +283,12 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var response = await PostJsonWithErrorLoggingAsync("/api/auth/reset-password", resetRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(content);
 
-            result.GetProperty("error").GetString().Should().Contain("Password must");
+            Assert.Contains("Password must", result.GetProperty("error").GetString());
         });
     }
 
@@ -305,7 +304,7 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             // Step 1: Request password reset
             var forgotPasswordRequest = new ForgotPasswordCommand { Email = email };
             var forgotResponse = await PostJsonWithErrorLoggingAsync("/api/auth/forgot-password", forgotPasswordRequest);
-            forgotResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, forgotResponse.StatusCode);
 
             // Step 2: Get token from database (simulating email)
             using var scope = Factory.Services.CreateScope();
@@ -313,16 +312,16 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
             var token = await dbContext.PasswordResetTokens
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
-            token.Should().NotBeNull();
+            Assert.NotNull(token);
 
             // Step 3: Validate token
             var validateRequest = new ValidateResetTokenQuery { Token = token!.Token };
             var validateResponse = await PostJsonWithErrorLoggingAsync("/api/auth/validate-reset-token", validateRequest);
-            validateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, validateResponse.StatusCode);
 
             var validateContent = await validateResponse.Content.ReadAsStringAsync();
             var validateResult = JsonSerializer.Deserialize<JsonElement>(validateContent);
-            validateResult.GetProperty("isValid").GetBoolean().Should().BeTrue();
+            Assert.True(validateResult.GetProperty("isValid").GetBoolean());
 
             // Step 4: Reset password
             var resetRequest = new ResetPasswordCommand
@@ -331,24 +330,24 @@ public class AuthControllerPasswordResetTests : IntegrationTestBase
                 NewPassword = "NewSecureP@ssw0rd123!"
             };
             var resetResponse = await PostJsonWithErrorLoggingAsync("/api/auth/reset-password", resetRequest);
-            resetResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
 
             // Step 5: Verify token is now invalid
             var revalidateResponse = await PostJsonWithErrorLoggingAsync("/api/auth/validate-reset-token", validateRequest);
-            revalidateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, revalidateResponse.StatusCode);
 
             var revalidateContent = await revalidateResponse.Content.ReadAsStringAsync();
             var revalidateResult = JsonSerializer.Deserialize<JsonElement>(revalidateContent);
-            revalidateResult.GetProperty("isValid").GetBoolean().Should().BeFalse();
-            revalidateResult.GetProperty("isUsed").GetBoolean().Should().BeTrue();
+            Assert.False(revalidateResult.GetProperty("isValid").GetBoolean());
+            Assert.True(revalidateResult.GetProperty("isUsed").GetBoolean());
 
             // Step 6: Verify can't use the same token again
             var secondResetResponse = await PostJsonWithErrorLoggingAsync("/api/auth/reset-password", resetRequest);
-            secondResetResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, secondResetResponse.StatusCode);
 
             var errorContent = await secondResetResponse.Content.ReadAsStringAsync();
             var errorResult = JsonSerializer.Deserialize<JsonElement>(errorContent);
-            errorResult.GetProperty("error").GetString().Should().Contain("already been used");
+            Assert.Contains("already been used", errorResult.GetProperty("error").GetString());
         });
     }
 }

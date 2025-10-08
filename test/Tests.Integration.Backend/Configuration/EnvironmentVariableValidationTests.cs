@@ -41,11 +41,9 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
         var environment = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>().EnvironmentName;
 
         // Assert
-        aspNetCoreEnvironment.Should().Be(expectedEnvironment,
-            $"ASPNETCORE_ENVIRONMENT should be {expectedEnvironment} for {configEnvironment} configuration");
+        Assert.Equal(expectedEnvironment, aspNetCoreEnvironment);
 
-        environment.Should().Be(expectedEnvironment,
-            $"IWebHostEnvironment.EnvironmentName should be {expectedEnvironment} for {configEnvironment} configuration");
+        Assert.Equal(expectedEnvironment, environment);
     }
 
     /// <summary>
@@ -65,18 +63,18 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Check for required environment variables
         var aspNetCoreEnvironment = configuration["ASPNETCORE_ENVIRONMENT"];
-        aspNetCoreEnvironment.Should().NotBeNullOrEmpty(
-            $"ASPNETCORE_ENVIRONMENT should be set in {environment} configuration");
+        Assert.NotNull(aspNetCoreEnvironment);
+        Assert.NotEmpty(aspNetCoreEnvironment);
 
         // Validate connection string is available (could come from env var or config file)
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty(
-            $"DefaultConnection should be available in {environment} configuration");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         // Check for any environment-specific overrides
         var allowedHosts = configuration["AllowedHosts"];
-        allowedHosts.Should().NotBeNullOrEmpty(
-            $"AllowedHosts should be configured in {environment} configuration");
+        Assert.NotNull(allowedHosts);
+        Assert.NotEmpty(allowedHosts);
     }
 
     /// <summary>
@@ -99,23 +97,20 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         // Assert
-        databaseProvider.Should().NotBeNullOrEmpty(
-            $"DatabaseProvider should be configured in {environment} environment");
+        Assert.NotNull(databaseProvider);
+        Assert.NotEmpty(databaseProvider);
 
         // Validate that the actual provider matches the expected provider for the environment
-        databaseProvider.Should().Be(expectedProvider,
-            $"DatabaseProvider in {environment} environment should be {expectedProvider}");
+        Assert.Equal(expectedProvider, databaseProvider);
 
         // Validate connection string format matches the provider
         if (databaseProvider == "SQLite")
         {
-            connectionString.Should().Contain(".db",
-                $"SQLite connection string should contain .db file reference in {environment}");
+            Assert.Contains(".db", connectionString);
         }
         else if (databaseProvider == "SqlServer")
         {
-            connectionString.Should().Contain("Server=",
-                $"SQL Server connection string should contain Server= in {environment}");
+            Assert.Contains("Server=", connectionString);
         }
     }
 
@@ -144,8 +139,7 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
             var configValue = configuration[testKey];
 
             // Assert
-            configValue.Should().Be(testValue,
-                $"Environment variable should override configuration file value in {environment}");
+            Assert.Equal(testValue, configValue);
         }
         finally
         {
@@ -171,16 +165,15 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Check that sensitive values are not logged or exposed
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty(
-            $"Connection string should be available in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         // Validate that sensitive information is properly handled
         // Note: This is more of a documentation test - in real scenarios you'd check logging configuration
         var jwtSecret = configuration["JWT:Secret"];
         if (!string.IsNullOrEmpty(jwtSecret))
         {
-            jwtSecret.Length.Should().BeGreaterThan(10,
-                $"JWT secret should be sufficiently long in {environment} environment");
+            Assert.True(jwtSecret.Length > 10);
         }
     }
 
@@ -240,18 +233,16 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Test handling of missing values
         var nonExistentValue = configuration["NonExistentEnvironmentVariable"];
-        nonExistentValue.Should().BeNull(
-            "Non-existent environment variables should return null");
+        Assert.Null(nonExistentValue);
 
         // Test default value handling
         var defaultValue = configuration.GetValue<string>("NonExistentKey", "DefaultValue");
-        defaultValue.Should().Be("DefaultValue",
-            "Configuration should return default value for missing keys");
+        Assert.Equal("DefaultValue", defaultValue);
 
         // Test required configuration validation
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        connectionString.Should().NotBeNullOrEmpty(
-            $"Required configuration should be present in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
     }
 
     /// <summary>
@@ -279,8 +270,7 @@ public class EnvironmentVariableValidationTests : IClassFixture<SqliteTestWebApp
             var logLevel = configuration["Logging:LogLevel:Default"];
 
             // Assert
-            logLevel.Should().Be(testLogLevel,
-                $"Environment variable should override configuration binding in {environment}");
+            Assert.Equal(testLogLevel, logLevel);
         }
         finally
         {

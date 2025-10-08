@@ -1,5 +1,6 @@
 namespace Domain.Enums
 {
+    // Test: Validate both frontend and backend tests run
     public static class UserRole
     {
         public const string Admin = "Admin";

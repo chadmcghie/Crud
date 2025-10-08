@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
@@ -30,8 +29,7 @@ public class ResponseCompressionTests : IClassFixture<SqliteTestWebApplicationFa
         var response = await authenticatedClient.GetAsync("/api/people");
 
         // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        response.Content.Headers.ContentEncoding.Should().Contain("gzip",
-            "API responses should be compressed when client supports it for better performance");
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Contains("gzip", response.Content.Headers.ContentEncoding);
     }
 }

@@ -20,10 +20,10 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync("/api/roles");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var roles = await ReadJsonAsync<List<RoleDto>>(response);
-            roles.Should().NotBeNull();
-            roles.Should().BeEmpty();
+            Assert.NotNull(roles);
+            Assert.Empty(roles);
         });
     }
 
@@ -39,17 +39,17 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var createdRole = await ReadJsonAsync<RoleDto>(response);
 
-            createdRole.Should().NotBeNull();
-            createdRole!.Id.Should().NotBeEmpty();
-            createdRole.Name.Should().Be("Administrator");
-            createdRole.Description.Should().Be("System administrator role");
+            Assert.NotNull(createdRole);
+            Assert.NotEqual(Guid.Empty, createdRole!.Id);
+            Assert.Equal("Administrator", createdRole.Name);
+            Assert.Equal("System administrator role", createdRole.Description);
 
             // Verify location header
-            response.Headers.Location.Should().NotBeNull();
-            response.Headers.Location!.ToString().ToLowerInvariant().Should().Contain($"/api/roles/{createdRole.Id}".ToLowerInvariant());
+            Assert.NotNull(response.Headers.Location);
+            Assert.Contains($"/api/roles/{createdRole.Id}".ToLowerInvariant(), response.Headers.Location!.ToString().ToLowerInvariant());
         });
     }
 
@@ -65,7 +65,7 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedPostJsonAsync("/api/roles", invalidRequest);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         });
     }
 
@@ -86,13 +86,13 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync("/api/roles");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var roles = await ReadJsonAsync<List<RoleDto>>(response);
 
-            roles.Should().NotBeNull();
-            roles.Should().HaveCount(2);
-            roles.Should().Contain(r => r.Name == "Admin");
-            roles.Should().Contain(r => r.Name == "User");
+            Assert.NotNull(roles);
+            Assert.Equal(2, roles.Count);
+            Assert.Contains(roles, r => r.Name == "Admin");
+            Assert.Contains(roles, r => r.Name == "User");
         });
     }
 
@@ -110,13 +110,13 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync($"/api/roles/{createdRole!.Id}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var role = await ReadJsonAsync<RoleDto>(response);
 
-            role.Should().NotBeNull();
-            role!.Id.Should().Be(createdRole.Id);
-            role.Name.Should().Be("Manager");
-            role.Description.Should().Be("Department manager");
+            Assert.NotNull(role);
+            Assert.Equal(createdRole.Id, role!.Id);
+            Assert.Equal("Manager", role.Name);
+            Assert.Equal("Department manager", role.Description);
         });
     }
 
@@ -132,7 +132,7 @@ public class RolesControllerTests : IntegrationTestBase
             var response = await AuthenticatedGetAsync($"/api/roles/{nonExistentId}");
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         });
     }
 
@@ -150,15 +150,15 @@ public class RolesControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/roles/{createdRole!.Id}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the update
         var getResponse = await AuthenticatedGetAsync($"/api/roles/{createdRole.Id}");
         var updatedRole = await ReadJsonAsync<RoleDto>(getResponse);
 
-        updatedRole.Should().NotBeNull();
-        updatedRole!.Name.Should().Be("Updated");
-        updatedRole.Description.Should().Be("Updated description");
+        Assert.NotNull(updatedRole);
+        Assert.Equal("Updated", updatedRole!.Name);
+        Assert.Equal("Updated description", updatedRole.Description);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class RolesControllerTests : IntegrationTestBase
         var response = await AuthenticatedPutJsonAsync($"/api/roles/{nonExistentId}", updateRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -189,11 +189,11 @@ public class RolesControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/roles/{createdRole!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // Verify the role is deleted
         var getResponse = await AuthenticatedGetAsync($"/api/roles/{createdRole.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public class RolesControllerTests : IntegrationTestBase
         var response = await AuthenticatedDeleteAsync($"/api/roles/{nonExistentId}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
@@ -220,12 +220,12 @@ public class RolesControllerTests : IntegrationTestBase
         var response = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var createdRole = await ReadJsonAsync<RoleDto>(response);
 
-        createdRole.Should().NotBeNull();
-        createdRole!.Name.Should().Be("SimpleRole");
-        createdRole.Description.Should().BeNull();
+        Assert.NotNull(createdRole);
+        Assert.Equal("SimpleRole", createdRole!.Name);
+        Assert.Null(createdRole.Description);
     }
 
     [Fact]
@@ -236,17 +236,17 @@ public class RolesControllerTests : IntegrationTestBase
 
         // Act & Assert - Create role
         var createResponse = await AuthenticatedPostJsonAsync("/api/roles", createRequest);
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var createdRole = await ReadJsonAsync<RoleDto>(createResponse);
 
         // Act & Assert - Verify persistence with new request
         var getResponse = await AuthenticatedGetAsync($"/api/roles/{createdRole!.Id}");
-        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var retrievedRole = await ReadJsonAsync<RoleDto>(getResponse);
 
-        retrievedRole.Should().NotBeNull();
-        retrievedRole!.Id.Should().Be(createdRole.Id);
-        retrievedRole.Name.Should().Be("Persistent");
-        retrievedRole.Description.Should().Be("Should persist");
+        Assert.NotNull(retrievedRole);
+        Assert.Equal(createdRole.Id, retrievedRole!.Id);
+        Assert.Equal("Persistent", retrievedRole.Name);
+        Assert.Equal("Should persist", retrievedRole.Description);
     }
 }

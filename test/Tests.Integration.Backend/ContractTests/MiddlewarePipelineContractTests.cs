@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -35,7 +34,8 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         var response = await client.GetAsync("/health");
 
         // CORS middleware contract expectations
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.True(response.StatusCode == HttpStatusCode.OK ||
+                   response.StatusCode == HttpStatusCode.ServiceUnavailable);
 
         // Check if CORS headers are present (they may or may not be based on configuration)
         var corsHeaders = response.Headers.Where(h => h.Key.StartsWith("Access-Control")).ToList();
@@ -48,8 +48,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
             var allowOriginHeader = response.Headers.FirstOrDefault(h => h.Key == "Access-Control-Allow-Origin");
             if (allowOriginHeader.Key != null)
             {
-                allowOriginHeader.Value.Should().NotBeNullOrEmpty(
-                  "Access-Control-Allow-Origin header should have a value when present");
+                Assert.NotEmpty(allowOriginHeader.Value);
             }
         }
 
@@ -71,20 +70,20 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         var response = await client.GetAsync("/health");
 
         // Compression middleware contract expectations
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.True(response.StatusCode == HttpStatusCode.OK ||
+                   response.StatusCode == HttpStatusCode.ServiceUnavailable);
 
         // Response should be readable regardless of compression
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().NotBeNullOrEmpty("Response should be readable after compression middleware processing");
+        Assert.False(string.IsNullOrEmpty(content));
 
         // Check if compression was applied (optional contract)
         var contentEncoding = response.Content.Headers.ContentEncoding;
         if (contentEncoding.Any())
         {
             _output.WriteLine($"Content encoding in {environment}: {string.Join(", ", contentEncoding)}");
-            contentEncoding.Should().OnlyContain(encoding =>
-              encoding == "gzip" || encoding == "deflate" || encoding == "br",
-              "Only standard compression encodings should be used");
+            Assert.All(contentEncoding, encoding =>
+              Assert.True(encoding == "gzip" || encoding == "deflate" || encoding == "br"));
         }
 
         _output.WriteLine($"✓ Compression middleware contract validated for {environment}");
@@ -102,17 +101,15 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         var unauthenticatedResponse = await client.GetAsync("/api/roles");
 
         // Authentication middleware contract expectations
-        unauthenticatedResponse.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,           // If endpoint allows anonymous access
-          HttpStatusCode.Unauthorized); // If authentication is required
+        Assert.True(unauthenticatedResponse.StatusCode == HttpStatusCode.OK ||
+                   unauthenticatedResponse.StatusCode == HttpStatusCode.Unauthorized);
 
         // Test with invalid token
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "invalid-token");
         var invalidTokenResponse = await client.GetAsync("/api/roles");
 
-        invalidTokenResponse.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,           // If endpoint allows anonymous access
-          HttpStatusCode.Unauthorized); // If token validation is enforced
+        Assert.True(invalidTokenResponse.StatusCode == HttpStatusCode.OK ||
+                   invalidTokenResponse.StatusCode == HttpStatusCode.Unauthorized);
 
         _output.WriteLine($"✓ Authentication middleware contract validated for {environment}");
     }
@@ -129,23 +126,19 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         var response = await client.GetAsync("/api/nonexistent/endpoint");
 
         // Exception handling middleware contract expectations
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound,
-          "Exception handling middleware should return 404 for non-existent endpoints");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
 
         // Production environment should not expose detailed error information
         if (environment == "Production")
         {
-            content.ToLower().Should().NotContain("stack trace",
-              "Production environment should not expose stack traces");
-            content.ToLower().Should().NotContain("exception",
-              "Production environment should not expose detailed exception information");
+            Assert.DoesNotContain("stack trace", content.ToLower());
+            Assert.DoesNotContain("exception", content.ToLower());
         }
 
         // Response should be properly formatted
-        response.Content.Headers.ContentType?.MediaType.Should().NotBeNullOrEmpty(
-          "Error responses should have proper content type");
+        Assert.False(string.IsNullOrEmpty(response.Content.Headers.ContentType?.MediaType));
 
         _output.WriteLine($"✓ Exception handling middleware contract validated for {environment}");
     }
@@ -161,16 +154,17 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         // Verify logging services are properly registered
         using var scope = factory.Services.CreateScope();
         var loggerFactory = scope.ServiceProvider.GetService<ILoggerFactory>();
-        loggerFactory.Should().NotBeNull($"Logger factory should be available in {environment}");
+        Assert.NotNull(loggerFactory);
 
         var logger = scope.ServiceProvider.GetService<ILogger<MiddlewarePipelineContractTests>>();
-        logger.Should().NotBeNull($"Logger should be available in {environment}");
+        Assert.NotNull(logger);
 
         // Test that logging doesn't interfere with requests
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/health");
 
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.True(response.StatusCode == HttpStatusCode.OK ||
+                   response.StatusCode == HttpStatusCode.ServiceUnavailable);
 
         _output.WriteLine($"✓ Logging middleware contract validated for {environment}");
     }
@@ -190,16 +184,17 @@ public class MiddlewarePipelineContractTests : ContractTestBase
         var response = await client.GetAsync("/health");
 
         // Pipeline contract expectations
-        response.Should().NotBeNull("Response should be received through complete pipeline");
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+        Assert.NotNull(response);
+        Assert.True(response.StatusCode == HttpStatusCode.OK ||
+                   response.StatusCode == HttpStatusCode.ServiceUnavailable);
 
         // Response should have proper headers indicating middleware processing
-        response.Headers.Should().NotBeNull("Response headers should be set by middleware pipeline");
-        response.Content.Headers.Should().NotBeNull("Content headers should be set by middleware pipeline");
+        Assert.NotNull(response.Headers);
+        Assert.NotNull(response.Content.Headers);
 
         // Content should be readable after all middleware processing
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().NotBeNullOrEmpty("Content should be accessible after middleware pipeline processing");
+        Assert.False(string.IsNullOrEmpty(content));
 
         _output.WriteLine($"✓ Middleware pipeline order contract validated for {environment}");
     }
@@ -223,7 +218,7 @@ public class MiddlewarePipelineContractTests : ContractTestBase
 
         foreach (var header in securityHeaders)
         {
-            header.Value.Should().NotBeNullOrEmpty($"Security header {header.Key} should have a value");
+            Assert.NotEmpty(header.Value);
             _output.WriteLine($"Security header in {environment}: {header.Key} = {string.Join(", ", header.Value)}");
         }
 

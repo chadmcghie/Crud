@@ -7,7 +7,6 @@ using App.Features.Authentication;
 using Domain.Entities.Authentication;
 using Domain.Interfaces;
 using Domain.ValueObjects;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -81,8 +80,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue($"Expected success but got error: {result.Error}");
-        result.Message.Should().Be("Your password has been reset successfully.");
+        Assert.True(result.Success, $"Expected success but got error: {result.Error}");
+        Assert.Equal("Your password has been reset successfully.", result.Message);
 
         _mockPasswordHasher.Verify(x => x.HashPassword(command.NewPassword), Times.Once);
         _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -109,8 +108,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("The password reset link has expired. Please request a new one.");
+        Assert.False(result.Success);
+        Assert.Equal("The password reset link has expired. Please request a new one.", result.Error);
     }
 
     [Fact]
@@ -135,8 +134,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("This password reset link has already been used.");
+        Assert.False(result.Success);
+        Assert.Equal("This password reset link has already been used.", result.Error);
     }
 
     [Fact]
@@ -157,8 +156,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("Invalid or expired password reset link.");
+        Assert.False(result.Success);
+        Assert.Equal("Invalid or expired password reset link.", result.Error);
     }
 
     [Theory]
@@ -178,8 +177,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("Token is required");
+        Assert.False(result.Success);
+        Assert.Equal("Token is required", result.Error);
     }
 
     [Theory]
@@ -199,8 +198,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("Password is required");
+        Assert.False(result.Success);
+        Assert.Equal("Password is required", result.Error);
     }
 
     [Theory]
@@ -222,8 +221,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Contain("Password must");
+        Assert.False(result.Success);
+        Assert.Contains("Password must", result.Error);
     }
 
     [Fact]
@@ -250,8 +249,8 @@ public class ResetPasswordCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().Be("User account not found.");
+        Assert.False(result.Success);
+        Assert.Equal("User account not found.", result.Error);
     }
 
     [Fact]

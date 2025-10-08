@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,7 +56,7 @@ public class CachingE2ETests : IntegrationTestBase
             _output.WriteLine($"Cached request (cache hit): {cachedTime}ms");
 
             // Assert performance
-            cachedTime.Should().BeLessThan(50, "Cached response should be under 50ms");
+            Assert.True(cachedTime < 50);
 
             // Step 3: Conditional request with ETag (should return 304)
             var etag = response2.Headers.ETag;
@@ -70,7 +69,7 @@ public class CachingE2ETests : IntegrationTestBase
                 var response3 = await userClient.SendAsync(conditionalRequest);
                 stopwatch.Stop();
 
-                response3.StatusCode.Should().Be(HttpStatusCode.NotModified);
+                Assert.Equal(HttpStatusCode.NotModified, response3.StatusCode);
                 _output.WriteLine($"Conditional request (304): {stopwatch.ElapsedMilliseconds}ms");
             }
 
@@ -90,8 +89,8 @@ public class CachingE2ETests : IntegrationTestBase
             // Content should be different after adding new person
             var content2 = await response2.Content.ReadAsStringAsync();
             var content4 = await response4.Content.ReadAsStringAsync();
-            content4.Should().NotBe(content2, "Content should change after adding new person");
-            content4.Should().Contain("Jane Smith");
+            Assert.NotEqual(content2, content4);
+            Assert.Contains("Jane Smith", content4);
 
             // Step 6: Final cached request
             stopwatch.Restart();
@@ -101,7 +100,7 @@ public class CachingE2ETests : IntegrationTestBase
             var finalCachedTime = stopwatch.ElapsedMilliseconds;
             _output.WriteLine($"Final cached request: {finalCachedTime}ms");
 
-            finalCachedTime.Should().BeLessThan(50, "Final cached response should be under 50ms");
+            Assert.True(finalCachedTime < 50);
         });
     }
 
@@ -126,8 +125,7 @@ public class CachingE2ETests : IntegrationTestBase
             var hasETag = response.Headers.ETag != null;
             var hasLastModified = response.Content.Headers.LastModified != null;
 
-            (hasCacheControl || hasETag || hasLastModified).Should().BeTrue(
-                $"Endpoint {endpoint} should return at least one cache-related header");
+            Assert.True(hasCacheControl || hasETag || hasLastModified);
 
             _output.WriteLine($"Endpoint: {endpoint}");
             if (hasCacheControl)
@@ -165,7 +163,7 @@ public class CachingE2ETests : IntegrationTestBase
             var response = await userClient.GetAsync("/api/people");
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().Contain("New Person", "Cache should be invalidated after POST");
+            Assert.Contains("New Person", content);
         });
     }
 
@@ -204,7 +202,7 @@ public class CachingE2ETests : IntegrationTestBase
 
             var avgTime = stopwatch.ElapsedMilliseconds / 5.0;
             _output.WriteLine($"Average cached response time: {avgTime}ms");
-            avgTime.Should().BeLessThan(20, "Cached entity responses should be very fast");
+            Assert.True(avgTime < 20);
         });
     }
 
@@ -250,8 +248,7 @@ public class CachingE2ETests : IntegrationTestBase
 
             // Use a more lenient threshold for CI environments where timing can be variable
             // Cached requests should show some improvement, but not necessarily 2x in all environments
-            avgCachedTime.Should().BeLessThan(initialTime * 1.5,
-                "Cached requests should show performance improvement over initial request");
+            Assert.True(avgCachedTime < initialTime * 1.5);
         });
     }
 
@@ -291,9 +288,9 @@ public class CachingE2ETests : IntegrationTestBase
             var wallsContent2 = await wallsResponse2.Content.ReadAsStringAsync();
 
             // Assert
-            rolesContent2.Should().NotBe(rolesContent1, "Roles cache should be invalidated");
-            rolesContent2.Should().Contain("New Role");
-            wallsContent2.Should().Be(wallsContent1, "Walls cache should NOT be invalidated");
+            Assert.NotEqual(rolesContent1, rolesContent2);
+            Assert.Contains("New Role", rolesContent2);
+            Assert.Equal(wallsContent1, wallsContent2);
         });
     }
 
@@ -339,8 +336,7 @@ public class CachingE2ETests : IntegrationTestBase
             _output.WriteLine($"20 concurrent requests completed in {totalTime}ms");
             _output.WriteLine($"Average time per request: {avgTime}ms");
 
-            avgTime.Should().BeLessThan(10,
-                "Concurrent cached requests should be very fast (under 10ms average)");
+            Assert.True(avgTime < 10);
         });
     }
 }

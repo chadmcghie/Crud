@@ -31,9 +31,8 @@
 - Application use cases / services.  
 - Utility code in Shared.  
 
-**Frameworks**  
-- xUnit (modern, async-friendly).  
-- FluentAssertions (readable assertions).  
+**Frameworks**
+- xUnit (modern, async-friendly, built-in assertions).
 - Moq/NSubstitute (mocks, stubs).  
 
 **Examples**  
@@ -51,10 +50,9 @@
 - Database access (EF Core, repositories).  
 - Infrastructure (file storage, messaging, caching).  
 
-**Frameworks & Tools**  
-- xUnit + Microsoft.AspNetCore.Mvc.Testing.  
+**Frameworks & Tools**
+- xUnit + Microsoft.AspNetCore.Mvc.Testing.
 - Testcontainers for .NET (real DBs in Docker).  
-- FluentAssertions.  
 
 **Examples**  
 - `POST /api/users` persists user in DB, returns `201`.  

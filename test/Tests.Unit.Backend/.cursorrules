@@ -36,7 +36,7 @@ This project contains unit tests for backend components including Domain entitie
 
 ## Code Standards
 - Use xUnit as the testing framework
-- Use FluentAssertions for readable assertions
+- Use xUnit Assert methods for assertions
 - Use Moq or NSubstitute for mocking
 - Follow consistent naming conventions
 - Use proper test categorization and organization
@@ -57,7 +57,7 @@ This project contains unit tests for backend components including Domain entitie
 - Use factories for complex object creation
 
 ## Assertions
-- Use FluentAssertions for readable assertions
+- Use xUnit Assert methods for clear, concise assertions
 - Test the most important aspects first
 - Use specific assertions rather than generic ones
 - Verify both positive and negative outcomes
@@ -108,10 +108,10 @@ public class PersonServiceTests
         var result = await _service.CreatePersonAsync(request);
         
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be(request.Name);
-        result.Email.Should().Be(request.Email);
-        
+        Assert.NotNull(result);
+        Assert.Equal(request.Name, result.Name);
+        Assert.Equal(request.Email, result.Email);
+
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Person>()), Times.Once);
         _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
@@ -143,9 +143,9 @@ public class PersonTests
         var person = Person.Create(name, email);
         
         // Assert
-        person.Should().NotBeNull();
-        person.Name.Should().Be(name);
-        person.Email.Should().Be(email);
+        Assert.NotNull(person);
+        Assert.Equal(name, person.Name);
+        Assert.Equal(email, person.Email);
     }
     
     [Theory]

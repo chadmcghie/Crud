@@ -20,16 +20,16 @@ public class WallTests
                 .Build();
 
             // Assert
-            wall.Should().NotBeNull();
-            wall.Id.Should().NotBeEmpty();
-            wall.Name.Should().Be("Exterior Wall");
-            wall.Length.Should().Be(10.0);
-            wall.Height.Should().Be(9.0);
-            wall.Thickness.Should().Be(6.0);
-            wall.AssemblyType.Should().Be("2x4 16\" on center");
-            wall.RValue.Should().Be(13.0);
-            wall.UValue.Should().Be(0.077);
-            wall.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.NotNull(wall);
+            Assert.NotEqual(Guid.Empty, wall.Id);
+            Assert.Equal("Exterior Wall", wall.Name);
+            Assert.Equal(10.0, wall.Length);
+            Assert.Equal(9.0, wall.Height);
+            Assert.Equal(6.0, wall.Thickness);
+            Assert.Equal("2x4 16\" on center", wall.AssemblyType);
+            Assert.Equal(13.0, wall.RValue);
+            Assert.Equal(0.077, wall.UValue);
+            Assert.True((DateTime.UtcNow - wall.CreatedAt).TotalSeconds < 1);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ public class WallTests
             var wall2 = WallTestDataBuilder.Default().Build();
 
             // Assert
-            wall1.Id.Should().NotBe(wall2.Id);
+            Assert.NotEqual(wall2.Id, wall1.Id);
         }
 
         [Fact]
@@ -54,8 +54,8 @@ public class WallTests
 
             // Assert
             var afterCreation = DateTime.UtcNow;
-            wall.CreatedAt.Should().BeOnOrAfter(beforeCreation);
-            wall.CreatedAt.Should().BeOnOrBefore(afterCreation);
+            Assert.True(wall.CreatedAt >= beforeCreation);
+            Assert.True(wall.CreatedAt <= afterCreation);
         }
     }
 
@@ -70,9 +70,9 @@ public class WallTests
                 .Build();
 
             // Assert
-            wall.Description.Should().Be("Test wall description");
+            Assert.Equal("Test wall description", wall.Description);
             // UpdatedAt should have a value because the domain method was called to set additional properties
-            wall.UpdatedAt.Should().NotBeNull();
+            Assert.NotNull(wall.UpdatedAt);
         }
 
         [Theory]
@@ -83,12 +83,11 @@ public class WallTests
             // The domain entity now enforces business rules and should throw for invalid dimensions
 
             // Arrange & Act & Assert
-            var act = () => WallTestDataBuilder.Default()
+            var ex = Assert.Throws<DomainException>(() => WallTestDataBuilder.Default()
                 .WithDimensions(invalidValue, 9.0, 6.0)
-                .Build();
+                .Build());
 
-            act.Should().Throw<DomainException>()
-                .WithMessage("*must be greater than zero");
+            Assert.Contains("must be greater than zero", ex.Message);
         }
     }
 }

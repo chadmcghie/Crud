@@ -47,13 +47,13 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Core Application Services
         var mediator = serviceProvider.GetService<IMediator>();
-        mediator.Should().NotBeNull($"IMediator should be registered in {environment}");
+        Assert.NotNull(mediator);
 
         var logger = serviceProvider.GetService<ILogger<DependencyInjectionValidationTests>>();
-        logger.Should().NotBeNull($"ILogger should be registered in {environment}");
+        Assert.NotNull(logger);
 
         var configuration = serviceProvider.GetService<IConfiguration>();
-        configuration.Should().NotBeNull($"IConfiguration should be registered in {environment}");
+        Assert.NotNull(configuration);
     }
 
     /// <summary>
@@ -73,15 +73,16 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Data Access Services
         var dbContext = serviceProvider.GetService<ApplicationDbContext>();
-        dbContext.Should().NotBeNull($"CrudDbContext should be registered in {environment}");
+        Assert.NotNull(dbContext);
 
         // Verify DbContext is configured correctly for the environment
         var connectionString = dbContext!.Database.GetConnectionString();
-        connectionString.Should().NotBeNullOrEmpty($"DbContext should have connection string in {environment}");
+        Assert.NotNull(connectionString);
+        Assert.NotEmpty(connectionString);
 
         // Validate repository pattern services (if using repository pattern)
         var peopleRepository = serviceProvider.GetService<Domain.Interfaces.IRepository<Domain.Entities.Person>>();
-        peopleRepository.Should().NotBeNull($"IRepository<Person> should be registered in {environment}");
+        Assert.NotNull(peopleRepository);
     }
 
     /// <summary>
@@ -101,14 +102,14 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Caching Services
         var cacheService = serviceProvider.GetService<ICacheService>();
-        cacheService.Should().NotBeNull($"ICacheService should be registered in {environment}");
+        Assert.NotNull(cacheService);
 
         // Verify cache management services for admin functionality
         var cacheStatisticsService = serviceProvider.GetService<ICacheStatisticsService>();
-        cacheStatisticsService.Should().NotBeNull($"ICacheStatisticsService should be registered in {environment}");
+        Assert.NotNull(cacheStatisticsService);
 
         var cacheManagementService = serviceProvider.GetService<ICacheManagementService>();
-        cacheManagementService.Should().NotBeNull($"ICacheManagementService should be registered in {environment}");
+        Assert.NotNull(cacheManagementService);
     }
 
     /// <summary>
@@ -128,13 +129,13 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
 
         // Act & Assert - Authentication Services
         var passwordHasher = serviceProvider.GetService<IPasswordHasher>();
-        passwordHasher.Should().NotBeNull($"IPasswordHasher should be registered in {environment}");
+        Assert.NotNull(passwordHasher);
 
         var emailService = serviceProvider.GetService<IEmailService>();
-        emailService.Should().NotBeNull($"IEmailService should be registered in {environment}");
+        Assert.NotNull(emailService);
 
         var userRepository = serviceProvider.GetService<IUserRepository>();
-        userRepository.Should().NotBeNull($"IUserRepository should be registered in {environment}");
+        Assert.NotNull(userRepository);
     }
 
     /// <summary>
@@ -150,8 +151,7 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
             using var scope = devFactory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var connectionString = dbContext.Database.GetConnectionString();
-            connectionString.Should().Contain("CrudAppDev.db",
-                "Development should use development SQLite database");
+            Assert.Contains("CrudAppDev.db", connectionString);
         }
 
         // Test Testing Environment
@@ -160,8 +160,7 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
             using var scope = testFactory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var connectionString = dbContext.Database.GetConnectionString();
-            connectionString.Should().Contain(".db",
-                "Testing should use SQLite database");
+            Assert.Contains(".db", connectionString);
         }
 
         // Test Production Environment
@@ -172,8 +171,8 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
             var connectionString = dbContext.Database.GetConnectionString();
 
             // Production might use SQL Server or SQLite depending on configuration
-            connectionString.Should().NotBeNullOrEmpty(
-                "Production should have a valid connection string");
+            Assert.NotNull(connectionString);
+            Assert.NotEmpty(connectionString);
         }
     }
 
@@ -208,11 +207,13 @@ public class DependencyInjectionValidationTests : IClassFixture<SqliteTestWebApp
         stopwatch.Stop();
 
         // Assert all services were resolved
-        services.Should().AllSatisfy(service => service.Should().NotBeNull());
+        foreach (var service in services)
+        {
+            Assert.NotNull(service);
+        }
 
         // Assert performance is reasonable (should be very fast)
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000,
-            $"Service resolution should be fast in {environment} environment");
+        Assert.True(stopwatch.ElapsedMilliseconds < 1000);
     }
 
     #region Helper Methods

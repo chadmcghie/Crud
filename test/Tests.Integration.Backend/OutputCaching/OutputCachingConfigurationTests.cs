@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +25,7 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         var outputCacheOptions = scope.ServiceProvider.GetService<IOptions<OutputCacheOptions>>();
 
         // Assert
-        outputCacheOptions.Should().NotBeNull("Output caching should be registered in DI container");
+        Assert.NotNull(outputCacheOptions);
     }
 
     [Fact]
@@ -42,8 +41,8 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         // Assert
         // In .NET 8, we can't directly verify policy names from OutputCacheOptions
         // The policies are registered internally
-        outputCacheOptions.Should().NotBeNull();
-        outputCacheOptions.Value.Should().NotBeNull();
+        Assert.NotNull(outputCacheOptions);
+        Assert.NotNull(outputCacheOptions.Value);
     }
 
     [Fact]
@@ -67,7 +66,7 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         var outputCacheStore = scope.ServiceProvider.GetService<IOutputCacheStore>();
 
         // Assert
-        outputCacheStore.Should().NotBeNull("Output cache store should be registered when Redis is configured");
+        Assert.NotNull(outputCacheStore);
         // When Redis is configured, it should use a Redis-backed store
         // The actual type check would depend on the implementation
     }
@@ -93,7 +92,7 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         var outputCacheStore = scope.ServiceProvider.GetService<IOutputCacheStore>();
 
         // Assert
-        outputCacheStore.Should().NotBeNull("Output cache store should fall back to memory when Redis is unavailable");
+        Assert.NotNull(outputCacheStore);
     }
 
     [Theory]
@@ -109,23 +108,23 @@ public class OutputCachingConfigurationTests : IClassFixture<WebApplicationFacto
         var cachingSettings = scope.ServiceProvider.GetRequiredService<IOptions<Api.CachingSettings>>();
 
         // Assert
-        outputCacheOptions.Should().NotBeNull();
-        outputCacheOptions.Value.Should().NotBeNull();
+        Assert.NotNull(outputCacheOptions);
+        Assert.NotNull(outputCacheOptions.Value);
 
         // Verify durations from settings
         switch (policyName)
         {
             case "PeoplePolicy":
-                cachingSettings.Value.PeopleCacheDurationSeconds.Should().Be(expectedDurationSeconds);
+                Assert.Equal(expectedDurationSeconds, cachingSettings.Value.PeopleCacheDurationSeconds);
                 break;
             case "RolesPolicy":
-                cachingSettings.Value.RolesCacheDurationSeconds.Should().Be(expectedDurationSeconds);
+                Assert.Equal(expectedDurationSeconds, cachingSettings.Value.RolesCacheDurationSeconds);
                 break;
             case "WallsPolicy":
-                cachingSettings.Value.WallsCacheDurationSeconds.Should().Be(expectedDurationSeconds);
+                Assert.Equal(expectedDurationSeconds, cachingSettings.Value.WallsCacheDurationSeconds);
                 break;
             case "WindowsPolicy":
-                cachingSettings.Value.WindowsCacheDurationSeconds.Should().Be(expectedDurationSeconds);
+                Assert.Equal(expectedDurationSeconds, cachingSettings.Value.WindowsCacheDurationSeconds);
                 break;
         }
     }

@@ -207,7 +207,7 @@ Use the project-manager subagent to create a recap document in docs/03-Developme
 <recap_template>
   # [yyyy-mm-dd] Recap: Feature Name
 
-  This recaps what was built for the spec documented at docs/03-Development/specs/[spec-folder-name]/spec.md.
+  This recaps what was built for the spec documented at docs/03-Development/02-specs/[spec-folder-name]/spec.md.
 
   ## Recap
 
@@ -232,9 +232,77 @@ Use the project-manager subagent to create a recap document in docs/03-Developme
 
 </step>
 
-<step number="7" subagent="project-manager" name="completion_summary">
+<step number="7" subagent="project-manager" name="create_completed_file">
 
-### Step 7: Completion Summary
+### Step 7: Create Completed.md File
+
+Use the project-manager subagent to create a completed.md file in the spec folder that provides a comprehensive summary of the completed implementation.
+
+<instructions>
+  ACTION: Use project-manager subagent
+  REQUEST: "Create completed.md file for current spec:
+            - Create file: [SPEC_FOLDER_PATH]/completed.md
+            - Include comprehensive implementation summary
+            - Document all completed tasks and deliverables
+            - Include performance metrics and impact analysis
+            - Reference PR and parent issue
+            - Use the completed.md from other specs as a template"
+  WAIT: For completed.md creation
+  PROCESS: Verify file is created with comprehensive content
+</instructions>
+
+<completed_template>
+  # Spec Completion Summary
+
+  ## [Spec Name]
+  **Status:** ✅ COMPLETED
+  **Completed Date:** [yyyy-mm-dd]
+  **Parent Issue:** #XXX - [Issue Title]
+  **Pull Request:** #XXX - [PR Title]
+
+  ## Implementation Summary
+
+  ### ✅ Completed Components
+  [List all completed tasks with details]
+
+  ### ✅ Technical Implementation
+  [Technical details and patterns used]
+
+  ### ✅ Deliverables
+  [Files created/modified]
+
+  ### ✅ Success Criteria Met
+  [Checkboxes for all success criteria]
+
+  ## Impact
+  [Performance improvements, benefits, metrics]
+
+  ## Issues Encountered and Resolved
+  [Any problems and how they were fixed]
+
+  ## Testing and Validation
+  [Test results and validation performed]
+</completed_template>
+
+<file_creation>
+  <location>[SPEC_FOLDER_PATH]/</location>
+  <naming>completed.md</naming>
+  <format>markdown with comprehensive details</format>
+</file_creation>
+
+<content_requirements>
+  <comprehensive>Full implementation details</comprehensive>
+  <metrics>Performance numbers and improvements</metrics>
+  <deliverables>Complete list of files and changes</deliverables>
+  <validation>Test results and success criteria</validation>
+  <reference>Link to PR and parent issue</reference>
+</content_requirements>
+
+</step>
+
+<step number="8" subagent="project-manager" name="completion_summary">
+
+### Step 8: Completion Summary
 
 Use the project-manager subagent to create a structured summary message with emojis showing what was done, any issues, testing instructions, and PR link.
 
@@ -280,9 +348,9 @@ Use the project-manager subagent to create a structured summary message with emo
 
 </step>
 
-<step number="8" subagent="project-manager" name="completion_notification">
+<step number="9" subagent="project-manager" name="completion_notification">
 
-### Step 8: Task Completion Notification
+### Step 9: Task Completion Notification
 
 Use the project-manager subagent to play a system sound to alert the user that tasks are complete.
 

@@ -1,5 +1,4 @@
 using System.Net;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -37,25 +36,21 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             var response = await client.GetAsync("/api/nonexistent/trigger-error");
 
             // Should return 404, not 500 (proper error handling)
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound,
-          $"Non-existent endpoints should return 404, not 500, in {environment}");
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
             // Response should not contain stack traces in production-like environments
             var content = await response.Content.ReadAsStringAsync();
             if (environment == "Production")
             {
-                content.ToLower().Should().NotContain("stack trace",
-              "Production environment should not expose stack traces");
-                content.ToLower().Should().NotContain("exception",
-              "Production environment should not expose detailed exception info");
+                Assert.DoesNotContain("stack trace", content.ToLower());
+                Assert.DoesNotContain("exception", content.ToLower());
             }
 
             _output.WriteLine($"✓ Exception handling working correctly in {environment}");
 
         }, $"Exception handling middleware in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Exception handling test should be fast in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Exception handling in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -77,10 +72,10 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             var response = await client.GetAsync("/api/roles");
 
             // CORS middleware should process the request (not necessarily add headers in test environment)
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,
-          HttpStatusCode.Unauthorized // If authentication is required
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.Unauthorized
+            );
 
             // In development, CORS headers might be present
             if (environment == "Development")
@@ -94,8 +89,7 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
 
         }, $"CORS middleware in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"CORS test should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"CORS test in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -117,10 +111,10 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             var response = await client.GetAsync("/api/roles");
 
             // Should respond (compression is transparent to status codes)
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,
-          HttpStatusCode.Unauthorized
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.Unauthorized
+            );
 
             // Check if compression is applied (response might be compressed)
             var contentEncoding = response.Content.Headers.ContentEncoding;
@@ -131,14 +125,13 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
 
             // Ensure we can read the response (decompression works)
             var content = await response.Content.ReadAsStringAsync();
-            content.Should().NotBeNull($"Response should be readable in {environment}");
+            Assert.NotNull(content);
 
             _output.WriteLine($"✓ Compression middleware working in {environment}");
 
         }, $"Compression middleware in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Compression test should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Compression test in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -158,26 +151,25 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             var response = await client.GetAsync("/api/roles");
 
             // Should require authentication or allow access based on configuration
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,           // If endpoint is not protected or has default data
-          HttpStatusCode.Unauthorized  // If authentication is required
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.Unauthorized
+            );
 
             // Test with invalid token
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "invalid-token");
             var invalidTokenResponse = await client.GetAsync("/api/roles");
 
-            invalidTokenResponse.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,           // If endpoint allows anonymous access
-          HttpStatusCode.Unauthorized  // If token validation is enforced
-        );
+            Assert.True(
+                invalidTokenResponse.StatusCode == HttpStatusCode.OK ||
+                invalidTokenResponse.StatusCode == HttpStatusCode.Unauthorized
+            );
 
             _output.WriteLine($"✓ Authentication middleware functioning in {environment}");
 
         }, $"Authentication middleware in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Authentication test should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Authentication middleware in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -196,26 +188,25 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             // Verify logging services are registered
             using var scope = factory.Services.CreateScope();
             var loggerFactory = scope.ServiceProvider.GetService<ILoggerFactory>();
-            loggerFactory.Should().NotBeNull($"Logger factory should be available in {environment}");
+            Assert.NotNull(loggerFactory);
 
             var logger = scope.ServiceProvider.GetService<ILogger<MiddlewarePipelineSmokeTests>>();
-            logger.Should().NotBeNull($"Logger should be available in {environment}");
+            Assert.NotNull(logger);
 
             // Test that logging doesn't break requests
             using var client = factory.CreateClient();
             var response = await client.GetAsync("/health");
 
-            response.StatusCode.Should().BeOneOf(
-          HttpStatusCode.OK,
-          HttpStatusCode.ServiceUnavailable // If health checks fail
-        );
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.ServiceUnavailable
+            );
 
             _output.WriteLine($"✓ Logging middleware configured in {environment}");
 
         }, $"Logging middleware in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(5,
-          $"Logging test should complete quickly in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 5);
 
         _output.WriteLine($"Logging middleware in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -246,19 +237,18 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
             // All requests should complete successfully (middleware pipeline should handle concurrency)
             foreach (var response in responses)
             {
-                response.StatusCode.Should().BeOneOf(
-              HttpStatusCode.OK,
-              HttpStatusCode.ServiceUnavailable,
-              HttpStatusCode.Unauthorized
-            );
+                Assert.True(
+                    response.StatusCode == HttpStatusCode.OK ||
+                    response.StatusCode == HttpStatusCode.ServiceUnavailable ||
+                    response.StatusCode == HttpStatusCode.Unauthorized
+                );
             }
 
             _output.WriteLine($"✓ Middleware pipeline handled {responses.Length} concurrent requests in {environment}");
 
         }, $"Concurrent middleware test in {environment}");
 
-        executionTime.TotalSeconds.Should().BeLessThan(10,
-          $"Concurrent middleware test should complete within 10 seconds in {environment} environment");
+        Assert.True(executionTime.TotalSeconds < 10);
 
         _output.WriteLine($"Concurrent middleware test in {environment}: {executionTime.TotalMilliseconds:F0}ms");
     }
@@ -277,11 +267,14 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
 
             // Test key middleware components quickly
             var response = await client.GetAsync("/health");
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
+            Assert.True(
+                response.StatusCode == HttpStatusCode.OK ||
+                response.StatusCode == HttpStatusCode.ServiceUnavailable
+            );
 
             // Test error handling
             var errorResponse = await client.GetAsync("/api/nonexistent");
-            errorResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Assert.Equal(HttpStatusCode.NotFound, errorResponse.StatusCode);
 
             _output.WriteLine($"Middleware pipeline validated for {environment}: {totalStopwatch.ElapsedMilliseconds}ms elapsed");
         }
@@ -289,8 +282,7 @@ public class MiddlewarePipelineSmokeTests : SmokeTestBase
         totalStopwatch.Stop();
 
         // Validate overall time constraint
-        totalStopwatch.Elapsed.TotalSeconds.Should().BeLessThan(30,
-          "All environment middleware pipeline tests should complete within 30 seconds total");
+        Assert.True(totalStopwatch.Elapsed.TotalSeconds < 30);
 
         _output.WriteLine($"Total middleware pipeline test time: {totalStopwatch.Elapsed.TotalSeconds:F2} seconds");
     }

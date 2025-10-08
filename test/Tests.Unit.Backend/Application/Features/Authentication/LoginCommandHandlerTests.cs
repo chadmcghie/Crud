@@ -77,13 +77,13 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
-            result.AccessToken.Should().Be(accessToken);
-            result.RefreshToken.Should().Be(refreshTokenValue);
-            result.Email.Should().Be(command.Email);
-            result.UserId.Should().Be(user.Id);
-            result.Roles.Should().NotBeNull();
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(accessToken, result.AccessToken);
+            Assert.Equal(refreshTokenValue, result.RefreshToken);
+            Assert.Equal(command.Email, result.Email);
+            Assert.Equal(user.Id, result.UserId);
+            Assert.NotNull(result.Roles);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u => u.RefreshTokens.Any(rt => rt.Token == refreshTokenValue)),
@@ -114,11 +114,11 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Invalid email or password");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Invalid email or password", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockPasswordHasher.Verify(x => x.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
@@ -155,11 +155,11 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Invalid email or password");
-            result.AccessToken.Should().BeNull();
-            result.RefreshToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Invalid email or password", result.Error);
+            Assert.Null(result.AccessToken);
+            Assert.Null(result.RefreshToken);
 
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
             _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -193,10 +193,10 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Be("Account is locked");
-            result.AccessToken.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Account is locked", result.Error);
+            Assert.Null(result.AccessToken);
 
             _mockPasswordHasher.Verify(x => x.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _mockJwtTokenService.Verify(x => x.GenerateAccessToken(It.IsAny<User>()), Times.Never);
@@ -232,9 +232,9 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Contain("Email");
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Contains("Email", result.Error);
 
             _mockUserRepository.Verify(x => x.GetByEmailAsync(
                 It.IsAny<Email>(),
@@ -259,9 +259,9 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeFalse();
-            result.Error.Should().Contain("Password");
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Contains("Password", result.Error);
 
             _mockUserRepository.Verify(x => x.GetByEmailAsync(
                 It.IsAny<Email>(),
@@ -288,7 +288,7 @@ public class LoginCommandHandlerTests
             var exception = await Assert.ThrowsAsync<Exception>(
                 () => _handler.Handle(command, CancellationToken.None));
 
-            exception.Message.Should().Be("Database error");
+            Assert.Equal("Database error", exception.Message);
         }
 
         [Fact]
@@ -366,8 +366,8 @@ public class LoginCommandHandlerTests
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Success.Should().BeTrue();
+            Assert.NotNull(result);
+            Assert.True(result.Success);
 
             _mockUserRepository.Verify(x => x.UpdateAsync(
                 It.Is<User>(u =>
