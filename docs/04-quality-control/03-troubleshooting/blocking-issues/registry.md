@@ -4,7 +4,7 @@
 
 | ID | Created | Spec | Category | Description | Status | Priority |
 |---|---|---|---|---|---|---|
-| - | - | - | - | No active blocking issues | - | - |
+| BI-2025-10-08-001 | 2025-10-08 | all-future-specs | test/functionality/configuration | E2E test cleanup and timeout failures - soft-delete conflicts | active | critical |
 
 ## Resolved Issues
 
