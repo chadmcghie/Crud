@@ -63,8 +63,8 @@ jobs:
         dotnet --info
         echo "Current directory: $(pwd)"
         echo "Solution file exists: $(ls -la solutions/Crud.sln)"
-        echo "Running dotnet format with full path:"
-        $DOTNET_ROOT/dotnet format solutions/Crud.sln
+        echo "Running dotnet format:"
+        dotnet format solutions/Crud.sln
         echo "✅ Formatting complete"
         
     - name: Frontend Linting
@@ -106,7 +106,7 @@ jobs:
         echo "🔍 Verifying that all code is now properly formatted..."
         # Ensure dotnet is in PATH
         export PATH="$DOTNET_ROOT:$PATH"
-        $DOTNET_ROOT/dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
+        dotnet format solutions/Crud.sln --verify-no-changes --verbosity diagnostic
         if [ $? -ne 0 ]; then
           echo "❌ ERROR: Code still has formatting issues after auto-format!"
           echo "This should not happen. Please check the workflow configuration."
