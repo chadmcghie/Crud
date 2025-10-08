@@ -10,7 +10,7 @@ import { PageHelpers } from './page-helpers';
  * Run locally with: npx playwright test tests/helpers/page-helpers-waits.spec.ts
  */
 
-test.describe.skip('PageHelpers Event-Driven Wait Methods', () => {
+test.describe.skip('@meta @dev PageHelpers Event-Driven Wait Methods', () => {
   const angularUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
   const apiUrl = process.env.API_URL || 'http://localhost:5172';
 

@@ -10,7 +10,7 @@ import { setupTestAuthentication, AuthConfig, clearTestAuthentication } from './
  * Run locally with: npx playwright test tests/helpers/test-auth-setup.spec.ts
  */
 
-test.describe.skip('Test Authentication Setup Helper', () => {
+test.describe.skip('@meta @dev Test Authentication Setup Helper', () => {
   let page: Page;
   const testUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
 

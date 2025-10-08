@@ -10,7 +10,7 @@ import * as yaml from 'js-yaml';
 test.describe('CI/CD Configuration', () => {
   const workflowPath = path.join(process.cwd(), '..', '..', '.github', 'workflows', 'pr-validation.yml');
 
-  test('should have Playwright webServer configuration', async () => {
+  test('@meta should have Playwright webServer configuration', async () => {
     // Check playwright.config.ts has webServer instead of globalSetup
     const configPath = path.join(process.cwd(), 'playwright.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
@@ -22,7 +22,7 @@ test.describe('CI/CD Configuration', () => {
     expect(configContent).not.toContain('globalSetup:');
   });
 
-  test('should not have manual server startup in CI', async () => {
+  test('@meta should not have manual server startup in CI', async () => {
     try {
       const workflowContent = await fs.readFile(workflowPath, 'utf-8');
       const workflow = yaml.load(workflowContent) as any;
@@ -48,7 +48,7 @@ test.describe('CI/CD Configuration', () => {
     }
   });
 
-  test('should have simplified environment variables', async () => {
+  test('@meta should have simplified environment variables', async () => {
     // Skip this test if not in CI or if env vars aren't set
     // The test:webserver script sets these variables
     const isCI = process.env.CI === 'true';
@@ -77,7 +77,7 @@ test.describe('CI/CD Configuration', () => {
     expect(envVars.length).toBeGreaterThan(0);
   });
 
-  test('should use simple test commands', async () => {
+  test('@meta should use simple test commands', async () => {
     // Check package.json for simplified test scripts
     const packagePath = path.join(process.cwd(), 'package.json');
     const packageContent = await fs.readFile(packagePath, 'utf-8');
@@ -97,7 +97,7 @@ test.describe('CI/CD Configuration', () => {
     console.log('Found legacy commands:', complexCommands);
   });
 
-  test('should have serial execution configuration', async () => {
+  test('@meta should have serial execution configuration', async () => {
     const configPath = path.join(process.cwd(), 'playwright.config.ts');
     const configContent = await fs.readFile(configPath, 'utf-8');
 
@@ -108,7 +108,7 @@ test.describe('CI/CD Configuration', () => {
     expect(configContent).toMatch(/retries:\s*(0|isCI\s*\?\s*1\s*:\s*0)/);
   });
 
-  test('should have proper database isolation in CI', async () => {
+  test('@meta should have proper database isolation in CI', async () => {
     try {
       const workflowContent = await fs.readFile(workflowPath, 'utf-8');
       
@@ -123,7 +123,7 @@ test.describe('CI/CD Configuration', () => {
     }
   });
 
-  test('should kill ports before starting servers', async () => {
+  test('@meta should kill ports before starting servers', async () => {
     try {
       const workflowContent = await fs.readFile(workflowPath, 'utf-8');
       

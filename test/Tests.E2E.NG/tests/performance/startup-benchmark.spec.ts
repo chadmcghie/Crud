@@ -7,7 +7,7 @@ import { performance } from 'perf_hooks';
  */
 test.describe('Startup Performance Benchmarks', () => {
   
-  test('should complete test initialization in under 5 seconds', async () => {
+  test('@performance @smoke should complete test initialization in under 5 seconds', async () => {
     // This test runs after global setup, so we measure from test start
     const testStartTime = performance.now();
     
@@ -23,7 +23,7 @@ test.describe('Startup Performance Benchmarks', () => {
     expect(initTime).toBeLessThan(5000);
   });
   
-  test('should reuse existing servers (not restart)', async () => {
+  test('@performance @extended should reuse existing servers (not restart)', async () => {
     // Check that servers were reused by looking at environment markers
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
     const angularUrl = process.env.ANGULAR_URL || 'http://localhost:4200';
@@ -51,7 +51,7 @@ test.describe('Startup Performance Benchmarks', () => {
     expect(angularTime).toBeLessThan(1000); // Angular might be slightly slower
   });
   
-  test('should reset database quickly between tests', async ({ page }) => {
+  test('@performance @extended should reset database quickly between tests', async ({ page }) => {
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
     
     // Measure database reset time
@@ -78,7 +78,7 @@ test.describe('Startup Performance Benchmarks', () => {
     expect(resetTime).toBeLessThan(3000); // Should complete in under 3 seconds
   });
   
-  test('should maintain performance across multiple test runs', async () => {
+  test('@performance @extended should maintain performance across multiple test runs', async () => {
     const timings: number[] = [];
     const apiUrl = process.env.API_URL || 'http://localhost:5172';
     
@@ -105,7 +105,7 @@ test.describe('Startup Performance Benchmarks', () => {
   });
   
   test.describe('Baseline Comparisons', () => {
-    test('documents performance improvements', async () => {
+  test('@performance @meta documents performance improvements', async () => {
       const improvements = {
         before: {
           coldStart: 90000, // 90 seconds
