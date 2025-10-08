@@ -87,8 +87,10 @@ export default defineConfig({
         E2E_TEST_MODE: 'true',
         BYPASS_AUTHORIZATION_FOR_INTEGRATION: 'true', // Additional bypass for E2E
 
-        // Testing environment logging (minimal for performance)
-        Logging__LogLevel__Default: 'Warning',
+        // Testing environment logging (Debug for troubleshooting)
+        Logging__LogLevel__Default: 'Debug',
+        Logging__LogLevel__Infrastructure: 'Debug',  // Override Infrastructure namespace filtering
+        Logging__LogLevel__App: 'Debug',             // Override App namespace filtering
         Logging__LogLevel__Microsoft: 'Warning',
         Logging__LogLevel__System: 'Warning',
 

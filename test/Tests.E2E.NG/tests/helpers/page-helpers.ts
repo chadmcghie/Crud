@@ -380,8 +380,9 @@ export class PageHelpers {
         if (!id) continue;
         if (checked) {
           await element.uncheck();
+          // Wait for checkbox to actually become unchecked (uses Playwright's auto-retry)
+          await expect(element).not.toBeChecked();
           console.log(`✓ Unchecked role ID ${id} (clearing all first)`);
-          await this.page.waitForTimeout(150);
         }
       }
 
@@ -392,13 +393,26 @@ export class PageHelpers {
         const shouldBeChecked = targetRoleIds.has(id);
         if (shouldBeChecked) {
           await element.check();
+          // Wait for checkbox to actually become checked (uses Playwright's auto-retry)
+          await expect(element).toBeChecked();
           console.log(`✓ Checked role ID ${id}`);
-          await this.page.waitForTimeout(150);
         }
       }
 
-      // Final wait for all Angular change detection to complete
-      await this.page.waitForTimeout(400);
+      // Step 3: Verify final state matches expectations
+      console.log('🔍 Verifying final checkbox states...');
+      for (const { element, id } of checkboxData) {
+        if (!id) continue;
+        const shouldBeChecked = targetRoleIds.has(id);
+
+        if (shouldBeChecked) {
+          await expect(element).toBeChecked();
+        } else {
+          await expect(element).not.toBeChecked();
+        }
+      }
+
+      console.log('✅ All role checkboxes set to desired state');
     }
   }
 

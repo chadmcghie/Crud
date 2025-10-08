@@ -1,8 +1,10 @@
 using System.Data.Common;
 using App.Abstractions;
+using App.Interfaces;
 using App.Models;
 using Infrastructure.Data;
 using Infrastructure.Resilience;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -17,13 +19,21 @@ public class DatabaseTestService : IDatabaseTestService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DatabaseTestService> _logger;
+    private readonly ICacheService _cacheService;
+    private readonly IOutputCacheStore? _outputCacheStore;
     private readonly object _respawnerLock = new();
     private static readonly SemaphoreSlim _databaseMutex = new SemaphoreSlim(1, 1);
 
-    public DatabaseTestService(ApplicationDbContext context, ILogger<DatabaseTestService> logger)
+    public DatabaseTestService(
+        ApplicationDbContext context,
+        ILogger<DatabaseTestService> logger,
+        ICacheService cacheService,
+        IOutputCacheStore? outputCacheStore = null)
     {
         _context = context;
         _logger = logger;
+        _cacheService = cacheService;
+        _outputCacheStore = outputCacheStore;
     }
 
     /// <summary>
@@ -136,16 +146,45 @@ public class DatabaseTestService : IDatabaseTestService
                 _logger.LogInformation("[Phase 3] Skipping database seeding as requested for worker {WorkerIndex}", workerIndex);
             }
 
+            // CRITICAL: Clear ALL cache layers after database reset to prevent stale data
+            _logger.LogInformation("[Phase 4] Clearing all caches for worker {WorkerIndex}...", workerIndex);
+            var cacheStart = DateTime.UtcNow;
+            double cacheTime = 0;
+            try
+            {
+                // Clear application-level cache (LazyCache/Redis)
+                await _cacheService.RemoveByPatternAsync("*");
+                _logger.LogInformation("[Phase 4] Cleared application cache");
+
+                // Clear ASP.NET Core Output Cache for all entity types
+                if (_outputCacheStore != null)
+                {
+                    var entityTypes = new[] { "people", "roles", "walls", "windows", "users" };
+                    foreach (var entityType in entityTypes)
+                    {
+                        await _outputCacheStore.EvictByTagAsync(entityType, default);
+                    }
+                    _logger.LogInformation("[Phase 4] Cleared output cache for all entity types");
+                }
+
+                cacheTime = (DateTime.UtcNow - cacheStart).TotalMilliseconds;
+                _logger.LogInformation("[Phase 4] Cleared all caches in {Ms}ms", cacheTime);
+            }
+            catch (Exception cacheEx)
+            {
+                _logger.LogWarning(cacheEx, "[Phase 4] Failed to clear caches, but continuing anyway");
+            }
+
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
             if (seedData)
             {
-                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms)",
-                    workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime);
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Seed: {SeedMs}ms, Cache: {CacheMs}ms)",
+                    workerIndex, totalTime, closeTime, deleteTime, createTime, seedTime, cacheTime);
             }
             else
             {
-                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms)",
-                    workerIndex, totalTime, closeTime, deleteTime, createTime);
+                _logger.LogInformation("Database reset via file deletion completed for worker {WorkerIndex} in {Ms}ms (Close: {CloseMs}ms, Delete: {DeleteMs}ms, Create: {CreateMs}ms, Cache: {CacheMs}ms)",
+                    workerIndex, totalTime, closeTime, deleteTime, createTime, cacheTime);
             }
         }
         catch (Exception ex)
@@ -164,48 +203,72 @@ public class DatabaseTestService : IDatabaseTestService
 
 
     /// <summary>
-    /// Resets database using EF Core with optimized bulk operations
+    /// Resets database using EF Core with optimized bulk operations.
+    /// CRITICAL: Uses IgnoreQueryFilters() to ensure ALL entities are deleted, including soft-deleted ones.
     /// </summary>
     private async Task ResetWithEfCoreAsync(int workerIndex, bool seedData)
     {
-        _logger.LogDebug("Resetting database for worker {WorkerIndex} using EF Core", workerIndex);
+        _logger.LogInformation("Resetting database for worker {WorkerIndex} using EF Core with hard delete", workerIndex);
         var startTime = DateTime.UtcNow;
 
         try
         {
             // Use ExecuteDeleteAsync for better performance (EF Core 7+)
             // This generates efficient DELETE statements instead of loading entities
+            // IMPORTANT: IgnoreQueryFilters() is CRITICAL to bypass soft delete filters and truly delete everything
+
+            // CRITICAL: Delete join tables FIRST to avoid FK constraint violations
+            // PersonRoles is a many-to-many join table that must be deleted before People and Roles
+            _logger.LogDebug("Deleting PersonRoles join table for worker {WorkerIndex}...", workerIndex);
+            var personRolesStart = DateTime.UtcNow;
+            var personRolesDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM PersonRoles");
+            _logger.LogDebug("Deleted {Count} PersonRoles records in {Ms}ms",
+                personRolesDeleted, (DateTime.UtcNow - personRolesStart).TotalMilliseconds);
 
             // Delete PasswordResetTokens first (has FK to Users)
             _logger.LogDebug("Deleting PasswordResetTokens for worker {WorkerIndex}...", workerIndex);
             var tokensStart = DateTime.UtcNow;
-            await _context.PasswordResetTokens.ExecuteDeleteAsync();
-            _logger.LogDebug("Deleted PasswordResetTokens in {Ms}ms", (DateTime.UtcNow - tokensStart).TotalMilliseconds);
+            await _context.PasswordResetTokens.IgnoreQueryFilters().ExecuteDeleteAsync();
+            var tokensCount = await _context.PasswordResetTokens.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("Deleted PasswordResetTokens in {Ms}ms, remaining count: {Count}",
+                (DateTime.UtcNow - tokensStart).TotalMilliseconds, tokensCount);
 
             // Delete Users (authentication data)
             _logger.LogDebug("Deleting Users for worker {WorkerIndex}...", workerIndex);
             var usersStart = DateTime.UtcNow;
-            await _context.Users.ExecuteDeleteAsync();
-            _logger.LogDebug("Deleted Users in {Ms}ms", (DateTime.UtcNow - usersStart).TotalMilliseconds);
+            await _context.Users.IgnoreQueryFilters().ExecuteDeleteAsync();
+            var usersCount = await _context.Users.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("Deleted Users in {Ms}ms, remaining count: {Count}",
+                (DateTime.UtcNow - usersStart).TotalMilliseconds, usersCount);
 
+            // Delete People (now that PersonRoles join table is empty)
             _logger.LogDebug("Deleting People for worker {WorkerIndex}...", workerIndex);
             var peopleStart = DateTime.UtcNow;
-            await _context.People.ExecuteDeleteAsync();
-            _logger.LogDebug("Deleted People in {Ms}ms", (DateTime.UtcNow - peopleStart).TotalMilliseconds);
+            var peopleCountBefore = await _context.People.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("People count before delete: {Count}", peopleCountBefore);
+            await _context.People.IgnoreQueryFilters().ExecuteDeleteAsync();
+            var peopleCountAfter = await _context.People.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("Deleted People in {Ms}ms, before: {Before}, after: {After}",
+                (DateTime.UtcNow - peopleStart).TotalMilliseconds, peopleCountBefore, peopleCountAfter);
 
+            // Delete Roles (now that PersonRoles join table is empty)
             _logger.LogDebug("Deleting Roles for worker {WorkerIndex}...", workerIndex);
             var rolesStart = DateTime.UtcNow;
-            await _context.Roles.ExecuteDeleteAsync();
-            _logger.LogDebug("Deleted Roles in {Ms}ms", (DateTime.UtcNow - rolesStart).TotalMilliseconds);
+            var rolesCountBefore = await _context.Roles.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("Roles count before delete: {Count}", rolesCountBefore);
+            await _context.Roles.IgnoreQueryFilters().ExecuteDeleteAsync();
+            var rolesCountAfter = await _context.Roles.IgnoreQueryFilters().CountAsync();
+            _logger.LogDebug("Deleted Roles in {Ms}ms, before: {Before}, after: {After}",
+                (DateTime.UtcNow - rolesStart).TotalMilliseconds, rolesCountBefore, rolesCountAfter);
 
             _logger.LogDebug("Deleting Windows for worker {WorkerIndex}...", workerIndex);
             var windowsStart = DateTime.UtcNow;
-            await _context.Windows.ExecuteDeleteAsync();
+            await _context.Windows.IgnoreQueryFilters().ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Windows in {Ms}ms", (DateTime.UtcNow - windowsStart).TotalMilliseconds);
 
             _logger.LogDebug("Deleting Walls for worker {WorkerIndex}...", workerIndex);
             var wallsStart = DateTime.UtcNow;
-            await _context.Walls.ExecuteDeleteAsync();
+            await _context.Walls.IgnoreQueryFilters().ExecuteDeleteAsync();
             _logger.LogDebug("Deleted Walls in {Ms}ms", (DateTime.UtcNow - wallsStart).TotalMilliseconds);
 
             // Optionally seed data after cleanup
@@ -217,8 +280,36 @@ public class DatabaseTestService : IDatabaseTestService
                 await _context.SaveChangesWithRetryAsync();
             }
 
+            // CRITICAL: Clear ALL cache layers after database reset to prevent stale data
+            _logger.LogDebug("Clearing all caches for worker {WorkerIndex}...", workerIndex);
+            var cacheStart = DateTime.UtcNow;
+            try
+            {
+                // Clear application-level cache (LazyCache/Redis)
+                await _cacheService.RemoveByPatternAsync("*");
+                _logger.LogDebug("Cleared application cache");
+
+                // Clear ASP.NET Core Output Cache for all entity types
+                if (_outputCacheStore != null)
+                {
+                    var entityTypes = new[] { "people", "roles", "walls", "windows", "users" };
+                    foreach (var entityType in entityTypes)
+                    {
+                        await _outputCacheStore.EvictByTagAsync(entityType, default);
+                    }
+                    _logger.LogDebug("Cleared output cache for all entity types");
+                }
+
+                _logger.LogDebug("Cleared all caches in {Ms}ms",
+                    (DateTime.UtcNow - cacheStart).TotalMilliseconds);
+            }
+            catch (Exception cacheEx)
+            {
+                _logger.LogWarning(cacheEx, "Failed to clear caches, but continuing anyway");
+            }
+
             var totalTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            _logger.LogDebug("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms (seedData: {SeedData})", workerIndex, totalTime, seedData);
+            _logger.LogInformation("Database reset completed using EF Core for worker {WorkerIndex} in {Ms}ms (seedData: {SeedData})", workerIndex, totalTime, seedData);
         }
         catch (Exception ex)
         {
@@ -246,17 +337,18 @@ public class DatabaseTestService : IDatabaseTestService
 
     /// <summary>
     /// Gets database statistics for debugging purposes.
+    /// IMPORTANT: Uses IgnoreQueryFilters() to count ALL entities including soft-deleted ones.
     /// </summary>
     public async Task<DatabaseStats> GetDatabaseStatsAsync()
     {
         return new DatabaseStats
         {
-            PeopleCount = await _context.People.CountAsync(),
-            RolesCount = await _context.Roles.CountAsync(),
-            WallsCount = await _context.Walls.CountAsync(),
-            WindowsCount = await _context.Windows.CountAsync(),
-            UsersCount = await _context.Users.CountAsync(),
-            PasswordResetTokensCount = await _context.PasswordResetTokens.CountAsync(),
+            PeopleCount = await _context.People.IgnoreQueryFilters().CountAsync(),
+            RolesCount = await _context.Roles.IgnoreQueryFilters().CountAsync(),
+            WallsCount = await _context.Walls.IgnoreQueryFilters().CountAsync(),
+            WindowsCount = await _context.Windows.IgnoreQueryFilters().CountAsync(),
+            UsersCount = await _context.Users.IgnoreQueryFilters().CountAsync(),
+            PasswordResetTokensCount = await _context.PasswordResetTokens.IgnoreQueryFilters().CountAsync(),
             ConnectionString = _context.Database.GetConnectionString()?.Replace("Password=", "Password=***"),
             CanConnect = await _context.Database.CanConnectAsync()
         };
@@ -364,6 +456,7 @@ public class DatabaseTestService : IDatabaseTestService
 
     /// <summary>
     /// Performs database integrity verification
+    /// IMPORTANT: Uses IgnoreQueryFilters() to verify ALL entities including soft-deleted ones.
     /// </summary>
     public async Task<bool> VerifyDatabaseIntegrityAsync(int workerIndex)
     {
@@ -371,14 +464,14 @@ public class DatabaseTestService : IDatabaseTestService
         {
             _logger.LogDebug("Verifying database integrity for worker {WorkerIndex}", workerIndex);
 
-            // Test basic database operations
+            // Test basic database operations - check ALL entities including soft-deleted
             await _context.Database.CanConnectAsync();
-            await _context.People.CountAsync();
-            await _context.Roles.CountAsync();
-            await _context.Walls.CountAsync();
-            await _context.Windows.CountAsync();
-            await _context.Users.CountAsync();
-            await _context.PasswordResetTokens.CountAsync();
+            await _context.People.IgnoreQueryFilters().CountAsync();
+            await _context.Roles.IgnoreQueryFilters().CountAsync();
+            await _context.Walls.IgnoreQueryFilters().CountAsync();
+            await _context.Windows.IgnoreQueryFilters().CountAsync();
+            await _context.Users.IgnoreQueryFilters().CountAsync();
+            await _context.PasswordResetTokens.IgnoreQueryFilters().CountAsync();
 
             _logger.LogDebug("Database integrity verification passed for worker {WorkerIndex}", workerIndex);
             return true;
