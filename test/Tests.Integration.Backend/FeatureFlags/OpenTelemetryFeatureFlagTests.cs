@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
-using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
 
