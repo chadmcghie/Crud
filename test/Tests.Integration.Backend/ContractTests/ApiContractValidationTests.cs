@@ -4,6 +4,7 @@ using Api.Dtos;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.Integration.Backend.Infrastructure;
 using Xunit;
@@ -182,6 +183,10 @@ public class ApiContractValidationTests : ContractTestBase
     {
         _output.WriteLine($"=== VALIDATING HEALTH API CONTRACT: {environment} ===");
 
+        // Check feature flag configuration
+        var configuration = BuildConfigurationForEnvironment(environment);
+        var isHealthChecksDetailedEnabled = configuration.GetValue<bool>("FeatureManagement:HealthChecksDetailed");
+
         using var client = CreateClientForEnvironment(environment);
 
         // Test GET /health contract (liveness check - returns text/plain)
@@ -192,16 +197,26 @@ public class ApiContractValidationTests : ContractTestBase
         Assert.False(string.IsNullOrEmpty(healthContent));
         Assert.Contains("healthy", healthContent.ToLower());
 
-        // Test GET /health/detailed contract (detailed health)
+        // Test GET /health/detailed contract (detailed health) - respects feature flag
         var detailedHealthResponse = await client.GetAsync("/health/detailed");
-        ValidateResponseContract(detailedHealthResponse, HttpStatusCode.OK, "application/json");
-
-        var detailedHealthData = await ValidateJsonContract<object>(detailedHealthResponse);
-        ValidateContractStructure(detailedHealthData, health =>
+        if (isHealthChecksDetailedEnabled)
         {
-            Assert.NotNull(health);
-            // Detailed health data structure should be consistent
-        });
+            // Feature enabled - validate contract
+            ValidateResponseContract(detailedHealthResponse, HttpStatusCode.OK, "application/json");
+
+            var detailedHealthData = await ValidateJsonContract<object>(detailedHealthResponse);
+            ValidateContractStructure(detailedHealthData, health =>
+            {
+                Assert.NotNull(health);
+                // Detailed health data structure should be consistent
+            });
+        }
+        else
+        {
+            // Feature disabled - expect NotFound
+            Assert.Equal(HttpStatusCode.NotFound, detailedHealthResponse.StatusCode);
+            _output.WriteLine($"  /health/detailed disabled in {environment} (HealthChecksDetailed feature flag: false)");
+        }
 
         _output.WriteLine($"✓ Health API contract validated for {environment}");
     }

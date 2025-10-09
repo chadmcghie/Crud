@@ -73,6 +73,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
     /// <summary>
     /// Test 1.3: Validates /health/detailed endpoint returns detailed health information
     /// Ensures detailed health endpoint provides environment-specific health details
+    /// Respects HealthChecksDetailed feature flag - expects 404 when disabled (Production)
     /// </summary>
     [Theory]
     [InlineData("Development")]
@@ -81,6 +82,9 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
     public async Task ApiHealthEndpoint_ShouldReturnDetailedHealth_InAllEnvironments(string environment)
     {
         // Arrange
+        var configuration = BuildConfigurationForEnvironment(environment);
+        var isHealthChecksDetailedEnabled = configuration.GetValue<bool>("FeatureManagement:HealthChecksDetailed");
+
         using var factory = CreateFactoryForEnvironment(environment);
         using var client = factory.CreateClient();
 
@@ -88,6 +92,14 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         var response = await client.GetAsync("/health/detailed");
 
         // Assert
+        if (!isHealthChecksDetailedEnabled)
+        {
+            // Feature flag disabled - endpoint should return 404
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            return;
+        }
+
+        // Feature flag enabled - endpoint should return detailed health
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
@@ -133,6 +145,7 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
     /// <summary>
     /// Test 1.3: Validates environment-specific health check configuration
     /// Ensures health checks include environment-appropriate information
+    /// Respects HealthChecksDetailed feature flag - skips when disabled (Production)
     /// </summary>
     [Fact]
     public async Task HealthChecks_ShouldIncludeEnvironmentSpecificInformation_ForEachEnvironment()
@@ -142,11 +155,24 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
         foreach (var environment in environments)
         {
             // Arrange
+            var configuration = BuildConfigurationForEnvironment(environment);
+            var isHealthChecksDetailedEnabled = configuration.GetValue<bool>("FeatureManagement:HealthChecksDetailed");
+
             using var factory = CreateFactoryForEnvironment(environment);
             using var client = factory.CreateClient();
 
             // Act
             var response = await client.GetAsync("/health/detailed");
+
+            // Assert
+            if (!isHealthChecksDetailedEnabled)
+            {
+                // Feature flag disabled - endpoint should return 404, skip validation
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+                continue;
+            }
+
+            // Feature flag enabled - validate detailed health response
             var content = await response.Content.ReadAsStringAsync();
             var healthInfo = JsonSerializer.Deserialize<JsonElement>(content);
 
@@ -293,6 +319,30 @@ public class HealthCheckValidationTests : IClassFixture<SqliteTestWebApplication
                     });
                 });
             });
+    }
+
+    /// <summary>
+    /// Builds configuration for a specific environment
+    /// </summary>
+    private IConfiguration BuildConfigurationForEnvironment(string environment)
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var repoRoot = currentDirectory;
+
+        while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+        {
+            repoRoot = Directory.GetParent(repoRoot)!.FullName;
+        }
+
+        var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(apiConfigPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        return builder.Build();
     }
 
     #endregion

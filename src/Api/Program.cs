@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Logs;
@@ -98,27 +99,48 @@ namespace Api
                     builder.Host.UseSerilog();
                 }
 
-                // 2) Observability: OpenTelemetry (logs/traces/metrics)
-                builder.Services.AddOpenTelemetry()
-                    .ConfigureResource(r => r
-                        .AddService(serviceName: "Crud.Api", serviceVersion: "1.0.0")
-                        .AddAttributes(new Dictionary<string, object>
-                        {
-                            ["deployment.environment"] = builder.Environment.EnvironmentName
-                        }))
-                    .WithTracing(t => t
-                        .AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation()
-                        .AddConsoleExporter())
-                    .WithMetrics(m => m
-                        .AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation());
+                // 2) Observability: OpenTelemetry (logs/traces/metrics) - controlled by OpenTelemetry feature flag
+                var isOpenTelemetryEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:OpenTelemetry");
+                if (isOpenTelemetryEnabled)
+                {
+                    Log.Information("OpenTelemetry feature flag is enabled - registering observability services");
+                    builder.Services.AddOpenTelemetry()
+                        .ConfigureResource(r => r
+                            .AddService(serviceName: "Crud.Api", serviceVersion: "1.0.0")
+                            .AddAttributes(new Dictionary<string, object>
+                            {
+                                ["deployment.environment"] = builder.Environment.EnvironmentName
+                            }))
+                        .WithTracing(t => t
+                            .AddAspNetCoreInstrumentation()
+                            .AddHttpClientInstrumentation()
+                            .AddConsoleExporter())
+                        .WithMetrics(m => m
+                            .AddAspNetCoreInstrumentation()
+                            .AddHttpClientInstrumentation());
+                }
+                else
+                {
+                    Log.Information("OpenTelemetry feature flag is disabled - skipping observability services registration");
+                }
 
-                // 3) App & Infra
+                // 3) Feature Management
+                builder.Services.AddFeatureManagement();
+
+                // 4) App & Infra
                 builder.Services.AddApplication();
 
-                // 4) Response Compression
-                builder.Services.AddResponseCompressionServices();
+                // 5) Response Compression (controlled by Compression feature flag)
+                var isCompressionEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:Compression");
+                if (isCompressionEnabled)
+                {
+                    Log.Information("Compression feature flag is enabled - registering response compression services");
+                    builder.Services.AddResponseCompressionServices();
+                }
+                else
+                {
+                    Log.Information("Compression feature flag is disabled - skipping response compression services");
+                }
 
                 builder.Services.AddHttpClient("default")
                     .AddPolicyHandler((sp, request) => PollyPolicies.GetComprehensiveHttpPolicy(sp));
@@ -203,33 +225,53 @@ namespace Api
                         throw new InvalidOperationException($"Unsupported database provider: {databaseProvider}");
                 }
 
-                // 4) CORS, Controllers, and other services
-                builder.Services.AddCors(options =>
+                // 4) CORS (controlled by Cors feature flag)
+                var isCorsEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:Cors");
+                if (isCorsEnabled)
                 {
-                    options.AddPolicy("AllowAngular", policy =>
+                    Log.Information("Cors feature flag is enabled - registering CORS services");
+                    builder.Services.AddCors(options =>
                     {
-                        policy.WithOrigins(
-                                "http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200",
-                                "http://localhost:4210", "http://localhost:4220", "http://localhost:4230",
-                                "http://localhost:4240", "http://localhost:4250", "http://localhost:4260"
-                              )
-                              .AllowAnyHeader()
-                              .AllowAnyMethod()
-                              .AllowCredentials();
+                        options.AddPolicy("AllowAngular", policy =>
+                        {
+                            policy.WithOrigins(
+                                    "http://localhost:4200", "http://127.0.0.1:4200", "https://localhost:4200",
+                                    "http://localhost:4210", "http://localhost:4220", "http://localhost:4230",
+                                    "http://localhost:4240", "http://localhost:4250", "http://localhost:4260"
+                                  )
+                                  .AllowAnyHeader()
+                                  .AllowAnyMethod()
+                                  .AllowCredentials();
+                        });
                     });
-                });
-
-                // Add caching services
-                builder.Services.AddCachingServices(builder.Configuration);
-
-                // Add cached repository decorators (only if using EF provider)
-                if (usingEfProvider)
+                }
+                else
                 {
-                    builder.Services.AddCachedRepositories();
+                    Log.Information("Cors feature flag is disabled - skipping CORS services registration");
                 }
 
-                // Add output caching
-                builder.Services.AddApiOutputCaching(builder.Configuration);
+                // Add caching services (controlled by Caching feature flag)
+                // Read feature flag directly from configuration during DI setup
+                var isCachingEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:Caching");
+
+                if (isCachingEnabled)
+                {
+                    Log.Information("Caching feature flag is enabled - registering caching services");
+                    builder.Services.AddCachingServices(builder.Configuration);
+
+                    // Add cached repository decorators (only if using EF provider)
+                    if (usingEfProvider)
+                    {
+                        builder.Services.AddCachedRepositories();
+                    }
+
+                    // Add output caching
+                    builder.Services.AddApiOutputCaching(builder.Configuration);
+                }
+                else
+                {
+                    Log.Information("Caching feature flag is disabled - skipping caching services registration");
+                }
 
                 // Configure JWT Authentication
                 var jwtSecret = builder.Configuration["Jwt:Secret"];
@@ -314,50 +356,72 @@ namespace Api
                     }
                 });
 
-                // Add rate limiting for password reset endpoint
-                builder.Services.AddRateLimiter(options =>
+                // Add rate limiting (controlled by RateLimiting feature flag)
+                var isRateLimitingEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:RateLimiting");
+                if (isRateLimitingEnabled)
                 {
-                    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                    Log.Information("RateLimiting feature flag is enabled - registering rate limiting services");
+                    builder.Services.AddRateLimiter(options =>
+                    {
+                        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                    // Password reset rate limit: 3 requests per 15 minutes per IP (disabled in Testing environment)
-                    var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
-                    var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
-                    var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
+                        // Password reset rate limit: 3 requests per 15 minutes per IP (relaxed in Testing environment)
+                        var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+                        var permitLimit = isTestEnvironment ? 1000 : 3; // Much higher limit for tests
+                        var window = isTestEnvironment ? TimeSpan.FromSeconds(1) : TimeSpan.FromMinutes(15);
 
-                    options.AddPolicy("PasswordReset", context =>
-                        RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = permitLimit,
-                                Window = window,
-                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                                QueueLimit = 0
-                            }));
+                        options.AddPolicy("PasswordReset", context =>
+                            RateLimitPartition.GetFixedWindowLimiter(
+                                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                                factory: _ => new FixedWindowRateLimiterOptions
+                                {
+                                    PermitLimit = permitLimit,
+                                    Window = window,
+                                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                    QueueLimit = 0
+                                }));
 
-                    // Global rate limit as fallback
-                    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                        RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = 100,
-                                Window = TimeSpan.FromMinutes(1),
-                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                                QueueLimit = 10
-                            }));
-                });
-
-                // Register the conditional request filter
-                builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+                        // Global rate limit as fallback (relaxed in Testing environment)
+                        var globalPermitLimit = isTestEnvironment ? 10000 : 100;
+                        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                            RateLimitPartition.GetFixedWindowLimiter(
+                                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                                factory: _ => new FixedWindowRateLimiterOptions
+                                {
+                                    PermitLimit = globalPermitLimit,
+                                    Window = TimeSpan.FromMinutes(1),
+                                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                    QueueLimit = isTestEnvironment ? 1000 : 10
+                                }));
+                    });
+                }
+                else
+                {
+                    Log.Information("RateLimiting feature flag is disabled - skipping rate limiting services");
+                }
 
                 // Register cache invalidation service
                 builder.Services.AddScoped<Api.Services.IOutputCacheInvalidationService, Api.Services.OutputCacheInvalidationService>();
 
+                // Register conditional request filter (controlled by ConditionalRequests feature flag)
+                var isConditionalRequestsEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:ConditionalRequests");
+                if (isConditionalRequestsEnabled)
+                {
+                    Log.Information("ConditionalRequests feature flag is enabled - registering conditional request filter");
+                    builder.Services.AddScoped<Api.Filters.ConditionalRequestFilter>();
+                }
+                else
+                {
+                    Log.Information("ConditionalRequests feature flag is disabled - skipping conditional request filter registration");
+                }
+
                 builder.Services.AddControllers(options =>
                     {
-                        // Add conditional request filter globally
-                        options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                        // Add conditional request filter globally (if enabled)
+                        if (isConditionalRequestsEnabled)
+                        {
+                            options.Filters.Add<Api.Filters.ConditionalRequestFilter>();
+                        }
                     })
                     .AddJsonOptions(options =>
                     {
@@ -372,41 +436,50 @@ namespace Api
 
                 builder.Services.AddEndpointsApiExplorer();
 
-                // Configure Swagger with JWT support
-                builder.Services.AddSwaggerGen(c =>
+                // Configure Swagger with JWT support (controlled by Swagger feature flag)
+                var isSwaggerEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:Swagger");
+                if (isSwaggerEnabled)
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo
+                    Log.Information("Swagger feature flag is enabled - registering Swagger services");
+                    builder.Services.AddSwaggerGen(c =>
                     {
-                        Title = "Crud API",
-                        Version = "v1",
-                        Description = "A CRUD API with JWT authentication"
-                    });
-
-                    // Add JWT Authentication
-                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                    {
-                        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
-                        Name = "Authorization",
-                        In = ParameterLocation.Header,
-                        Type = SecuritySchemeType.ApiKey,
-                        Scheme = "Bearer"
-                    });
-
-                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-                    {
+                        c.SwaggerDoc("v1", new OpenApiInfo
                         {
-                            new OpenApiSecurityScheme
+                            Title = "Crud API",
+                            Version = "v1",
+                            Description = "A CRUD API with JWT authentication"
+                        });
+
+                        // Add JWT Authentication
+                        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                        {
+                            Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                            Name = "Authorization",
+                            In = ParameterLocation.Header,
+                            Type = SecuritySchemeType.ApiKey,
+                            Scheme = "Bearer"
+                        });
+
+                        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                        {
                             {
-                                Reference = new OpenApiReference
+                                new OpenApiSecurityScheme
                                 {
-                                    Type = ReferenceType.SecurityScheme,
-                                    Id = "Bearer"
-                                }
-                            },
-                            Array.Empty<string>()
-                        }
+                                    Reference = new OpenApiReference
+                                    {
+                                        Type = ReferenceType.SecurityScheme,
+                                        Id = "Bearer"
+                                    }
+                                },
+                                Array.Empty<string>()
+                            }
+                        });
                     });
-                });
+                }
+                else
+                {
+                    Log.Information("Swagger feature flag is disabled - skipping Swagger services registration");
+                }
 
                 builder.Services.AddHealthChecks()
                     .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready", "live" });
@@ -427,29 +500,86 @@ namespace Api
                     Log.Information("Database ensured successfully");
                 }
 
-                if (app.Environment.IsDevelopment())
+                // Enable Swagger UI (controlled by Swagger feature flag)
+                if (isSwaggerEnabled)
                 {
                     app.UseSwagger();
                     app.UseSwaggerUI();
-                    Log.Information("Swagger UI enabled for development environment");
+                    Log.Information("Swagger UI enabled (Swagger feature flag: enabled)");
                 }
 
                 app.UseHttpsRedirection();
-                app.UseResponseCompression();
-                app.UseStaticFiles(); // Serve static files with compression
-                app.UseMiddleware<CompressionPerformanceMiddleware>();
-                app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-                app.UseCors("AllowAngular");
-                app.UseRateLimiter();
+
+                // Enable response compression middleware (controlled by Compression feature flag)
+                // Read from configuration to avoid creating temporary service provider
+                if (isCompressionEnabled)
+                {
+                    app.UseResponseCompression();
+                    app.UseStaticFiles(); // Serve static files with compression
+                    app.UseMiddleware<CompressionPerformanceMiddleware>();
+                    Log.Information("Response compression middleware enabled (Compression feature flag: enabled)");
+                }
+                else
+                {
+                    app.UseStaticFiles(); // Serve static files without compression
+                    Log.Information("Response compression middleware disabled (Compression feature flag: disabled)");
+                }
+                // Enable detailed exception handling (controlled by DetailedExceptions feature flag)
+                var isDetailedExceptionsEnabled = builder.Configuration.GetValue<bool>("FeatureManagement:DetailedExceptions");
+                if (isDetailedExceptionsEnabled)
+                {
+                    app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+                    Log.Information("Detailed exception handling middleware enabled (DetailedExceptions feature flag: enabled)");
+                }
+                else
+                {
+                    Log.Information("Detailed exception handling middleware disabled (DetailedExceptions feature flag: disabled)");
+                }
+
+                // Enable CORS middleware (controlled by Cors feature flag)
+                if (isCorsEnabled)
+                {
+                    app.UseCors("AllowAngular");
+                    Log.Information("CORS middleware enabled (Cors feature flag: enabled)");
+                }
+                else
+                {
+                    Log.Information("CORS middleware disabled (Cors feature flag: disabled)");
+                }
+
+                // Enable rate limiting middleware (controlled by RateLimiting feature flag)
+                if (isRateLimitingEnabled)
+                {
+                    app.UseRateLimiter();
+                    Log.Information("Rate limiting middleware enabled (RateLimiting feature flag: enabled)");
+                }
+                else
+                {
+                    Log.Information("Rate limiting middleware disabled (RateLimiting feature flag: disabled)");
+                }
+
                 app.UseAuthentication();
                 app.UseAuthorization();
 
-                // Add output caching middleware (if not disabled)
+                // Add output caching middleware (controlled by Caching feature flag)
+                var appFeatureManager = app.Services.GetRequiredService<IFeatureManager>();
+                var cachingFeatureEnabled = await appFeatureManager.IsEnabledAsync(Api.Constants.FeatureFlags.Caching);
                 var outputCachingDisabled = app.Configuration.GetValue<bool>("OutputCaching:Disabled");
-                if (!outputCachingDisabled)
+
+                if (cachingFeatureEnabled && !outputCachingDisabled)
                 {
-                    app.UseMiddleware<Api.Middleware.ConditionalRequestMiddleware>(); // Must run before output cache
+                    // Conditional request middleware (requires both Caching and ConditionalRequests flags)
+                    if (isConditionalRequestsEnabled)
+                    {
+                        app.UseMiddleware<Api.Middleware.ConditionalRequestMiddleware>(); // Must run before output cache
+                    }
                     app.UseOutputCache();
+                    Log.Information("Output caching middleware enabled (Caching feature flag: enabled, ConditionalRequests: {ConditionalRequests})", isConditionalRequestsEnabled);
+                }
+                else
+                {
+                    Log.Information("Output caching middleware disabled (Caching feature flag: {CachingEnabled}, OutputCaching:Disabled: {OutputCachingDisabled})",
+                        cachingFeatureEnabled, outputCachingDisabled);
                 }
 
                 // Note: Conditional request support (ETag/If-None-Match, Last-Modified/If-Modified-Since) 
@@ -471,11 +601,21 @@ namespace Api
                     Predicate = check => check.Tags.Contains("ready")
                 });
 
-                app.MapHealthChecks("/health/detailed", new HealthCheckOptions
+                // Detailed health check endpoint (controlled by HealthChecksDetailed feature flag)
+                var isHealthChecksDetailedEnabled = await appFeatureManager.IsEnabledAsync(Api.Constants.FeatureFlags.HealthChecksDetailed);
+                if (isHealthChecksDetailedEnabled)
                 {
-                    Predicate = _ => true,
-                    ResponseWriter = WriteDetailedHealthResponse
-                });
+                    app.MapHealthChecks("/health/detailed", new HealthCheckOptions
+                    {
+                        Predicate = _ => true,
+                        ResponseWriter = WriteDetailedHealthResponse
+                    });
+                    Log.Information("Detailed health check endpoint enabled (HealthChecksDetailed feature flag: enabled)");
+                }
+                else
+                {
+                    Log.Information("Detailed health check endpoint disabled (HealthChecksDetailed feature flag: disabled)");
+                }
 
                 Log.Information("🔍 STARTUP DEBUG: Application configured successfully. About to start web host...");
                 Log.Information("🔍 STARTUP DEBUG: Listening URLs will be: {Urls}", string.Join(", ", app.Urls));
