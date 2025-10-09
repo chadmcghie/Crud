@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -79,16 +81,28 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         // Test /health endpoint
         var healthResponse = await client.GetAsync("/health");
         Assert.True(
-            healthResponse.StatusCode == System.Net.HttpStatusCode.OK ||
-            healthResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
+            healthResponse.StatusCode == HttpStatusCode.OK ||
+            healthResponse.StatusCode == HttpStatusCode.ServiceUnavailable
         );
 
-        // Test /health/detailed endpoint
+        // Test /health/detailed endpoint - respects HealthChecksDetailed feature flag
+        var configuration = BuildConfigurationForEnvironment(environment);
+        var isHealthChecksDetailedEnabled = configuration.GetValue<bool>("FeatureManagement:HealthChecksDetailed");
+
         var detailedHealthResponse = await client.GetAsync("/health/detailed");
-        Assert.True(
-            detailedHealthResponse.StatusCode == System.Net.HttpStatusCode.OK ||
-            detailedHealthResponse.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
-        );
+        if (isHealthChecksDetailedEnabled)
+        {
+            // Feature enabled - expect OK or ServiceUnavailable
+            Assert.True(
+                detailedHealthResponse.StatusCode == HttpStatusCode.OK ||
+                detailedHealthResponse.StatusCode == HttpStatusCode.ServiceUnavailable
+            );
+        }
+        else
+        {
+            // Feature disabled - expect NotFound
+            Assert.Equal(HttpStatusCode.NotFound, detailedHealthResponse.StatusCode);
+        }
 
         stopwatch.Stop();
         _output.WriteLine($"  ✓ Health endpoints: {stopwatch.ElapsedMilliseconds}ms");
@@ -258,4 +272,32 @@ public class AutomatedSmokeTestRunner : SmokeTestBase
         Assert.Equal(3, report.Environments.Length);
         Assert.Equal(4, report.TestCategories.Length);
     }
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Builds configuration for a specific environment
+    /// </summary>
+    private IConfiguration BuildConfigurationForEnvironment(string environment)
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var repoRoot = currentDirectory;
+
+        while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+        {
+            repoRoot = Directory.GetParent(repoRoot)!.FullName;
+        }
+
+        var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(apiConfigPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        return builder.Build();
+    }
+
+    #endregion
 }

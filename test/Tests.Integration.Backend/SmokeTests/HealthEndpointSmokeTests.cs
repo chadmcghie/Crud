@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
@@ -56,14 +57,26 @@ public class HealthEndpointSmokeTests : SmokeTestBase
     public async Task DetailedHealthEndpoint_ShouldReturnHealthy_WithinTimeLimit(string environment)
     {
         // Arrange
+        var configuration = BuildConfigurationForEnvironment(environment);
+        var isHealthChecksDetailedEnabled = configuration.GetValue<bool>("FeatureManagement:HealthChecksDetailed");
+
         using var client = CreateClientForEnvironment(environment);
-        _output.WriteLine($"Testing /health/detailed endpoint in {environment} environment");
+        _output.WriteLine($"Testing /health/detailed endpoint in {environment} environment (HealthChecksDetailed flag: {isHealthChecksDetailedEnabled})");
 
         // Act & Assert
         var executionTime = await MeasureExecutionTimeAsync(async () =>
         {
             var response = await client.GetAsync("/health/detailed");
 
+            // If feature flag is disabled (e.g., Production), endpoint should return 404 Not Found
+            if (!isHealthChecksDetailedEnabled)
+            {
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+                _output.WriteLine($"/health/detailed is disabled in {environment} (as expected)");
+                return;
+            }
+
+            // If feature flag is enabled, validate healthy response
             ValidateHealthyResponse(response);
 
             var content = await response.Content.ReadAsStringAsync();
@@ -170,4 +183,32 @@ public class HealthEndpointSmokeTests : SmokeTestBase
 
         _output.WriteLine($"Total time for all environments: {totalStopwatch.Elapsed.TotalSeconds:F2} seconds");
     }
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Builds configuration for a specific environment
+    /// </summary>
+    private IConfiguration BuildConfigurationForEnvironment(string environment)
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var repoRoot = currentDirectory;
+
+        while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+        {
+            repoRoot = Directory.GetParent(repoRoot)!.FullName;
+        }
+
+        var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(apiConfigPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        return builder.Build();
+    }
+
+    #endregion
 }

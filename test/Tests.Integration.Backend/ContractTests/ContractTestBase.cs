@@ -241,6 +241,30 @@ public abstract class ContractTestBase : IDisposable
         return results;
     }
 
+    /// <summary>
+    /// Builds configuration for a specific environment
+    /// </summary>
+    protected static IConfiguration BuildConfigurationForEnvironment(string environment)
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var repoRoot = currentDirectory;
+
+        while (!Directory.Exists(Path.Combine(repoRoot, "src")) && Directory.GetParent(repoRoot) != null)
+        {
+            repoRoot = Directory.GetParent(repoRoot)!.FullName;
+        }
+
+        var apiConfigPath = Path.Combine(repoRoot, "src", "Api");
+
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(apiConfigPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        return builder.Build();
+    }
+
     public void Dispose()
     {
         foreach (var factory in _factories)
