@@ -112,7 +112,7 @@ jobs:
       timeout-minutes: 15
       
     - name: Upload integration test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: production-integration-test-results-${{ github.sha }}
@@ -216,7 +216,7 @@ jobs:
         TEST_RUN_ID: pr-main-${{ github.run_id }}-${{ github.run_number }}
         
     - name: Upload E2E test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: production-e2e-test-results-${{ github.sha }}
@@ -226,7 +226,7 @@ jobs:
         retention-days: 7
           
     - name: Upload database files (for debugging)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: failure()
       with:
         name: production-database-files-${{ github.sha }}

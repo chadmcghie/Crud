@@ -260,7 +260,7 @@ jobs:
 
     - name: Upload build artifacts for reuse in PRs
       if: matrix.language == 'csharp' && needs.detect-changes.outputs.backend == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: feature-build-${{ github.sha }}
         path: |
