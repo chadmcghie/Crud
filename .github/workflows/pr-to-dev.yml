@@ -226,7 +226,7 @@ jobs:
         echo "🚨 MANUAL OVERRIDE: Skipping integration tests"
         echo "⚠️  Integration tests were manually skipped"
     - name: Upload integration test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: integration-test-results-${{ github.event.pull_request.head.sha }}
@@ -343,7 +343,7 @@ jobs:
         TEST_RUN_ID: pr-dev-smoke-${{ github.run_id }}-${{ github.run_number }}
         
     - name: Upload E2E test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: e2e-smoke-test-results-${{ github.event.pull_request.head.sha }}
@@ -353,7 +353,7 @@ jobs:
         retention-days: 7
           
     - name: Upload database files (for debugging)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: failure()
       with:
         name: database-files-${{ github.event.pull_request.head.sha }}

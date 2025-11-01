@@ -91,7 +91,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: e2e-test-results-${{ github.run_number }}
         path: |
@@ -101,7 +101,7 @@ jobs:
 
     - name: Upload test artifacts
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: e2e-test-artifacts-${{ github.run_number }}
         path: test/Tests.E2E.NG/test-results/artifacts/
